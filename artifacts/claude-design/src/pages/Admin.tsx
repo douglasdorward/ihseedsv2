@@ -515,7 +515,12 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     setSaving(true);
     setError("");
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
-    const action = submitter?.value; // "draft" or "publish"
+    const action = submitter?.value; // "back", "draft", or "publish"
+
+    if (action === "back" && (viewMode === "live" || isArchived)) {
+      navigate("/admin/products");
+      return;
+    }
 
     if (action === "publish") {
       const missing = [
@@ -556,7 +561,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         }
         await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey() });
         await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
-        navigate(`/admin/products/${newProd.id}`);
+        navigate(action === "back" ? "/admin/products" : `/admin/products/${newProd.id}`);
       } else {
         const { slug, publishStatus, ...draftPayload } = payload;
         await saveDraftMutation.mutateAsync({ id: productId!, data: draftPayload });
@@ -565,7 +570,8 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         }
         await queryClient.invalidateQueries({ queryKey: getGetAdminProductQueryKey(productId!) });
         await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey() });
-      await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
+        await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
+        if (action === "back") navigate("/admin/products");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to save product.");
@@ -631,7 +637,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   return (
     <>
       <header className="admin-page-header admin-editor-header">
-        <button className="admin-back-link" type="button" onClick={() => navigate("/admin/products")}><Icon name="arrow-left" size={16}/>Products &amp; mixes</button>
+        <button className="admin-back-link" type="submit" form="admin-product-form" name="action" value="back" disabled={saving} title="Save draft and return to Products & mixes"><Icon name="arrow-left" size={16}/>Products &amp; mixes</button>
         <div className="admin-header-actions">
           {isLive && (
             <div className="admin-view-toggle">
@@ -640,7 +646,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
             </div>
           )}
           {!isNew && hasDraft && !isArchived && <button className="admin-button ghost" type="button" onClick={discardDraft} disabled={saving}>Discard draft</button>}
-          <button className="admin-button ghost" type="button" onClick={() => navigate("/admin/products")}>Cancel</button>
 
           {isArchived ? (
             <button className="admin-button primary" type="button" onClick={restore} disabled={saving}>Restore to Draft</button>
