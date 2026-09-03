@@ -1,0 +1,287 @@
+# IH Seeds — Product Fields for the Website Admin Portal
+
+Field specification for the product/mix add-and-edit screen.
+
+Every option list below is taken from the **IH Seeds Product Data (Master Catalogue)** — 150 product
+records across 10 categories, plus the 2026 Pasture Growers Guide. Percentages show how many of the
+150 records already hold data for that field, so you can judge what earns a place on the form.
+
+Legend: **[BUILT]** already on the form · **[CHANGE]** exists but needs altering · **[NEW]** to add
+
+---
+
+## 1. Identity
+
+| Field | Type | Notes |
+|---|---|---|
+| `product_name` | text, required | |
+| `slug` | text, required, unique **[NEW]** | URL key. Set once, do **not** derive from product name — 8 products already carry a guide name that differs from the catalogue name (e.g. "Tetila USA" vs "New Tetila"), so a name-derived URL would break on rename. |
+| `stock_code` | text **[BUILT]** | |
+| `category` | single select **[BUILT]** | see 1.1 |
+| `guide_section` | single select **[BUILT]** | see 1.2 |
+| `record_type` | single select **[CHANGE]** | `Mix` \| `Variety` \| `Commodity / generic` — the third value is missing. Buckwheat, Cereal Rye, Black Mustard and Sunflower-Common are species lines, not named varieties. |
+| `botanical_name` | text **[NEW]** | 72% filled. Expected on a seed site and useful for search. |
+| `also_known_as` | text, repeatable **[NEW]** | Tillage Radish alone trades under 4 names (Tillage Radish / Tillage Forage Radish / Buster / Busta). |
+| `pack_sizes` | repeatable `{label, size, unit}` **[CHANGE]** | Currently a single "Pack size" text field. Carpet Grass and Bermuda Couch are each sold as **8 kg pasture** *and* **100 kg turf** — one field cannot hold both. |
+
+### 1.1 `category` options
+
+```
+Ryegrasses
+Clovers
+Fescues & Other Grasses
+Serradellas & Medics
+Lucerne
+Herbs
+Sub-Tropical Grasses
+Biologicals
+Forage & Grain Crops
+Mixes
+```
+
+### 1.2 `guide_section` options
+
+The 12 printed sections of the 2026 Pasture Growers Guide:
+
+```
+Subterranean Clovers
+Aerial Seeded Clovers & White Clovers
+Serradellas & Medic
+Specialist Seed Mixes
+Annual Tetraploid Ryegrasses
+Annual Diploid Ryegrasses
+Short Term – Biennials & Perennial Ryegrass Varieties
+Lucerne
+Other Grasses
+Sub Tropical Perennial Grasses & Mixes
+Alternative Crops
+Biologicals
+```
+
+---
+
+## 2. Classification — new panel
+
+| Field | Type | Options / notes |
+|---|---|---|
+| `persistency_type` | single select **[NEW]** | `Annual` \| `Biennial` \| `Perennial` \| `Hybrid perennial` \| `Short-term (1–2 years)` — 73% filled. A primary customer filter with no home on the current form. Make it an enum: the catalogue's free-text version has picked up junk values like "Excellent" and "Moderate drought tolerance" that you don't want to inherit. |
+| `ploidy` | single select **[NEW]** | `Diploid` \| `Tetraploid` \| `Hexaploid` \| `Mixed (blend)` — only 17% of all products, but effectively **every ryegrass**, and diploid-vs-tetraploid is a primary buying decision in that category. Show conditionally when `category = Ryegrasses`. |
+| `flower_colour` | single select **[NEW]** | `Pink` \| `Yellow` \| `White` \| `Crimson` \| `Red` \| `Purple` — the guide states it explicitly for every serradella. |
+| `bred_by_origin` | text **[NEW]** | 41% filled. Ranges from "Agricom (NZ)" to "Collected by Dr John Gladstones in 1967". |
+| `australian_bred` | boolean **[NEW]** | "Australian bred for Australian farming conditions" is repeated marketing copy across the ryegrass range — worth a filterable flag. |
+| `distributed_by` | text, default "IH Seeds" **[NEW]** | 94% filled. |
+
+---
+
+## 3. Summary & description — already built
+
+| Field | Type |
+|---|---|
+| `summary` | text **[BUILT]** |
+| `description` | long text **[BUILT]** |
+| `internal_notes` | long text, never published **[BUILT]** |
+
+---
+
+## 4. Agronomy specs
+
+### 4.1 Sowing rate — needs restructuring
+
+| Field | Type | Notes |
+|---|---|---|
+| `sowing_rates` | repeatable `{context, min, max, unit}` **[CHANGE]** | Over 40 products carry a **split rate** that a single text box cannot represent: "Monoculture: 20 kg/ha; Mix: 6–8 kg/ha", "Dryland 4–10; Irrigation 18–25". |
+
+`context` options:
+
+```
+Monoculture
+In a mix
+Dryland
+Irrigation
+Pasture
+Turf
+```
+
+### 4.2 Rainfall and soil
+
+| Field | Type | Notes |
+|---|---|---|
+| `rainfall_min_mm` | integer **[CHANGE]** | Store the number, not "400+". Parses cleanly on 141/150 records, and a number lets customers filter by rainfall zone. |
+| `soil_ph_min` | decimal **[NEW]** | **Missing entirely, 71% filled.** Distinct from soil *range* (which is texture). Legumes are sold on it — lucerne and sub clovers need 5.5 CaCl₂ minimum. |
+| `soil_ph_scale` | select: `CaCl₂` \| `water` **[NEW]** | The tech sheets specify CaCl₂; without the scale the number is ambiguous. |
+| `soil_range_lightest` | select **[BUILT]** | `LS` \| `S` \| `L` \| `H` |
+| `soil_range_heaviest` | select **[BUILT]** | `LS` \| `S` \| `L` \| `H` |
+| `sowing_depth_min_cm` / `sowing_depth_max_cm` | decimal **[NEW]** | 30% filled. |
+
+Soil range key, for the form's help text: **LS** light sand · **S** sand · **L** loam · **H** heavy.
+
+### 4.3 Tolerance — fix the option list
+
+| Field | Type |
+|---|---|
+| `tolerance` | multi-select, each with a **Mild** qualifier **[CHANGE]** |
+
+```
+Low pH          ← MISSING from the current form
+Waterlogging
+Salinity        ← MISSING from the current form
+Drought
+Frost
+```
+
+The current chips are Drought / Frost / Waterlogging. **Low pH and Salinity are the two the printed
+guide actually codes** — every guide row is tagged P (low pH), W (waterlogging) or S (salinity), and
+that column pairs with Ideal Soil Range. Across the 150 records: waterlogging 71 mentions, low
+pH/acid 59, salinity 46, drought 39, frost 25.
+
+Salinity in particular is the headline claim for Puccinellia, Tall Wheat Grass, Reclaimer Rhodes
+Grass and L97 Lucerne — in WA that is a category people search on.
+
+The **Mild** qualifier is real data, not a nicety: the guide prints "Mild S" and "Mild P/W".
+
+### 4.4 Maturity — split the single field into measure + value
+
+The current single "Flowering / heading" text field is holding **four different measurements**, which
+is why its placeholder has to read "Aug-Nov, Mid, or All Year R…". As one text field it cannot be
+sorted or filtered, and lucerne data ends up mislabelled.
+
+| Field | Type | Applies to |
+|---|---|---|
+| `maturity_measure` | single select **[CHANGE]** | see below |
+| `maturity_days` | integer **[NEW]** | Clovers, serradellas — range in data 77–144 |
+| `heading_date` | select **[NEW]** | Ryegrasses |
+| `flowering_window` | text **[NEW]** | Mixes |
+| `winter_activity` | integer 1–10 **[NEW]** | Lucerne only |
+
+`maturity_measure` options:
+
+```
+Days to flowering (Perth)     → use maturity_days
+Heading date                  → use heading_date
+Time of flowering             → use flowering_window
+Winter activity rating        → use winter_activity
+```
+
+`heading_date` options:
+
+```
+Very early
+Early
+Mid
+Mid-late
+Late
+```
+
+`flowering_window` observed values: `Aug-Nov`, `Aug-Oct`, `Jul-Aug`, `Summer`, `Winter`,
+`All Year Round`.
+
+> **Why this matters:** winter activity is a *dormancy* rating, not a flowering date. Storing L97's
+> "9" in a field labelled flowering is simply wrong data.
+
+### 4.5 Inoculant and seed treatment
+
+| Field | Type | Options |
+|---|---|---|
+| `inoculant_group` | single select **[BUILT]** | `None` \| `C` \| `G/S` \| `G` \| `S` \| `AL` \| `AM` \| `B` \| `BS` \| `E` \| `F/E` \| `I` |
+| `seed_treatment` | multi-select **[CHANGE]** | `Bare / untreated` \| `Gaucho` \| `Thiram` \| `Goldstrike` \| `BioNPK Powder S` \| `Lime coated` |
+| `ecocert_approved` | boolean **[NEW]** | Four mixes carry "ECOCERT APPROVED" — a genuine selling point for organic growers. |
+
+### 4.6 Use and suitability
+
+| Field | Type | Notes |
+|---|---|---|
+| `end_use` | multi-select **[NEW]** | **Missing entirely, 90% filled — the single biggest gap.** This is how customers shop. |
+| `livestock` | multi-select **[BUILT]** | Keep the 7 you have; consider adding `Weaners` and `Lamb finishing`. |
+| `companion_species` | repeatable, linked to other product records **[NEW]** | 46% filled. Straight cross-sell — "sow with…". Link records rather than storing free text. |
+
+`end_use` options:
+
+```
+Grazing                          (81 records)
+Hay                              (62)
+Silage                           (53)
+Cover crop
+Green manure
+Grain
+Stockfeed
+Permanent pasture
+Erosion control / stabilisation
+Break crop
+Biofumigant
+Turf
+```
+
+`livestock` options (current 7, plus 2 suggested):
+
+```
+Beef        Dairy       Sheep       Equine
+Goat        Chicken     Alpaca
+Weaners     Lamb finishing
+```
+
+### 4.7 Performance detail
+
+| Field | Type | Notes |
+|---|---|---|
+| `disease_pest_resistance` | long text **[NEW]** | 56% filled |
+| `persistence_longevity` | text **[NEW]** | 50% filled |
+| `grazing_management_notes` | long text **[NEW]** | 62% filled — this is the "Planting Tips" content from the tech sheets |
+
+---
+
+## 5. Commercial & legal — new panel
+
+| Field | Type | Notes |
+|---|---|---|
+| `pbr_protected` | boolean **[NEW]** | The guide's own footer states most listed varieties are protected under the **Plant Breeders Rights Act 1994**, and that unauthorised propagation or sale is an infringement. Worth recording per product. |
+| `pbr_details` | text **[NEW]** | Certificate or registration reference |
+| `licence_restriction` | text **[NEW]** | e.g. Fran₂o: "Seed/Pod must not be harvested and sold unless under license to LegumeN2 Pty Ltd" |
+| `certification` | multi-select **[NEW]** | `ASF Code of Practice` \| `Certified Quality Assured Seed` \| `Certified seed` \| `Licensed production` |
+| `is_third_party_product` | boolean **[NEW]** | Several lines are bred elsewhere and distributed by IH Seeds |
+| `supplier_name` | text **[NEW]** | e.g. AGF (Freyr Sunn Hemp), Feldsaaten Freudenberger (Treposno), Valley Seeds (Safeguard), LegumeN (Diamanti) |
+
+---
+
+## 6. Mix components
+
+| Field | Type | Notes |
+|---|---|---|
+| `components` | repeatable `{product_link, species_name, inclusion_rate, unit, note}` **[CHANGE]** | The current "Add species" needs **inclusion rate** and a **per-component note** — the catalogue's Mix Components tab already carries both columns. Linking each component to its own product record lets a mix page list its species as clickable products. |
+| `formulation_year` | text **[NEW]** | Mix recipes change constantly — WA Southern Perennial changed formulation **six times** between 2020 and 2026, and MaxiMix swapped its oats and ryegrass varieties across four releases. Without a year stamp the component list goes stale silently. |
+
+---
+
+## 7. Availability, tech sheet, photos, publishing
+
+| Field | Type | Notes |
+|---|---|---|
+| `availability` | single select **[BUILT]** | `Good stock` \| `Low stock` \| `Very low` \| `Unavailable` |
+| `tech_sheet_pdf` | file + `pdf_path` **[BUILT]** | |
+| `photos` | 3 slots **[BUILT]** | Photo 1 = hero / catalogue card |
+| `status` | select **[BUILT]** | `Draft` \| `Published` |
+| `in_current_printed_guide` | boolean **[NEW]** | 60 catalogue products are **not** in the 2026 guide. Decide whether these show as legacy lines or stay hidden — either way you need the flag to tell them apart. |
+| `seo_title` | text **[NEW]** | |
+| `seo_description` | text **[NEW]** | |
+| `sort_order` | integer **[NEW]** | |
+| `featured` | boolean **[NEW]** | |
+| `related_products` | repeatable link **[NEW]** | |
+
+---
+
+## Priority order
+
+If the whole list is too much for one build, this is the order that adds the most value per field:
+
+1. **Fix the tolerance chips** — add Low pH and Salinity. Small change, and without it the form
+   cannot record what the printed guide codes on every row.
+2. **`end_use` multi-select** — 90% of products have it, it is how customers shop, and it is absent.
+3. **Split the maturity field** — cheap to do now, painful to migrate after data entry starts.
+4. **`sowing_rates` as repeatable rows** — same reasoning; 40+ products need it.
+5. **`persistency_type`, `soil_ph_min`, `botanical_name`, `ploidy`** — high fill rates, all missing.
+6. **`slug`** — before any product goes live and gets linked to.
+7. Everything else.
+
+---
+
+*Source: IH Seeds - Product Data (Master Catalogue) - 2026 Flyer Update.xlsx — 150 product records,
+10 category tabs, plus the 2026 Pasture Growers Guide (back page and middle pages, 29.01.2026).*
