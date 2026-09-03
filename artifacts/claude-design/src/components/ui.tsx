@@ -7,6 +7,9 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
   if (name === "close") return <svg {...common}><path d="m6 6 12 12M18 6 6 18" /></svg>;
   if (name === "search") return <svg {...common}><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>;
   if (name === "user") return <svg {...common}><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.9-3.2 3.2-4.8 7-4.8s6.1 1.6 7 4.8" /></svg>;
+  if (name === "phone") return <svg {...common}><path d="M5 4.8c0-1 1.1-1.7 2-1.3l2.4 1.1c.6.3.9 1 .7 1.6l-.8 2.3a2 2 0 0 0 .4 2l1.8 1.8a2 2 0 0 0 2 .4l2.3-.8c.6-.2 1.3.1 1.6.7l1.1 2.4c.4.9-.3 2-1.3 2C10 17 7 14 5 4.8Z" /></svg>;
+  if (name === "mail") return <svg {...common}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></svg>;
+  if (name === "clock") return <svg {...common}><circle cx="12" cy="12" r="8.5" /><path d="M12 7v5l3 2" /></svg>;
   if (name === "arrow-left") return <svg {...common}><path d="M19 12H5m6-6-6 6 6 6" /></svg>;
   if (name === "arrow-right") return <svg {...common}><path d="M5 12h14m-6-6 6 6-6 6" /></svg>;
   if (name === "map-pin") return <svg {...common}><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>;

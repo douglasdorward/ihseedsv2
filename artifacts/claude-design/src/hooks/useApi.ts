@@ -66,11 +66,12 @@ export function useEnquiry() {
   const [submitState, setSubmitState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [form, setForm] = useState<EnquiryForm>({ name: "", email: "", phone: "", topic: "General advice", message: "" });
 
-  const submitEnquiry = async (event: React.FormEvent<HTMLFormElement>) => {
+  const submitEnquiry = async (event: React.FormEvent<HTMLFormElement>, extraContext = "") => {
     event.preventDefault();
     setSubmitState("sending");
     try {
-      const response = await fetch("/api/enquiries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      const message = [form.message, extraContext].filter(Boolean).join("\n\n");
+      const response = await fetch("/api/enquiries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, message }) });
       if (!response.ok) throw new Error("Unable to send enquiry");
       setSubmitState("sent");
       setForm({ name: "", email: "", phone: "", topic: "General advice", message: "" });
