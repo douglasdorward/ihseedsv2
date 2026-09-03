@@ -16,7 +16,113 @@ export interface Product {
   packSize: string;
   status: string;
   note: string;
+  category: string;
+  techSheet: string;
+  publishStatus: string;
   createdAt: string;
+  updatedAt: string;
+}
+
+export type ProductInputStatus = typeof ProductInputStatus[keyof typeof ProductInputStatus];
+
+
+export const ProductInputStatus = {
+  'in-stock': 'in-stock',
+  low: 'low',
+  'very-low': 'very-low',
+  unavailable: 'unavailable',
+} as const;
+
+export type ProductInputPublishStatus = typeof ProductInputPublishStatus[keyof typeof ProductInputPublishStatus];
+
+
+export const ProductInputPublishStatus = {
+  Published: 'Published',
+  Draft: 'Draft',
+} as const;
+
+export interface ProductInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  price: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  packSize: string;
+  status: ProductInputStatus;
+  /** @maxLength 500 */
+  note: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  category: string;
+  /** @maxLength 240 */
+  techSheet: string;
+  publishStatus: ProductInputPublishStatus;
+}
+
+export type ProductUpdateStatus = typeof ProductUpdateStatus[keyof typeof ProductUpdateStatus];
+
+
+export const ProductUpdateStatus = {
+  'in-stock': 'in-stock',
+  low: 'low',
+  'very-low': 'very-low',
+  unavailable: 'unavailable',
+} as const;
+
+export type ProductUpdatePublishStatus = typeof ProductUpdatePublishStatus[keyof typeof ProductUpdatePublishStatus];
+
+
+export const ProductUpdatePublishStatus = {
+  Published: 'Published',
+  Draft: 'Draft',
+} as const;
+
+export interface ProductUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  name?: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  price?: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  packSize?: string;
+  status?: ProductUpdateStatus;
+  /** @maxLength 500 */
+  note?: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  category?: string;
+  /** @maxLength 240 */
+  techSheet?: string;
+  publishStatus?: ProductUpdatePublishStatus;
+}
+
+export interface AdminSummary {
+  totalProducts: number;
+  publishedProducts: number;
+  lowStockProducts: number;
+  missingTechSheets: number;
+  recentProducts: Product[];
 }
 
 export interface AvailabilityRow {

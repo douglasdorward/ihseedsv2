@@ -27,9 +27,137 @@ export const ListProductsResponseItem = zod.object({
   "packSize": zod.string(),
   "status": zod.string(),
   "note": zod.string(),
-  "createdAt": zod.coerce.date()
+  "category": zod.string(),
+  "techSheet": zod.string(),
+  "publishStatus": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
 })
 export const ListProductsResponse = zod.array(ListProductsResponseItem)
+
+
+/**
+ * @summary Create a product
+ */
+export const createProductBodyNameMax = 160;
+
+export const createProductBodyPriceMax = 80;
+
+export const createProductBodyPackSizeMax = 80;
+
+export const createProductBodyNoteMax = 500;
+
+export const createProductBodyCategoryMax = 120;
+
+export const createProductBodyTechSheetMax = 240;
+
+
+
+export const CreateProductBody = zod.object({
+  "name": zod.string().min(1).max(createProductBodyNameMax),
+  "price": zod.string().min(1).max(createProductBodyPriceMax),
+  "packSize": zod.string().min(1).max(createProductBodyPackSizeMax),
+  "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
+  "note": zod.string().max(createProductBodyNoteMax),
+  "category": zod.string().min(1).max(createProductBodyCategoryMax),
+  "techSheet": zod.string().max(createProductBodyTechSheetMax),
+  "publishStatus": zod.enum(['Published', 'Draft'])
+})
+
+export const CreateProductResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "price": zod.string(),
+  "packSize": zod.string(),
+  "status": zod.string(),
+  "note": zod.string(),
+  "category": zod.string(),
+  "techSheet": zod.string(),
+  "publishStatus": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a product
+ */
+export const UpdateProductParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const updateProductBodyNameMax = 160;
+
+export const updateProductBodyPriceMax = 80;
+
+export const updateProductBodyPackSizeMax = 80;
+
+export const updateProductBodyNoteMax = 500;
+
+export const updateProductBodyCategoryMax = 120;
+
+export const updateProductBodyTechSheetMax = 240;
+
+
+
+export const UpdateProductBody = zod.object({
+  "name": zod.string().min(1).max(updateProductBodyNameMax).optional(),
+  "price": zod.string().min(1).max(updateProductBodyPriceMax).optional(),
+  "packSize": zod.string().min(1).max(updateProductBodyPackSizeMax).optional(),
+  "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']).optional(),
+  "note": zod.string().max(updateProductBodyNoteMax).optional(),
+  "category": zod.string().min(1).max(updateProductBodyCategoryMax).optional(),
+  "techSheet": zod.string().max(updateProductBodyTechSheetMax).optional(),
+  "publishStatus": zod.enum(['Published', 'Draft']).optional()
+})
+
+export const UpdateProductResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "price": zod.string(),
+  "packSize": zod.string(),
+  "status": zod.string(),
+  "note": zod.string(),
+  "category": zod.string(),
+  "techSheet": zod.string(),
+  "publishStatus": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a product
+ */
+export const DeleteProductParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteProductResponse = zod.void()
+
+
+/**
+ * @summary Get product management dashboard summary
+ */
+export const GetAdminSummaryResponse = zod.object({
+  "totalProducts": zod.number(),
+  "publishedProducts": zod.number(),
+  "lowStockProducts": zod.number(),
+  "missingTechSheets": zod.number(),
+  "recentProducts": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "price": zod.string(),
+  "packSize": zod.string(),
+  "status": zod.string(),
+  "note": zod.string(),
+  "category": zod.string(),
+  "techSheet": zod.string(),
+  "publishStatus": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+})
 
 
 /**

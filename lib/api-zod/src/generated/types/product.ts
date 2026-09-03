@@ -13,5 +13,9 @@ export interface Product {
   packSize: string;
   status: string;
   note: string;
+  category: string;
+  techSheet: string;
+  publishStatus: string;
   createdAt: Date;
+  updatedAt: Date;
 }

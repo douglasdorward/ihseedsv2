@@ -14,6 +14,8 @@ tags:
     description: Seed catalogue and availability
   - name: enquiries
     description: Advice enquiries
+  - name: admin
+    description: IH Seeds backoffice product management
 paths:
   /healthz:
     get:
@@ -42,6 +44,78 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [admin]
+      summary: Create a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Invalid product
+        "409":
+          description: Product name already exists
+  /products/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    patch:
+      operationId: updateProduct
+      tags: [admin]
+      summary: Update a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Invalid product
+        "404":
+          description: Product not found
+        "409":
+          description: Product name already exists
+    delete:
+      operationId: deleteProduct
+      tags: [admin]
+      summary: Delete a product
+      responses:
+        "204":
+          description: Product deleted
+        "404":
+          description: Product not found
+  /admin/summary:
+    get:
+      operationId: getAdminSummary
+      tags: [admin]
+      summary: Get product management dashboard summary
+      responses:
+        "200":
+          description: Product management summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSummary"
   /availability:
     get:
       operationId: listAvailability
@@ -94,8 +168,47 @@ components:
         packSize: { type: string }
         status: { type: string }
         note: { type: string }
+        category: { type: string }
+        techSheet: { type: string }
+        publishStatus: { type: string }
         createdAt: { type: string, format: date-time }
-      required: [id, name, price, packSize, status, note, createdAt]
+        updatedAt: { type: string, format: date-time }
+      required: [id, name, price, packSize, status, note, category, techSheet, publishStatus, createdAt, updatedAt]
+    ProductInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 160 }
+        price: { type: string, minLength: 1, maxLength: 80 }
+        packSize: { type: string, minLength: 1, maxLength: 80 }
+        status: { type: string, enum: [in-stock, low, very-low, unavailable] }
+        note: { type: string, maxLength: 500 }
+        category: { type: string, minLength: 1, maxLength: 120 }
+        techSheet: { type: string, maxLength: 240 }
+        publishStatus: { type: string, enum: [Published, Draft] }
+      required: [name, price, packSize, status, note, category, techSheet, publishStatus]
+    ProductUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 160 }
+        price: { type: string, minLength: 1, maxLength: 80 }
+        packSize: { type: string, minLength: 1, maxLength: 80 }
+        status: { type: string, enum: [in-stock, low, very-low, unavailable] }
+        note: { type: string, maxLength: 500 }
+        category: { type: string, minLength: 1, maxLength: 120 }
+        techSheet: { type: string, maxLength: 240 }
+        publishStatus: { type: string, enum: [Published, Draft] }
+    AdminSummary:
+      type: object
+      properties:
+        totalProducts: { type: number }
+        publishedProducts: { type: number }
+        lowStockProducts: { type: number }
+        missingTechSheets: { type: number }
+        recentProducts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+      required: [totalProducts, publishedProducts, lowStockProducts, missingTechSheets, recentProducts]
     AvailabilityRow:
       type: object
       properties:

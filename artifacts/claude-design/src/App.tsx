@@ -11,11 +11,13 @@ import Guide from "./pages/Guide";
 import Availability from "./pages/Availability";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Admin from "./pages/Admin";
 
 export default function App() {
   const [location] = useLocation();
 
   const route = (() => {
+    if (location.startsWith("/admin")) return <Admin />;
     if (location === "/") return <Home />;
     if (location === "/products") return <Products />;
     if (/^\/category\/[^/]+$/.test(location)) return <Category />;
@@ -43,7 +45,9 @@ export default function App() {
       "/about": "About Us",
       "/contact": "Get in Touch",
     };
-    const label = location.startsWith("/category/")
+    const label = location.startsWith("/admin")
+      ? "Admin"
+      : location.startsWith("/category/")
       ? "Seed Category"
       : location.startsWith("/products/")
         ? "Product Details"
@@ -53,6 +57,8 @@ export default function App() {
       .querySelector('meta[name="description"]')
       ?.setAttribute("content", `${label} from IH Seeds, Western Australia's pasture seed specialists.`);
   }, [location]);
+
+  if (location.startsWith("/admin")) return route;
 
   return (
     <SiteShell>
