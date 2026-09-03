@@ -183,7 +183,7 @@ h1 strong { display:block; font-weight:800; }
 .admin-page-header p,.admin-stat-card > small,.admin-product-preview > small { margin:0 0 7px; color:#7b827d; font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
 .admin-page-header h1 { color:#174e37; font-size:36px; font-weight:300; letter-spacing:-.035em; }
 .admin-page-header h1 strong { display:inline; font-weight:750; }
-.admin-editor-header { align-items:center; }
+.admin-editor-header { min-height:72px; align-items:center; padding-top:18px; padding-bottom:18px; }
 .admin-back-link { display:flex; align-items:center; gap:8px; border:0; margin:0 0 8px; padding:0; background:transparent; color:#7b827d; font-size:12px; font-weight:750; letter-spacing:.07em; text-transform:uppercase; }
 .admin-header-actions { display:flex; gap:10px; }
 .admin-button { min-height:46px; display:inline-flex; align-items:center; justify-content:center; gap:9px; border:1px solid transparent; border-radius:999px; padding:11px 24px; font-weight:750; }
@@ -351,7 +351,10 @@ h1 strong { display:block; font-weight:800; }
   .admin-sidebar.is-open { transform:translateX(0); }
   .admin-overlay { position:fixed; inset:0; z-index:50; display:block; border:0; background:rgba(13,31,22,.45); }
   .admin-page-header { min-height:100px; align-items:flex-start; flex-direction:column; padding:78px 20px 20px; }
+  .admin-page-header.admin-editor-header { min-height:0; padding:78px 20px 20px; }
   .admin-page-header h1 { font-size:30px; }
+  .admin-editor-title { padding:24px 20px 0; }
+  .admin-editor-title h1 { font-size:30px; }
   .admin-header-actions { width:100%; }
   .admin-header-actions .admin-button { flex:1; }
   .admin-content,.admin-editor { padding:24px 20px 48px; }
@@ -468,6 +471,8 @@ h1 strong { display:block; font-weight:800; }
 .admin-publish-meta { display:flex; flex-direction:column; gap:8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #c8cec9; color:#536059; font-size:12px; }
 .admin-publish-meta strong { color:#174e37; }
 .admin-version-copy { display:block; margin-top:6px; color:#68716b; font-size:11px; font-weight:700; }
+.admin-editor-title { max-width:1400px; padding:28px 40px 0; }
+.admin-editor-title h1 { color:#174e37; font-size:36px; font-weight:300; letter-spacing:-.035em; }
 .admin-editor-version { margin-top:7px; color:#68716b; font-size:12px; font-weight:750; }
 .admin-row-actions { display:flex; align-items:flex-start; flex-direction:column; gap:7px; }
 .admin-mobile-row-actions { display:none; margin-top:9px; }

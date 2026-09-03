@@ -631,13 +631,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   return (
     <>
       <header className="admin-page-header admin-editor-header">
-        <div>
-          <button className="admin-back-link" type="button" onClick={() => navigate("/admin/products")}><Icon name="arrow-left" size={16}/>Products &amp; mixes</button>
-          <h1>{isNew ? "Add a product" : product?.name ?? "Product"}</h1>
-          <div className="admin-editor-version">
-            {isNew || !isLive ? "Draft changes — not public" : viewMode === "live" ? "Live on public site · read-only" : "Draft changes — not public"}
-          </div>
-        </div>
+        <button className="admin-back-link" type="button" onClick={() => navigate("/admin/products")}><Icon name="arrow-left" size={16}/>Products &amp; mixes</button>
         <div className="admin-header-actions">
           {isLive && (
             <div className="admin-view-toggle">
@@ -658,6 +652,12 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
           ) : null}
         </div>
       </header>
+      <div className="admin-editor-title">
+        <h1>{isNew ? "Add a product" : product?.name ?? "Product"}</h1>
+        <div className="admin-editor-version">
+          {isNew || !isLive ? "Draft changes — not public" : viewMode === "live" ? "Live on public site · read-only" : "Draft changes — not public"}
+        </div>
+      </div>
       <form id="admin-product-form" className="admin-editor admin-claude-editor" onSubmit={submit}>
         <datalist id="admin-product-slugs">{products.filter((item) => item.id !== product?.id).map((item) => <option key={item.id} value={item.slug}>{item.name}</option>)}</datalist>
         <fieldset className="admin-editor-main" disabled={viewMode === "live" || isArchived}>
