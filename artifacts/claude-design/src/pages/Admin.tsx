@@ -425,7 +425,7 @@ function ProductEditor({
           </section>
 
           <section className="admin-panel admin-form-card">
-            <div><h2>Agronomy — 2026 Pasture Growers Guide</h2><p>The guide fields are stored with the product record. Leave a field blank if the guide has no entry.</p></div>
+            <div><h2>Agronomy Specs</h2><p>The guide fields are stored with the product record. Leave a field blank if the guide has no entry.</p></div>
             <div className="admin-form-grid">
               <label>Sowing rate (kg/ha)<input value={form.details.rate} onChange={(event) => setDetail("rate", event.target.value)} placeholder="25 to 35"/></label>
               <label>Rainfall (mm)<input value={form.details.rainfall} onChange={(event) => setDetail("rainfall", event.target.value)} placeholder="400+"/></label>
