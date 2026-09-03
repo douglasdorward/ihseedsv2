@@ -645,7 +645,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
       </header>
       <form id="admin-product-form" className="admin-editor admin-claude-editor" onSubmit={submit}>
         <datalist id="admin-product-slugs">{products.filter((item) => item.id !== product?.id).map((item) => <option key={item.id} value={item.slug}>{item.name}</option>)}</datalist>
-        <fieldset className="admin-editor-main" disabled={viewMode === "live" || isArchived} style={{ border: 0, margin: 0, padding: 0 }}>
+        <fieldset className="admin-editor-main" disabled={viewMode === "live" || isArchived}>
           <section className="admin-panel admin-form-card">
             <h2>Identity</h2>
             <div className="admin-form-grid">
@@ -753,13 +753,13 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
             <div>{statusOptions.map((status) => <button key={status.value} type="button" className={currentForm.status === status.value ? "selected" : ""} onClick={() => setField("status", status.value as ProductInputStatus)}><i className={`status-dot ${status.value}`}/>{status.label}</button>)}</div>
           </section>
 
-          <fieldset className="admin-panel admin-form-card" disabled={viewMode === "live" || isArchived} style={{ border: 0, margin: 0, padding: 0 }}>
+          <fieldset className="admin-panel admin-form-card" disabled={viewMode === "live" || isArchived}>
             <div><h2>Tech sheet</h2><p>Uploaded once here. Powers the product page download and Tech Sheets Hub listing.</p></div>
             <label>PDF path<input value={currentForm.techSheet} onChange={(event) => setField("techSheet", event.target.value)} placeholder="/tech-sheets/product-name.pdf"/></label>
             <div className={`admin-file-state ${currentForm.techSheet ? "attached" : ""}`}><Icon name={currentForm.techSheet ? "file-text" : "plus"} size={22}/><span><strong>{currentForm.techSheet || "Drop a PDF, or choose a file"}</strong><small>{currentForm.techSheet ? "PDF attached to this record" : "Or select one already in the Media Library"}</small></span>{currentForm.techSheet && viewMode !== "live" && !isArchived && <button type="button" onClick={() => setField("techSheet", "")}>Replace</button>}</div>
           </fieldset>
 
-          <fieldset className="admin-panel admin-form-card" disabled={viewMode === "live" || isArchived} style={{ border: 0, margin: 0, padding: 0 }}>
+          <fieldset className="admin-panel admin-form-card" disabled={viewMode === "live" || isArchived}>
             <div><h2>Photos</h2><p>Three slots, matching the stocklist. Photo 1 is the hero and catalogue card image.</p></div>
             <div className="admin-photo-list">{currentForm.details.photos.map((photo, index) => <div className="admin-photo-row" key={photo.slot}><span className="admin-photo-thumb">{photo.src ? <img src={photo.src} alt="" /> : <Icon name="plus" size={20}/>}</span><span><small>{photo.slot}</small><strong>{photo.file || "No image attached"}</strong><em>{photo.rating || "Add a photo from the Media Library"}</em></span>{viewMode !== "live" && !isArchived && <button type="button" onClick={() => updatePhoto(index, photo.file ? { file: "", rating: "", src: "" } : { file: `paddock-0${index + 1}.jpeg`, rating: "80% · Good", src: index % 2 ? "/ih-seeds-logo.png" : "/ih-seeds-logo.png" })}>{photo.file ? "Remove" : "Add"}</button>}</div>)}</div>
           </fieldset>
@@ -794,7 +794,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
               }}>Archive this product</button>}
           </section>
 
-          <fieldset className="admin-panel admin-form-card" disabled={viewMode === "live" || isArchived} style={{ border: 0, margin: 0, padding: 0 }}>
+          <fieldset className="admin-panel admin-form-card" disabled={viewMode === "live" || isArchived}>
             <div><h2>SEO &amp; related products</h2><p>Control search snippets and product cross-links.</p></div>
             <label>SEO title<input value={currentForm.details.seoTitle} onChange={(event) => setDetail("seoTitle", event.target.value)} maxLength={180} placeholder={currentForm.name || "Product page title"}/></label>
             <label>SEO description<textarea rows={4} value={currentForm.details.seoDescription} onChange={(event) => setDetail("seoDescription", event.target.value)} maxLength={320} placeholder="Search result description."/></label>

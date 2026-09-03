@@ -250,6 +250,8 @@ h1 strong { display:block; font-weight:800; }
 .admin-empty { padding:34px; color:#7b827d; text-align:center; }
 .admin-editor { max-width:1400px; display:grid; grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr); gap:28px; padding:32px 40px 60px; align-items:start; }
 .admin-editor-main,.admin-editor-aside { min-width:0; display:flex; flex-direction:column; gap:22px; }
+.admin-editor-main { border:0; margin:0; padding:0; }
+.admin-editor-aside > fieldset.admin-form-card { margin:0; }
 .admin-form-card { display:flex; flex-direction:column; gap:22px; padding:25px; overflow:visible; }
 .admin-form-card h2 { margin-bottom:5px; color:#174e37; font-size:20px; }
 .admin-form-card > div > p { color:#7b827d; font-size:13px; line-height:1.5; }
