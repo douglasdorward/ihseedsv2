@@ -61,7 +61,7 @@ function Icon({ name, size = 22 }: { name: string; size?: number }) {
 
 function Logo({ inverse = false }: { inverse?: boolean }) {
   return <button className={`logo ${inverse ? "logo-inverse" : ""}`} onClick={() => scrollToId("top")} data-testid="button-logo" aria-label="Back to top">
-    <span className="logo-mark">IH</span><span>Seeds</span><small>Irwin Hunter &amp; Co</small>
+    <img src="/ih-seeds-logo.png" alt="IH Seeds — Irwin Hunter & Co" />
   </button>;
 }
 
