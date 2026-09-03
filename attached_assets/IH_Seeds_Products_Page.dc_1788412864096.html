@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/colors.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/typography.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/radius.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/elevation.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/motion.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/base.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/styles.css">
+<script src="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/_ds_bundle.js"></script>
+<style>body{margin:0;background:#FFFFFF;font-family:"Raleway",Tahoma,sans-serif;color:#1D281C}*{box-sizing:border-box}a{color:#0C583C}a:hover{color:#06763C}</style>
+</helmet>
+<div style="background:#FFFFFF">
+
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SiteHeader" tone="solid" sticky="{{ true }}" logo="assets/logo-ihseeds-irwinhunter-colour.png" logo-alt="IH Seeds — Irwin Hunter &amp; Co" hint-size="100%,140px" dc-props="{{ headerProps }}"></x-import>
+
+<section style="background:#EFF1EE">
+<div style="max-width:1180px;margin:0 auto;padding:80px 40px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:64px;align-items:center">
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="font-size:14px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#0C583C">Products</div>
+<h1 style="margin:0;font-size:48px;line-height:1.2;font-weight:300;color:#0C583C;max-width:16ch">Find the seed that fits your <span style="font-weight:700">paddock</span></h1>
+<p style="margin:0;font-size:18px;line-height:1.6;color:#1D281C;max-width:52ch">Over 100+ lines across nine categories, sourced and tested for Western Australian conditions. Browse the range, then order through your local rural reseller.</p>
+<div style="display:flex;gap:16px;flex-wrap:wrap;padding-top:8px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Button" variant="primary" hint-size="180px,48px">Get in Touch</x-import>
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Button" variant="outline" hint-size="200px,48px">Find a reseller</x-import>
+</div>
+</div>
+<div style="border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(29,40,28,0.10)">
+<img src="assets/img-paddock-02.jpeg" alt="Seed in a weathered hand" style="display:block;width:100%;height:380px;object-fit:cover">
+</div>
+</div>
+</section>
+
+<section style="background:#FFFFFF">
+<div style="max-width:1180px;margin:0 auto;padding:96px 40px 64px">
+<div style="display:flex;flex-wrap:wrap;gap:12px;padding-bottom:48px">
+<sc-for list="{{ filters }}" as="f" hint-placeholder-count="6">
+<button type="button" onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button>
+</sc-for>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px">
+<sc-for list="{{ categories }}" as="c" hint-placeholder-count="9">
+<a href="IH%20Seeds%20Category%20Page.dc.html" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:16px">
+<div style="border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(29,40,28,0.10);position:relative">
+<img src="{{ c.image }}" alt="{{ c.name }}" style="display:block;width:100%;height:240px;object-fit:cover">
+<div style="position:absolute;inset:40% 0 0 0;background:linear-gradient(to bottom,rgba(29,40,28,0) 0%,rgba(29,40,28,0.55) 100%);pointer-events:none"></div>
+<div style="position:absolute;bottom:12px;left:16px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+<span style="font-size:14px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#FFFFFF">{{ c.count }}</span>
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.IconButton" icon="arrow-right" label="View category" variant="accent" size="sm" hint-size="40px,40px"></x-import>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:24px;font-weight:700;color:#0C583C;line-height:1.4">{{ c.name }}</div>
+<div style="font-size:16px;line-height:1.6;color:#1D281C;max-width:38ch">{{ c.blurb }}</div>
+</div>
+</a>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section style="background:#FFFFFF">
+<div style="max-width:1440px;margin:0 auto;padding:32px 40px 96px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.FeaturePanel" hint-size="100%,480px" light="Tested before it" bold="ships" image="assets/img-paddock-03.jpeg" image-side="right" body="Every line is true to type seed from credible growers, germination tested and blended to order. If you are unsure which species suits your rainfall zone, soil type and grazing plan, talk to us before you order — that advice is part of the seed." cta="Download the Tech Sheet"></x-import>
+</div>
+</section>
+
+<section style="background:#EFF1EE">
+<div style="max-width:1180px;margin:0 auto;padding:96px 40px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SectionHeading" light="Seed" bold="Availability" hint-size="100%,80px" actions="{{ availabilityAction }}"></x-import>
+<div style="background:#FFFFFF;border:1px solid #EDEDEB;border-radius:16px;padding:8px 32px">
+<sc-for list="{{ availability }}" as="row" hint-placeholder-count="5">
+<div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.4fr) 150px;gap:24px;align-items:center;padding:20px 0;border-bottom:1px solid #EDEDEB">
+<div style="font-size:18px;font-weight:700;color:#0C583C">{{ row.name }}</div>
+<div style="font-size:16px;color:#1D281C">{{ row.note }}</div>
+<div style="display:flex;justify-content:flex-end">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.StockPill" status="{{ row.status }}" hint-size="120px,28px"></x-import>
+</div>
+</div>
+</sc-for>
+<div style="padding:20px 0;font-size:14px;color:#5A6659">Availability is updated weekly. Your reseller may hold additional stock.</div>
+</div>
+</div>
+</section>
+
+<section style="background:#FFFFFF">
+<div style="max-width:1440px;margin:0 auto;padding:96px 40px 64px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.CtaBanner" hint-size="100%,520px" headline="Species, sowing rates and regional advice for the season ahead." image="assets/img-paddock-05.jpeg" cta="Download the 2026 Pasture Seed Guide (PDF)"></x-import>
+</div>
+</section>
+
+<section style="background:#FFFFFF">
+<div style="max-width:1180px;margin:0 auto;padding:32px 40px 96px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:64px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SectionHeading" light="Common" bold="questions" hint-size="100%,60px"></x-import>
+<p style="margin:0;font-size:16px;line-height:1.6;color:#1D281C;max-width:36ch">Questions come with the paddock. Here are the ones we are asked most. For anything else, call the office.</p>
+<div style="padding-top:8px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Button" variant="primary" hint-size="180px,48px">Get in Touch</x-import>
+</div>
+</div>
+<div style="display:flex;flex-direction:column">
+<sc-for list="{{ faqs }}" as="q" hint-placeholder-count="5">
+<div style="border-top:1px solid #EDEDEB">
+<button type="button" onClick="{{ q.onClick }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:24px 0;background:none;border:0;cursor:pointer;text-align:left;font-family:inherit;font-size:20px;font-weight:600;color:#0C583C">
+<span>{{ q.question }}</span>
+<span style="{{ q.iconStyle }}">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Icon" name="plus" size="{{ 20 }}" hint-size="20px,20px"></x-import>
+</span>
+</button>
+<sc-if value="{{ q.open }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 56px 24px 0;font-size:16px;line-height:1.6;color:#1D281C;max-width:64ch">{{ q.answer }}</div>
+</sc-if>
+</div>
+</sc-for>
+<div style="border-top:1px solid #EDEDEB"></div>
+</div>
+</div>
+</section>
+
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SiteFooter" hint-size="100%,560px" logo="assets/logo-ihseeds-white.png" statement="The pasture seed and mixes specialists of Western Australia." dc-props="{{ footerProps }}"></x-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440}}">
+class Component extends DCLogic {
+  state = { filter: 'All products', openFaq: 0 };
+  renderVals() {
+    const NS = window.IHSeedsDesignSystem_515a16 || {};
+    const { Button } = NS;
+    const el = React.createElement;
+    const allCategories = [
+      { name: 'Specialty Mixes', group: 'Mixes', count: '18 lines', blurb: 'Blended to order for the paddock they are going into — SouWest\u2122, Maximix, Silahay\u2122.', image: 'assets/img-paddock-01.jpeg' },
+      { name: 'Ryegrass', group: 'Grasses', count: '21 lines', blurb: 'Annual, Italian and perennial types for high rainfall and irrigated country.', image: 'assets/img-paddock-02.jpeg' },
+      { name: 'Clovers', group: 'Legumes', count: '16 lines', blurb: 'Sub, balansa, arrowleaf and Persian clovers across the rainfall range.', image: 'assets/img-paddock-03.jpeg' },
+      { name: 'Lucerne', group: 'Legumes', count: '9 lines', blurb: 'Winter-active through to highly winter-active, for hay and grazing stands.', image: 'assets/img-paddock-04.jpeg' },
+      { name: 'Serradella & Medic', group: 'Legumes', count: '12 lines', blurb: 'Hard-seeded regenerating legumes for lighter soils and the wheatbelt.', image: 'assets/img-paddock-05.jpeg' },
+      { name: 'Other Grasses', group: 'Grasses', count: '14 lines', blurb: 'Cocksfoot, phalaris, fescue and panic for persistent perennial pasture.', image: 'assets/img-paddock-02.jpeg' },
+      { name: 'Sub-Tropical Grasses & Legumes', group: 'Grasses', count: '11 lines', blurb: 'Rhodes grass, panics and tropical legumes for the northern pastoral.', image: 'assets/img-paddock-01.jpeg' },
+      { name: 'Alternative & Forage Crops', group: 'Forage', count: '15 lines', blurb: 'Brassicas, cereals, vetch and millet for filling the feed gap.', image: 'assets/img-paddock-03.jpeg' },
+      { name: 'Bio Stimulants', group: 'Treatments', count: '7 lines', blurb: 'Inoculants, coatings and soil biology products to support establishment.', image: 'assets/img-paddock-04.jpeg' },
+    ];
+    const filters = ['All products', 'Mixes', 'Grasses', 'Legumes', 'Forage', 'Treatments'];
+    const active = this.state.filter;
+    const chip = (on) => `padding:10px 22px;border-radius:999px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:background 180ms cubic-bezier(.2,.6,.2,1),color 180ms cubic-bezier(.2,.6,.2,1);border:2px solid ${on ? '#09583C' : '#C5CCC5'};background:${on ? '#09583C' : 'transparent'};color:${on ? '#FFFFFF' : '#0C583C'}`;
+    const faqData = [
+      { question: 'Can I buy seed direct from IH Seeds?', answer: 'We supply through rural resellers across Western Australia. Tell us what you are sowing and we will point you to the closest store holding it, or arrange a blend through them.' },
+      { question: 'How do I know which species suits my paddock?', answer: 'Start with rainfall zone, soil type and how the paddock will be grazed or cut. Call us with those three and we will narrow the range to a short list, then send the tech sheets.' },
+      { question: 'Do you blend custom mixes?', answer: 'Yes. Most of our specialty mixes are blended to order, and we will adjust a mix for your rainfall and grazing plan.' },
+      { question: 'Is the seed tested?', answer: 'Every line is germination and purity tested, and sourced true to type from credible growers. Test results travel with the order.' },
+      { question: 'How is availability updated?', answer: 'The availability list is reviewed weekly. Good stock, low stock, very low and unavailable reflect our warehouse — resellers may hold stock beyond that.' },
+    ];
+    return {
+      headerProps: { items: [
+        { id: 'products', label: 'Products', href: 'IH%20Seeds%20Products%20Page.dc.html' },
+        { id: 'guide', label: 'Seed Guide 2026' },
+        { id: 'availability', label: 'Seed Availability', href: 'IH%20Seeds%20Availability%20Page.dc.html' },
+        { id: 'resources', label: 'Resources', href: 'IH%20Seeds%20Resources%20Page.dc.html' },
+        { id: 'about', label: 'About' },
+      ], ctaHref: 'IH%20Seeds%20Contact%20Page.dc.html', activeItem: 'products', cta: 'Get in Touch', utilities: ['search'] },
+      footerProps: {
+        columns: [
+          { title: 'Products', links: [{ label: 'Specialty Mixes', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Ryegrass', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Clovers', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Lucerne', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Serradella & Medic', href: 'IH%20Seeds%20Products%20Page.dc.html' }] },
+          { title: 'Resources', links: [{ label: 'Tech Sheets Hub', href: 'IH%20Seeds%20Resources%20Page.dc.html' }, { label: 'Pasture Seed Guide' }, { label: 'Seed Availability', href: 'IH%20Seeds%20Availability%20Page.dc.html' }, { label: 'Tips & Advice', href: 'IH%20Seeds%20Resources%20Page.dc.html' }] },
+          { title: 'Company', links: [{ label: 'Our Story' }, { label: 'Find a Reseller', href: 'IH%20Seeds%20Contact%20Page.dc.html' }, { label: 'Contact', href: 'IH%20Seeds%20Contact%20Page.dc.html' }] },
+        ],
+        legal: el('span', null, '\u00A9 2026 Irwin Hunter & Co \u00B7 Australian Seed Federation member'),
+      },
+      filters: filters.map((label) => ({
+        label,
+        style: chip(label === active),
+        onClick: () => this.setState({ filter: label }),
+      })),
+      categories: active === 'All products' ? allCategories : allCategories.filter((c) => c.group === active),
+      availabilityAction: Button ? el(Button, { variant: 'outline' }, 'View the full availability table') : null,
+      availability: [
+        { name: 'SouWest\u2122 Pasture Mix', note: 'Blended to order, 500 mm+ zones', status: 'in-stock' },
+        { name: 'Ceres PG One50 Ryegrass', note: 'Perennial, 600 mm+ zones', status: 'in-stock' },
+        { name: 'Silahay\u2122 Mix', note: 'Hay and silage, mid rainfall', status: 'low' },
+        { name: 'Dalkeith Subterranean Clover', note: 'Early season, 325\u2013450 mm', status: 'very-low' },
+        { name: 'Rhodes Grass Katambora', note: 'Sub-tropical, northern pastoral', status: 'unavailable' },
+      ],
+      faqs: faqData.map((f, i) => ({
+        question: f.question,
+        answer: f.answer,
+        open: this.state.openFaq === i,
+        iconStyle: `display:flex;color:#0C583C;transition:transform 180ms cubic-bezier(.2,.6,.2,1);transform:rotate(${this.state.openFaq === i ? 45 : 0}deg)`,
+        onClick: () => this.setState((s) => ({ openFaq: s.openFaq === i ? -1 : i })),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

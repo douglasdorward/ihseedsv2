@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/colors.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/typography.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/radius.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/elevation.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/motion.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/base.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/styles.css">
+<script src="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/_ds_bundle.js"></script>
+<style>body{margin:0;background:#FFFFFF;font-family:"Raleway",Tahoma,sans-serif;color:#1D281C}*{box-sizing:border-box}a{color:#0C583C}a:hover{color:#06763C}</style>
+</helmet>
+<div style="background:#FFFFFF">
+
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SiteHeader" tone="solid" sticky="{{ true }}" logo="assets/logo-ihseeds-irwinhunter-colour.png" logo-alt="IH Seeds — Irwin Hunter &amp; Co" hint-size="100%,140px" dc-props="{{ headerProps }}"></x-import>
+
+<section style="background:#EFF1EE">
+<div style="max-width:1180px;margin:0 auto;padding:32px 40px 12px;font-size:14px;font-weight:600;color:#5A6659">Products / {{ cat.name }}</div>
+<div style="max-width:1180px;margin:0 auto;padding:12px 40px 72px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:64px;align-items:center">
+<div style="display:flex;flex-direction:column;gap:20px">
+<h1 style="margin:0;font-size:48px;line-height:1.2;font-weight:300;color:#0C583C">{{ cat.light }} <span style="font-weight:700">{{ cat.boldWord }}</span></h1>
+<p style="margin:0;font-size:18px;line-height:1.6;color:#1D281C;max-width:52ch">{{ cat.lead }}</p>
+<div style="display:flex;gap:32px;flex-wrap:wrap;padding-top:8px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#5A6659">Lines in this category</div>
+<div style="font-size:24px;font-weight:700;color:#0C583C">{{ cat.count }}</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#5A6659">Rainfall range</div>
+<div style="font-size:24px;font-weight:700;color:#0C583C">{{ cat.rainfall }}</div>
+</div>
+</div>
+</div>
+<div style="border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(29,40,28,0.10);min-height:340px;background:#C5CCC5">
+<div role="img" aria-label="{{ cat.name }}" style="{{ cat.imageStyle }}"></div>
+</div>
+</div>
+</section>
+
+<section style="background:#FFFFFF;border-bottom:1px solid #EDEDEB;position:sticky;top:141px;z-index:15">
+<div style="max-width:1180px;margin:0 auto;padding:20px 40px;display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+<sc-for list="{{ categoryTabs }}" as="t" hint-placeholder-count="2">
+<button type="button" onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+</sc-for>
+<div style="width:1px;height:28px;background:#EDEDEB;margin:0 8px"></div>
+<sc-for list="{{ groupChips }}" as="g" hint-placeholder-count="4">
+<button type="button" onClick="{{ g.onClick }}" style="{{ g.style }}">{{ g.label }}</button>
+</sc-for>
+<div style="margin-left:auto;font-size:14px;font-weight:600;color:#5A6659">{{ resultLine }}</div>
+</div>
+</section>
+
+<section style="background:#FFFFFF">
+<div style="max-width:1180px;margin:0 auto;padding:64px 40px 32px;display:flex;flex-direction:column;gap:64px">
+<sc-for list="{{ groups }}" as="grp" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:2px solid #0C583C;padding-bottom:12px">
+<h2 style="margin:0;font-size:30px;font-weight:700;color:#0C583C">{{ grp.title }}</h2>
+<span style="font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#5A6659">{{ grp.guideSection }} · {{ grp.countLabel }}</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px">
+<sc-for list="{{ grp.items }}" as="p" hint-placeholder-count="6">
+<a href="IH%20Seeds%20IND%20Product%20Page.dc.html" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:16px">
+<div style="border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(29,40,28,0.10);min-height:220px;background:#C5CCC5;position:relative">
+<div role="img" aria-label="{{ p.name }}" style="{{ p.imageStyle }}"></div>
+<div style="position:absolute;top:12px;left:12px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.StockPill" status="{{ p.status }}" size="sm" hint-size="110px,26px"></x-import>
+</div>
+<div style="position:absolute;inset:40% 0 0 0;background:linear-gradient(to bottom,rgba(29,40,28,0) 0%,rgba(29,40,28,0.55) 100%);pointer-events:none"></div>
+<div style="position:absolute;bottom:12px;left:16px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+<span style="font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#FFFFFF">Sowing rates and tech sheet</span>
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.IconButton" icon="arrow-right" label="View product" hint-size="44px,44px"></x-import>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:20px;font-weight:700;color:#0C583C;line-height:1.35">{{ p.name }}</div>
+<div style="font-size:16px;line-height:1.6;color:#1D281C">{{ p.tagline }}</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:4px">
+<sc-for list="{{ p.tags }}" as="tag" hint-placeholder-count="2">
+<span style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#0C583C;border:1px solid #C5CCC5;border-radius:999px;padding:5px 12px">{{ tag }}</span>
+</sc-for>
+</div>
+</div>
+</a>
+</sc-for>
+</div>
+</div>
+</sc-for>
+<p style="margin:0;font-size:14px;line-height:1.6;color:#5A6659;max-width:80ch">Guide sections follow the 2026 IH Seeds Pasture Growers Guide. Sowing rates, rainfall, flowering and soil detail sit on each product page. Availability is updated weekly — your reseller may hold additional stock.</p>
+</div>
+</section>
+
+<section style="background:#FFFFFF">
+<div style="max-width:1440px;margin:0 auto;padding:64px 40px 96px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.CtaBanner" hint-size="100%,520px" headline="Every line in this category, with sowing rates and regional notes." image="assets/img-paddock-05.jpeg" cta="Download the 2026 Pasture Seed Guide (PDF)"></x-import>
+</div>
+</section>
+
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SiteFooter" hint-size="100%,560px" logo="assets/logo-ihseeds-white.png" statement="The pasture seed and mixes specialists of Western Australia." dc-props="{{ footerProps }}"></x-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440}}">
+class Component extends DCLogic {
+  state = { category: 'mixes', group: 'All' };
+
+  data() {
+    const img = (n) => `assets/img-paddock-0${n}.jpeg`;
+    const COATED = 'BioNPKS coated';
+    const BARE = 'Bare seed';
+    return {
+      mixes: {
+        name: 'Specialty Mixes', light: 'Specialty', boldWord: 'Mixes', count: '14 lines', rainfall: '350\u2013550 mm', image: 'assets/img-paddock-01.jpeg',
+        lead: 'Mixes blended in Western Australia for Western Australian paddocks. Every mix comes in 25 kg bags, and most can be adjusted to suit your rainfall, soil type and grazing plan.',
+        groups: [
+          { title: 'Pasture and production mixes', guideSection: 'Guide: specialist seed mixes', items: [
+            { name: 'SouWest Pasture Mix\u2122', tagline: 'The perfect mix, combining productivity with diversity.', status: 'in-stock', image: img(1), tags: ['25 kg bag', '500 kg bulka', COATED] },
+            { name: 'Maximix', tagline: 'Bang for your buck.', status: 'in-stock', image: img(2), tags: ['25 kg bag', COATED] },
+            { name: 'Silahay Mix\u2122', tagline: 'The big producer.', status: 'low', image: img(3), tags: ['25 kg bag', BARE] },
+            { name: 'Western Annual Ryegrass Mix', tagline: 'Capitalise your growing season.', status: 'in-stock', image: img(4), tags: ['25 kg bag', BARE] },
+            { name: 'Self Regeneration Mix\u2122', tagline: 'ARGT resistant ryegrass base. Tough and reliable.', status: 'in-stock', image: img(5), tags: ['25 kg bag', COATED] },
+            { name: 'Irrigation Mix', tagline: 'Highly productive mix of ryegrasses and white clover.', status: 'in-stock', image: img(2), tags: ['25 kg bag', BARE] },
+            { name: 'IH Dairy Select Mix', tagline: 'New. Formulated for the dairy industry.', status: 'in-stock', image: img(3), tags: ['25 kg bag', COATED] },
+            { name: 'Equi1st Mix\u2122', tagline: 'The horse\u2019s choice. Suitable for all livestock.', status: 'in-stock', image: img(4), tags: ['25 kg bag', BARE] },
+            { name: 'Custom Mix (Mix & Match)', tagline: 'Your farm. Your mix.', status: 'in-stock', image: img(1), tags: ['25 kg bag', 'Blended to order'] },
+          ] },
+          { title: 'Cover crop and soil mixes', guideSection: 'Guide: specialist seed mixes', items: [
+            { name: 'Winter Cover Crop Plus', tagline: '13 species for winter ground cover. ECOCERT approved.', status: 'in-stock', image: img(5), tags: ['25 kg bag', COATED] },
+            { name: 'Summer Cover Crop Plus', tagline: 'Grains, broadleaves and legumes for summer biomass. ECOCERT approved.', status: 'in-stock', image: img(2), tags: ['25 kg bag', COATED] },
+            { name: 'Interow Mix\u2122', tagline: 'Beneficial mix for vineyards, orchards and plantations.', status: 'in-stock', image: img(3), tags: ['25 kg bag', COATED] },
+            { name: 'Nitro Mix', tagline: 'A unique combination of legumes to build a healthy soil.', status: 'in-stock', image: img(4), tags: ['25 kg bag', COATED] },
+            { name: 'Green Manure Mix', tagline: 'Improve soil structure, suppress weeds, add nutrients.', status: 'low', image: img(1), tags: ['25 kg bag', BARE] },
+          ] },
+        ],
+      },
+      ryegrass: {
+        name: 'Ryegrass', light: 'Ryegrass', boldWord: 'varieties', count: '15 lines', rainfall: '350\u2013650 mm', image: 'assets/img-paddock-02.jpeg',
+        lead: 'Annual, Italian and perennial ryegrass \u2014 from very early ARGT resistant types for the wheatbelt through to hybrid perennials for high rainfall country.',
+        groups: [
+          { title: 'Annual tetraploid ryegrass', guideSection: 'Guide: annual tetraploid ryegrasses', items: [
+            { name: 'Abundant', tagline: 'Year-on-year top performer from Esperance to Perth.', status: 'in-stock', image: img(2), tags: ['25 kg bag', BARE] },
+            { name: 'Evoke', tagline: 'New. Establishes quickly, improved later season growth.', status: 'in-stock', image: img(3), tags: ['25 kg bag', BARE] },
+            { name: 'Amazon T', tagline: 'Quick to establish, outstanding rust tolerance.', status: 'in-stock', image: img(4), tags: ['25 kg bag', BARE] },
+            { name: 'Astound', tagline: 'Excellent winter and early spring production.', status: 'in-stock', image: img(5), tags: ['25 kg bag', BARE] },
+            { name: 'Tetila', tagline: 'High feed quality with good late autumn and winter growth.', status: 'in-stock', image: img(1), tags: ['25 kg bag', BARE] },
+          ] },
+          { title: 'Annual diploid ryegrass', guideSection: 'Guide: annual diploid ryegrasses', items: [
+            { name: 'Dargo', tagline: 'Highly proven from Esperance to Geraldton.', status: 'in-stock', image: img(3), tags: ['20 kg bag', BARE] },
+            { name: 'Safeguard (ARGT)', tagline: 'ARGT resistant ryegrass for reducing the risk of ARGT poisoning.', status: 'low', image: img(4), tags: ['25 kg bag', BARE] },
+            { name: 'Finefeed', tagline: 'Fast emergence, quality feed.', status: 'in-stock', image: img(5), tags: ['25 kg bag', BARE] },
+            { name: 'Wimmera', tagline: 'Traditional annual ryegrass, held as a price list line.', status: 'in-stock', image: img(1), tags: ['25 kg bag', BARE] },
+          ] },
+          { title: 'Biennial Italian ryegrass', guideSection: 'Guide: short term biennials and perennial ryegrass', items: [
+            { name: 'Amass Tetraploid Italian', tagline: 'Late heading variety that is a big producer into winter and spring.', status: 'in-stock', image: img(2), tags: ['25 kg bag', BARE] },
+            { name: 'Achieve Diploid Italian', tagline: 'Improved winter production and faster establishment.', status: 'in-stock', image: img(3), tags: ['25 kg bag', BARE] },
+          ] },
+          { title: 'Perennial and hybrid ryegrass', guideSection: 'Guide: short term biennials and perennial ryegrass', items: [
+            { name: 'Hypa Hybrid', tagline: 'New. Mid-late maturing, high dry matter late winter to mid spring.', status: 'in-stock', image: img(4), tags: ['25 kg bag', BARE] },
+            { name: 'AusVic Perennial', tagline: 'Very low endophyte perennial designed to stop staggers.', status: 'in-stock', image: img(5), tags: ['25 kg bag', BARE] },
+            { name: 'Dunstan Perennial', tagline: 'Strong rust resistance and persistence.', status: 'in-stock', image: img(1), tags: ['25 kg bag', BARE] },
+            { name: 'Victorian Perennial', tagline: 'Traditional perennial ryegrass, held as a price list line.', status: 'very-low', image: img(2), tags: ['25 kg bag', BARE] },
+          ] },
+        ],
+      },
+    };
+  }
+
+  renderVals() {
+    const el = React.createElement;
+    const data = this.data();
+    const cat = data[this.state.category];
+    const chip = (on) => `padding:9px 20px;border-radius:999px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background 180ms cubic-bezier(.2,.6,.2,1),color 180ms cubic-bezier(.2,.6,.2,1);border:2px solid ${on ? '#09583C' : '#C5CCC5'};background:${on ? '#09583C' : 'transparent'};color:${on ? '#FFFFFF' : '#0C583C'}`;
+    const groupNames = ['All'].concat(cat.groups.map((g) => g.title));
+    const activeGroup = groupNames.indexOf(this.state.group) === -1 ? 'All' : this.state.group;
+    const shown = cat.groups.filter((g) => activeGroup === 'All' || g.title === activeGroup);
+    const total = shown.reduce((n, g) => n + g.items.length, 0);
+    const bg = (src, h) => `display:block;width:100%;height:${h}px;background-image:url("${src}");background-size:cover;background-position:center`;
+    return {
+      cat: Object.assign({}, cat, { imageStyle: bg(cat.image, 340) }),
+      headerProps: { items: [
+        { id: 'products', label: 'Products', href: 'IH%20Seeds%20Products%20Page.dc.html' },
+        { id: 'guide', label: 'Seed Guide 2026' },
+        { id: 'availability', label: 'Seed Availability', href: 'IH%20Seeds%20Availability%20Page.dc.html' },
+        { id: 'resources', label: 'Resources', href: 'IH%20Seeds%20Resources%20Page.dc.html' },
+        { id: 'about', label: 'About' },
+      ], ctaHref: 'IH%20Seeds%20Contact%20Page.dc.html', activeItem: 'products', cta: 'Get in Touch', utilities: ['search'] },
+      footerProps: {
+        columns: [
+          { title: 'Products', links: [{ label: 'Specialty Mixes', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Ryegrass', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Clovers', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Lucerne', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Serradella & Medic', href: 'IH%20Seeds%20Products%20Page.dc.html' }] },
+          { title: 'Resources', links: [{ label: 'Tech Sheets Hub', href: 'IH%20Seeds%20Resources%20Page.dc.html' }, { label: 'Pasture Seed Guide' }, { label: 'Seed Availability', href: 'IH%20Seeds%20Availability%20Page.dc.html' }, { label: 'Tips & Advice', href: 'IH%20Seeds%20Resources%20Page.dc.html' }] },
+          { title: 'Company', links: [{ label: 'Our Story' }, { label: 'Find a Reseller', href: 'IH%20Seeds%20Contact%20Page.dc.html' }, { label: 'Contact', href: 'IH%20Seeds%20Contact%20Page.dc.html' }] },
+        ],
+        legal: el('span', null, '\u00A9 2026 Irwin Hunter & Co \u00B7 Australian Seed Federation member'),
+      },
+      categoryTabs: [
+        { key: 'mixes', label: 'Specialty Mixes' },
+        { key: 'ryegrass', label: 'Ryegrass' },
+      ].map((t) => ({
+        label: t.label,
+        style: chip(this.state.category === t.key),
+        onClick: () => this.setState({ category: t.key, group: 'All' }),
+      })),
+      groupChips: groupNames.map((g) => ({
+        label: g === 'All' ? 'All types' : g,
+        style: chip(activeGroup === g),
+        onClick: () => this.setState({ group: g }),
+      })),
+      resultLine: `${total} of ${cat.count.replace(' lines', '')} lines shown`,
+      groups: shown.map((g) => ({
+        title: g.title,
+        guideSection: g.guideSection,
+        countLabel: `${g.items.length} lines`,
+        items: g.items.map((p) => Object.assign({}, p, { imageStyle: bg(p.image, 220) })),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

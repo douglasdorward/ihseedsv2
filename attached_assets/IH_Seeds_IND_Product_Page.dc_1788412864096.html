@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/colors.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/typography.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/radius.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/elevation.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/motion.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/base.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/styles.css">
+<script src="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/_ds_bundle.js"></script>
+<style>body{margin:0;background:#FFFFFF;font-family:"Raleway",Tahoma,sans-serif;color:#1D281C}*{box-sizing:border-box}a{color:#0C583C}a:hover{color:#06763C}</style>
+</helmet>
+<div style="background:#FFFFFF">
+
+<div style="position:relative">
+<div style="position:absolute;top:0;left:0;right:0;z-index:30">
+<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(29,40,28,0.65) 0%,rgba(29,40,28,0) 100%);pointer-events:none"></div>
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SiteHeader" tone="onImage" logo="assets/logo-mono-white.png" logo-alt="IH Seeds — Irwin Hunter &amp; Co" hint-size="100%,140px" dc-props="{{ headerProps }}"></x-import>
+</div>
+<div style="{{ heroStyle }}">
+<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(29,40,28,0.55) 0%,rgba(29,40,28,0.28) 45%,rgba(29,40,28,0.72) 100%)"></div>
+<div style="position:relative;max-width:1180px;margin:0 auto;padding:200px 40px 64px;display:flex;flex-direction:column;gap:20px">
+<div style="font-size:14px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#F9B617">{{ p.category }}</div>
+<h1 style="margin:0;font-size:64px;line-height:1.05;letter-spacing:-0.01em;font-weight:700;color:#FFFFFF;max-width:20ch">{{ p.name }}</h1>
+<p style="margin:0;font-size:22px;line-height:1.6;color:#FFFFFF;max-width:52ch">{{ p.tagline }}</p>
+<div style="display:flex;flex-wrap:wrap;gap:12px;padding-top:8px">
+<sc-for list="{{ p.claims }}" as="claim" hint-placeholder-count="3">
+<span style="font-size:14px;font-weight:600;color:#FFFFFF;border:1.5px solid rgba(255,255,255,0.5);border-radius:999px;padding:9px 20px">{{ claim }}</span>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+
+<section style="background:#FFFFFF;border-bottom:1px solid #EDEDEB">
+<div style="max-width:1180px;margin:0 auto;padding:20px 40px;display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+<span style="font-size:14px;font-weight:600;color:#5A6659">Demo — switch product:</span>
+<sc-for list="{{ productTabs }}" as="t" hint-placeholder-count="4">
+<button type="button" onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+</sc-for>
+</div>
+</section>
+
+<section style="background:#FFFFFF">
+<div style="max-width:1180px;margin:0 auto;padding:72px 40px 96px;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:64px;align-items:start">
+
+<div style="display:flex;flex-direction:column;gap:48px">
+<p style="margin:0;font-size:22px;line-height:1.5;font-weight:600;color:#0C583C;max-width:56ch">{{ p.lead }}</p>
+
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.QuickFacts" items="{{ p.quickFacts }}" tone="subtle" hint-size="100%,120px"></x-import>
+
+<div style="display:flex;flex-direction:column;gap:16px">
+<h2 style="margin:0;font-size:30px;font-weight:700;color:#0C583C">About this {{ p.kindWord }}</h2>
+<sc-for list="{{ p.body }}" as="para" hint-placeholder-count="3">
+<p style="margin:0;font-size:17px;line-height:1.7;color:#1D281C;max-width:64ch">{{ para }}</p>
+</sc-for>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px">
+<h2 style="margin:0;font-size:30px;font-weight:700;color:#0C583C">{{ p.compositionTitle }}</h2>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px">
+<sc-for list="{{ p.composition }}" as="c" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:4px;background:#EFF1EE;border-radius:16px;padding:18px 22px">
+<div style="font-size:17px;font-weight:700;color:#0C583C">{{ c.name }}</div>
+<div style="font-size:15px;line-height:1.5;color:#1D281C">{{ c.note }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px">
+<h2 style="margin:0;font-size:30px;font-weight:700;color:#0C583C">Specifications</h2>
+<div style="border:1px solid #EDEDEB;border-radius:16px;overflow:hidden">
+<sc-for list="{{ p.specs }}" as="s" hint-placeholder-count="8">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:24px;padding:16px 24px;border-bottom:1px solid #EDEDEB">
+<div style="font-size:15px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#5A6659">{{ s.label }}</div>
+<div style="font-size:17px;font-weight:600;color:#0C583C">{{ s.value }}</div>
+</div>
+</sc-for>
+</div>
+<p style="margin:0;font-size:14px;line-height:1.6;color:#5A6659;max-width:64ch">Soil codes: LS light sand · S sand · L loam · H heavy. Tolerance codes: P acidity · W waterlogging · S salinity. Agronomy from the 2026 IH Seeds Pasture Growers Guide.</p>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px">
+<h2 style="margin:0;font-size:30px;font-weight:700;color:#0C583C">Sowing and management</h2>
+<sc-for list="{{ p.management }}" as="m" hint-placeholder-count="3">
+<div style="display:flex;gap:16px;border-top:1px solid #EDEDEB;padding-top:16px">
+<div style="flex:0 0 180px;font-size:15px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#5A6659">{{ m.label }}</div>
+<div style="font-size:17px;line-height:1.7;color:#1D281C;max-width:52ch">{{ m.value }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<aside style="display:flex;flex-direction:column;gap:20px;position:sticky;top:32px">
+<div style="border:1px solid #EDEDEB;border-radius:16px;box-shadow:0 2px 10px rgba(29,40,28,0.08);padding:28px;display:flex;flex-direction:column;gap:18px;background:#FFFFFF">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+<div style="font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#5A6659">Availability</div>
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.StockPill" status="{{ p.status }}" hint-size="120px,28px"></x-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ p.sidebarFacts }}" as="s" hint-placeholder-count="3">
+<div style="display:flex;justify-content:space-between;gap:16px;border-top:1px solid #EDEDEB;padding-top:12px">
+<span style="font-size:15px;color:#5A6659">{{ s.label }}</span>
+<span style="font-size:15px;font-weight:700;color:#0C583C;text-align:right">{{ s.value }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="background:#0C583C;border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;gap:14px">
+<span style="color:#F9B617;display:flex">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Icon" name="file-text" size="{{ 28 }}" hint-size="28px,28px"></x-import>
+</span>
+<div style="font-size:22px;font-weight:700;color:#FFFFFF;line-height:1.3">Tech sheet</div>
+</div>
+<p style="margin:0;font-size:16px;line-height:1.8;color:#FFFFFF">Sowing rates, mix composition, rainfall zones and management notes in one page. Take it to the paddock or send it to your reseller.</p>
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Button" variant="accent" hint-size="100%,48px">Download the Tech Sheet (PDF)</x-import>
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Button" variant="onImage" hint-size="100%,48px">Download this page as a PDF</x-import>
+</div>
+
+<div style="border:1px solid #EDEDEB;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:14px">
+<div style="font-size:20px;font-weight:700;color:#0C583C">Where to buy</div>
+<p style="margin:0;font-size:16px;line-height:1.6;color:#1D281C">We supply through rural resellers across Western Australia. Tell us where you're based and we will point you to the closest store.</p>
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Button" variant="primary" hint-size="100%,48px">Find a reseller</x-import>
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Button" variant="outline" hint-size="100%,48px">Get in Touch</x-import>
+</div>
+</aside>
+</div>
+</section>
+
+<section style="background:#EFF1EE">
+<div style="max-width:1180px;margin:0 auto;padding:96px 40px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SectionHeading" light="Also worth" bold="considering" hint-size="100%,80px"></x-import>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px">
+<sc-for list="{{ related }}" as="r" hint-placeholder-count="3">
+<a href="#" onClick="{{ r.onClick }}" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:16px">
+<div style="border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(29,40,28,0.10);background:#C5CCC5">
+<div role="img" aria-label="{{ r.name }}" style="{{ r.imageStyle }}"></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:20px;font-weight:700;color:#0C583C">{{ r.name }}</div>
+<div style="font-size:16px;line-height:1.6;color:#1D281C">{{ r.tagline }}</div>
+<div style="display:flex;align-items:center;gap:12px;padding-top:8px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.IconButton" icon="arrow-right" label="View product" hint-size="44px,44px"></x-import>
+<span style="font-size:13px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#5A6659">More information</span>
+</div>
+</div>
+</a>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section style="background:#FFFFFF">
+<div style="max-width:1440px;margin:0 auto;padding:96px 40px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.CtaBanner" hint-size="100%,520px" headline="Every mix and variety we stock, with sowing rates and regional notes." image="assets/img-paddock-05.jpeg" cta="Download the 2026 Pasture Seed Guide (PDF)"></x-import>
+</div>
+</section>
+
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SiteFooter" hint-size="100%,560px" logo="assets/logo-ihseeds-white.png" statement="The pasture seed and mixes specialists of Western Australia." dc-props="{{ footerProps }}"></x-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440}}">
+class Component extends DCLogic {
+  state = { key: 'silahay' };
+
+  catalogue() {
+    const spec = (rate, rain, flower, soil, tol, ino) => [
+      { label: 'Sowing rate', value: rate },
+      { label: 'Rainfall', value: rain },
+      { label: 'Flowering / heading', value: flower },
+      { label: 'Ideal soil range', value: soil },
+      { label: 'Tolerance', value: tol },
+      { label: 'Inoculant group', value: ino },
+    ];
+    return {
+      silahay: {
+        key: 'silahay', short: 'Silahay Mix', name: 'Silahay Mix\u2122', category: 'Specialty Mixes \u00b7 Specialist seed mixes',
+        tagline: 'The big producer. High production ryegrass and clover mix for silage, hay and grazing.',
+        kindWord: 'mix', status: 'low', image: 'assets/img-paddock-03.jpeg',
+        claims: ['15 to 25 kg/ha', '450 mm+ rainfall', '25 kg bag'],
+        lead: 'Silahay is a high production mix of ryegrass and clovers built for silage and hay, and it can also be grazed. Early establishment vigour produces high quality bulk through the spring.',
+        body: [
+          'Abundant tetraploid and Dargo diploid ryegrasses carry the grass component, giving early feed and strong spring bulk. Balansa and Persian clovers lift protein and fix nitrogen, and both hold quality later into the season than a straight grass stand.',
+          'Sown in autumn on the break, Silahay is up and away quickly, which matters when you are cutting rather than grazing. The mix suits medium to higher rainfall country from 450 mm, across sand through to heavier soils.',
+          'Where the paddock is being cut for silage, target the boot stage of the ryegrass for quality. For hay, a slightly later cut lifts bulk at some cost to feed value. Either way, the clover component keeps the feed test respectable.',
+        ],
+        compositionTitle: 'What is in the mix',
+        composition: [
+          { name: 'Abundant tetraploid ryegrass', note: 'Mid maturity, high forage yield, strong plant vigour.' },
+          { name: 'Dargo diploid ryegrass', note: 'Early maturity, proven from Esperance to Geraldton.' },
+          { name: 'Paradana balansa clover', note: 'High spring production, tolerates waterlogging.' },
+          { name: 'Persian clover', note: 'Late flowering, high quality forage for cutting.' },
+        ],
+        specs: spec('15 to 25 kg/ha', '450 mm+', 'August to October', 'S-H (sand to heavy)', 'Not rated in the guide', 'Pre-inoculated clovers'),
+        management: [
+          { label: 'Sowing window', value: 'Autumn, on the break. Early sowing gives the establishment vigour this mix is built around.' },
+          { label: 'Cutting', value: 'Boot stage for silage quality. A later cut lifts hay bulk at some cost to feed value.' },
+          { label: 'Grazing', value: 'Can be grazed early, then locked up for a spring cut. Avoid grazing hard through the cutting paddock in late winter.' },
+          { label: 'Fertiliser', value: 'Responds strongly to nitrogen after grazing or a first cut. Soil test and address phosphorus and potassium before sowing.' },
+        ],
+        sidebarFacts: [
+          { label: 'Stock code', value: 'SILA' },
+          { label: 'Pack size', value: '25 kg bag' },
+          { label: 'Seed treatment', value: 'Bare seed' },
+          { label: 'Guide section', value: 'Specialist seed mixes' },
+        ],
+        related: ['souwest', 'maximix', 'abundant'],
+      },
+      souwest: {
+        key: 'souwest', short: 'SouWest Pasture Mix', name: 'SouWest Pasture Mix\u2122', category: 'Specialty Mixes \u00b7 Specialist seed mixes',
+        tagline: 'The perfect mix, combining productivity with diversity. BioNPKS coated.',
+        kindWord: 'mix', status: 'in-stock', image: 'assets/img-paddock-01.jpeg',
+        claims: ['15 to 25 kg/ha', '500 mm+ rainfall', '25 kg bag or 500 kg bulka'],
+        lead: 'An adaptable and diverse mix across a wide range of soil types, and our most widely sown pasture mix for dryland country in the south-west.',
+        body: [
+          'SouWest blends annual and perennial ryegrasses with black and white seeded sub clovers, balansa, Persian, crimson and arrowleaf clovers. That spread of maturities is what gives the mix its season length.',
+          'It can be manipulated for seed set, which means a paddock sown to SouWest can carry pasture over subsequent years rather than being resown annually. It is a sound option where you are pursuing regenerative practices and want diversity in the stand.',
+          'Suited to grazing, silage or hay. Coated with biological BioNPK S, ECOCERT approved.',
+        ],
+        compositionTitle: 'What is in the mix',
+        composition: [
+          { name: 'Annual and perennial ryegrasses', note: 'Early feed with persistence into later years.' },
+          { name: 'Black and white seeded sub clovers', note: 'Regenerating base for subsequent seasons.' },
+          { name: 'Balansa and Persian clovers', note: 'Aerial seeded, high spring production.' },
+          { name: 'Crimson and arrowleaf clovers', note: 'Late flowering, deep rooted, extends the season.' },
+        ],
+        specs: spec('15 to 25 kg/ha', '500 mm+', 'August to November', 'S-H (sand to heavy)', 'Not rated in the guide', 'Pre-inoculated clovers'),
+        management: [
+          { label: 'Sowing window', value: 'Autumn, on the break. Sow shallow and firm the seedbed for the small seeded clover component.' },
+          { label: 'Seed set', value: 'Lock up in spring to allow clover seed set if you want regeneration in following seasons.' },
+          { label: 'Grazing', value: 'Rotational grazing suits the mix best. Avoid hard set stocking in the establishment year.' },
+          { label: 'Fertiliser', value: 'Soil test before sowing. The legume component reduces nitrogen requirement once established.' },
+        ],
+        sidebarFacts: [
+          { label: 'Stock code', value: 'SOU / SOU500' },
+          { label: 'Pack size', value: '25 kg bag \u00b7 500 kg bulka' },
+          { label: 'Seed treatment', value: 'BioNPKS coated \u00b7 ECOCERT' },
+          { label: 'Guide section', value: 'Specialist seed mixes' },
+        ],
+        related: ['silahay', 'maximix', 'abundant'],
+      },
+      maximix: {
+        key: 'maximix', short: 'Maximix', name: 'Maximix', category: 'Specialty Mixes \u00b7 Specialist seed mixes',
+        tagline: 'Bang for your buck. Our best value production mix. BioNPKS coated.',
+        kindWord: 'mix', status: 'in-stock', image: 'assets/img-paddock-02.jpeg',
+        claims: ['25 to 35 kg/ha', '400 mm+ rainfall', '25 kg bag'],
+        lead: 'Highly productive and our best value mix, built to extend annual season production while maximising livestock nutritional intake.',
+        body: [
+          'Early, medium and late varieties of diploid and tetraploid ryegrasses give feed across the whole growing season rather than one spike. Oats add early bulk, and aerial seeded clovers lift quality through spring.',
+          'Maximix suits producers who want a straightforward, high output annual pasture from 400 mm rainfall up, on sand through to heavier soils.',
+          'Coated with biological BioNPK powder S, ECOCERT approved.',
+        ],
+        compositionTitle: 'What is in the mix',
+        composition: [
+          { name: 'Diploid and tetraploid ryegrasses', note: 'Early, medium and late maturities for season length.' },
+          { name: 'Oats', note: 'Early bulk feed while the ryegrass establishes.' },
+          { name: 'Aerial seeded clovers', note: 'Protein and nitrogen fixation through spring.' },
+        ],
+        specs: spec('25 to 35 kg/ha', '400 mm+', 'August to November', 'S-H (sand to heavy)', 'Not rated in the guide', 'Pre-inoculated clovers'),
+        management: [
+          { label: 'Sowing window', value: 'Autumn, on the break. Sow at the higher rate where you want maximum early bulk.' },
+          { label: 'Grazing', value: 'Graze early to control the oat component, then rotate through winter and spring.' },
+          { label: 'Cutting', value: 'Suits silage or hay in a good spring. Cut at the boot stage of the dominant ryegrass.' },
+          { label: 'Fertiliser', value: 'Responds strongly to nitrogen after each grazing.' },
+        ],
+        sidebarFacts: [
+          { label: 'Stock code', value: 'MAXI' },
+          { label: 'Pack size', value: '25 kg bag' },
+          { label: 'Seed treatment', value: 'BioNPKS coated \u00b7 ECOCERT' },
+          { label: 'Guide section', value: 'Specialist seed mixes' },
+        ],
+        related: ['silahay', 'souwest', 'abundant'],
+      },
+      abundant: {
+        key: 'abundant', short: 'Abundant', name: 'Abundant Tetraploid Ryegrass', category: 'Ryegrass \u00b7 Annual tetraploid ryegrasses',
+        tagline: 'Year-on-year top performer from Esperance to Perth.',
+        kindWord: 'variety', status: 'in-stock', image: 'assets/img-paddock-04.jpeg',
+        claims: ['25 to 35 kg/ha', '500 mm+ rainfall', '25 kg bag'],
+        lead: 'Extremely reliable year on year and well suited to WA\u2019s unique growing environment, with optimal full season production.',
+        body: [
+          'A tetraploid with exceptional plant vigour, very high forage yielding ability, stress tolerance and disease resistance. It stays green longer into late spring when managed appropriately.',
+          'Abundant continues to set the benchmark for tetraploid ryegrasses in WA, and it is the grass we build several of our production mixes around, including Silahay and the IH Dairy Select Mix.',
+          'Mid maturity, so it pairs well with an earlier diploid where you want feed at the front of the season.',
+        ],
+        compositionTitle: 'Where it fits',
+        composition: [
+          { name: 'Grazing', note: 'High quality feed through winter and spring under rotation.' },
+          { name: 'Silage and hay', note: 'Strong bulk with good feed test at the boot stage.' },
+          { name: 'In a mix', note: 'The grass base of Silahay Mix and IH Dairy Select Mix.' },
+          { name: 'Dairy', note: 'Suits high input systems wanting full season production.' },
+        ],
+        specs: spec('25 to 35 kg/ha', '500 mm+', 'Mid', 'S-H (sand to heavy)', 'W (waterlogging)', 'Not applicable'),
+        management: [
+          { label: 'Sowing window', value: 'Autumn, on the break, sown shallow into a firm seedbed.' },
+          { label: 'Grazing', value: 'First grazing at the three leaf stage. Rotational grazing holds quality and tiller density.' },
+          { label: 'Late season', value: 'Manage grazing pressure in late spring to keep it green longer.' },
+          { label: 'Fertiliser', value: 'Responds strongly to nitrogen after each grazing or cut.' },
+        ],
+        sidebarFacts: [
+          { label: 'Stock code', value: 'ABU' },
+          { label: 'Pack size', value: '25 kg bag' },
+          { label: 'Seed treatment', value: 'Bare seed' },
+          { label: 'Guide section', value: 'Annual tetraploid ryegrasses' },
+        ],
+        related: ['silahay', 'maximix', 'souwest'],
+      },
+    };
+  }
+
+  renderVals() {
+    const el = React.createElement;
+    const all = this.catalogue();
+    const p = all[this.state.key];
+    const chip = (on) => `padding:9px 20px;border-radius:999px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background 180ms cubic-bezier(.2,.6,.2,1),color 180ms cubic-bezier(.2,.6,.2,1);border:2px solid ${on ? '#09583C' : '#C5CCC5'};background:${on ? '#09583C' : 'transparent'};color:${on ? '#FFFFFF' : '#0C583C'}`;
+    const go = (key) => (e) => { if (e) e.preventDefault(); this.setState({ key }); window.scrollTo(0, 0); };
+    const icons = { 'Sowing rate': 'scale', 'Rainfall': 'cloud-rain', 'Flowering / heading': 'calendar', 'Ideal soil range': 'layers' };
+    const quickFacts = p.specs.slice(0, 4).map((s) => ({ label: s.label, value: s.value, icon: icons[s.label] }));
+    return {
+      p: Object.assign({}, p, { quickFacts }),
+      heroStyle: `position:relative;min-height:620px;background-image:url("${p.image}");background-size:cover;background-position:center`,
+      headerProps: { items: [
+        { id: 'products', label: 'Products', href: 'IH%20Seeds%20Products%20Page.dc.html' },
+        { id: 'guide', label: 'Seed Guide 2026' },
+        { id: 'availability', label: 'Seed Availability', href: 'IH%20Seeds%20Availability%20Page.dc.html' },
+        { id: 'resources', label: 'Resources', href: 'IH%20Seeds%20Resources%20Page.dc.html' },
+        { id: 'about', label: 'About' },
+      ], ctaHref: 'IH%20Seeds%20Contact%20Page.dc.html', activeItem: 'products', cta: 'Get in Touch', utilities: ['search'] },
+      footerProps: {
+        columns: [
+          { title: 'Products', links: [{ label: 'Specialty Mixes', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Ryegrass', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Clovers', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Lucerne', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Serradella & Medic', href: 'IH%20Seeds%20Products%20Page.dc.html' }] },
+          { title: 'Resources', links: [{ label: 'Tech Sheets Hub', href: 'IH%20Seeds%20Resources%20Page.dc.html' }, { label: 'Pasture Seed Guide' }, { label: 'Seed Availability', href: 'IH%20Seeds%20Availability%20Page.dc.html' }, { label: 'Tips & Advice', href: 'IH%20Seeds%20Resources%20Page.dc.html' }] },
+          { title: 'Company', links: [{ label: 'Our Story' }, { label: 'Find a Reseller', href: 'IH%20Seeds%20Contact%20Page.dc.html' }, { label: 'Contact', href: 'IH%20Seeds%20Contact%20Page.dc.html' }] },
+        ],
+        legal: el('span', null, '\u00A9 2026 Irwin Hunter & Co \u00B7 Australian Seed Federation member'),
+      },
+      productTabs: Object.keys(all).map((k) => ({
+        label: all[k].short,
+        style: chip(this.state.key === k),
+        onClick: go(k),
+      })),
+      related: p.related.map((k) => ({
+        name: all[k].name,
+        tagline: all[k].tagline,
+        imageStyle: `display:block;width:100%;height:220px;background-image:url("${all[k].image}");background-size:cover;background-position:center`,
+        onClick: go(k),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/colors.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/typography.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/radius.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/elevation.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/motion.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/base.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/styles.css">
+<script src="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/_ds_bundle.js"></script>
+<style>body{margin:0;background:#FFFFFF;font-family:"Raleway",Tahoma,sans-serif;color:#1D281C}*{box-sizing:border-box}a{color:#0C583C}a:hover{color:#06763C}</style>
+</helmet>
+<div style="background:#FFFFFF">
+
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SiteHeader" tone="solid" sticky="{{ true }}" logo="assets/logo-ihseeds-irwinhunter-colour.png" logo-alt="IH Seeds — Irwin Hunter &amp; Co" hint-size="100%,140px" dc-props="{{ headerProps }}"></x-import>
+
+<section style="background:#EFF1EE">
+<div style="max-width:1180px;margin:0 auto;padding:80px 40px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:64px;align-items:center">
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="font-size:14px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#0C583C">Seed Guide 2026</div>
+<h1 style="margin:0;font-size:48px;line-height:1.2;font-weight:300;color:#0C583C;max-width:18ch">Every mix and variety, <span style="font-weight:700">by rainfall zone</span></h1>
+<p style="margin:0;font-size:18px;line-height:1.6;color:#1D281C;max-width:52ch">Sowing rates, flowering windows, soil range and tolerance for every line we stock — the same agronomy behind every product page, in one downloadable guide.</p>
+<div style="display:flex;gap:16px;flex-wrap:wrap;padding-top:8px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Button" variant="accent" hint-size="240px,48px">Download the 2026 Pasture Seed Guide (PDF)</x-import>
+</div>
+<div style="font-size:14px;color:#5A6659">Updated January 2026 · Free to download</div>
+</div>
+<div style="border-radius:24px;overflow:hidden;box-shadow:0 8px 24px rgba(29,40,28,0.14);aspect-ratio:3/4;max-width:340px;margin:0 auto">
+<img src="assets/img-paddock-04.jpeg" alt="2026 IH Seeds Pasture Growers Guide cover" style="display:block;width:100%;height:100%;object-fit:cover">
+</div>
+</div>
+</section>
+
+<section style="background:#FFFFFF">
+<div style="max-width:1180px;margin:0 auto;padding:96px 40px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SectionHeading" light="What's" bold="inside" hint-size="100%,80px"></x-import>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:32px">
+<sc-for list="{{ contents }}" as="c" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:12px">
+<span style="color:#0C583C;display:flex"><x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Icon" name="{{ c.icon }}" size="{{ 28 }}" hint-size="28px,28px"></x-import></span>
+<div style="font-size:20px;font-weight:700;color:#0C583C;line-height:1.4">{{ c.title }}</div>
+<div style="font-size:15px;line-height:1.6;color:#1D281C">{{ c.body }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section style="background:#EFF1EE">
+<div style="max-width:1180px;margin:0 auto;padding:96px 40px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SectionHeading" light="Guide" bold="sections" hint-size="100%,80px"></x-import>
+<div style="border:1px solid #EDEDEB;border-radius:16px;overflow:hidden;background:#FFFFFF">
+<sc-for list="{{ sections }}" as="s" hint-placeholder-count="9">
+<div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) 100px;gap:24px;align-items:center;padding:20px 28px;border-bottom:1px solid #EDEDEB">
+<div style="font-size:17px;font-weight:700;color:#0C583C">{{ s.name }}</div>
+<div style="font-size:15px;color:#1D281C">{{ s.note }}</div>
+<div style="font-size:14px;font-weight:600;color:#5A6659;text-align:right">{{ s.pages }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section style="background:#FFFFFF">
+<div style="max-width:1440px;margin:0 auto;padding:96px 40px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.FeaturePanel" hint-size="100%,480px" light="Read it in the" bold="paddock" image="assets/img-paddock-02.jpeg" body="Every entry follows the same format as our product pages: sowing rate, rainfall range, flowering window, ideal soil and tolerance. Cross-reference a mix against the availability table before you order, and call us if your paddock sits between two guide zones." cta="View Seed Availability"></x-import>
+</div>
+</section>
+
+<section style="background:#0C583C">
+<div style="max-width:1180px;margin:0 auto;padding:80px 40px;display:flex;flex-wrap:wrap;gap:48px;align-items:center;justify-content:space-between">
+<div style="display:flex;flex-direction:column;gap:8px;max-width:44ch">
+<div style="font-size:14px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#F9B617">Stay in touch</div>
+<h2 style="margin:0;font-size:30px;font-weight:700;color:#FFFFFF">Get the next edition first</h2>
+<p style="margin:0;font-size:16px;line-height:1.6;color:#FFFFFF">We reissue the guide each season as varieties and rates change. Leave your email and we will send the update.</p>
+</div>
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.NewsletterSignup" hint-size="420px,80px"></x-import>
+</div>
+</section>
+
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SiteFooter" hint-size="100%,560px" logo="assets/logo-ihseeds-white.png" statement="The pasture seed and mixes specialists of Western Australia." dc-props="{{ footerProps }}"></x-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440}}">
+class Component extends DCLogic {
+  renderVals() {
+    const el = React.createElement;
+    return {
+      headerProps: { items: [
+        { id: 'products', label: 'Products', href: 'IH%20Seeds%20Products%20Page.dc.html' },
+        { id: 'guide', label: 'Seed Guide 2026', href: 'IH%20Seeds%20Guide%20Page.dc.html' },
+        { id: 'availability', label: 'Seed Availability', href: 'IH%20Seeds%20Availability%20Page.dc.html' },
+        { id: 'resources', label: 'Resources', href: 'IH%20Seeds%20Resources%20Page.dc.html' },
+        { id: 'about', label: 'About' },
+      ], ctaHref: 'IH%20Seeds%20Contact%20Page.dc.html', activeItem: 'guide', cta: 'Get in Touch', utilities: ['search'] },
+      footerProps: {
+        columns: [
+          { title: 'Products', links: [{ label: 'Specialty Mixes', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Ryegrass', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Clovers', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Lucerne', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Serradella & Medic', href: 'IH%20Seeds%20Products%20Page.dc.html' }] },
+          { title: 'Resources', links: [{ label: 'Tech Sheets Hub', href: 'IH%20Seeds%20Resources%20Page.dc.html' }, { label: 'Pasture Seed Guide', href: 'IH%20Seeds%20Guide%20Page.dc.html' }, { label: 'Seed Availability', href: 'IH%20Seeds%20Availability%20Page.dc.html' }, { label: 'Tips & Advice', href: 'IH%20Seeds%20Resources%20Page.dc.html' }] },
+          { title: 'Company', links: [{ label: 'Our Story' }, { label: 'Find a Reseller', href: 'IH%20Seeds%20Contact%20Page.dc.html' }, { label: 'Contact', href: 'IH%20Seeds%20Contact%20Page.dc.html' }] },
+        ],
+        legal: el('span', null, '\u00A9 2026 Irwin Hunter & Co \u00B7 Australian Seed Federation member'),
+      },
+      contents: [
+        { icon: 'scale', title: 'Sowing rates', body: 'A kg/ha rate for every mix and variety, adjusted for pure seed.' },
+        { icon: 'cloud-rain', title: 'Rainfall zones', body: 'The minimum annual rainfall each line is proven to perform in.' },
+        { icon: 'layers', title: 'Soil range', body: 'Light sand through to heavy clay, coded against each entry.' },
+        { icon: 'calendar', title: 'Flowering windows', body: 'When each variety heads, so cutting and grazing timing lines up.' },
+      ],
+      sections: [
+        { name: 'Specialist seed mixes', note: 'SouWest, Maximix, Silahay and the rest of the specialty range', pages: 'p. 4\u201312' },
+        { name: 'Annual tetraploid ryegrasses', note: 'Abundant, Evoke, Amazon T, Astound, Tetila', pages: 'p. 13\u201318' },
+        { name: 'Annual diploid ryegrasses', note: 'Dargo, Safeguard (ARGT), Finefeed, Wimmera', pages: 'p. 19\u201322' },
+        { name: 'Biennial Italian ryegrasses', note: 'Amass, Achieve', pages: 'p. 23\u201324' },
+        { name: 'Perennial and hybrid ryegrasses', note: 'Hypa, AusVic, Dunstan, Victorian', pages: 'p. 25\u201330' },
+        { name: 'Clovers', note: 'Sub, balansa, arrowleaf, Persian and crimson', pages: 'p. 31\u201338' },
+        { name: 'Lucerne', note: 'Winter-active through to highly winter-active', pages: 'p. 39\u201342' },
+        { name: 'Serradella and medic', note: 'French serradella, yellow serradella, medics', pages: 'p. 43\u201347' },
+        { name: 'Sub-tropical grasses and legumes', note: 'Rhodes grass, panics and tropical legumes', pages: 'p. 48\u201352' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

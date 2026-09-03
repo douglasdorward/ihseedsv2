@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/colors.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/typography.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/radius.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/elevation.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/motion.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/tokens/base.css">
+<link rel="stylesheet" href="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/styles.css">
+<script src="_ds/ih-seeds-design-system-515a1627-c7a7-49db-9479-3a8c5f545748/_ds_bundle.js"></script>
+<style>body{margin:0;background:#FFFFFF;font-family:"Raleway",Tahoma,sans-serif;color:#1D281C}*{box-sizing:border-box}a{color:#0C583C}a:hover{color:#06763C}</style>
+</helmet>
+<div style="background:#FFFFFF">
+
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SiteHeader" tone="solid" sticky="{{ true }}" logo="assets/logo-ihseeds-irwinhunter-colour.png" logo-alt="IH Seeds — Irwin Hunter &amp; Co" hint-size="100%,140px" dc-props="{{ headerProps }}"></x-import>
+
+<section style="background:#EFF1EE">
+<div style="max-width:1180px;margin:0 auto;padding:64px 40px 40px;display:flex;flex-direction:column;gap:16px">
+<div style="font-size:14px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#0C583C">Resources</div>
+<h1 style="margin:0;font-size:48px;line-height:1.2;font-weight:300;color:#0C583C">Advice, guides and <span style="font-weight:700">tech sheets</span></h1>
+<p style="margin:0;font-size:18px;line-height:1.6;color:#1D281C;max-width:64ch">Everything we publish on sowing, feed planning and seasonal timing, plus a downloadable tech sheet for every mix and variety we stock.</p>
+</div>
+<div style="max-width:1180px;margin:0 auto;padding:0 40px 32px;display:flex;gap:12px">
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="2">
+<button type="button" onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+</sc-for>
+</div>
+</section>
+
+<sc-if value="{{ isArticles }}" hint-placeholder-val="{{ true }}">
+<section style="background:#FFFFFF">
+<div style="max-width:1180px;margin:0 auto;padding:64px 40px 96px">
+<div style="display:flex;flex-wrap:wrap;gap:12px;padding-bottom:48px">
+<sc-for list="{{ articleFilters }}" as="f" hint-placeholder-count="4">
+<button type="button" onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button>
+</sc-for>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px">
+<sc-for list="{{ articles }}" as="a" hint-placeholder-count="6">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.ArticleCard" hint-size="100%,460px" title="{{ a.title }}" date="{{ a.date }}" excerpt="{{ a.excerpt }}" image="{{ a.image }}" category="{{ a.category }}" href="#"></x-import>
+</sc-for>
+</div>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isTechSheets }}" hint-placeholder-val="{{ false }}">
+<section style="background:#FFFFFF">
+<div style="max-width:1180px;margin:0 auto;padding:64px 40px 96px">
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;padding-bottom:40px">
+<div style="flex:1 1 260px;min-width:220px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Input" placeholder="Search by product name or stock code" value="{{ search }}" on-change="{{ onSearch }}" hint-size="100%,44px"></x-import>
+</div>
+<sc-for list="{{ sheetFilters }}" as="f" hint-placeholder-count="5">
+<button type="button" onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button>
+</sc-for>
+<div style="margin-left:auto;font-size:14px;font-weight:600;color:#5A6659">{{ resultLine }}</div>
+</div>
+<div style="display:flex;flex-direction:column;border:1px solid #EDEDEB;border-radius:16px;overflow:hidden">
+<sc-for list="{{ sheets }}" as="s" hint-placeholder-count="8">
+<div style="display:grid;grid-template-columns:44px minmax(0,2fr) minmax(0,1.2fr) 120px 160px;gap:20px;align-items:center;padding:18px 24px;border-bottom:1px solid #EDEDEB">
+<span style="color:#0C583C;display:flex">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Icon" name="file-text" size="{{ 22 }}" hint-size="22px,22px"></x-import>
+</span>
+<div style="display:flex;flex-direction:column;gap:2px">
+<div style="font-size:16px;font-weight:700;color:#0C583C">{{ s.name }}</div>
+<div style="font-size:13px;color:#5A6659">{{ s.section }}</div>
+</div>
+<div style="font-size:14px;color:#1D281C">{{ s.category }}</div>
+<div style="font-size:13px;font-weight:600;color:#5A6659">{{ s.updated }}</div>
+<div style="display:flex;justify-content:flex-end">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.Button" variant="outline" size="sm" hint-size="140px,40px">Download PDF</x-import>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ noSheets }}" hint-placeholder-val="{{ false }}">
+<div style="padding:48px 24px;text-align:center;font-size:16px;color:#5A6659">No tech sheets match that search or filter.</div>
+</sc-if>
+</div>
+</div>
+</section>
+</sc-if>
+
+<section style="background:#EFF1EE">
+<div style="max-width:1440px;margin:0 auto;padding:96px 40px">
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.CtaBanner" hint-size="100%,520px" headline="Species, sowing rates and regional advice for the season ahead." image="assets/img-paddock-05.jpeg" cta="Download the 2026 Pasture Seed Guide (PDF)"></x-import>
+</div>
+</section>
+
+<x-import component-from-global-scope="IHSeedsDesignSystem_515a16.SiteFooter" hint-size="100%,560px" logo="assets/logo-ihseeds-white.png" statement="The pasture seed and mixes specialists of Western Australia." dc-props="{{ footerProps }}"></x-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440}}">
+class Component extends DCLogic {
+  state = { tab: 'articles', articleCat: 'All', sheetCat: 'All', search: '' };
+
+  articleData() {
+    return [
+      { category: 'Editorial', date: '27 October 2025', title: 'Mix & Match Custom Pasture', excerpt: 'The need for sustainable and productive pastures has never been greater in today\u2019s farming landscape.', image: 'assets/img-paddock-03.jpeg' },
+      { category: 'Sowing & Timing', date: '12 September 2025', title: 'Getting Your Autumn Sowing Window Right', excerpt: 'Timing decides the season. Soil temperature, rainfall triggers and the sowing rates that hold up.', image: 'assets/img-paddock-05.jpeg' },
+      { category: 'Feed Planning', date: '4 August 2025', title: 'Feed Planning Through a Dry Finish', excerpt: 'Practical steps for holding feed quality when the season shortens.', image: 'assets/img-paddock-02.jpeg' },
+      { category: 'Publication', date: '15 July 2025', title: '2026 Pasture Seed Guide', excerpt: 'Sowing rates, rainfall zones and species notes for every mix and variety we stock, in one download.', image: 'assets/img-paddock-01.jpeg' },
+      { category: 'Editorial', date: '2 June 2025', title: 'ARGT: What It Is and How to Sow Around It', excerpt: 'Where ryegrass toxicity risk is real, and which varieties reduce it.', image: 'assets/img-paddock-04.jpeg' },
+      { category: 'Sowing & Timing', date: '20 April 2025', title: 'Reading the Break: When to Sow Annuals', excerpt: 'Soil moisture over the calendar, and why the earliest break is not always the best one.', image: 'assets/img-paddock-02.jpeg' },
+    ];
+  }
+
+  sheetData() {
+    return [
+      { name: 'SouWest\u2122 Pasture Mix', category: 'Specialty Mixes', section: 'Specialist seed mixes', updated: 'Jan 2026' },
+      { name: 'Maximix', category: 'Specialty Mixes', section: 'Specialist seed mixes', updated: 'Jan 2026' },
+      { name: 'Silahay\u2122 Mix', category: 'Specialty Mixes', section: 'Specialist seed mixes', updated: 'Jan 2026' },
+      { name: 'Abundant Tetraploid Ryegrass', category: 'Ryegrass', section: 'Annual tetraploid ryegrasses', updated: 'Jan 2026' },
+      { name: 'Evoke Tetraploid Ryegrass', category: 'Ryegrass', section: 'Annual tetraploid ryegrasses', updated: 'Jan 2026' },
+      { name: 'Safeguard (ARGT) Diploid Ryegrass', category: 'Ryegrass', section: 'Annual diploid ryegrasses', updated: 'Jan 2026' },
+      { name: 'Dalkeith Subterranean Clover', category: 'Clovers', section: 'Sub clovers', updated: 'Dec 2025' },
+      { name: 'SARDI Seven Lucerne', category: 'Lucerne', section: 'Winter-active lucerne', updated: 'Dec 2025' },
+      { name: 'Margurita French Serradella', category: 'Serradella & Medic', section: 'Serradellas', updated: 'Dec 2025' },
+      { name: 'Rhodes Grass Katambora', category: 'Sub-Tropical', section: 'Sub-tropical grasses', updated: 'Nov 2025' },
+    ];
+  }
+
+  renderVals() {
+    const el = React.createElement;
+    const chip = (on) => `padding:9px 20px;border-radius:999px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background 180ms cubic-bezier(.2,.6,.2,1),color 180ms cubic-bezier(.2,.6,.2,1);border:2px solid ${on ? '#09583C' : '#C5CCC5'};background:${on ? '#09583C' : 'transparent'};color:${on ? '#FFFFFF' : '#0C583C'}`;
+    const tabStyle = (on) => `padding:12px 24px;border-radius:999px;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;transition:background 180ms cubic-bezier(.2,.6,.2,1),color 180ms cubic-bezier(.2,.6,.2,1);border:2px solid ${on ? '#09583C' : 'transparent'};background:${on ? '#09583C' : 'transparent'};color:${on ? '#FFFFFF' : '#0C583C'}`;
+
+    const allArticles = this.articleData();
+    const articleCats = ['All'].concat(Array.from(new Set(allArticles.map((a) => a.category))));
+    const articles = this.state.articleCat === 'All' ? allArticles : allArticles.filter((a) => a.category === this.state.articleCat);
+
+    const allSheets = this.sheetData();
+    const sheetCats = ['All'].concat(Array.from(new Set(allSheets.map((s) => s.category))));
+    const q = this.state.search.trim().toLowerCase();
+    const sheets = allSheets.filter((s) =>
+      (this.state.sheetCat === 'All' || s.category === this.state.sheetCat) &&
+      (!q || s.name.toLowerCase().includes(q))
+    );
+
+    return {
+      headerProps: { items: [
+        { id: 'products', label: 'Products', href: 'IH%20Seeds%20Products%20Page.dc.html' },
+        { id: 'guide', label: 'Seed Guide 2026' },
+        { id: 'availability', label: 'Seed Availability', href: 'IH%20Seeds%20Availability%20Page.dc.html' },
+        { id: 'resources', label: 'Resources', href: 'IH%20Seeds%20Resources%20Page.dc.html' },
+        { id: 'about', label: 'About' },
+      ], ctaHref: 'IH%20Seeds%20Contact%20Page.dc.html', activeItem: 'resources', cta: 'Get in Touch', utilities: ['search'] },
+      footerProps: {
+        columns: [
+          { title: 'Products', links: [{ label: 'Specialty Mixes', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Ryegrass', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Clovers', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Lucerne', href: 'IH%20Seeds%20Products%20Page.dc.html' }, { label: 'Serradella & Medic', href: 'IH%20Seeds%20Products%20Page.dc.html' }] },
+          { title: 'Resources', links: [{ label: 'Tech Sheets Hub', href: 'IH%20Seeds%20Resources%20Page.dc.html' }, { label: 'Pasture Seed Guide' }, { label: 'Seed Availability', href: 'IH%20Seeds%20Availability%20Page.dc.html' }, { label: 'Tips & Advice', href: 'IH%20Seeds%20Resources%20Page.dc.html' }] },
+          { title: 'Company', links: [{ label: 'Our Story' }, { label: 'Find a Reseller', href: 'IH%20Seeds%20Contact%20Page.dc.html' }, { label: 'Contact', href: 'IH%20Seeds%20Contact%20Page.dc.html' }] },
+        ],
+        legal: el('span', null, '\u00A9 2026 Irwin Hunter & Co \u00B7 Australian Seed Federation member'),
+      },
+      isArticles: this.state.tab === 'articles',
+      isTechSheets: this.state.tab === 'sheets',
+      tabs: [
+        { key: 'articles', label: 'Articles & Publications' },
+        { key: 'sheets', label: 'Tech Sheets Hub' },
+      ].map((t) => ({ label: t.label, style: tabStyle(this.state.tab === t.key), onClick: () => this.setState({ tab: t.key }) })),
+      articleFilters: articleCats.map((c) => ({ label: c, style: chip(this.state.articleCat === c), onClick: () => this.setState({ articleCat: c }) })),
+      articles,
+      sheetFilters: sheetCats.map((c) => ({ label: c, style: chip(this.state.sheetCat === c), onClick: () => this.setState({ sheetCat: c }) })),
+      search: this.state.search,
+      onSearch: (v) => this.setState({ search: typeof v === 'string' ? v : (v && v.target ? v.target.value : '') }),
+      sheets,
+      noSheets: sheets.length === 0,
+      resultLine: `${sheets.length} of ${allSheets.length} tech sheets`,
+    };
+  }
+}
+</script>
+</body>
+</html>
