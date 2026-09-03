@@ -5,34 +5,40 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ProductCreateInputStatus } from './productCreateInputStatus';
 import type { ProductDetails } from './productDetails';
-import type { ProductUpdateStatus } from './productUpdateStatus';
 
-export interface ProductUpdate {
+export interface ProductCreateInput {
   /**
      * @minLength 1
      * @maxLength 160
      */
-  name?: string;
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+     */
+  slug: string;
   /**
      * @minLength 1
      * @maxLength 80
      */
-  price?: string;
+  price: string;
   /**
      * @minLength 1
      * @maxLength 80
      */
-  packSize?: string;
-  status?: ProductUpdateStatus;
+  packSize: string;
+  status: ProductCreateInputStatus;
   /** @maxLength 500 */
-  note?: string;
+  note: string;
   /**
      * @minLength 1
      * @maxLength 120
      */
-  category?: string;
+  category: string;
   /** @maxLength 240 */
-  techSheet?: string;
-  details?: ProductDetails;
+  techSheet: string;
+  details: ProductDetails;
 }

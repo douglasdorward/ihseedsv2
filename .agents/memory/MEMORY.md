@@ -1,2 +1,3 @@
 - [Imported bundle entry verification](imported-bundle-entry.md) — after replacing an imported Claude bundle, verify the served root actually mounts the new app.
 - [OpenAPI integer generation](openapi-integer-generation.md) — summary counts use number because this workspace's generator emits Zod-v4-only z.int() for integer schemas.
+- [Catalogue lifecycle safety](catalogue-lifecycle-safety.md) — public fallbacks must never resurrect non-published records; lifecycle writes serialize on the product row.

@@ -58,6 +58,18 @@ export type ProductDetails = {
   relatedProducts: string[];
 };
 
+export type ProductLifecycleStatus = "Published" | "Draft" | "Archived";
+export type ProductEditablePayload = {
+  name: string;
+  price: string;
+  packSize: string;
+  status: "in-stock" | "low" | "very-low" | "unavailable";
+  note: string;
+  category: string;
+  techSheet: string;
+  details: ProductDetails;
+};
+
 const emptyProductDetails: ProductDetails = {
   stockCode: "",
   guideSection: "",
@@ -204,7 +216,16 @@ export const productsTable = pgTable("ih_products", {
   category: text("category").notNull().default("Other"),
   techSheet: text("tech_sheet").notNull().default(""),
   publishStatus: text("publish_status").notNull().default("Published"),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
   details: jsonb("details").$type<ProductDetails>().notNull().default(emptyProductDetails),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const productDraftsTable = pgTable("ih_product_drafts", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  productId: integer("product_id").notNull().references(() => productsTable.id, { onDelete: "cascade" }).unique(),
+  snapshot: jsonb("snapshot").$type<ProductEditablePayload>().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -276,13 +297,15 @@ export const insertProductSchema = z.object({
   note: z.string().trim().max(500),
   category: z.string().trim().min(1).max(120),
   techSheet: z.string().trim().max(240),
-  publishStatus: z.enum(["Published", "Draft"]),
+  publishStatus: z.enum(["Published", "Draft", "Archived"]),
   details: productDetailsSchema,
 });
 export const updateProductSchema = insertProductSchema
   .omit({ slug: true, details: true })
   .partial()
   .extend({ details: productDetailsObjectSchema.optional() });
+export const productDraftSchema = insertProductSchema.omit({ slug: true, publishStatus: true });
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type UpdateProduct = z.infer<typeof updateProductSchema>;
 export type Product = typeof productsTable.$inferSelect;
+export type ProductDraftInput = z.infer<typeof productDraftSchema>;

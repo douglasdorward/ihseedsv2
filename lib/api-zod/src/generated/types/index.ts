@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminProduct';
+export * from './adminProductLifecycleStatus';
 export * from './adminSummary';
 export * from './availabilityRow';
 export * from './enquiryCreated';
@@ -13,6 +15,8 @@ export * from './enquiryInput';
 export * from './healthStatus';
 export * from './product';
 export * from './productComponent';
+export * from './productCreateInput';
+export * from './productCreateInputStatus';
 export * from './productDetails';
 export * from './productDetailsCertificationItem';
 export * from './productDetailsEndUseItem';
@@ -28,15 +32,18 @@ export * from './productDetailsSeedTreatmentItem';
 export * from './productDetailsSoilPhScale';
 export * from './productDetailsSoilRangeHeaviest';
 export * from './productDetailsSoilRangeLightest';
+export * from './productDraft';
+export * from './productDraftInput';
+export * from './productDraftInputStatus';
 export * from './productInput';
 export * from './productInputPublishStatus';
 export * from './productInputStatus';
 export * from './productPackSize';
 export * from './productPhoto';
+export * from './productPublishStatus';
 export * from './productSowingRate';
 export * from './productSowingRateContext';
 export * from './productTolerance';
 export * from './productToleranceName';
 export * from './productUpdate';
-export * from './productUpdatePublishStatus';
 export * from './productUpdateStatus';

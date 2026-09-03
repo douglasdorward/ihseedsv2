@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ProductInputPublishStatus = typeof ProductInputPublishStatus[keyof typeof ProductInputPublishStatus];
+export type AdminProductLifecycleStatus = typeof AdminProductLifecycleStatus[keyof typeof AdminProductLifecycleStatus];
 
 
-export const ProductInputPublishStatus = {
+export const AdminProductLifecycleStatus = {
   Published: 'Published',
   Draft: 'Draft',
   Archived: 'Archived',

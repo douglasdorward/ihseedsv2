@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ProductDetails } from './productDetails';
+import type { ProductPublishStatus } from './productPublishStatus';
 
 export interface Product {
   id: number;
@@ -17,7 +18,8 @@ export interface Product {
   note: string;
   category: string;
   techSheet: string;
-  publishStatus: string;
+  publishStatus: ProductPublishStatus;
+  publishedAt?: Date | null;
   details: ProductDetails;
   createdAt: Date;
   updatedAt: Date;

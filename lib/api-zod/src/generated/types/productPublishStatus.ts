@@ -6,10 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ProductUpdatePublishStatus = typeof ProductUpdatePublishStatus[keyof typeof ProductUpdatePublishStatus];
+export type ProductPublishStatus = typeof ProductPublishStatus[keyof typeof ProductPublishStatus];
 
 
-export const ProductUpdatePublishStatus = {
+export const ProductPublishStatus = {
   Published: 'Published',
   Draft: 'Draft',
+  Archived: 'Archived',
 } as const;

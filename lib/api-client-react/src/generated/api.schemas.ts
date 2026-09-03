@@ -9,6 +9,15 @@ export interface HealthStatus {
   status: string;
 }
 
+export type ProductPublishStatus = typeof ProductPublishStatus[keyof typeof ProductPublishStatus];
+
+
+export const ProductPublishStatus = {
+  Published: 'Published',
+  Draft: 'Draft',
+  Archived: 'Archived',
+} as const;
+
 export type ProductDetailsRecordType = typeof ProductDetailsRecordType[keyof typeof ProductDetailsRecordType];
 
 
@@ -353,11 +362,71 @@ export interface Product {
   note: string;
   category: string;
   techSheet: string;
-  publishStatus: string;
+  publishStatus: ProductPublishStatus;
+  publishedAt?: string | null;
   details: ProductDetails;
   createdAt: string;
   updatedAt: string;
 }
+
+export type ProductDraftInputStatus = typeof ProductDraftInputStatus[keyof typeof ProductDraftInputStatus];
+
+
+export const ProductDraftInputStatus = {
+  'in-stock': 'in-stock',
+  low: 'low',
+  'very-low': 'very-low',
+  unavailable: 'unavailable',
+} as const;
+
+export interface ProductDraftInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  price: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  packSize: string;
+  status: ProductDraftInputStatus;
+  /** @maxLength 500 */
+  note: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  category: string;
+  /** @maxLength 240 */
+  techSheet: string;
+  details: ProductDetails;
+}
+
+export type ProductDraft = ProductDraftInput & {
+  savedAt: string;
+};
+
+export type AdminProductLifecycleStatus = typeof AdminProductLifecycleStatus[keyof typeof AdminProductLifecycleStatus];
+
+
+export const AdminProductLifecycleStatus = {
+  Published: 'Published',
+  Draft: 'Draft',
+  Archived: 'Archived',
+} as const;
+
+export type AdminProduct = Product & ({
+  lifecycleStatus: AdminProductLifecycleStatus;
+  hasDraft: boolean;
+  draftSavedAt: string | null;
+  draft: ProductDraft | null;
+});
 
 export type ProductInputStatus = typeof ProductInputStatus[keyof typeof ProductInputStatus];
 
@@ -375,6 +444,7 @@ export type ProductInputPublishStatus = typeof ProductInputPublishStatus[keyof t
 export const ProductInputPublishStatus = {
   Published: 'Published',
   Draft: 'Draft',
+  Archived: 'Archived',
 } as const;
 
 export interface ProductInput {
@@ -413,6 +483,51 @@ export interface ProductInput {
   details: ProductDetails;
 }
 
+export type ProductCreateInputStatus = typeof ProductCreateInputStatus[keyof typeof ProductCreateInputStatus];
+
+
+export const ProductCreateInputStatus = {
+  'in-stock': 'in-stock',
+  low: 'low',
+  'very-low': 'very-low',
+  unavailable: 'unavailable',
+} as const;
+
+export interface ProductCreateInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+     */
+  slug: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  price: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  packSize: string;
+  status: ProductCreateInputStatus;
+  /** @maxLength 500 */
+  note: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  category: string;
+  /** @maxLength 240 */
+  techSheet: string;
+  details: ProductDetails;
+}
+
 export type ProductUpdateStatus = typeof ProductUpdateStatus[keyof typeof ProductUpdateStatus];
 
 
@@ -421,14 +536,6 @@ export const ProductUpdateStatus = {
   low: 'low',
   'very-low': 'very-low',
   unavailable: 'unavailable',
-} as const;
-
-export type ProductUpdatePublishStatus = typeof ProductUpdatePublishStatus[keyof typeof ProductUpdatePublishStatus];
-
-
-export const ProductUpdatePublishStatus = {
-  Published: 'Published',
-  Draft: 'Draft',
 } as const;
 
 export interface ProductUpdate {
@@ -457,13 +564,15 @@ export interface ProductUpdate {
   category?: string;
   /** @maxLength 240 */
   techSheet?: string;
-  publishStatus?: ProductUpdatePublishStatus;
   details?: ProductDetails;
 }
 
 export interface AdminSummary {
   totalProducts: number;
   publishedProducts: number;
+  draftProducts: number;
+  archivedProducts: number;
+  pendingDrafts: number;
   lowStockProducts: number;
   missingTechSheets: number;
   recentProducts: Product[];

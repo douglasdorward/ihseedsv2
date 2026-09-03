@@ -10,6 +10,9 @@ import type { Product } from './product';
 export interface AdminSummary {
   totalProducts: number;
   publishedProducts: number;
+  draftProducts: number;
+  archivedProducts: number;
+  pendingDrafts: number;
   lowStockProducts: number;
   missingTechSheets: number;
   recentProducts: Product[];

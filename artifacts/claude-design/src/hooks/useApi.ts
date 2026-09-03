@@ -48,7 +48,7 @@ export function useProducts() {
     fetch("/api/products")
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("Catalogue unavailable")))
       .then((data: Product[]) => setProducts(data))
-      .catch(() => setProducts(fallbackProducts))
+      .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, []);
 
@@ -63,7 +63,7 @@ export function useAvailability() {
     fetch("/api/availability")
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("Catalogue unavailable")))
       .then((data: Omit<Product, "price" | "packSize">[]) => setProducts(data))
-      .catch(() => setProducts(fallbackProducts.map(({ id, name, note, status }) => ({ id, name, note, status }))))
+      .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, []);
 

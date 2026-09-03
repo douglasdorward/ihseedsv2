@@ -53,7 +53,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ProductInput"
+              $ref: "#/components/schemas/ProductCreateInput"
       responses:
         "201":
           description: Product created
@@ -116,6 +116,158 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminSummary"
+  /admin/products:
+    get:
+      operationId: listAdminProducts
+      tags: [admin]
+      summary: List catalogue products with lifecycle metadata
+      responses:
+        "200":
+          description: Admin catalogue
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminProduct"
+  /admin/products/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getAdminProduct
+      tags: [admin]
+      summary: Get a product and its current draft revision
+      responses:
+        "200":
+          description: Admin product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProduct"
+        "404":
+          description: Product not found
+  /admin/products/{id}/draft:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: saveProductDraftRevision
+      tags: [admin]
+      summary: Save a product draft revision
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductDraftInput"
+      responses:
+        "200":
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProduct"
+        "400":
+          description: Invalid draft
+        "404":
+          description: Product not found
+        "409":
+          description: Invalid lifecycle transition
+  /admin/products/{id}/publish:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: publishProduct
+      tags: [admin]
+      summary: Promote the current draft to the public catalogue
+      responses:
+        "200":
+          description: Published product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProduct"
+        "404":
+          description: Product not found
+        "409":
+          description: Invalid lifecycle transition
+  /admin/products/{id}/archive:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: archiveProduct
+      tags: [admin]
+      summary: Move a product to the archive
+      responses:
+        "200":
+          description: Archived product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProduct"
+        "404":
+          description: Product not found
+        "409":
+          description: Invalid lifecycle transition
+  /admin/products/{id}/restore:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: restoreProduct
+      tags: [admin]
+      summary: Restore an archived product to Draft
+      responses:
+        "200":
+          description: Draft product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProduct"
+        "404":
+          description: Product not found
+        "409":
+          description: Invalid lifecycle transition
+  /admin/products/{id}/discard-draft:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: discardProductDraft
+      tags: [admin]
+      summary: Discard pending changes to a published product
+      responses:
+        "200":
+          description: Published product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProduct"
+        "404":
+          description: Product not found
+        "409":
+          description: Invalid lifecycle transition
   /availability:
     get:
       operationId: listAvailability
@@ -171,12 +323,46 @@ components:
         note: { type: string }
         category: { type: string }
         techSheet: { type: string }
-        publishStatus: { type: string }
+        publishStatus: { type: string, enum: [Published, Draft, Archived] }
+        publishedAt: { type: string, format: date-time, nullable: true }
         details:
           $ref: "#/components/schemas/ProductDetails"
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
       required: [id, name, slug, price, packSize, status, note, category, techSheet, publishStatus, details, createdAt, updatedAt]
+    ProductDraftInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 160 }
+        price: { type: string, minLength: 1, maxLength: 80 }
+        packSize: { type: string, minLength: 1, maxLength: 80 }
+        status: { type: string, enum: [in-stock, low, very-low, unavailable] }
+        note: { type: string, maxLength: 500 }
+        category: { type: string, minLength: 1, maxLength: 120 }
+        techSheet: { type: string, maxLength: 240 }
+        details:
+          $ref: "#/components/schemas/ProductDetails"
+      required: [name, price, packSize, status, note, category, techSheet, details]
+    ProductDraft:
+      allOf:
+        - $ref: "#/components/schemas/ProductDraftInput"
+        - type: object
+          properties:
+            savedAt: { type: string, format: date-time }
+          required: [savedAt]
+    AdminProduct:
+      allOf:
+        - $ref: "#/components/schemas/Product"
+        - type: object
+          properties:
+            lifecycleStatus: { type: string, enum: [Published, Draft, Archived] }
+            hasDraft: { type: boolean }
+            draftSavedAt: { type: string, format: date-time, nullable: true }
+            draft:
+              oneOf:
+                - $ref: "#/components/schemas/ProductDraft"
+                - type: "null"
+          required: [lifecycleStatus, hasDraft, draftSavedAt, draft]
     ProductInput:
       type: object
       properties:
@@ -188,10 +374,24 @@ components:
         note: { type: string, maxLength: 500 }
         category: { type: string, minLength: 1, maxLength: 120 }
         techSheet: { type: string, maxLength: 240 }
-        publishStatus: { type: string, enum: [Published, Draft] }
+        publishStatus: { type: string, enum: [Published, Draft, Archived] }
         details:
           $ref: "#/components/schemas/ProductDetails"
       required: [name, slug, price, packSize, status, note, category, techSheet, publishStatus, details]
+    ProductCreateInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 160 }
+        slug: { type: string, minLength: 1, maxLength: 180, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        price: { type: string, minLength: 1, maxLength: 80 }
+        packSize: { type: string, minLength: 1, maxLength: 80 }
+        status: { type: string, enum: [in-stock, low, very-low, unavailable] }
+        note: { type: string, maxLength: 500 }
+        category: { type: string, minLength: 1, maxLength: 120 }
+        techSheet: { type: string, maxLength: 240 }
+        details:
+          $ref: "#/components/schemas/ProductDetails"
+      required: [name, slug, price, packSize, status, note, category, techSheet, details]
     ProductUpdate:
       type: object
       properties:
@@ -202,7 +402,6 @@ components:
         note: { type: string, maxLength: 500 }
         category: { type: string, minLength: 1, maxLength: 120 }
         techSheet: { type: string, maxLength: 240 }
-        publishStatus: { type: string, enum: [Published, Draft] }
         details:
           $ref: "#/components/schemas/ProductDetails"
     ProductDetails:
@@ -335,13 +534,16 @@ components:
       properties:
         totalProducts: { type: number }
         publishedProducts: { type: number }
+        draftProducts: { type: number }
+        archivedProducts: { type: number }
+        pendingDrafts: { type: number }
         lowStockProducts: { type: number }
         missingTechSheets: { type: number }
         recentProducts:
           type: array
           items:
             $ref: "#/components/schemas/Product"
-      required: [totalProducts, publishedProducts, lowStockProducts, missingTechSheets, recentProducts]
+      required: [totalProducts, publishedProducts, draftProducts, archivedProducts, pendingDrafts, lowStockProducts, missingTechSheets, recentProducts]
     AvailabilityRow:
       type: object
       properties:

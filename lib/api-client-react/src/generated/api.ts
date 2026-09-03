@@ -20,13 +20,15 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminProduct,
   AdminSummary,
   AvailabilityRow,
   EnquiryCreated,
   EnquiryInput,
   HealthStatus,
   Product,
-  ProductInput,
+  ProductCreateInput,
+  ProductDraftInput,
   ProductUpdate
 } from './api.schemas';
 
@@ -223,14 +225,14 @@ export const getCreateProductUrl = () => {
 /**
  * @summary Create a product
  */
-export const createProduct = async (productInput: ProductInput, options?: Parameters<typeof customFetch>[1]): Promise<Product> => {
+export const createProduct = async (productCreateInput: ProductCreateInput, options?: Parameters<typeof customFetch>[1]): Promise<Product> => {
 
   return customFetch<Product>(getCreateProductUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(productInput)
+    body: JSON.stringify(productCreateInput)
   }
 );}
 
@@ -239,8 +241,8 @@ export const createProduct = async (productInput: ProductInput, options?: Parame
 
 
 export const getCreateProductMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{data: BodyType<ProductInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{data: BodyType<ProductInput>}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{data: BodyType<ProductCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{data: BodyType<ProductCreateInput>}, TContext> => {
 
 const mutationKey = ['createProduct'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -252,7 +254,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createProduct>>, {data: BodyType<ProductInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createProduct>>, {data: BodyType<ProductCreateInput>}> = (props) => {
           const {data} = props ?? {};
 
           return  createProduct(data,requestOptions)
@@ -266,18 +268,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type CreateProductMutationResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>
-    export type CreateProductMutationBody = BodyType<ProductInput>
+    export type CreateProductMutationBody = BodyType<ProductCreateInput>
     export type CreateProductMutationError = ErrorType<void>
 
     /**
  * @summary Create a product
  */
 export const useCreateProduct = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{data: BodyType<ProductInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{data: BodyType<ProductCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createProduct>>,
         TError,
-        {data: BodyType<ProductInput>},
+        {data: BodyType<ProductCreateInput>},
         TContext
       > => {
       return useMutation(getCreateProductMutationOptions(options));
@@ -502,6 +504,516 @@ export function useGetAdminSummary<TData = Awaited<ReturnType<typeof getAdminSum
 
 
 
+
+export const getListAdminProductsUrl = () => {
+
+
+
+
+  return `/api/admin/products`
+}
+
+/**
+ * @summary List catalogue products with lifecycle metadata
+ */
+export const listAdminProducts = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminProduct[]> => {
+
+  return customFetch<AdminProduct[]>(getListAdminProductsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminProductsQueryKey = () => {
+    return [
+    `/api/admin/products`
+    ] as const;
+    }
+
+
+export const getListAdminProductsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminProducts>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminProductsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminProducts>>> = ({ signal }) => listAdminProducts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminProducts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminProductsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminProducts>>>
+export type ListAdminProductsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List catalogue products with lifecycle metadata
+ */
+
+export function useListAdminProducts<TData = Awaited<ReturnType<typeof listAdminProducts>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminProductsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminProductUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/products/${id}`
+}
+
+/**
+ * @summary Get a product and its current draft revision
+ */
+export const getAdminProduct = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<AdminProduct> => {
+
+  return customFetch<AdminProduct>(getGetAdminProductUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminProductQueryKey = (id: number,) => {
+    return [
+    `/api/admin/products/${id}`
+    ] as const;
+    }
+
+
+export const getGetAdminProductQueryOptions = <TData = Awaited<ReturnType<typeof getAdminProduct>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminProduct>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminProductQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminProduct>>> = ({ signal }) => getAdminProduct(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminProduct>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminProductQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminProduct>>>
+export type GetAdminProductQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a product and its current draft revision
+ */
+
+export function useGetAdminProduct<TData = Awaited<ReturnType<typeof getAdminProduct>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminProduct>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminProductQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSaveProductDraftRevisionUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/products/${id}/draft`
+}
+
+/**
+ * @summary Save a product draft revision
+ */
+export const saveProductDraftRevision = async (id: number,
+    productDraftInput: ProductDraftInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminProduct> => {
+
+  return customFetch<AdminProduct>(getSaveProductDraftRevisionUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(productDraftInput)
+  }
+);}
+
+
+
+
+
+export const getSaveProductDraftRevisionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveProductDraftRevision>>, TError,{id: number;data: BodyType<ProductDraftInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveProductDraftRevision>>, TError,{id: number;data: BodyType<ProductDraftInput>}, TContext> => {
+
+const mutationKey = ['saveProductDraftRevision'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveProductDraftRevision>>, {id: number;data: BodyType<ProductDraftInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  saveProductDraftRevision(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveProductDraftRevisionMutationResult = NonNullable<Awaited<ReturnType<typeof saveProductDraftRevision>>>
+    export type SaveProductDraftRevisionMutationBody = BodyType<ProductDraftInput>
+    export type SaveProductDraftRevisionMutationError = ErrorType<void>
+
+    /**
+ * @summary Save a product draft revision
+ */
+export const useSaveProductDraftRevision = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveProductDraftRevision>>, TError,{id: number;data: BodyType<ProductDraftInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveProductDraftRevision>>,
+        TError,
+        {id: number;data: BodyType<ProductDraftInput>},
+        TContext
+      > => {
+      return useMutation(getSaveProductDraftRevisionMutationOptions(options));
+    }
+
+export const getPublishProductUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/products/${id}/publish`
+}
+
+/**
+ * @summary Promote the current draft to the public catalogue
+ */
+export const publishProduct = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<AdminProduct> => {
+
+  return customFetch<AdminProduct>(getPublishProductUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPublishProductMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['publishProduct'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishProduct>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  publishProduct(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PublishProductMutationResult = NonNullable<Awaited<ReturnType<typeof publishProduct>>>
+
+    export type PublishProductMutationError = ErrorType<void>
+
+    /**
+ * @summary Promote the current draft to the public catalogue
+ */
+export const usePublishProduct = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof publishProduct>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPublishProductMutationOptions(options));
+    }
+
+export const getArchiveProductUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/products/${id}/archive`
+}
+
+/**
+ * @summary Move a product to the archive
+ */
+export const archiveProduct = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<AdminProduct> => {
+
+  return customFetch<AdminProduct>(getArchiveProductUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getArchiveProductMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof archiveProduct>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['archiveProduct'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof archiveProduct>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  archiveProduct(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ArchiveProductMutationResult = NonNullable<Awaited<ReturnType<typeof archiveProduct>>>
+
+    export type ArchiveProductMutationError = ErrorType<void>
+
+    /**
+ * @summary Move a product to the archive
+ */
+export const useArchiveProduct = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof archiveProduct>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getArchiveProductMutationOptions(options));
+    }
+
+export const getRestoreProductUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/products/${id}/restore`
+}
+
+/**
+ * @summary Restore an archived product to Draft
+ */
+export const restoreProduct = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<AdminProduct> => {
+
+  return customFetch<AdminProduct>(getRestoreProductUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRestoreProductMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restoreProduct>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['restoreProduct'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restoreProduct>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  restoreProduct(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestoreProductMutationResult = NonNullable<Awaited<ReturnType<typeof restoreProduct>>>
+
+    export type RestoreProductMutationError = ErrorType<void>
+
+    /**
+ * @summary Restore an archived product to Draft
+ */
+export const useRestoreProduct = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restoreProduct>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getRestoreProductMutationOptions(options));
+    }
+
+export const getDiscardProductDraftUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/products/${id}/discard-draft`
+}
+
+/**
+ * @summary Discard pending changes to a published product
+ */
+export const discardProductDraft = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<AdminProduct> => {
+
+  return customFetch<AdminProduct>(getDiscardProductDraftUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getDiscardProductDraftMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discardProductDraft>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof discardProductDraft>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['discardProductDraft'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof discardProductDraft>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  discardProductDraft(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DiscardProductDraftMutationResult = NonNullable<Awaited<ReturnType<typeof discardProductDraft>>>
+
+    export type DiscardProductDraftMutationError = ErrorType<void>
+
+    /**
+ * @summary Discard pending changes to a published product
+ */
+export const useDiscardProductDraft = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discardProductDraft>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof discardProductDraft>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDiscardProductDraftMutationOptions(options));
+    }
 
 export const getListAvailabilityUrl = () => {
 

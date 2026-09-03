@@ -6,33 +6,33 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ProductDetails } from './productDetails';
-import type { ProductUpdateStatus } from './productUpdateStatus';
+import type { ProductDraftInputStatus } from './productDraftInputStatus';
 
-export interface ProductUpdate {
+export interface ProductDraftInput {
   /**
      * @minLength 1
      * @maxLength 160
      */
-  name?: string;
+  name: string;
   /**
      * @minLength 1
      * @maxLength 80
      */
-  price?: string;
+  price: string;
   /**
      * @minLength 1
      * @maxLength 80
      */
-  packSize?: string;
-  status?: ProductUpdateStatus;
+  packSize: string;
+  status: ProductDraftInputStatus;
   /** @maxLength 500 */
-  note?: string;
+  note: string;
   /**
      * @minLength 1
      * @maxLength 120
      */
-  category?: string;
+  category: string;
   /** @maxLength 240 */
-  techSheet?: string;
-  details?: ProductDetails;
+  techSheet: string;
+  details: ProductDetails;
 }
