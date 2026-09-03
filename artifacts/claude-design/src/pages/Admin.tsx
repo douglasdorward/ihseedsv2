@@ -517,6 +517,21 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
     const action = submitter?.value; // "draft" or "publish"
 
+    if (action === "publish") {
+      const missing = [
+        !form.slug.trim() && "Slug",
+        !form.category.trim() && "Category",
+        !form.details.recordType && "Record type",
+        !form.details.summary.trim() && "Summary",
+        !form.details.description.trim() && "Product description",
+      ].filter(Boolean) as string[];
+      if (missing.length > 0) {
+        setError(`Complete these fields before publishing: ${missing.join(", ")}.`);
+        setSaving(false);
+        return;
+      }
+    }
+
     if (action === "publish" && !window.confirm("Publish these changes? This will replace the currently live version.")) {
       setSaving(false);
       return;
@@ -649,14 +664,14 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
           <section className="admin-panel admin-form-card">
             <h2>Identity</h2>
             <div className="admin-form-grid">
-              <label>Product name<input required value={currentForm.name} onChange={(event) => setField("name", event.target.value)} placeholder="e.g. SouWest™ Pasture Mix"/></label>
-              <label>Slug<input required disabled={!isNew} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={currentForm.slug} onChange={(event) => setField("slug", event.target.value.toLowerCase())} placeholder="souwest-pasture-mix"/><small>Stable URL key. It cannot be changed after the product is created.</small></label>
+               <label>Product name<small>Required to save a draft or publish.</small><input required value={currentForm.name} onChange={(event) => setField("name", event.target.value)} placeholder="e.g. SouWest™ Pasture Mix"/></label>
+               <label>Slug<input disabled={!isNew} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={currentForm.slug} onChange={(event) => setField("slug", event.target.value.toLowerCase())} placeholder="souwest-pasture-mix"/><small>Stable URL key. It cannot be changed after the product is created. Required to publish.</small></label>
               <label>Stock code<input value={currentForm.details.stockCode} onChange={(event) => setDetail("stockCode", event.target.value)} placeholder="e.g. EQUI or SOU / SOU500"/></label>
               <label>Botanical name<input value={currentForm.details.botanicalName} onChange={(event) => setDetail("botanicalName", event.target.value)} placeholder="e.g. Lolium multiflorum"/></label>
-               <label>Category<select value={currentForm.category} onChange={(event) => setField("category", event.target.value)}>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+               <label>Category<small>Required to publish.</small><select value={currentForm.category} onChange={(event) => setField("category", event.target.value)}>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
                <label>Guide section<select value={currentForm.details.guideSection} onChange={(event) => setDetail("guideSection", event.target.value)}>{guideSections.map((section) => <option key={section || "not-set"} value={section}>{section || "Not set"}</option>)}</select></label>
             </div>
-            <div className="admin-choice-field"><span>Record type</span><div>{(["Mix", "Variety", "Commodity / generic"] as RecordKind[]).map((kind) => <button key={kind} type="button" className={currentForm.details.recordType === kind ? "selected" : ""} onClick={() => setDetail("recordType", kind as any)}>{kind}</button>)}</div></div>
+               <div className="admin-choice-field"><span>Record type <small>Required to publish.</small></span><div>{(["Mix", "Variety", "Commodity / generic"] as RecordKind[]).map((kind) => <button key={kind} type="button" className={currentForm.details.recordType === kind ? "selected" : ""} onClick={() => setDetail("recordType", kind as any)}>{kind}</button>)}</div></div>
             <div className="admin-repeat-group">
               <div className="admin-section-heading"><div><h3>Also known as</h3><p>Alternative trade or catalogue names.</p></div>{viewMode !== "live" && !isArchived && <button className="admin-button outline small" type="button" onClick={() => addStringItem("alsoKnownAs")}><Icon name="plus" size={16}/>Add name</button>}</div>
               {currentForm.details.alsoKnownAs.map((alias, index) => <div className="admin-repeat-row" key={index}><input value={alias} onChange={(event) => updateStringItem("alsoKnownAs", index, event.target.value)} placeholder="Alternative name"/>{viewMode !== "live" && !isArchived && <button type="button" onClick={() => removeStringItem("alsoKnownAs", index)} aria-label="Remove alternative name">×</button>}</div>)}
@@ -720,15 +735,15 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
 
           <section className="admin-panel admin-form-card">
             <div><h2>Summary &amp; description</h2><p>The summary sits under the product name; the description becomes the body of the public product page.</p></div>
-            <label>Summary<input value={currentForm.details.summary} onChange={(event) => { setDetail("summary", event.target.value); setField("note", event.target.value); }} placeholder="e.g. The Horse’s Choice. Suitable for all livestock."/></label>
-            <label>Product description<small>Blank lines between paragraphs are preserved on the public page.</small><textarea rows={7} value={currentForm.details.description} onChange={(event) => setDetail("description", event.target.value)} placeholder="Describe the product, where it performs, and how it is used."/></label>
+             <label>Summary<small>Required to publish.</small><input value={currentForm.details.summary} onChange={(event) => { setDetail("summary", event.target.value); setField("note", event.target.value); }} placeholder="e.g. The Horse’s Choice. Suitable for all livestock."/></label>
+             <label>Product description<small>Required to publish. Blank lines between paragraphs are preserved on the public page.</small><textarea rows={7} value={currentForm.details.description} onChange={(event) => setDetail("description", event.target.value)} placeholder="Describe the product, where it performs, and how it is used."/></label>
             <label>Internal notes<small>Not published. Anything the office needs to know about this line.</small><textarea rows={2} value={currentForm.details.notes} onChange={(event) => setDetail("notes", event.target.value)} placeholder="Internal note"/></label>
           </section>
 
           <section className="admin-panel admin-form-card">
             <div><h2>Commercial &amp; legal</h2><p>Record ownership, certification, supplier, and licence conditions.</p></div>
             <div className="admin-form-grid">
-              <label>Price display<input required value={currentForm.price} onChange={(event) => setField("price", event.target.value)} placeholder="Contact for pricing"/></label>
+               <label>Price display<input value={currentForm.price} onChange={(event) => setField("price", event.target.value)} placeholder="Contact for pricing"/></label>
               <label>Supplier name<input value={currentForm.details.supplierName} onChange={(event) => setDetail("supplierName", event.target.value)} placeholder="Supplier or breeder"/></label>
               <label>PBR details<input value={currentForm.details.pbrDetails} onChange={(event) => setDetail("pbrDetails", event.target.value)} placeholder="Certificate or registration reference"/></label>
               <label className="wide">Licence restriction<textarea rows={3} value={currentForm.details.licenceRestriction} onChange={(event) => setDetail("licenceRestriction", event.target.value)} placeholder="Licence restrictions or propagation conditions."/></label>

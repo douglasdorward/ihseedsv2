@@ -47,6 +47,17 @@ function normalizeEditable(payload: ProductEditablePayload): ProductEditablePayl
   return { ...payload, details: normalizeProductDetails(payload.details, payload.packSize) };
 }
 
+function getPublishValidationErrors(product: Product, payload: ProductEditablePayload) {
+  return [
+    !payload.name.trim() && "Product name",
+    !product.slug.trim() && "Slug",
+    !payload.category.trim() && "Category",
+    !payload.details.recordType && "Record type",
+    !payload.details.summary.trim() && "Summary",
+    !payload.details.description.trim() && "Product description",
+  ].filter(Boolean) as string[];
+}
+
 async function ensureProducts() {
   const existing = await db.select().from(productsTable).orderBy(asc(productsTable.id));
   if (existing.length > 0) {
@@ -132,7 +143,11 @@ router.get("/products", async (req, res): Promise<void> => {
 });
 
 router.post("/products", async (req, res): Promise<void> => {
-  const parsed = insertProductSchema.safeParse({ ...req.body, publishStatus: "Draft" });
+  const parsed = insertProductSchema.safeParse({
+    ...req.body,
+    slug: typeof req.body.slug === "string" && req.body.slug.trim() ? req.body.slug : createSlug(String(req.body.name ?? "")),
+    publishStatus: "Draft",
+  });
   if (!parsed.success) {
     req.log.warn({ errors: parsed.error.flatten() }, "Invalid product create request");
     res.status(400).json({ error: "Please complete all required product fields." });
@@ -271,8 +286,11 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       const [draft] = await tx.select().from(productDraftsTable)
         .where(eq(productDraftsTable.productId, id));
       const payload = draft?.snapshot ?? editableFromProduct(lockedProduct);
+      const normalizedPayload = normalizeEditable(payload);
+      const missingFields = getPublishValidationErrors(lockedProduct, normalizedPayload);
+      if (missingFields.length > 0) throw new Error(`PUBLISH_VALIDATION:${missingFields.join(", ")}`);
       const [published] = await tx.update(productsTable).set({
-        ...normalizeEditable(payload),
+        ...normalizedPayload,
         publishStatus: "Published",
         publishedAt: new Date(),
         updatedAt: new Date(),
@@ -288,6 +306,10 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
     }
     if (error instanceof Error && error.message === "PRODUCT_ARCHIVED") {
       res.status(409).json({ error: "Restore this product to Draft before publishing it." });
+      return;
+    }
+    if (error instanceof Error && error.message.startsWith("PUBLISH_VALIDATION:")) {
+      res.status(400).json({ error: `Complete these fields before publishing: ${error.message.slice("PUBLISH_VALIDATION:".length)}.` });
       return;
     }
     if (error instanceof Error && error.message.includes("duplicate key")) {

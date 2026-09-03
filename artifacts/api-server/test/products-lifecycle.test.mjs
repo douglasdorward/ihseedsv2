@@ -88,7 +88,13 @@ async function createProduct(label) {
     techSheet: "",
   }), 201);
   createdProductIds.push(product.id);
-  return product;
+  return assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+    details: {
+      ...product.details,
+      summary: "Lifecycle test summary",
+      description: "Lifecycle test product description.",
+    },
+  })), 200);
 }
 
 async function adminProduct(id) {
@@ -106,6 +112,30 @@ async function availability() {
 function includesProduct(products, id) {
   return products.some((product) => product.id === id);
 }
+
+test("drafts only require a product name but publishing requires public catalogue fields", async () => {
+  const product = assertStatus(await request("POST", "/products", {
+    name: `Incomplete lifecycle draft ${testRunId}`,
+    slug: "",
+    price: "",
+    packSize: "",
+    status: "in-stock",
+    note: "",
+    category: "",
+    techSheet: "",
+  }), 201);
+  createdProductIds.push(product.id);
+
+  assert.equal(product.publishStatus, "Draft");
+  assert.ok(product.slug, "Expected a stable slug to be generated from the product name");
+  assert.equal(includesProduct(await publicProducts(), product.id), false);
+
+  const publishResult = await request("POST", `/admin/products/${product.id}/publish`);
+  assertStatus(publishResult, 400);
+  assert.match(publishResult.data.error, /Category/);
+  assert.match(publishResult.data.error, /Summary/);
+  assert.match(publishResult.data.error, /Product description/);
+});
 
 before(async () => {
   if (!process.env.DATABASE_URL) {
