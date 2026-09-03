@@ -25,7 +25,6 @@ export function Header() {
         <Link href="/about" className={navItemClass("/about")} aria-current={isActive("/about") ? "page" : undefined} onClick={() => setMenuOpen(false)} data-testid="link-about">About</Link>
         <Link href="/contact" className="button button-accent nav-cta" onClick={() => setMenuOpen(false)} data-testid="button-get-in-touch">Get in Touch</Link>
         <Link href="/products" className="utility-button" onClick={() => setMenuOpen(false)} data-testid="button-search" aria-label="Search catalogue"><Icon name="search" size={18} /></Link>
-        <Link href="/contact" className="utility-button" onClick={() => setMenuOpen(false)} data-testid="button-account" aria-label="Contact IH Seeds"><Icon name="user" size={18} /></Link>
       </nav>
       <button className="mobile-menu-button" onClick={() => setMenuOpen((open) => !open)} data-testid="button-mobile-menu" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen}><Icon name={menuOpen ? "close" : "menu"} size={26} /></button>
     </header>
