@@ -6,17 +6,23 @@ export function Header() {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const navItemClass = (path: string) => `nav-link ${location.startsWith(path) && path !== "/" || (path === "/" && location === "/") ? "active" : ""}`;
+  const isActive = (path: string) => {
+    if (path === "/products") {
+      return location === "/products" || location.startsWith("/products/") || location.startsWith("/category/");
+    }
+    return location === path || location.startsWith(`${path}/`);
+  };
+  const navItemClass = (path: string) => `nav-link ${isActive(path) ? "active" : ""}`;
   
   return (
     <header className="site-header" style={{ position: "relative", zIndex: 100 }}>
       <Logo />
       <nav className={`desktop-nav ${menuOpen ? "mobile-nav-open" : ""}`} aria-label="Main navigation">
-        <Link href="/products" className={navItemClass("/products")} onClick={() => setMenuOpen(false)} data-testid="link-products">Products</Link>
-        <Link href="/guide" className={navItemClass("/guide")} onClick={() => setMenuOpen(false)} data-testid="link-guide">Seed Guide 2026</Link>
-        <Link href="/availability" className={navItemClass("/availability")} onClick={() => setMenuOpen(false)} data-testid="link-availability">Seed Availability</Link>
-        <Link href="/resources" className={navItemClass("/resources")} onClick={() => setMenuOpen(false)} data-testid="link-resources">Resources</Link>
-        <Link href="/about" className={navItemClass("/about")} onClick={() => setMenuOpen(false)} data-testid="link-about">About</Link>
+        <Link href="/products" className={navItemClass("/products")} aria-current={isActive("/products") ? "page" : undefined} onClick={() => setMenuOpen(false)} data-testid="link-products">Products</Link>
+        <Link href="/guide" className={navItemClass("/guide")} aria-current={isActive("/guide") ? "page" : undefined} onClick={() => setMenuOpen(false)} data-testid="link-guide">Seed Guide 2026</Link>
+        <Link href="/availability" className={navItemClass("/availability")} aria-current={isActive("/availability") ? "page" : undefined} onClick={() => setMenuOpen(false)} data-testid="link-availability">Seed Availability</Link>
+        <Link href="/resources" className={navItemClass("/resources")} aria-current={isActive("/resources") ? "page" : undefined} onClick={() => setMenuOpen(false)} data-testid="link-resources">Resources</Link>
+        <Link href="/about" className={navItemClass("/about")} aria-current={isActive("/about") ? "page" : undefined} onClick={() => setMenuOpen(false)} data-testid="link-about">About</Link>
         <Link href="/contact" className="button button-accent nav-cta" onClick={() => setMenuOpen(false)} data-testid="button-get-in-touch">Get in Touch</Link>
         <Link href="/products" className="utility-button" onClick={() => setMenuOpen(false)} data-testid="button-search" aria-label="Search catalogue"><Icon name="search" size={18} /></Link>
         <Link href="/contact" className="utility-button" onClick={() => setMenuOpen(false)} data-testid="button-account" aria-label="Contact IH Seeds"><Icon name="user" size={18} /></Link>
