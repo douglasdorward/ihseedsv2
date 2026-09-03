@@ -171,9 +171,11 @@ components:
         category: { type: string }
         techSheet: { type: string }
         publishStatus: { type: string }
+        details:
+          $ref: "#/components/schemas/ProductDetails"
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-      required: [id, name, price, packSize, status, note, category, techSheet, publishStatus, createdAt, updatedAt]
+      required: [id, name, price, packSize, status, note, category, techSheet, publishStatus, details, createdAt, updatedAt]
     ProductInput:
       type: object
       properties:
@@ -185,7 +187,9 @@ components:
         category: { type: string, minLength: 1, maxLength: 120 }
         techSheet: { type: string, maxLength: 240 }
         publishStatus: { type: string, enum: [Published, Draft] }
-      required: [name, price, packSize, status, note, category, techSheet, publishStatus]
+        details:
+          $ref: "#/components/schemas/ProductDetails"
+      required: [name, price, packSize, status, note, category, techSheet, publishStatus, details]
     ProductUpdate:
       type: object
       properties:
@@ -197,6 +201,51 @@ components:
         category: { type: string, minLength: 1, maxLength: 120 }
         techSheet: { type: string, maxLength: 240 }
         publishStatus: { type: string, enum: [Published, Draft] }
+        details:
+          $ref: "#/components/schemas/ProductDetails"
+    ProductDetails:
+      type: object
+      properties:
+        stockCode: { type: string, maxLength: 40 }
+        guideSection: { type: string, maxLength: 120 }
+        treatment: { type: string, maxLength: 120 }
+        kind: { type: string, enum: [Mix, Variety] }
+        rate: { type: string, maxLength: 80 }
+        rainfall: { type: string, maxLength: 80 }
+        flowering: { type: string, maxLength: 100 }
+        inoculant: { type: string, maxLength: 80 }
+        soil:
+          type: array
+          items: { type: string }
+        tolerance:
+          type: array
+          items: { type: string }
+        summary: { type: string, maxLength: 500 }
+        description: { type: string, maxLength: 5000 }
+        notes: { type: string, maxLength: 2000 }
+        components:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductComponent"
+        photos:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductPhoto"
+      required: [stockCode, guideSection, treatment, kind, rate, rainfall, flowering, inoculant, soil, tolerance, summary, description, notes, components, photos]
+    ProductComponent:
+      type: object
+      properties:
+        name: { type: string }
+        note: { type: string }
+      required: [name, note]
+    ProductPhoto:
+      type: object
+      properties:
+        slot: { type: string }
+        file: { type: string }
+        rating: { type: string }
+        src: { type: string }
+      required: [slot, file, rating, src]
     AdminSummary:
       type: object
       properties:

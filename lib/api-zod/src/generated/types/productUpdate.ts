@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ProductDetails } from './productDetails';
 import type { ProductUpdatePublishStatus } from './productUpdatePublishStatus';
 import type { ProductUpdateStatus } from './productUpdateStatus';
 
@@ -35,4 +36,5 @@ export interface ProductUpdate {
   /** @maxLength 240 */
   techSheet?: string;
   publishStatus?: ProductUpdatePublishStatus;
+  details?: ProductDetails;
 }

@@ -9,6 +9,54 @@ export interface HealthStatus {
   status: string;
 }
 
+export type ProductDetailsKind = typeof ProductDetailsKind[keyof typeof ProductDetailsKind];
+
+
+export const ProductDetailsKind = {
+  Mix: 'Mix',
+  Variety: 'Variety',
+} as const;
+
+export interface ProductComponent {
+  name: string;
+  note: string;
+}
+
+export interface ProductPhoto {
+  slot: string;
+  file: string;
+  rating: string;
+  src: string;
+}
+
+export interface ProductDetails {
+  /** @maxLength 40 */
+  stockCode: string;
+  /** @maxLength 120 */
+  guideSection: string;
+  /** @maxLength 120 */
+  treatment: string;
+  kind: ProductDetailsKind;
+  /** @maxLength 80 */
+  rate: string;
+  /** @maxLength 80 */
+  rainfall: string;
+  /** @maxLength 100 */
+  flowering: string;
+  /** @maxLength 80 */
+  inoculant: string;
+  soil: string[];
+  tolerance: string[];
+  /** @maxLength 500 */
+  summary: string;
+  /** @maxLength 5000 */
+  description: string;
+  /** @maxLength 2000 */
+  notes: string;
+  components: ProductComponent[];
+  photos: ProductPhoto[];
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -19,6 +67,7 @@ export interface Product {
   category: string;
   techSheet: string;
   publishStatus: string;
+  details: ProductDetails;
   createdAt: string;
   updatedAt: string;
 }
@@ -68,6 +117,7 @@ export interface ProductInput {
   /** @maxLength 240 */
   techSheet: string;
   publishStatus: ProductInputPublishStatus;
+  details: ProductDetails;
 }
 
 export type ProductUpdateStatus = typeof ProductUpdateStatus[keyof typeof ProductUpdateStatus];
@@ -115,6 +165,7 @@ export interface ProductUpdate {
   /** @maxLength 240 */
   techSheet?: string;
   publishStatus?: ProductUpdatePublishStatus;
+  details?: ProductDetails;
 }
 
 export interface AdminSummary {

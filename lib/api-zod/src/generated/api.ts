@@ -20,6 +20,28 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary List pasture seed products
  */
+export const listProductsResponseDetailsStockCodeMax = 40;
+
+export const listProductsResponseDetailsGuideSectionMax = 120;
+
+export const listProductsResponseDetailsTreatmentMax = 120;
+
+export const listProductsResponseDetailsRateMax = 80;
+
+export const listProductsResponseDetailsRainfallMax = 80;
+
+export const listProductsResponseDetailsFloweringMax = 100;
+
+export const listProductsResponseDetailsInoculantMax = 80;
+
+export const listProductsResponseDetailsSummaryMax = 500;
+
+export const listProductsResponseDetailsDescriptionMax = 5000;
+
+export const listProductsResponseDetailsNotesMax = 2000;
+
+
+
 export const ListProductsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -30,6 +52,31 @@ export const ListProductsResponseItem = zod.object({
   "category": zod.string(),
   "techSheet": zod.string(),
   "publishStatus": zod.string(),
+  "details": zod.object({
+  "stockCode": zod.string().max(listProductsResponseDetailsStockCodeMax),
+  "guideSection": zod.string().max(listProductsResponseDetailsGuideSectionMax),
+  "treatment": zod.string().max(listProductsResponseDetailsTreatmentMax),
+  "kind": zod.enum(['Mix', 'Variety']),
+  "rate": zod.string().max(listProductsResponseDetailsRateMax),
+  "rainfall": zod.string().max(listProductsResponseDetailsRainfallMax),
+  "flowering": zod.string().max(listProductsResponseDetailsFloweringMax),
+  "inoculant": zod.string().max(listProductsResponseDetailsInoculantMax),
+  "soil": zod.array(zod.string()),
+  "tolerance": zod.array(zod.string()),
+  "summary": zod.string().max(listProductsResponseDetailsSummaryMax),
+  "description": zod.string().max(listProductsResponseDetailsDescriptionMax),
+  "notes": zod.string().max(listProductsResponseDetailsNotesMax),
+  "components": zod.array(zod.object({
+  "name": zod.string(),
+  "note": zod.string()
+})),
+  "photos": zod.array(zod.object({
+  "slot": zod.string(),
+  "file": zod.string(),
+  "rating": zod.string(),
+  "src": zod.string()
+}))
+}),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -51,6 +98,26 @@ export const createProductBodyCategoryMax = 120;
 
 export const createProductBodyTechSheetMax = 240;
 
+export const createProductBodyDetailsStockCodeMax = 40;
+
+export const createProductBodyDetailsGuideSectionMax = 120;
+
+export const createProductBodyDetailsTreatmentMax = 120;
+
+export const createProductBodyDetailsRateMax = 80;
+
+export const createProductBodyDetailsRainfallMax = 80;
+
+export const createProductBodyDetailsFloweringMax = 100;
+
+export const createProductBodyDetailsInoculantMax = 80;
+
+export const createProductBodyDetailsSummaryMax = 500;
+
+export const createProductBodyDetailsDescriptionMax = 5000;
+
+export const createProductBodyDetailsNotesMax = 2000;
+
 
 
 export const CreateProductBody = zod.object({
@@ -61,8 +128,55 @@ export const CreateProductBody = zod.object({
   "note": zod.string().max(createProductBodyNoteMax),
   "category": zod.string().min(1).max(createProductBodyCategoryMax),
   "techSheet": zod.string().max(createProductBodyTechSheetMax),
-  "publishStatus": zod.enum(['Published', 'Draft'])
+  "publishStatus": zod.enum(['Published', 'Draft']),
+  "details": zod.object({
+  "stockCode": zod.string().max(createProductBodyDetailsStockCodeMax),
+  "guideSection": zod.string().max(createProductBodyDetailsGuideSectionMax),
+  "treatment": zod.string().max(createProductBodyDetailsTreatmentMax),
+  "kind": zod.enum(['Mix', 'Variety']),
+  "rate": zod.string().max(createProductBodyDetailsRateMax),
+  "rainfall": zod.string().max(createProductBodyDetailsRainfallMax),
+  "flowering": zod.string().max(createProductBodyDetailsFloweringMax),
+  "inoculant": zod.string().max(createProductBodyDetailsInoculantMax),
+  "soil": zod.array(zod.string()),
+  "tolerance": zod.array(zod.string()),
+  "summary": zod.string().max(createProductBodyDetailsSummaryMax),
+  "description": zod.string().max(createProductBodyDetailsDescriptionMax),
+  "notes": zod.string().max(createProductBodyDetailsNotesMax),
+  "components": zod.array(zod.object({
+  "name": zod.string(),
+  "note": zod.string()
+})),
+  "photos": zod.array(zod.object({
+  "slot": zod.string(),
+  "file": zod.string(),
+  "rating": zod.string(),
+  "src": zod.string()
+}))
 })
+})
+
+export const createProductResponseDetailsStockCodeMax = 40;
+
+export const createProductResponseDetailsGuideSectionMax = 120;
+
+export const createProductResponseDetailsTreatmentMax = 120;
+
+export const createProductResponseDetailsRateMax = 80;
+
+export const createProductResponseDetailsRainfallMax = 80;
+
+export const createProductResponseDetailsFloweringMax = 100;
+
+export const createProductResponseDetailsInoculantMax = 80;
+
+export const createProductResponseDetailsSummaryMax = 500;
+
+export const createProductResponseDetailsDescriptionMax = 5000;
+
+export const createProductResponseDetailsNotesMax = 2000;
+
+
 
 export const CreateProductResponse = zod.object({
   "id": zod.number(),
@@ -74,6 +188,31 @@ export const CreateProductResponse = zod.object({
   "category": zod.string(),
   "techSheet": zod.string(),
   "publishStatus": zod.string(),
+  "details": zod.object({
+  "stockCode": zod.string().max(createProductResponseDetailsStockCodeMax),
+  "guideSection": zod.string().max(createProductResponseDetailsGuideSectionMax),
+  "treatment": zod.string().max(createProductResponseDetailsTreatmentMax),
+  "kind": zod.enum(['Mix', 'Variety']),
+  "rate": zod.string().max(createProductResponseDetailsRateMax),
+  "rainfall": zod.string().max(createProductResponseDetailsRainfallMax),
+  "flowering": zod.string().max(createProductResponseDetailsFloweringMax),
+  "inoculant": zod.string().max(createProductResponseDetailsInoculantMax),
+  "soil": zod.array(zod.string()),
+  "tolerance": zod.array(zod.string()),
+  "summary": zod.string().max(createProductResponseDetailsSummaryMax),
+  "description": zod.string().max(createProductResponseDetailsDescriptionMax),
+  "notes": zod.string().max(createProductResponseDetailsNotesMax),
+  "components": zod.array(zod.object({
+  "name": zod.string(),
+  "note": zod.string()
+})),
+  "photos": zod.array(zod.object({
+  "slot": zod.string(),
+  "file": zod.string(),
+  "rating": zod.string(),
+  "src": zod.string()
+}))
+}),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -98,6 +237,26 @@ export const updateProductBodyCategoryMax = 120;
 
 export const updateProductBodyTechSheetMax = 240;
 
+export const updateProductBodyDetailsStockCodeMax = 40;
+
+export const updateProductBodyDetailsGuideSectionMax = 120;
+
+export const updateProductBodyDetailsTreatmentMax = 120;
+
+export const updateProductBodyDetailsRateMax = 80;
+
+export const updateProductBodyDetailsRainfallMax = 80;
+
+export const updateProductBodyDetailsFloweringMax = 100;
+
+export const updateProductBodyDetailsInoculantMax = 80;
+
+export const updateProductBodyDetailsSummaryMax = 500;
+
+export const updateProductBodyDetailsDescriptionMax = 5000;
+
+export const updateProductBodyDetailsNotesMax = 2000;
+
 
 
 export const UpdateProductBody = zod.object({
@@ -108,8 +267,55 @@ export const UpdateProductBody = zod.object({
   "note": zod.string().max(updateProductBodyNoteMax).optional(),
   "category": zod.string().min(1).max(updateProductBodyCategoryMax).optional(),
   "techSheet": zod.string().max(updateProductBodyTechSheetMax).optional(),
-  "publishStatus": zod.enum(['Published', 'Draft']).optional()
+  "publishStatus": zod.enum(['Published', 'Draft']).optional(),
+  "details": zod.object({
+  "stockCode": zod.string().max(updateProductBodyDetailsStockCodeMax),
+  "guideSection": zod.string().max(updateProductBodyDetailsGuideSectionMax),
+  "treatment": zod.string().max(updateProductBodyDetailsTreatmentMax),
+  "kind": zod.enum(['Mix', 'Variety']),
+  "rate": zod.string().max(updateProductBodyDetailsRateMax),
+  "rainfall": zod.string().max(updateProductBodyDetailsRainfallMax),
+  "flowering": zod.string().max(updateProductBodyDetailsFloweringMax),
+  "inoculant": zod.string().max(updateProductBodyDetailsInoculantMax),
+  "soil": zod.array(zod.string()),
+  "tolerance": zod.array(zod.string()),
+  "summary": zod.string().max(updateProductBodyDetailsSummaryMax),
+  "description": zod.string().max(updateProductBodyDetailsDescriptionMax),
+  "notes": zod.string().max(updateProductBodyDetailsNotesMax),
+  "components": zod.array(zod.object({
+  "name": zod.string(),
+  "note": zod.string()
+})),
+  "photos": zod.array(zod.object({
+  "slot": zod.string(),
+  "file": zod.string(),
+  "rating": zod.string(),
+  "src": zod.string()
+}))
+}).optional()
 })
+
+export const updateProductResponseDetailsStockCodeMax = 40;
+
+export const updateProductResponseDetailsGuideSectionMax = 120;
+
+export const updateProductResponseDetailsTreatmentMax = 120;
+
+export const updateProductResponseDetailsRateMax = 80;
+
+export const updateProductResponseDetailsRainfallMax = 80;
+
+export const updateProductResponseDetailsFloweringMax = 100;
+
+export const updateProductResponseDetailsInoculantMax = 80;
+
+export const updateProductResponseDetailsSummaryMax = 500;
+
+export const updateProductResponseDetailsDescriptionMax = 5000;
+
+export const updateProductResponseDetailsNotesMax = 2000;
+
+
 
 export const UpdateProductResponse = zod.object({
   "id": zod.number(),
@@ -121,6 +327,31 @@ export const UpdateProductResponse = zod.object({
   "category": zod.string(),
   "techSheet": zod.string(),
   "publishStatus": zod.string(),
+  "details": zod.object({
+  "stockCode": zod.string().max(updateProductResponseDetailsStockCodeMax),
+  "guideSection": zod.string().max(updateProductResponseDetailsGuideSectionMax),
+  "treatment": zod.string().max(updateProductResponseDetailsTreatmentMax),
+  "kind": zod.enum(['Mix', 'Variety']),
+  "rate": zod.string().max(updateProductResponseDetailsRateMax),
+  "rainfall": zod.string().max(updateProductResponseDetailsRainfallMax),
+  "flowering": zod.string().max(updateProductResponseDetailsFloweringMax),
+  "inoculant": zod.string().max(updateProductResponseDetailsInoculantMax),
+  "soil": zod.array(zod.string()),
+  "tolerance": zod.array(zod.string()),
+  "summary": zod.string().max(updateProductResponseDetailsSummaryMax),
+  "description": zod.string().max(updateProductResponseDetailsDescriptionMax),
+  "notes": zod.string().max(updateProductResponseDetailsNotesMax),
+  "components": zod.array(zod.object({
+  "name": zod.string(),
+  "note": zod.string()
+})),
+  "photos": zod.array(zod.object({
+  "slot": zod.string(),
+  "file": zod.string(),
+  "rating": zod.string(),
+  "src": zod.string()
+}))
+}),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -139,6 +370,28 @@ export const DeleteProductResponse = zod.void()
 /**
  * @summary Get product management dashboard summary
  */
+export const getAdminSummaryResponseRecentProductsItemDetailsStockCodeMax = 40;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsGuideSectionMax = 120;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsTreatmentMax = 120;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsRateMax = 80;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsRainfallMax = 80;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsFloweringMax = 100;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsInoculantMax = 80;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsSummaryMax = 500;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsDescriptionMax = 5000;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsNotesMax = 2000;
+
+
+
 export const GetAdminSummaryResponse = zod.object({
   "totalProducts": zod.number(),
   "publishedProducts": zod.number(),
@@ -154,6 +407,31 @@ export const GetAdminSummaryResponse = zod.object({
   "category": zod.string(),
   "techSheet": zod.string(),
   "publishStatus": zod.string(),
+  "details": zod.object({
+  "stockCode": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsStockCodeMax),
+  "guideSection": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsGuideSectionMax),
+  "treatment": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsTreatmentMax),
+  "kind": zod.enum(['Mix', 'Variety']),
+  "rate": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsRateMax),
+  "rainfall": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsRainfallMax),
+  "flowering": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsFloweringMax),
+  "inoculant": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsInoculantMax),
+  "soil": zod.array(zod.string()),
+  "tolerance": zod.array(zod.string()),
+  "summary": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSummaryMax),
+  "description": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsDescriptionMax),
+  "notes": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsNotesMax),
+  "components": zod.array(zod.object({
+  "name": zod.string(),
+  "note": zod.string()
+})),
+  "photos": zod.array(zod.object({
+  "slot": zod.string(),
+  "file": zod.string(),
+  "rating": zod.string(),
+  "src": zod.string()
+}))
+}),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 }))

@@ -4,6 +4,26 @@ import { navigate, useLocation } from "../router";
 
 type ProductStatus = "in-stock" | "low" | "very-low" | "unavailable";
 type PublishStatus = "Published" | "Draft";
+type RecordKind = "Mix" | "Variety";
+type ProductComponent = { name: string; note: string };
+type ProductPhoto = { slot: string; file: string; rating: string; src: string };
+type ProductDetails = {
+  stockCode: string;
+  guideSection: string;
+  treatment: string;
+  kind: RecordKind;
+  rate: string;
+  rainfall: string;
+  flowering: string;
+  inoculant: string;
+  soil: string[];
+  tolerance: string[];
+  summary: string;
+  description: string;
+  notes: string;
+  components: ProductComponent[];
+  photos: ProductPhoto[];
+};
 
 type AdminProduct = {
   id: number;
@@ -15,6 +35,7 @@ type AdminProduct = {
   category: string;
   techSheet: string;
   publishStatus: PublishStatus;
+  details: ProductDetails;
   createdAt: string;
   updatedAt: string;
 };
@@ -30,6 +51,27 @@ const blankProduct: ProductInput = {
   category: "Specialty Mixes",
   techSheet: "",
   publishStatus: "Draft",
+  details: {
+    stockCode: "",
+    guideSection: "Specialty mixes",
+    treatment: "",
+    kind: "Mix",
+    rate: "",
+    rainfall: "",
+    flowering: "",
+    inoculant: "",
+    soil: [],
+    tolerance: [],
+    summary: "",
+    description: "",
+    notes: "",
+    components: [{ name: "", note: "" }],
+    photos: [
+      { slot: "Photo 1 · Hero", file: "", rating: "", src: "" },
+      { slot: "Photo 2", file: "", rating: "", src: "" },
+      { slot: "Photo 3", file: "", rating: "", src: "" },
+    ],
+  },
 };
 
 const statusOptions: { value: ProductStatus; label: string }[] = [
@@ -293,42 +335,43 @@ function ProductEditor({
   isNew: boolean;
   reload: () => Promise<void>;
 }) {
-  const [form, setForm] = useState<ProductInput>(product ? {
-    name: product.name,
-    price: product.price,
-    packSize: product.packSize,
-    status: product.status,
-    note: product.note,
-    category: product.category,
-    techSheet: product.techSheet,
-    publishStatus: product.publishStatus,
-  } : blankProduct);
+  const toForm = (item?: AdminProduct): ProductInput => item ? {
+    name: item.name,
+    price: item.price,
+    packSize: item.packSize,
+    status: item.status,
+    note: item.note,
+    category: item.category,
+    techSheet: item.techSheet,
+    publishStatus: item.publishStatus,
+    details: { ...blankProduct.details, ...item.details },
+  } : { ...blankProduct, details: { ...blankProduct.details, components: [...blankProduct.details.components], photos: [...blankProduct.details.photos] } };
+  const [form, setForm] = useState<ProductInput>(() => toForm(product));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (product) setForm({
-      name: product.name,
-      price: product.price,
-      packSize: product.packSize,
-      status: product.status,
-      note: product.note,
-      category: product.category,
-      techSheet: product.techSheet,
-      publishStatus: product.publishStatus,
-    });
+    setForm(toForm(product));
   }, [product]);
 
   const setField = <K extends keyof ProductInput,>(key: K, value: ProductInput[K]) => setForm((current) => ({ ...current, [key]: value }));
+  const setDetail = <K extends keyof ProductDetails,>(key: K, value: ProductDetails[K]) => setForm((current) => ({ ...current, details: { ...current.details, [key]: value } }));
+  const toggleList = (key: "soil" | "tolerance", value: string) => setDetail(key, form.details[key].includes(value) ? form.details[key].filter((item) => item !== value) : [...form.details[key], value]);
+  const updateComponent = (index: number, patch: Partial<ProductComponent>) => setDetail("components", form.details.components.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
+  const removeComponent = (index: number) => setDetail("components", form.details.components.filter((_, itemIndex) => itemIndex !== index));
+  const updatePhoto = (index: number, patch: Partial<ProductPhoto>) => setDetail("photos", form.details.photos.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setSaving(true);
     setError("");
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    const requestedStatus = submitter?.name === "publishStatus" ? submitter.value as PublishStatus : form.publishStatus;
+    const payload = { ...form, publishStatus: requestedStatus };
     const response = await fetch(isNew ? "/api/products" : `/api/products/${product?.id}`, {
       method: isNew ? "POST" : "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
     if (!response.ok) {
       setError(await readError(response));
@@ -355,42 +398,82 @@ function ProductEditor({
 
   return (
     <>
-      <PageHeader
-        eyebrow="Products & mixes"
-        title={isNew ? "Add a product" : product?.name ?? "Product"}
-        action={<div className="admin-header-actions"><button className="admin-button ghost" onClick={() => navigate("/admin/products")}>Cancel</button><button className="admin-button primary" type="submit" form="admin-product-form" disabled={saving}>{saving ? "Saving…" : "Save product"}</button></div>}
-      />
-      <form id="admin-product-form" className="admin-editor" onSubmit={submit}>
+      <header className="admin-page-header admin-editor-header">
+        <div>
+          <button className="admin-back-link" type="button" onClick={() => navigate("/admin/products")}><Icon name="arrow-left" size={16}/>Products &amp; mixes</button>
+          <h1>{isNew ? "Add a product" : product?.name ?? "Product"}</h1>
+        </div>
+        <div className="admin-header-actions">
+          <button className="admin-button ghost" type="button" onClick={() => navigate("/admin/products")}>Cancel</button>
+          <button className="admin-button outline" type="submit" form="admin-product-form" name="publishStatus" value="Draft" disabled={saving}>Save draft</button>
+          <button className="admin-button primary" type="submit" form="admin-product-form" name="publishStatus" value="Published" disabled={saving}>{saving ? "Saving…" : "Publish changes"}</button>
+        </div>
+      </header>
+      <form id="admin-product-form" className="admin-editor admin-claude-editor" onSubmit={submit}>
         <div className="admin-editor-main">
           <section className="admin-panel admin-form-card">
-            <div><h2>Product details</h2><p>Core catalogue information shown on the public product and availability pages.</p></div>
+            <h2>Identity</h2>
             <div className="admin-form-grid">
-              <label className="wide">Product name<input required value={form.name} onChange={(event) => setField("name", event.target.value)} placeholder="e.g. SouWest Pasture Mix"/></label>
+              <label>Product name<input required value={form.name} onChange={(event) => setField("name", event.target.value)} placeholder="e.g. SouWest™ Pasture Mix"/></label>
+              <label>Stock code<input value={form.details.stockCode} onChange={(event) => setDetail("stockCode", event.target.value)} placeholder="e.g. EQUI or SOU / SOU500"/></label>
               <label>Category<select value={form.category} onChange={(event) => setField("category", event.target.value)}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
+              <label>Guide section<select value={form.details.guideSection} onChange={(event) => setDetail("guideSection", event.target.value)}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
               <label>Pack size<input required value={form.packSize} onChange={(event) => setField("packSize", event.target.value)} placeholder="25 kg bag"/></label>
-              <label>Price<input required value={form.price} onChange={(event) => setField("price", event.target.value)} placeholder="$25.00 per kg"/></label>
-              <label>Stock status<select value={form.status} onChange={(event) => setField("status", event.target.value as ProductStatus)}>{statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}</select></label>
-              <label className="wide">Short description<textarea rows={4} value={form.note} onChange={(event) => setField("note", event.target.value)} placeholder="A concise note for the product catalogue and availability table."/></label>
+              <label>Seed treatment<input value={form.details.treatment} onChange={(event) => setDetail("treatment", event.target.value)} placeholder="Bare seed or pre-inoculated"/></label>
             </div>
+            <div className="admin-choice-field"><span>Record type</span><div>{(["Mix", "Variety"] as RecordKind[]).map((kind) => <button key={kind} type="button" className={form.details.kind === kind ? "selected" : ""} onClick={() => setDetail("kind", kind)}>{kind}</button>)}</div><small>{form.details.kind === "Mix" ? "A blended product with multiple species." : "A single variety or biological product."}</small></div>
           </section>
+
           <section className="admin-panel admin-form-card">
-            <div><h2>Tech sheet</h2><p>Enter the public PDF path or file name attached to this product.</p></div>
-            <label>PDF path<input value={form.techSheet} onChange={(event) => setField("techSheet", event.target.value)} placeholder="/tech-sheets/product-name.pdf"/></label>
-            <div className={`admin-file-state ${form.techSheet ? "attached" : ""}`}><Icon name={form.techSheet ? "file-text" : "plus"} size={22}/><span><strong>{form.techSheet || "No tech sheet attached"}</strong><small>{form.techSheet ? "Shown as a download on the product page" : "Add a PDF path when the file is ready"}</small></span>{form.techSheet && <button type="button" onClick={() => setField("techSheet", "")}>Remove</button>}</div>
+            <div><h2>Agronomy — 2026 Pasture Growers Guide</h2><p>The guide fields are stored with the product record. Leave a field blank if the guide has no entry.</p></div>
+            <div className="admin-form-grid">
+              <label>Sowing rate (kg/ha)<input value={form.details.rate} onChange={(event) => setDetail("rate", event.target.value)} placeholder="25 to 35"/></label>
+              <label>Rainfall (mm)<input value={form.details.rainfall} onChange={(event) => setDetail("rainfall", event.target.value)} placeholder="400+"/></label>
+              <label>Flowering / heading<input value={form.details.flowering} onChange={(event) => setDetail("flowering", event.target.value)} placeholder="Aug-Nov, Mid, or All Year Round"/></label>
+              <label>Inoculant group<input value={form.details.inoculant} onChange={(event) => setDetail("inoculant", event.target.value)} placeholder="Blank if not applicable"/></label>
+            </div>
+            <div className="admin-choice-field"><span>Ideal soil range</span><div>{["L", "M", "S", "C"].map((soil) => <button key={soil} type="button" className={form.details.soil.includes(soil) ? "selected" : ""} onClick={() => toggleList("soil", soil)}>{soil}</button>)}</div><small>Pick the lightest and heaviest soil this suits — selected: {form.details.soil.join(" – ") || "no range set"}.</small></div>
+            <div className="admin-choice-field"><span>Tolerance</span><div>{["Drought", "Frost", "Waterlogging"].map((tolerance) => <button key={tolerance} type="button" className={form.details.tolerance.includes(tolerance) ? "selected" : ""} onClick={() => toggleList("tolerance", tolerance)}>{tolerance}</button>)}</div><small>{form.details.tolerance.length ? `Shown on the page as ${form.details.tolerance.join(", ")}.` : "No tolerance indicators selected."}</small></div>
+          </section>
+
+          <section className="admin-panel admin-form-card">
+            <div><h2>Summary &amp; description</h2><p>The summary sits under the product name; the description becomes the body of the public product page.</p></div>
+            <label>Summary<input value={form.details.summary} onChange={(event) => { setDetail("summary", event.target.value); setField("note", event.target.value); }} placeholder="e.g. The Horse’s Choice. Suitable for all livestock."/></label>
+            <label>Product description<small>Blank lines between paragraphs are preserved on the public page.</small><textarea rows={7} value={form.details.description} onChange={(event) => setDetail("description", event.target.value)} placeholder="Describe the product, where it performs, and how it is used."/></label>
+            <label>Internal notes<small>Not published. Anything the office needs to know about this line.</small><textarea rows={2} value={form.details.notes} onChange={(event) => setDetail("notes", event.target.value)} placeholder="Internal note"/></label>
+          </section>
+
+          <section className="admin-panel admin-form-card">
+            <div className="admin-section-heading"><div><h2>{form.details.kind === "Mix" ? "Mix components" : "Usage notes"}</h2><p>Add the species or usage notes that make up this product.</p></div><button className="admin-button outline small" type="button" onClick={() => setDetail("components", [...form.details.components, { name: "", note: "" }])}><Icon name="plus" size={16}/>Add species</button></div>
+            <div className="admin-component-list">{form.details.components.map((component, index) => <div className="admin-component-row" key={`${index}-${component.name}`}><span className="admin-grip">⋮⋮</span><input value={component.name} onChange={(event) => updateComponent(index, { name: event.target.value })} placeholder="Species"/><input value={component.note} onChange={(event) => updateComponent(index, { note: event.target.value })} placeholder="One-line note"/><button type="button" aria-label="Remove component" onClick={() => removeComponent(index)}>×</button></div>)}</div>
           </section>
         </div>
-        <aside className="admin-editor-aside">
-          <section className="admin-panel admin-form-card">
-            <div><h2>Publishing</h2><p>Draft products remain visible to editors but can be excluded from future public catalogue publishing.</p></div>
-            <label>Status<select value={form.publishStatus} onChange={(event) => setField("publishStatus", event.target.value as PublishStatus)}><option>Published</option><option>Draft</option></select></label>
-            <div className="admin-publish-preview"><span className={form.publishStatus === "Published" ? "live" : ""}></span><strong>{form.publishStatus}</strong><p>{form.publishStatus === "Published" ? "Catalogue changes are live after saving." : "This item is being prepared for publication."}</p></div>
+
+        <div className="admin-editor-aside">
+          <section className="admin-panel admin-availability-card">
+            <h2>Availability</h2><p>Shows on catalogue cards and the product page. Wording matches the public availability table.</p>
+            <div>{statusOptions.map((status) => <button key={status.value} type="button" className={form.status === status.value ? "selected" : ""} onClick={() => setField("status", status.value)}><i className={`status-dot ${status.value}`}/>{status.label}</button>)}</div>
           </section>
-          <section className="admin-panel admin-product-preview">
-            <small>Public catalogue preview</small><h3>{form.name || "Product name"}</h3><StatusPill status={form.status}/><p>{form.note || "Your product summary will appear here."}</p><strong>{form.price || "Price"} · {form.packSize || "Pack size"}</strong>
+
+          <section className="admin-panel admin-form-card">
+            <div><h2>Tech sheet</h2><p>Uploaded once here. Powers the product page download and Tech Sheets Hub listing.</p></div>
+            <label>PDF path<input value={form.techSheet} onChange={(event) => setField("techSheet", event.target.value)} placeholder="/tech-sheets/product-name.pdf"/></label>
+            <div className={`admin-file-state ${form.techSheet ? "attached" : ""}`}><Icon name={form.techSheet ? "file-text" : "plus"} size={22}/><span><strong>{form.techSheet || "Drop a PDF, or choose a file"}</strong><small>{form.techSheet ? "PDF attached to this record" : "Or select one already in the Media Library"}</small></span>{form.techSheet && <button type="button" onClick={() => setField("techSheet", "")}>Replace</button>}</div>
+          </section>
+
+          <section className="admin-panel admin-form-card">
+            <div><h2>Photos</h2><p>Three slots, matching the stocklist. Photo 1 is the hero and catalogue card image.</p></div>
+            <div className="admin-photo-list">{form.details.photos.map((photo, index) => <div className="admin-photo-row" key={photo.slot}><span className="admin-photo-thumb">{photo.src ? <img src={photo.src} alt="" /> : <Icon name="plus" size={20}/>}</span><span><small>{photo.slot}</small><strong>{photo.file || "No image attached"}</strong><em>{photo.rating || "Add a photo from the Media Library"}</em></span><button type="button" onClick={() => updatePhoto(index, photo.file ? { file: "", rating: "", src: "" } : { file: `paddock-0${index + 1}.jpeg`, rating: "80% · Good", src: index % 2 ? "/ih-seeds-logo.png" : "/ih-seeds-logo.png" })}>{photo.file ? "Remove" : "Add"}</button></div>)}</div>
+          </section>
+
+          <section className="admin-panel admin-publishing-card">
+            <h2>Publishing</h2>
+            <label>Status<select value={form.publishStatus} onChange={(event) => setField("publishStatus", event.target.value as PublishStatus)}><option>Published</option><option>Draft</option></select></label>
+            <p>{form.publishStatus === "Published" ? "Live on the public catalogue. Stock status changes go live immediately without republishing." : "Hidden from the public catalogue. Editors can still see and update the record."}</p>
           </section>
           {!isNew && <button type="button" className="admin-delete-button" onClick={remove} disabled={saving}>Delete this product</button>}
           {error && <p className="admin-form-error" role="alert">{error}</p>}
-        </aside>
+        </div>
       </form>
     </>
   );
