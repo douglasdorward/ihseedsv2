@@ -117,10 +117,12 @@ const statusOptions: { value: ProductStatus; label: string }[] = [
 
 const categories = [
   "Ryegrasses", "Clovers", "Fescues & Other Grasses", "Serradellas & Medics",
-  "Lucerne", "Herbs", "Sub-Tropical Grasses", "Biologicals", "Forage & Grain Crops", "Mixes"
+  "Lucerne", "Herbs", "Sub-Tropical Grasses", "Biologicals", "Forage & Grain Crops", "Mixes",
+  "Specialty Mixes", "Other"
 ];
 
 const guideSections = [
+  "",
   "Subterranean Clovers", "Aerial Seeded Clovers & White Clovers", "Serradellas & Medic",
   "Specialist Seed Mixes", "Annual Tetraploid Ryegrasses", "Annual Diploid Ryegrasses",
   "Short Term – Biennials & Perennial Ryegrass Varieties", "Lucerne", "Other Grasses",
@@ -195,7 +197,12 @@ function PageHeader({ eyebrow, title, action }: { eyebrow: string; title: ReactN
 
 function Dashboard() {
   const { data: summary, isLoading } = useGetAdminSummary();
-  const attention = summary ? [...summary.recentProducts.filter(p => p.status !== "in-stock"), ...summary.recentProducts.filter(p => !p.techSheet)].slice(0, 5) : [];
+  const attention = summary
+    ? Array.from(new Map(
+      [...summary.recentProducts.filter(p => p.status !== "in-stock"), ...summary.recentProducts.filter(p => !p.techSheet)]
+        .map((product) => [product.id, product]),
+    ).values()).slice(0, 5)
+    : [];
 
   return (
     <>
@@ -646,8 +653,8 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
               <label>Slug<input required disabled={!isNew} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={currentForm.slug} onChange={(event) => setField("slug", event.target.value.toLowerCase())} placeholder="souwest-pasture-mix"/><small>Stable URL key. It cannot be changed after the product is created.</small></label>
               <label>Stock code<input value={currentForm.details.stockCode} onChange={(event) => setDetail("stockCode", event.target.value)} placeholder="e.g. EQUI or SOU / SOU500"/></label>
               <label>Botanical name<input value={currentForm.details.botanicalName} onChange={(event) => setDetail("botanicalName", event.target.value)} placeholder="e.g. Lolium multiflorum"/></label>
-              <label>Category<select value={currentForm.category} onChange={(event) => setField("category", event.target.value)}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
-              <label>Guide section<select value={currentForm.details.guideSection} onChange={(event) => setDetail("guideSection", event.target.value)}>{guideSections.map((section) => <option key={section}>{section}</option>)}</select></label>
+               <label>Category<select value={currentForm.category} onChange={(event) => setField("category", event.target.value)}>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+               <label>Guide section<select value={currentForm.details.guideSection} onChange={(event) => setDetail("guideSection", event.target.value)}>{guideSections.map((section) => <option key={section || "not-set"} value={section}>{section || "Not set"}</option>)}</select></label>
             </div>
             <div className="admin-choice-field"><span>Record type</span><div>{(["Mix", "Variety", "Commodity / generic"] as RecordKind[]).map((kind) => <button key={kind} type="button" className={currentForm.details.recordType === kind ? "selected" : ""} onClick={() => setDetail("recordType", kind as any)}>{kind}</button>)}</div></div>
             <div className="admin-repeat-group">
