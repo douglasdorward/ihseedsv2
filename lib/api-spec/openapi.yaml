@@ -1,0 +1,123 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: catalogue
+    description: Seed catalogue and availability
+  - name: enquiries
+    description: Advice enquiries
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /products:
+    get:
+      operationId: listProducts
+      tags: [catalogue]
+      summary: List pasture seed products
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+  /availability:
+    get:
+      operationId: listAvailability
+      tags: [catalogue]
+      summary: List current seed availability
+      responses:
+        "200":
+          description: Availability
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvailabilityRow"
+  /enquiries:
+    post:
+      operationId: createEnquiry
+      tags: [enquiries]
+      summary: Submit an advice enquiry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnquiryInput"
+      responses:
+        "201":
+          description: Enquiry received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnquiryCreated"
+        "400":
+          description: Invalid enquiry
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Product:
+      type: object
+      properties:
+        id: { type: number }
+        name: { type: string }
+        price: { type: string }
+        packSize: { type: string }
+        status: { type: string }
+        note: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, name, price, packSize, status, note, createdAt]
+    AvailabilityRow:
+      type: object
+      properties:
+        id: { type: number }
+        name: { type: string }
+        note: { type: string }
+        status: { type: string }
+      required: [id, name, note, status]
+    EnquiryInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        email: { type: string, maxLength: 200 }
+        phone: { type: string, maxLength: 40 }
+        topic: { type: string, minLength: 1, maxLength: 120 }
+        message: { type: string, minLength: 10, maxLength: 4000 }
+      required: [name, email, topic, message]
+    EnquiryCreated:
+      type: object
+      properties:
+        ok: { type: boolean }
+        id: { type: number }
+        createdAt: { type: string, format: date-time }
+      required: [ok, id, createdAt]
+

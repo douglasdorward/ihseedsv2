@@ -1,0 +1,1 @@
+- [Imported bundle entry verification](imported-bundle-entry.md) — after replacing an imported Claude bundle, verify the served root actually mounts the new app.
