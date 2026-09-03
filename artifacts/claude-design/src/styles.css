@@ -128,6 +128,27 @@ h1 strong { display:block; font-weight:800; }
   .hero-wrap { padding:0 12px; }.hero { min-height:600px; border-radius:16px; background-position:65% center; }.hero-copy { margin:0; padding:30px 26px; align-self:flex-end; }.hero-copy h1 { font-size:45px; }.hero-copy p { font-size:16px; margin:18px 0 24px; }.hero-actions { flex-wrap:wrap; }.button { padding-inline:24px; }
   .three-column { grid-template-columns:1fr; padding:34px 24px; gap:28px; }.pillar p { max-width:42ch; }
   .content-width { padding:64px 20px; }.section-heading { align-items:flex-start; gap:18px; flex-direction:column; }.section-heading h2,.feature-copy h2,.contact-intro h2 { font-size:42px; }.section-heading .button { align-self:flex-start; }
+  .page-hero-grid { grid-template-columns:1fr !important; gap:32px !important; padding:56px 20px !important; }
+  .page-hero-grid h1 { font-size:42px !important; }
+  .page-content { padding:56px 20px !important; }
+  .page-wide { padding:40px 20px 64px !important; }
+  .page-breadcrumb { padding:24px 20px 8px !important; }
+  .category-card-grid { grid-template-columns:1fr !important; gap:28px !important; }
+  .chip-scroller,.resource-tabs { flex-wrap:nowrap !important; overflow-x:auto; overscroll-behavior-inline:contain; scrollbar-width:none; padding-left:20px !important; padding-right:20px !important; }
+  .chip-scroller::-webkit-scrollbar,.resource-tabs::-webkit-scrollbar { display:none; }
+  .chip-scroller > *,.resource-tabs > * { flex:0 0 auto; }
+  .category-sticky { top:86px !important; }
+  .availability-heading { align-items:flex-start !important; flex-direction:column; gap:24px; }
+  .availability-heading .button { align-self:flex-start; white-space:nowrap; }
+  .product-hero-content { padding:100px 20px 48px !important; }
+  .product-title { font-size:44px !important; }
+  .product-detail-grid { grid-template-columns:1fr !important; gap:40px !important; padding:56px 20px 72px !important; }
+  .product-sidebar { position:static !important; }
+  .spec-row { grid-template-columns:1fr !important; gap:6px !important; }
+  .resource-intro h1 { font-size:42px !important; }
+  .tech-sheet-row { grid-template-columns:36px minmax(0,1fr) !important; gap:12px !important; padding:18px !important; }
+  .tech-sheet-row > :nth-child(3),.tech-sheet-row > :nth-child(4) { display:none; }
+  .tech-sheet-row > :last-child { grid-column:2; justify-content:flex-start !important; }
   .product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }.product-image { min-height:180px; }.product-details { padding:14px; }.product-details h3 { font-size:16px; min-height:64px; }.product-details p { font-size:12px; }.product-image .status-pill { left:8px; bottom:8px; padding:6px 8px; font-size:10px; }
   .about-section { padding:64px 20px; }.feature-panel { grid-template-columns:1fr; }.feature-image { min-height:240px; }.feature-copy { padding:34px 26px; }.feature-copy p { font-size:15px; }
   .availability-table { padding:4px 18px; }.availability-row { grid-template-columns:1fr auto; gap:8px 14px; padding:17px 0; }.availability-row strong { font-size:16px; }.availability-row span:not(.status-pill) { grid-column:1; font-size:13px; }.availability-row .status-pill { grid-column:2; grid-row:1 / span 2; }
@@ -135,4 +156,9 @@ h1 strong { display:block; font-weight:800; }
   .guide-section { padding:0 20px 64px; }.guide-banner { min-height:420px; padding:30px 24px; align-items:flex-end; }.guide-banner h2 { font-size:35px; }
   .contact-layout { grid-template-columns:1fr; gap:36px; }.form-row { grid-template-columns:1fr; }.contact-intro p { max-width:none; }
   .footer-top { padding:52px 24px 36px; grid-template-columns:1fr; gap:28px; }.footer-top > p { max-width:35ch; }.footer-columns { grid-template-columns:repeat(3,1fr); gap:14px; }.footer-columns h4 { font-size:14px; }.footer-columns button { font-size:12px; }.footer-bottom { padding:20px 24px; line-height:1.5; }
+}
+@media (max-width:520px) {
+  .footer-columns { grid-template-columns:1fr; gap:28px; }
+  .product-grid { grid-template-columns:1fr; }
+  .availability-heading h1 { font-size:46px !important; }
 }
