@@ -1,21 +1,39 @@
 import React from "react";
 import { Link, useParams } from "../router";
-import { useProducts, imageOptions } from "../hooks/useApi";
+import { useProducts, imageOptions, productPath, slugify } from "../hooks/useApi";
 import { Icon, StatusPill } from "../components/ui";
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { products, loading } = useProducts();
   
-  const product = products.find(p => p.id.toString() === slug || p.name.toLowerCase().replace(/™/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "") === slug) || products[0];
+  const product = products.find((item) =>
+    item.slug === slug ||
+    item.id.toString() === slug ||
+    (!item.slug && slugify(item.name) === slug),
+  );
 
-  if (loading || !product) {
+  if (loading) {
     return (
       <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="loading-state">Loading product...</div>
       </div>
     );
   }
+
+  if (!product) {
+    return (
+      <section className="page-content" style={{ minHeight: "55vh", maxWidth: 1180, margin: "0 auto", padding: "96px 40px" }}>
+        <h1 style={{ color: "var(--green)", fontSize: 48 }}>Product not found</h1>
+        <p style={{ marginBottom: 28 }}>That product is not part of the current online range.</p>
+        <Link href="/products" className="button button-primary">Browse the catalogue</Link>
+      </section>
+    );
+  }
+
+  const relatedProducts = (product.details?.relatedProducts ?? [])
+    .map((relatedSlug) => products.find((item) => item.slug === relatedSlug))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
 
   const specs = [
     { label: "Sowing rate", value: "8–15 kg/ha alone, 3–5 kg/ha in mixes.", icon: "scale" },
@@ -97,10 +115,10 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {relatedProducts.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "var(--green)" }}>Related products</h3>
-              {products.filter(p => p.id !== product.id).slice(0, 2).map((p, i) => (
-                <Link key={p.id} href={`/products/${p.id}`} style={{ display: "flex", gap: 16, textDecoration: "none", alignItems: "center", padding: 12, borderRadius: 12, border: "1px solid var(--line)" }}>
+              {relatedProducts.map((p, i) => (
+                <Link key={p.id} href={productPath(p)} style={{ display: "flex", gap: 16, textDecoration: "none", alignItems: "center", padding: 12, borderRadius: 12, border: "1px solid var(--line)" }}>
                   <div style={{ width: 64, height: 64, borderRadius: 8, backgroundImage: `url(${imageOptions[i+1]})`, backgroundSize: "cover" }} />
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: "var(--green)" }}>{p.name}</div>
@@ -108,7 +126,7 @@ export default function ProductDetail() {
                   </div>
                 </Link>
               ))}
-            </div>
+            </div>}
           </div>
 
         </div>

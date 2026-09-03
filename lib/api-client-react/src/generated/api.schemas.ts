@@ -9,23 +9,245 @@ export interface HealthStatus {
   status: string;
 }
 
-export type ProductDetailsKind = typeof ProductDetailsKind[keyof typeof ProductDetailsKind];
+export type ProductDetailsRecordType = typeof ProductDetailsRecordType[keyof typeof ProductDetailsRecordType];
 
 
-export const ProductDetailsKind = {
+export const ProductDetailsRecordType = {
   Mix: 'Mix',
   Variety: 'Variety',
+  'Commodity_/_generic': 'Commodity / generic',
+} as const;
+
+export interface ProductPackSize {
+  /** @maxLength 80 */
+  label: string;
+  /** @minimum 0 */
+  size: number | null;
+  /** @maxLength 30 */
+  unit: string;
+}
+
+export type ProductDetailsPersistencyType = typeof ProductDetailsPersistencyType[keyof typeof ProductDetailsPersistencyType];
+
+
+export const ProductDetailsPersistencyType = {
+  '': '',
+  Annual: 'Annual',
+  Biennial: 'Biennial',
+  Perennial: 'Perennial',
+  Hybrid_perennial: 'Hybrid perennial',
+  'Short-term_(1–2_years)': 'Short-term (1–2 years)',
+} as const;
+
+export type ProductDetailsPloidy = typeof ProductDetailsPloidy[keyof typeof ProductDetailsPloidy];
+
+
+export const ProductDetailsPloidy = {
+  '': '',
+  Diploid: 'Diploid',
+  Tetraploid: 'Tetraploid',
+  Hexaploid: 'Hexaploid',
+  'Mixed_(blend)': 'Mixed (blend)',
+} as const;
+
+export type ProductDetailsFlowerColour = typeof ProductDetailsFlowerColour[keyof typeof ProductDetailsFlowerColour];
+
+
+export const ProductDetailsFlowerColour = {
+  '': '',
+  Pink: 'Pink',
+  Yellow: 'Yellow',
+  White: 'White',
+  Crimson: 'Crimson',
+  Red: 'Red',
+  Purple: 'Purple',
+} as const;
+
+export type ProductSowingRateContext = typeof ProductSowingRateContext[keyof typeof ProductSowingRateContext];
+
+
+export const ProductSowingRateContext = {
+  Monoculture: 'Monoculture',
+  In_a_mix: 'In a mix',
+  Dryland: 'Dryland',
+  Irrigation: 'Irrigation',
+  Pasture: 'Pasture',
+  Turf: 'Turf',
+} as const;
+
+export interface ProductSowingRate {
+  context: ProductSowingRateContext;
+  /** @minimum 0 */
+  min: number | null;
+  /** @minimum 0 */
+  max: number | null;
+  /** @maxLength 20 */
+  unit: string;
+}
+
+export type ProductDetailsSoilPhScale = typeof ProductDetailsSoilPhScale[keyof typeof ProductDetailsSoilPhScale];
+
+
+export const ProductDetailsSoilPhScale = {
+  'CaCl₂': 'CaCl₂',
+  water: 'water',
+} as const;
+
+export type ProductDetailsSoilRangeLightest = typeof ProductDetailsSoilRangeLightest[keyof typeof ProductDetailsSoilRangeLightest];
+
+
+export const ProductDetailsSoilRangeLightest = {
+  '': '',
+  LS: 'LS',
+  S: 'S',
+  L: 'L',
+  H: 'H',
+} as const;
+
+export type ProductDetailsSoilRangeHeaviest = typeof ProductDetailsSoilRangeHeaviest[keyof typeof ProductDetailsSoilRangeHeaviest];
+
+
+export const ProductDetailsSoilRangeHeaviest = {
+  '': '',
+  LS: 'LS',
+  S: 'S',
+  L: 'L',
+  H: 'H',
+} as const;
+
+export type ProductToleranceName = typeof ProductToleranceName[keyof typeof ProductToleranceName];
+
+
+export const ProductToleranceName = {
+  Low_pH: 'Low pH',
+  Waterlogging: 'Waterlogging',
+  Salinity: 'Salinity',
+  Drought: 'Drought',
+  Frost: 'Frost',
+} as const;
+
+export interface ProductTolerance {
+  name: ProductToleranceName;
+  mild: boolean;
+}
+
+export type ProductDetailsMaturityMeasure = typeof ProductDetailsMaturityMeasure[keyof typeof ProductDetailsMaturityMeasure];
+
+
+export const ProductDetailsMaturityMeasure = {
+  '': '',
+  'Days_to_flowering_(Perth)': 'Days to flowering (Perth)',
+  Heading_date: 'Heading date',
+  Time_of_flowering: 'Time of flowering',
+  Winter_activity_rating: 'Winter activity rating',
+} as const;
+
+export type ProductDetailsHeadingDate = typeof ProductDetailsHeadingDate[keyof typeof ProductDetailsHeadingDate];
+
+
+export const ProductDetailsHeadingDate = {
+  '': '',
+  Very_early: 'Very early',
+  Early: 'Early',
+  Mid: 'Mid',
+  'Mid-late': 'Mid-late',
+  Late: 'Late',
+} as const;
+
+export type ProductDetailsInoculantGroup = typeof ProductDetailsInoculantGroup[keyof typeof ProductDetailsInoculantGroup];
+
+
+export const ProductDetailsInoculantGroup = {
+  None: 'None',
+  C: 'C',
+  'G/S': 'G/S',
+  G: 'G',
+  S: 'S',
+  AL: 'AL',
+  AM: 'AM',
+  B: 'B',
+  BS: 'BS',
+  E: 'E',
+  'F/E': 'F/E',
+  I: 'I',
+} as const;
+
+export type ProductDetailsSeedTreatmentItem = typeof ProductDetailsSeedTreatmentItem[keyof typeof ProductDetailsSeedTreatmentItem];
+
+
+export const ProductDetailsSeedTreatmentItem = {
+  'Bare_/_untreated': 'Bare / untreated',
+  Gaucho: 'Gaucho',
+  Thiram: 'Thiram',
+  Goldstrike: 'Goldstrike',
+  BioNPK_Powder_S: 'BioNPK Powder S',
+  Lime_coated: 'Lime coated',
+} as const;
+
+export type ProductDetailsEndUseItem = typeof ProductDetailsEndUseItem[keyof typeof ProductDetailsEndUseItem];
+
+
+export const ProductDetailsEndUseItem = {
+  Grazing: 'Grazing',
+  Hay: 'Hay',
+  Silage: 'Silage',
+  Cover_crop: 'Cover crop',
+  Green_manure: 'Green manure',
+  Grain: 'Grain',
+  Stockfeed: 'Stockfeed',
+  Permanent_pasture: 'Permanent pasture',
+  'Erosion_control_/_stabilisation': 'Erosion control / stabilisation',
+  Break_crop: 'Break crop',
+  Biofumigant: 'Biofumigant',
+  Turf: 'Turf',
+} as const;
+
+export type ProductDetailsLivestockItem = typeof ProductDetailsLivestockItem[keyof typeof ProductDetailsLivestockItem];
+
+
+export const ProductDetailsLivestockItem = {
+  Beef: 'Beef',
+  Dairy: 'Dairy',
+  Sheep: 'Sheep',
+  Equine: 'Equine',
+  Goat: 'Goat',
+  Chicken: 'Chicken',
+  Alpaca: 'Alpaca',
+  Weaners: 'Weaners',
+  Lamb_finishing: 'Lamb finishing',
+} as const;
+
+export type ProductDetailsCertificationItem = typeof ProductDetailsCertificationItem[keyof typeof ProductDetailsCertificationItem];
+
+
+export const ProductDetailsCertificationItem = {
+  ASF_Code_of_Practice: 'ASF Code of Practice',
+  Certified_Quality_Assured_Seed: 'Certified Quality Assured Seed',
+  Certified_seed: 'Certified seed',
+  Licensed_production: 'Licensed production',
 } as const;
 
 export interface ProductComponent {
-  name: string;
+  /** @maxLength 180 */
+  productLink: string;
+  /** @maxLength 120 */
+  speciesName: string;
+  /** @minimum 0 */
+  inclusionRate: number | null;
+  /** @maxLength 20 */
+  unit: string;
+  /** @maxLength 240 */
   note: string;
 }
 
 export interface ProductPhoto {
+  /** @maxLength 40 */
   slot: string;
+  /** @maxLength 240 */
   file: string;
+  /** @maxLength 80 */
   rating: string;
+  /** @maxLength 500 */
   src: string;
 }
 
@@ -34,20 +256,71 @@ export interface ProductDetails {
   stockCode: string;
   /** @maxLength 120 */
   guideSection: string;
+  recordType: ProductDetailsRecordType;
+  /** @maxLength 180 */
+  botanicalName: string;
+  /** @items.maxLength 120 */
+  alsoKnownAs: string[];
+  packSizes: ProductPackSize[];
   /** @maxLength 120 */
   treatment: string;
-  kind: ProductDetailsKind;
+  persistencyType: ProductDetailsPersistencyType;
+  ploidy: ProductDetailsPloidy;
+  flowerColour: ProductDetailsFlowerColour;
+  /** @maxLength 180 */
+  bredByOrigin: string;
+  australianBred: boolean;
+  /** @maxLength 120 */
+  distributedBy: string;
+  sowingRates: ProductSowingRate[];
+  /** @minimum 0 */
+  rainfallMinMm: number | null;
+  /**
+     * @minimum 0
+     * @maximum 14
+     */
+  soilPhMin: number | null;
+  soilPhScale: ProductDetailsSoilPhScale;
+  soilRangeLightest: ProductDetailsSoilRangeLightest;
+  soilRangeHeaviest: ProductDetailsSoilRangeHeaviest;
+  /** @minimum 0 */
+  sowingDepthMinCm: number | null;
+  /** @minimum 0 */
+  sowingDepthMaxCm: number | null;
+  tolerance: ProductTolerance[];
+  maturityMeasure: ProductDetailsMaturityMeasure;
+  /** @minimum 0 */
+  maturityDays: number | null;
+  headingDate: ProductDetailsHeadingDate;
   /** @maxLength 80 */
-  rate: string;
-  /** @maxLength 80 */
-  rainfall: string;
-  /** @maxLength 100 */
-  flowering: string;
-  /** @maxLength 80 */
-  inoculant: string;
-  soil: string[];
-  tolerance: string[];
-  livestock: string[];
+  floweringWindow: string;
+  /**
+     * @minimum 1
+     * @maximum 10
+     */
+  winterActivity: number | null;
+  inoculantGroup: ProductDetailsInoculantGroup;
+  seedTreatment: ProductDetailsSeedTreatmentItem[];
+  ecocertApproved: boolean;
+  endUse: ProductDetailsEndUseItem[];
+  livestock: ProductDetailsLivestockItem[];
+  /** @items.maxLength 120 */
+  companionSpecies: string[];
+  /** @maxLength 3000 */
+  diseasePestResistance: string;
+  /** @maxLength 180 */
+  persistenceLongevity: string;
+  /** @maxLength 3000 */
+  grazingManagementNotes: string;
+  pbrProtected: boolean;
+  /** @maxLength 300 */
+  pbrDetails: string;
+  /** @maxLength 1000 */
+  licenceRestriction: string;
+  certification: ProductDetailsCertificationItem[];
+  isThirdPartyProduct: boolean;
+  /** @maxLength 180 */
+  supplierName: string;
   /** @maxLength 500 */
   summary: string;
   /** @maxLength 5000 */
@@ -55,12 +328,25 @@ export interface ProductDetails {
   /** @maxLength 2000 */
   notes: string;
   components: ProductComponent[];
+  /** @maxLength 20 */
+  formulationYear: string;
   photos: ProductPhoto[];
+  inCurrentPrintedGuide: boolean;
+  /** @maxLength 180 */
+  seoTitle: string;
+  /** @maxLength 320 */
+  seoDescription: string;
+  /** @minimum 0 */
+  sortOrder: number | null;
+  featured: boolean;
+  /** @items.maxLength 180 */
+  relatedProducts: string[];
 }
 
 export interface Product {
   id: number;
   name: string;
+  slug: string;
   price: string;
   packSize: string;
   status: string;
@@ -97,6 +383,12 @@ export interface ProductInput {
      * @maxLength 160
      */
   name: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+     */
+  slug: string;
   /**
      * @minLength 1
      * @maxLength 80

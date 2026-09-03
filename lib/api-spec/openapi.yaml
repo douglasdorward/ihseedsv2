@@ -164,6 +164,7 @@ components:
       properties:
         id: { type: number }
         name: { type: string }
+        slug: { type: string }
         price: { type: string }
         packSize: { type: string }
         status: { type: string }
@@ -175,11 +176,12 @@ components:
           $ref: "#/components/schemas/ProductDetails"
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-      required: [id, name, price, packSize, status, note, category, techSheet, publishStatus, details, createdAt, updatedAt]
+      required: [id, name, slug, price, packSize, status, note, category, techSheet, publishStatus, details, createdAt, updatedAt]
     ProductInput:
       type: object
       properties:
         name: { type: string, minLength: 1, maxLength: 160 }
+        slug: { type: string, minLength: 1, maxLength: 180, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
         price: { type: string, minLength: 1, maxLength: 80 }
         packSize: { type: string, minLength: 1, maxLength: 80 }
         status: { type: string, enum: [in-stock, low, very-low, unavailable] }
@@ -189,7 +191,7 @@ components:
         publishStatus: { type: string, enum: [Published, Draft] }
         details:
           $ref: "#/components/schemas/ProductDetails"
-      required: [name, price, packSize, status, note, category, techSheet, publishStatus, details]
+      required: [name, slug, price, packSize, status, note, category, techSheet, publishStatus, details]
     ProductUpdate:
       type: object
       properties:
@@ -208,21 +210,67 @@ components:
       properties:
         stockCode: { type: string, maxLength: 40 }
         guideSection: { type: string, maxLength: 120 }
-        treatment: { type: string, maxLength: 120 }
-        kind: { type: string, enum: [Mix, Variety] }
-        rate: { type: string, maxLength: 80 }
-        rainfall: { type: string, maxLength: 80 }
-        flowering: { type: string, maxLength: 100 }
-        inoculant: { type: string, maxLength: 80 }
-        soil:
+        recordType: { type: string, enum: [Mix, Variety, "Commodity / generic"] }
+        botanicalName: { type: string, maxLength: 180 }
+        alsoKnownAs:
           type: array
-          items: { type: string }
+          items: { type: string, maxLength: 120 }
+        packSizes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductPackSize"
+        treatment: { type: string, maxLength: 120 }
+        persistencyType: { type: string, enum: ["", Annual, Biennial, Perennial, "Hybrid perennial", "Short-term (1–2 years)"] }
+        ploidy: { type: string, enum: ["", Diploid, Tetraploid, Hexaploid, "Mixed (blend)"] }
+        flowerColour: { type: string, enum: ["", Pink, Yellow, White, Crimson, Red, Purple] }
+        bredByOrigin: { type: string, maxLength: 180 }
+        australianBred: { type: boolean }
+        distributedBy: { type: string, maxLength: 120 }
+        sowingRates:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductSowingRate"
+        rainfallMinMm: { type: number, minimum: 0, multipleOf: 1, nullable: true }
+        soilPhMin: { type: number, minimum: 0, maximum: 14, nullable: true }
+        soilPhScale: { type: string, enum: ["CaCl₂", water] }
+        soilRangeLightest: { type: string, enum: ["", LS, S, L, H] }
+        soilRangeHeaviest: { type: string, enum: ["", LS, S, L, H] }
+        sowingDepthMinCm: { type: number, minimum: 0, nullable: true }
+        sowingDepthMaxCm: { type: number, minimum: 0, nullable: true }
         tolerance:
           type: array
-          items: { type: string }
+          items:
+            $ref: "#/components/schemas/ProductTolerance"
+        maturityMeasure: { type: string, enum: ["", "Days to flowering (Perth)", "Heading date", "Time of flowering", "Winter activity rating"] }
+        maturityDays: { type: number, minimum: 0, multipleOf: 1, nullable: true }
+        headingDate: { type: string, enum: ["", "Very early", Early, Mid, "Mid-late", Late] }
+        floweringWindow: { type: string, maxLength: 80 }
+        winterActivity: { type: number, minimum: 1, maximum: 10, multipleOf: 1, nullable: true }
+        inoculantGroup: { type: string, enum: [None, C, "G/S", G, S, AL, AM, B, BS, E, "F/E", I] }
+        seedTreatment:
+          type: array
+          items: { type: string, enum: ["Bare / untreated", Gaucho, Thiram, Goldstrike, "BioNPK Powder S", "Lime coated"] }
+        ecocertApproved: { type: boolean }
+        endUse:
+          type: array
+          items: { type: string, enum: [Grazing, Hay, Silage, "Cover crop", "Green manure", Grain, Stockfeed, "Permanent pasture", "Erosion control / stabilisation", "Break crop", Biofumigant, Turf] }
         livestock:
           type: array
-          items: { type: string }
+          items: { type: string, enum: [Beef, Dairy, Sheep, Equine, Goat, Chicken, Alpaca, Weaners, "Lamb finishing"] }
+        companionSpecies:
+          type: array
+          items: { type: string, maxLength: 120 }
+        diseasePestResistance: { type: string, maxLength: 3000 }
+        persistenceLongevity: { type: string, maxLength: 180 }
+        grazingManagementNotes: { type: string, maxLength: 3000 }
+        pbrProtected: { type: boolean }
+        pbrDetails: { type: string, maxLength: 300 }
+        licenceRestriction: { type: string, maxLength: 1000 }
+        certification:
+          type: array
+          items: { type: string, enum: ["ASF Code of Practice", "Certified Quality Assured Seed", "Certified seed", "Licensed production"] }
+        isThirdPartyProduct: { type: boolean }
+        supplierName: { type: string, maxLength: 180 }
         summary: { type: string, maxLength: 500 }
         description: { type: string, maxLength: 5000 }
         notes: { type: string, maxLength: 2000 }
@@ -230,24 +278,57 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ProductComponent"
+        formulationYear: { type: string, maxLength: 20 }
         photos:
           type: array
           items:
             $ref: "#/components/schemas/ProductPhoto"
-      required: [stockCode, guideSection, treatment, kind, rate, rainfall, flowering, inoculant, soil, tolerance, livestock, summary, description, notes, components, photos]
+        inCurrentPrintedGuide: { type: boolean }
+        seoTitle: { type: string, maxLength: 180 }
+        seoDescription: { type: string, maxLength: 320 }
+        sortOrder: { type: number, minimum: 0, multipleOf: 1, nullable: true }
+        featured: { type: boolean }
+        relatedProducts:
+          type: array
+          items: { type: string, maxLength: 180 }
+      required: [stockCode, guideSection, recordType, botanicalName, alsoKnownAs, packSizes, treatment, persistencyType, ploidy, flowerColour, bredByOrigin, australianBred, distributedBy, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, sowingDepthMinCm, sowingDepthMaxCm, tolerance, maturityMeasure, maturityDays, headingDate, floweringWindow, winterActivity, inoculantGroup, seedTreatment, ecocertApproved, endUse, livestock, companionSpecies, diseasePestResistance, persistenceLongevity, grazingManagementNotes, pbrProtected, pbrDetails, licenceRestriction, certification, isThirdPartyProduct, supplierName, summary, description, notes, components, formulationYear, photos, inCurrentPrintedGuide, seoTitle, seoDescription, sortOrder, featured, relatedProducts]
+    ProductPackSize:
+      type: object
+      properties:
+        label: { type: string, maxLength: 80 }
+        size: { type: number, minimum: 0, nullable: true }
+        unit: { type: string, maxLength: 30 }
+      required: [label, size, unit]
+    ProductSowingRate:
+      type: object
+      properties:
+        context: { type: string, enum: [Monoculture, "In a mix", Dryland, Irrigation, Pasture, Turf] }
+        min: { type: number, minimum: 0, nullable: true }
+        max: { type: number, minimum: 0, nullable: true }
+        unit: { type: string, maxLength: 20 }
+      required: [context, min, max, unit]
+    ProductTolerance:
+      type: object
+      properties:
+        name: { type: string, enum: ["Low pH", Waterlogging, Salinity, Drought, Frost] }
+        mild: { type: boolean }
+      required: [name, mild]
     ProductComponent:
       type: object
       properties:
-        name: { type: string }
-        note: { type: string }
-      required: [name, note]
+        productLink: { type: string, maxLength: 180 }
+        speciesName: { type: string, maxLength: 120 }
+        inclusionRate: { type: number, minimum: 0, nullable: true }
+        unit: { type: string, maxLength: 20 }
+        note: { type: string, maxLength: 240 }
+      required: [productLink, speciesName, inclusionRate, unit, note]
     ProductPhoto:
       type: object
       properties:
-        slot: { type: string }
-        file: { type: string }
-        rating: { type: string }
-        src: { type: string }
+        slot: { type: string, maxLength: 40 }
+        file: { type: string, maxLength: 240 }
+        rating: { type: string, maxLength: 80 }
+        src: { type: string, maxLength: 500 }
       required: [slot, file, rating, src]
     AdminSummary:
       type: object

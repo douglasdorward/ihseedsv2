@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "../router";
-import { articleSeed, imageOptions, slugify, useProducts } from "../hooks/useApi";
+import { articleSeed, imageOptions, productPath, useProducts } from "../hooks/useApi";
 import { Icon } from "../components/ui";
 
 export default function Resources() {
@@ -74,7 +74,7 @@ export default function Resources() {
                   <div style={{ fontSize: 14, color: "var(--black-green)" }}>{product.packSize}</div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>2026 range</div>
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <Link href={`/products/${slugify(product.name)}`} className="button button-outline" style={{ padding: "8px 16px", minHeight: "auto", fontSize: 14 }}>View tech sheet</Link>
+                    <Link href={productPath(product)} className="button button-outline" style={{ padding: "8px 16px", minHeight: "auto", fontSize: 14 }}>View tech sheet</Link>
                   </div>
                 </div>
               ))}

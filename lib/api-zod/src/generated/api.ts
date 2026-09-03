@@ -24,15 +24,59 @@ export const listProductsResponseDetailsStockCodeMax = 40;
 
 export const listProductsResponseDetailsGuideSectionMax = 120;
 
+export const listProductsResponseDetailsBotanicalNameMax = 180;
+
+export const listProductsResponseDetailsAlsoKnownAsItemMax = 120;
+
+export const listProductsResponseDetailsPackSizesItemLabelMax = 80;
+
+export const listProductsResponseDetailsPackSizesItemSizeMin = 0;
+
+export const listProductsResponseDetailsPackSizesItemUnitMax = 30;
+
 export const listProductsResponseDetailsTreatmentMax = 120;
 
-export const listProductsResponseDetailsRateMax = 80;
+export const listProductsResponseDetailsBredByOriginMax = 180;
 
-export const listProductsResponseDetailsRainfallMax = 80;
+export const listProductsResponseDetailsDistributedByMax = 120;
 
-export const listProductsResponseDetailsFloweringMax = 100;
+export const listProductsResponseDetailsSowingRatesItemMinMin = 0;
 
-export const listProductsResponseDetailsInoculantMax = 80;
+export const listProductsResponseDetailsSowingRatesItemMaxMin = 0;
+
+export const listProductsResponseDetailsSowingRatesItemUnitMax = 20;
+
+export const listProductsResponseDetailsRainfallMinMmMin = 0;
+export const listProductsResponseDetailsRainfallMinMmMultipleOf = 1;
+
+export const listProductsResponseDetailsSoilPhMinMin = 0;
+export const listProductsResponseDetailsSoilPhMinMax = 14;
+
+export const listProductsResponseDetailsSowingDepthMinCmMin = 0;
+
+export const listProductsResponseDetailsSowingDepthMaxCmMin = 0;
+
+export const listProductsResponseDetailsMaturityDaysMin = 0;
+export const listProductsResponseDetailsMaturityDaysMultipleOf = 1;
+
+export const listProductsResponseDetailsFloweringWindowMax = 80;
+
+export const listProductsResponseDetailsWinterActivityMax = 10;
+export const listProductsResponseDetailsWinterActivityMultipleOf = 1;
+
+export const listProductsResponseDetailsCompanionSpeciesItemMax = 120;
+
+export const listProductsResponseDetailsDiseasePestResistanceMax = 3000;
+
+export const listProductsResponseDetailsPersistenceLongevityMax = 180;
+
+export const listProductsResponseDetailsGrazingManagementNotesMax = 3000;
+
+export const listProductsResponseDetailsPbrDetailsMax = 300;
+
+export const listProductsResponseDetailsLicenceRestrictionMax = 1000;
+
+export const listProductsResponseDetailsSupplierNameMax = 180;
 
 export const listProductsResponseDetailsSummaryMax = 500;
 
@@ -40,11 +84,41 @@ export const listProductsResponseDetailsDescriptionMax = 5000;
 
 export const listProductsResponseDetailsNotesMax = 2000;
 
+export const listProductsResponseDetailsComponentsItemProductLinkMax = 180;
+
+export const listProductsResponseDetailsComponentsItemSpeciesNameMax = 120;
+
+export const listProductsResponseDetailsComponentsItemInclusionRateMin = 0;
+
+export const listProductsResponseDetailsComponentsItemUnitMax = 20;
+
+export const listProductsResponseDetailsComponentsItemNoteMax = 240;
+
+export const listProductsResponseDetailsFormulationYearMax = 20;
+
+export const listProductsResponseDetailsPhotosItemSlotMax = 40;
+
+export const listProductsResponseDetailsPhotosItemFileMax = 240;
+
+export const listProductsResponseDetailsPhotosItemRatingMax = 80;
+
+export const listProductsResponseDetailsPhotosItemSrcMax = 500;
+
+export const listProductsResponseDetailsSeoTitleMax = 180;
+
+export const listProductsResponseDetailsSeoDescriptionMax = 320;
+
+export const listProductsResponseDetailsSortOrderMin = 0;
+export const listProductsResponseDetailsSortOrderMultipleOf = 1;
+
+export const listProductsResponseDetailsRelatedProductsItemMax = 180;
+
 
 
 export const ListProductsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "slug": zod.string(),
   "price": zod.string(),
   "packSize": zod.string(),
   "status": zod.string(),
@@ -55,28 +129,81 @@ export const ListProductsResponseItem = zod.object({
   "details": zod.object({
   "stockCode": zod.string().max(listProductsResponseDetailsStockCodeMax),
   "guideSection": zod.string().max(listProductsResponseDetailsGuideSectionMax),
+  "recordType": zod.enum(['Mix', 'Variety', 'Commodity / generic']),
+  "botanicalName": zod.string().max(listProductsResponseDetailsBotanicalNameMax),
+  "alsoKnownAs": zod.array(zod.string().max(listProductsResponseDetailsAlsoKnownAsItemMax)),
+  "packSizes": zod.array(zod.object({
+  "label": zod.string().max(listProductsResponseDetailsPackSizesItemLabelMax),
+  "size": zod.number().min(listProductsResponseDetailsPackSizesItemSizeMin).nullable(),
+  "unit": zod.string().max(listProductsResponseDetailsPackSizesItemUnitMax)
+})),
   "treatment": zod.string().max(listProductsResponseDetailsTreatmentMax),
-  "kind": zod.enum(['Mix', 'Variety']),
-  "rate": zod.string().max(listProductsResponseDetailsRateMax),
-  "rainfall": zod.string().max(listProductsResponseDetailsRainfallMax),
-  "flowering": zod.string().max(listProductsResponseDetailsFloweringMax),
-  "inoculant": zod.string().max(listProductsResponseDetailsInoculantMax),
-  "soil": zod.array(zod.string()),
-  "tolerance": zod.array(zod.string()),
-  "livestock": zod.array(zod.string()),
+  "persistencyType": zod.enum(['', 'Annual', 'Biennial', 'Perennial', 'Hybrid perennial', 'Short-term (1–2 years)']),
+  "ploidy": zod.enum(['', 'Diploid', 'Tetraploid', 'Hexaploid', 'Mixed (blend)']),
+  "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
+  "bredByOrigin": zod.string().max(listProductsResponseDetailsBredByOriginMax),
+  "australianBred": zod.boolean(),
+  "distributedBy": zod.string().max(listProductsResponseDetailsDistributedByMax),
+  "sowingRates": zod.array(zod.object({
+  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "min": zod.number().min(listProductsResponseDetailsSowingRatesItemMinMin).nullable(),
+  "max": zod.number().min(listProductsResponseDetailsSowingRatesItemMaxMin).nullable(),
+  "unit": zod.string().max(listProductsResponseDetailsSowingRatesItemUnitMax)
+})),
+  "rainfallMinMm": zod.number().min(listProductsResponseDetailsRainfallMinMmMin).multipleOf(listProductsResponseDetailsRainfallMinMmMultipleOf).nullable(),
+  "soilPhMin": zod.number().min(listProductsResponseDetailsSoilPhMinMin).max(listProductsResponseDetailsSoilPhMinMax).nullable(),
+  "soilPhScale": zod.enum(['CaCl₂', 'water']),
+  "soilRangeLightest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "soilRangeHeaviest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "sowingDepthMinCm": zod.number().min(listProductsResponseDetailsSowingDepthMinCmMin).nullable(),
+  "sowingDepthMaxCm": zod.number().min(listProductsResponseDetailsSowingDepthMaxCmMin).nullable(),
+  "tolerance": zod.array(zod.object({
+  "name": zod.enum(['Low pH', 'Waterlogging', 'Salinity', 'Drought', 'Frost']),
+  "mild": zod.boolean()
+})),
+  "maturityMeasure": zod.enum(['', 'Days to flowering (Perth)', 'Heading date', 'Time of flowering', 'Winter activity rating']),
+  "maturityDays": zod.number().min(listProductsResponseDetailsMaturityDaysMin).multipleOf(listProductsResponseDetailsMaturityDaysMultipleOf).nullable(),
+  "headingDate": zod.enum(['', 'Very early', 'Early', 'Mid', 'Mid-late', 'Late']),
+  "floweringWindow": zod.string().max(listProductsResponseDetailsFloweringWindowMax),
+  "winterActivity": zod.number().min(1).max(listProductsResponseDetailsWinterActivityMax).multipleOf(listProductsResponseDetailsWinterActivityMultipleOf).nullable(),
+  "inoculantGroup": zod.enum(['None', 'C', 'G/S', 'G', 'S', 'AL', 'AM', 'B', 'BS', 'E', 'F/E', 'I']),
+  "seedTreatment": zod.array(zod.enum(['Bare / untreated', 'Gaucho', 'Thiram', 'Goldstrike', 'BioNPK Powder S', 'Lime coated'])),
+  "ecocertApproved": zod.boolean(),
+  "endUse": zod.array(zod.enum(['Grazing', 'Hay', 'Silage', 'Cover crop', 'Green manure', 'Grain', 'Stockfeed', 'Permanent pasture', 'Erosion control / stabilisation', 'Break crop', 'Biofumigant', 'Turf'])),
+  "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
+  "companionSpecies": zod.array(zod.string().max(listProductsResponseDetailsCompanionSpeciesItemMax)),
+  "diseasePestResistance": zod.string().max(listProductsResponseDetailsDiseasePestResistanceMax),
+  "persistenceLongevity": zod.string().max(listProductsResponseDetailsPersistenceLongevityMax),
+  "grazingManagementNotes": zod.string().max(listProductsResponseDetailsGrazingManagementNotesMax),
+  "pbrProtected": zod.boolean(),
+  "pbrDetails": zod.string().max(listProductsResponseDetailsPbrDetailsMax),
+  "licenceRestriction": zod.string().max(listProductsResponseDetailsLicenceRestrictionMax),
+  "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
+  "isThirdPartyProduct": zod.boolean(),
+  "supplierName": zod.string().max(listProductsResponseDetailsSupplierNameMax),
   "summary": zod.string().max(listProductsResponseDetailsSummaryMax),
   "description": zod.string().max(listProductsResponseDetailsDescriptionMax),
   "notes": zod.string().max(listProductsResponseDetailsNotesMax),
   "components": zod.array(zod.object({
-  "name": zod.string(),
-  "note": zod.string()
+  "productLink": zod.string().max(listProductsResponseDetailsComponentsItemProductLinkMax),
+  "speciesName": zod.string().max(listProductsResponseDetailsComponentsItemSpeciesNameMax),
+  "inclusionRate": zod.number().min(listProductsResponseDetailsComponentsItemInclusionRateMin).nullable(),
+  "unit": zod.string().max(listProductsResponseDetailsComponentsItemUnitMax),
+  "note": zod.string().max(listProductsResponseDetailsComponentsItemNoteMax)
 })),
+  "formulationYear": zod.string().max(listProductsResponseDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
-  "slot": zod.string(),
-  "file": zod.string(),
-  "rating": zod.string(),
-  "src": zod.string()
-}))
+  "slot": zod.string().max(listProductsResponseDetailsPhotosItemSlotMax),
+  "file": zod.string().max(listProductsResponseDetailsPhotosItemFileMax),
+  "rating": zod.string().max(listProductsResponseDetailsPhotosItemRatingMax),
+  "src": zod.string().max(listProductsResponseDetailsPhotosItemSrcMax)
+})),
+  "inCurrentPrintedGuide": zod.boolean(),
+  "seoTitle": zod.string().max(listProductsResponseDetailsSeoTitleMax),
+  "seoDescription": zod.string().max(listProductsResponseDetailsSeoDescriptionMax),
+  "sortOrder": zod.number().min(listProductsResponseDetailsSortOrderMin).multipleOf(listProductsResponseDetailsSortOrderMultipleOf).nullable(),
+  "featured": zod.boolean(),
+  "relatedProducts": zod.array(zod.string().max(listProductsResponseDetailsRelatedProductsItemMax))
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -89,6 +216,10 @@ export const ListProductsResponse = zod.array(ListProductsResponseItem)
  */
 export const createProductBodyNameMax = 160;
 
+export const createProductBodySlugMax = 180;
+
+
+export const createProductBodySlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
 export const createProductBodyPriceMax = 80;
 
 export const createProductBodyPackSizeMax = 80;
@@ -103,15 +234,59 @@ export const createProductBodyDetailsStockCodeMax = 40;
 
 export const createProductBodyDetailsGuideSectionMax = 120;
 
+export const createProductBodyDetailsBotanicalNameMax = 180;
+
+export const createProductBodyDetailsAlsoKnownAsItemMax = 120;
+
+export const createProductBodyDetailsPackSizesItemLabelMax = 80;
+
+export const createProductBodyDetailsPackSizesItemSizeMin = 0;
+
+export const createProductBodyDetailsPackSizesItemUnitMax = 30;
+
 export const createProductBodyDetailsTreatmentMax = 120;
 
-export const createProductBodyDetailsRateMax = 80;
+export const createProductBodyDetailsBredByOriginMax = 180;
 
-export const createProductBodyDetailsRainfallMax = 80;
+export const createProductBodyDetailsDistributedByMax = 120;
 
-export const createProductBodyDetailsFloweringMax = 100;
+export const createProductBodyDetailsSowingRatesItemMinMin = 0;
 
-export const createProductBodyDetailsInoculantMax = 80;
+export const createProductBodyDetailsSowingRatesItemMaxMin = 0;
+
+export const createProductBodyDetailsSowingRatesItemUnitMax = 20;
+
+export const createProductBodyDetailsRainfallMinMmMin = 0;
+export const createProductBodyDetailsRainfallMinMmMultipleOf = 1;
+
+export const createProductBodyDetailsSoilPhMinMin = 0;
+export const createProductBodyDetailsSoilPhMinMax = 14;
+
+export const createProductBodyDetailsSowingDepthMinCmMin = 0;
+
+export const createProductBodyDetailsSowingDepthMaxCmMin = 0;
+
+export const createProductBodyDetailsMaturityDaysMin = 0;
+export const createProductBodyDetailsMaturityDaysMultipleOf = 1;
+
+export const createProductBodyDetailsFloweringWindowMax = 80;
+
+export const createProductBodyDetailsWinterActivityMax = 10;
+export const createProductBodyDetailsWinterActivityMultipleOf = 1;
+
+export const createProductBodyDetailsCompanionSpeciesItemMax = 120;
+
+export const createProductBodyDetailsDiseasePestResistanceMax = 3000;
+
+export const createProductBodyDetailsPersistenceLongevityMax = 180;
+
+export const createProductBodyDetailsGrazingManagementNotesMax = 3000;
+
+export const createProductBodyDetailsPbrDetailsMax = 300;
+
+export const createProductBodyDetailsLicenceRestrictionMax = 1000;
+
+export const createProductBodyDetailsSupplierNameMax = 180;
 
 export const createProductBodyDetailsSummaryMax = 500;
 
@@ -119,10 +294,40 @@ export const createProductBodyDetailsDescriptionMax = 5000;
 
 export const createProductBodyDetailsNotesMax = 2000;
 
+export const createProductBodyDetailsComponentsItemProductLinkMax = 180;
+
+export const createProductBodyDetailsComponentsItemSpeciesNameMax = 120;
+
+export const createProductBodyDetailsComponentsItemInclusionRateMin = 0;
+
+export const createProductBodyDetailsComponentsItemUnitMax = 20;
+
+export const createProductBodyDetailsComponentsItemNoteMax = 240;
+
+export const createProductBodyDetailsFormulationYearMax = 20;
+
+export const createProductBodyDetailsPhotosItemSlotMax = 40;
+
+export const createProductBodyDetailsPhotosItemFileMax = 240;
+
+export const createProductBodyDetailsPhotosItemRatingMax = 80;
+
+export const createProductBodyDetailsPhotosItemSrcMax = 500;
+
+export const createProductBodyDetailsSeoTitleMax = 180;
+
+export const createProductBodyDetailsSeoDescriptionMax = 320;
+
+export const createProductBodyDetailsSortOrderMin = 0;
+export const createProductBodyDetailsSortOrderMultipleOf = 1;
+
+export const createProductBodyDetailsRelatedProductsItemMax = 180;
+
 
 
 export const CreateProductBody = zod.object({
   "name": zod.string().min(1).max(createProductBodyNameMax),
+  "slug": zod.string().min(1).max(createProductBodySlugMax).regex(createProductBodySlugRegExp),
   "price": zod.string().min(1).max(createProductBodyPriceMax),
   "packSize": zod.string().min(1).max(createProductBodyPackSizeMax),
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
@@ -133,28 +338,81 @@ export const CreateProductBody = zod.object({
   "details": zod.object({
   "stockCode": zod.string().max(createProductBodyDetailsStockCodeMax),
   "guideSection": zod.string().max(createProductBodyDetailsGuideSectionMax),
+  "recordType": zod.enum(['Mix', 'Variety', 'Commodity / generic']),
+  "botanicalName": zod.string().max(createProductBodyDetailsBotanicalNameMax),
+  "alsoKnownAs": zod.array(zod.string().max(createProductBodyDetailsAlsoKnownAsItemMax)),
+  "packSizes": zod.array(zod.object({
+  "label": zod.string().max(createProductBodyDetailsPackSizesItemLabelMax),
+  "size": zod.number().min(createProductBodyDetailsPackSizesItemSizeMin).nullable(),
+  "unit": zod.string().max(createProductBodyDetailsPackSizesItemUnitMax)
+})),
   "treatment": zod.string().max(createProductBodyDetailsTreatmentMax),
-  "kind": zod.enum(['Mix', 'Variety']),
-  "rate": zod.string().max(createProductBodyDetailsRateMax),
-  "rainfall": zod.string().max(createProductBodyDetailsRainfallMax),
-  "flowering": zod.string().max(createProductBodyDetailsFloweringMax),
-  "inoculant": zod.string().max(createProductBodyDetailsInoculantMax),
-  "soil": zod.array(zod.string()),
-  "tolerance": zod.array(zod.string()),
-  "livestock": zod.array(zod.string()),
+  "persistencyType": zod.enum(['', 'Annual', 'Biennial', 'Perennial', 'Hybrid perennial', 'Short-term (1–2 years)']),
+  "ploidy": zod.enum(['', 'Diploid', 'Tetraploid', 'Hexaploid', 'Mixed (blend)']),
+  "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
+  "bredByOrigin": zod.string().max(createProductBodyDetailsBredByOriginMax),
+  "australianBred": zod.boolean(),
+  "distributedBy": zod.string().max(createProductBodyDetailsDistributedByMax),
+  "sowingRates": zod.array(zod.object({
+  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "min": zod.number().min(createProductBodyDetailsSowingRatesItemMinMin).nullable(),
+  "max": zod.number().min(createProductBodyDetailsSowingRatesItemMaxMin).nullable(),
+  "unit": zod.string().max(createProductBodyDetailsSowingRatesItemUnitMax)
+})),
+  "rainfallMinMm": zod.number().min(createProductBodyDetailsRainfallMinMmMin).multipleOf(createProductBodyDetailsRainfallMinMmMultipleOf).nullable(),
+  "soilPhMin": zod.number().min(createProductBodyDetailsSoilPhMinMin).max(createProductBodyDetailsSoilPhMinMax).nullable(),
+  "soilPhScale": zod.enum(['CaCl₂', 'water']),
+  "soilRangeLightest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "soilRangeHeaviest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "sowingDepthMinCm": zod.number().min(createProductBodyDetailsSowingDepthMinCmMin).nullable(),
+  "sowingDepthMaxCm": zod.number().min(createProductBodyDetailsSowingDepthMaxCmMin).nullable(),
+  "tolerance": zod.array(zod.object({
+  "name": zod.enum(['Low pH', 'Waterlogging', 'Salinity', 'Drought', 'Frost']),
+  "mild": zod.boolean()
+})),
+  "maturityMeasure": zod.enum(['', 'Days to flowering (Perth)', 'Heading date', 'Time of flowering', 'Winter activity rating']),
+  "maturityDays": zod.number().min(createProductBodyDetailsMaturityDaysMin).multipleOf(createProductBodyDetailsMaturityDaysMultipleOf).nullable(),
+  "headingDate": zod.enum(['', 'Very early', 'Early', 'Mid', 'Mid-late', 'Late']),
+  "floweringWindow": zod.string().max(createProductBodyDetailsFloweringWindowMax),
+  "winterActivity": zod.number().min(1).max(createProductBodyDetailsWinterActivityMax).multipleOf(createProductBodyDetailsWinterActivityMultipleOf).nullable(),
+  "inoculantGroup": zod.enum(['None', 'C', 'G/S', 'G', 'S', 'AL', 'AM', 'B', 'BS', 'E', 'F/E', 'I']),
+  "seedTreatment": zod.array(zod.enum(['Bare / untreated', 'Gaucho', 'Thiram', 'Goldstrike', 'BioNPK Powder S', 'Lime coated'])),
+  "ecocertApproved": zod.boolean(),
+  "endUse": zod.array(zod.enum(['Grazing', 'Hay', 'Silage', 'Cover crop', 'Green manure', 'Grain', 'Stockfeed', 'Permanent pasture', 'Erosion control / stabilisation', 'Break crop', 'Biofumigant', 'Turf'])),
+  "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
+  "companionSpecies": zod.array(zod.string().max(createProductBodyDetailsCompanionSpeciesItemMax)),
+  "diseasePestResistance": zod.string().max(createProductBodyDetailsDiseasePestResistanceMax),
+  "persistenceLongevity": zod.string().max(createProductBodyDetailsPersistenceLongevityMax),
+  "grazingManagementNotes": zod.string().max(createProductBodyDetailsGrazingManagementNotesMax),
+  "pbrProtected": zod.boolean(),
+  "pbrDetails": zod.string().max(createProductBodyDetailsPbrDetailsMax),
+  "licenceRestriction": zod.string().max(createProductBodyDetailsLicenceRestrictionMax),
+  "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
+  "isThirdPartyProduct": zod.boolean(),
+  "supplierName": zod.string().max(createProductBodyDetailsSupplierNameMax),
   "summary": zod.string().max(createProductBodyDetailsSummaryMax),
   "description": zod.string().max(createProductBodyDetailsDescriptionMax),
   "notes": zod.string().max(createProductBodyDetailsNotesMax),
   "components": zod.array(zod.object({
-  "name": zod.string(),
-  "note": zod.string()
+  "productLink": zod.string().max(createProductBodyDetailsComponentsItemProductLinkMax),
+  "speciesName": zod.string().max(createProductBodyDetailsComponentsItemSpeciesNameMax),
+  "inclusionRate": zod.number().min(createProductBodyDetailsComponentsItemInclusionRateMin).nullable(),
+  "unit": zod.string().max(createProductBodyDetailsComponentsItemUnitMax),
+  "note": zod.string().max(createProductBodyDetailsComponentsItemNoteMax)
 })),
+  "formulationYear": zod.string().max(createProductBodyDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
-  "slot": zod.string(),
-  "file": zod.string(),
-  "rating": zod.string(),
-  "src": zod.string()
-}))
+  "slot": zod.string().max(createProductBodyDetailsPhotosItemSlotMax),
+  "file": zod.string().max(createProductBodyDetailsPhotosItemFileMax),
+  "rating": zod.string().max(createProductBodyDetailsPhotosItemRatingMax),
+  "src": zod.string().max(createProductBodyDetailsPhotosItemSrcMax)
+})),
+  "inCurrentPrintedGuide": zod.boolean(),
+  "seoTitle": zod.string().max(createProductBodyDetailsSeoTitleMax),
+  "seoDescription": zod.string().max(createProductBodyDetailsSeoDescriptionMax),
+  "sortOrder": zod.number().min(createProductBodyDetailsSortOrderMin).multipleOf(createProductBodyDetailsSortOrderMultipleOf).nullable(),
+  "featured": zod.boolean(),
+  "relatedProducts": zod.array(zod.string().max(createProductBodyDetailsRelatedProductsItemMax))
 })
 })
 
@@ -162,15 +420,59 @@ export const createProductResponseDetailsStockCodeMax = 40;
 
 export const createProductResponseDetailsGuideSectionMax = 120;
 
+export const createProductResponseDetailsBotanicalNameMax = 180;
+
+export const createProductResponseDetailsAlsoKnownAsItemMax = 120;
+
+export const createProductResponseDetailsPackSizesItemLabelMax = 80;
+
+export const createProductResponseDetailsPackSizesItemSizeMin = 0;
+
+export const createProductResponseDetailsPackSizesItemUnitMax = 30;
+
 export const createProductResponseDetailsTreatmentMax = 120;
 
-export const createProductResponseDetailsRateMax = 80;
+export const createProductResponseDetailsBredByOriginMax = 180;
 
-export const createProductResponseDetailsRainfallMax = 80;
+export const createProductResponseDetailsDistributedByMax = 120;
 
-export const createProductResponseDetailsFloweringMax = 100;
+export const createProductResponseDetailsSowingRatesItemMinMin = 0;
 
-export const createProductResponseDetailsInoculantMax = 80;
+export const createProductResponseDetailsSowingRatesItemMaxMin = 0;
+
+export const createProductResponseDetailsSowingRatesItemUnitMax = 20;
+
+export const createProductResponseDetailsRainfallMinMmMin = 0;
+export const createProductResponseDetailsRainfallMinMmMultipleOf = 1;
+
+export const createProductResponseDetailsSoilPhMinMin = 0;
+export const createProductResponseDetailsSoilPhMinMax = 14;
+
+export const createProductResponseDetailsSowingDepthMinCmMin = 0;
+
+export const createProductResponseDetailsSowingDepthMaxCmMin = 0;
+
+export const createProductResponseDetailsMaturityDaysMin = 0;
+export const createProductResponseDetailsMaturityDaysMultipleOf = 1;
+
+export const createProductResponseDetailsFloweringWindowMax = 80;
+
+export const createProductResponseDetailsWinterActivityMax = 10;
+export const createProductResponseDetailsWinterActivityMultipleOf = 1;
+
+export const createProductResponseDetailsCompanionSpeciesItemMax = 120;
+
+export const createProductResponseDetailsDiseasePestResistanceMax = 3000;
+
+export const createProductResponseDetailsPersistenceLongevityMax = 180;
+
+export const createProductResponseDetailsGrazingManagementNotesMax = 3000;
+
+export const createProductResponseDetailsPbrDetailsMax = 300;
+
+export const createProductResponseDetailsLicenceRestrictionMax = 1000;
+
+export const createProductResponseDetailsSupplierNameMax = 180;
 
 export const createProductResponseDetailsSummaryMax = 500;
 
@@ -178,11 +480,41 @@ export const createProductResponseDetailsDescriptionMax = 5000;
 
 export const createProductResponseDetailsNotesMax = 2000;
 
+export const createProductResponseDetailsComponentsItemProductLinkMax = 180;
+
+export const createProductResponseDetailsComponentsItemSpeciesNameMax = 120;
+
+export const createProductResponseDetailsComponentsItemInclusionRateMin = 0;
+
+export const createProductResponseDetailsComponentsItemUnitMax = 20;
+
+export const createProductResponseDetailsComponentsItemNoteMax = 240;
+
+export const createProductResponseDetailsFormulationYearMax = 20;
+
+export const createProductResponseDetailsPhotosItemSlotMax = 40;
+
+export const createProductResponseDetailsPhotosItemFileMax = 240;
+
+export const createProductResponseDetailsPhotosItemRatingMax = 80;
+
+export const createProductResponseDetailsPhotosItemSrcMax = 500;
+
+export const createProductResponseDetailsSeoTitleMax = 180;
+
+export const createProductResponseDetailsSeoDescriptionMax = 320;
+
+export const createProductResponseDetailsSortOrderMin = 0;
+export const createProductResponseDetailsSortOrderMultipleOf = 1;
+
+export const createProductResponseDetailsRelatedProductsItemMax = 180;
+
 
 
 export const CreateProductResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "slug": zod.string(),
   "price": zod.string(),
   "packSize": zod.string(),
   "status": zod.string(),
@@ -193,28 +525,81 @@ export const CreateProductResponse = zod.object({
   "details": zod.object({
   "stockCode": zod.string().max(createProductResponseDetailsStockCodeMax),
   "guideSection": zod.string().max(createProductResponseDetailsGuideSectionMax),
+  "recordType": zod.enum(['Mix', 'Variety', 'Commodity / generic']),
+  "botanicalName": zod.string().max(createProductResponseDetailsBotanicalNameMax),
+  "alsoKnownAs": zod.array(zod.string().max(createProductResponseDetailsAlsoKnownAsItemMax)),
+  "packSizes": zod.array(zod.object({
+  "label": zod.string().max(createProductResponseDetailsPackSizesItemLabelMax),
+  "size": zod.number().min(createProductResponseDetailsPackSizesItemSizeMin).nullable(),
+  "unit": zod.string().max(createProductResponseDetailsPackSizesItemUnitMax)
+})),
   "treatment": zod.string().max(createProductResponseDetailsTreatmentMax),
-  "kind": zod.enum(['Mix', 'Variety']),
-  "rate": zod.string().max(createProductResponseDetailsRateMax),
-  "rainfall": zod.string().max(createProductResponseDetailsRainfallMax),
-  "flowering": zod.string().max(createProductResponseDetailsFloweringMax),
-  "inoculant": zod.string().max(createProductResponseDetailsInoculantMax),
-  "soil": zod.array(zod.string()),
-  "tolerance": zod.array(zod.string()),
-  "livestock": zod.array(zod.string()),
+  "persistencyType": zod.enum(['', 'Annual', 'Biennial', 'Perennial', 'Hybrid perennial', 'Short-term (1–2 years)']),
+  "ploidy": zod.enum(['', 'Diploid', 'Tetraploid', 'Hexaploid', 'Mixed (blend)']),
+  "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
+  "bredByOrigin": zod.string().max(createProductResponseDetailsBredByOriginMax),
+  "australianBred": zod.boolean(),
+  "distributedBy": zod.string().max(createProductResponseDetailsDistributedByMax),
+  "sowingRates": zod.array(zod.object({
+  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "min": zod.number().min(createProductResponseDetailsSowingRatesItemMinMin).nullable(),
+  "max": zod.number().min(createProductResponseDetailsSowingRatesItemMaxMin).nullable(),
+  "unit": zod.string().max(createProductResponseDetailsSowingRatesItemUnitMax)
+})),
+  "rainfallMinMm": zod.number().min(createProductResponseDetailsRainfallMinMmMin).multipleOf(createProductResponseDetailsRainfallMinMmMultipleOf).nullable(),
+  "soilPhMin": zod.number().min(createProductResponseDetailsSoilPhMinMin).max(createProductResponseDetailsSoilPhMinMax).nullable(),
+  "soilPhScale": zod.enum(['CaCl₂', 'water']),
+  "soilRangeLightest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "soilRangeHeaviest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "sowingDepthMinCm": zod.number().min(createProductResponseDetailsSowingDepthMinCmMin).nullable(),
+  "sowingDepthMaxCm": zod.number().min(createProductResponseDetailsSowingDepthMaxCmMin).nullable(),
+  "tolerance": zod.array(zod.object({
+  "name": zod.enum(['Low pH', 'Waterlogging', 'Salinity', 'Drought', 'Frost']),
+  "mild": zod.boolean()
+})),
+  "maturityMeasure": zod.enum(['', 'Days to flowering (Perth)', 'Heading date', 'Time of flowering', 'Winter activity rating']),
+  "maturityDays": zod.number().min(createProductResponseDetailsMaturityDaysMin).multipleOf(createProductResponseDetailsMaturityDaysMultipleOf).nullable(),
+  "headingDate": zod.enum(['', 'Very early', 'Early', 'Mid', 'Mid-late', 'Late']),
+  "floweringWindow": zod.string().max(createProductResponseDetailsFloweringWindowMax),
+  "winterActivity": zod.number().min(1).max(createProductResponseDetailsWinterActivityMax).multipleOf(createProductResponseDetailsWinterActivityMultipleOf).nullable(),
+  "inoculantGroup": zod.enum(['None', 'C', 'G/S', 'G', 'S', 'AL', 'AM', 'B', 'BS', 'E', 'F/E', 'I']),
+  "seedTreatment": zod.array(zod.enum(['Bare / untreated', 'Gaucho', 'Thiram', 'Goldstrike', 'BioNPK Powder S', 'Lime coated'])),
+  "ecocertApproved": zod.boolean(),
+  "endUse": zod.array(zod.enum(['Grazing', 'Hay', 'Silage', 'Cover crop', 'Green manure', 'Grain', 'Stockfeed', 'Permanent pasture', 'Erosion control / stabilisation', 'Break crop', 'Biofumigant', 'Turf'])),
+  "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
+  "companionSpecies": zod.array(zod.string().max(createProductResponseDetailsCompanionSpeciesItemMax)),
+  "diseasePestResistance": zod.string().max(createProductResponseDetailsDiseasePestResistanceMax),
+  "persistenceLongevity": zod.string().max(createProductResponseDetailsPersistenceLongevityMax),
+  "grazingManagementNotes": zod.string().max(createProductResponseDetailsGrazingManagementNotesMax),
+  "pbrProtected": zod.boolean(),
+  "pbrDetails": zod.string().max(createProductResponseDetailsPbrDetailsMax),
+  "licenceRestriction": zod.string().max(createProductResponseDetailsLicenceRestrictionMax),
+  "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
+  "isThirdPartyProduct": zod.boolean(),
+  "supplierName": zod.string().max(createProductResponseDetailsSupplierNameMax),
   "summary": zod.string().max(createProductResponseDetailsSummaryMax),
   "description": zod.string().max(createProductResponseDetailsDescriptionMax),
   "notes": zod.string().max(createProductResponseDetailsNotesMax),
   "components": zod.array(zod.object({
-  "name": zod.string(),
-  "note": zod.string()
+  "productLink": zod.string().max(createProductResponseDetailsComponentsItemProductLinkMax),
+  "speciesName": zod.string().max(createProductResponseDetailsComponentsItemSpeciesNameMax),
+  "inclusionRate": zod.number().min(createProductResponseDetailsComponentsItemInclusionRateMin).nullable(),
+  "unit": zod.string().max(createProductResponseDetailsComponentsItemUnitMax),
+  "note": zod.string().max(createProductResponseDetailsComponentsItemNoteMax)
 })),
+  "formulationYear": zod.string().max(createProductResponseDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
-  "slot": zod.string(),
-  "file": zod.string(),
-  "rating": zod.string(),
-  "src": zod.string()
-}))
+  "slot": zod.string().max(createProductResponseDetailsPhotosItemSlotMax),
+  "file": zod.string().max(createProductResponseDetailsPhotosItemFileMax),
+  "rating": zod.string().max(createProductResponseDetailsPhotosItemRatingMax),
+  "src": zod.string().max(createProductResponseDetailsPhotosItemSrcMax)
+})),
+  "inCurrentPrintedGuide": zod.boolean(),
+  "seoTitle": zod.string().max(createProductResponseDetailsSeoTitleMax),
+  "seoDescription": zod.string().max(createProductResponseDetailsSeoDescriptionMax),
+  "sortOrder": zod.number().min(createProductResponseDetailsSortOrderMin).multipleOf(createProductResponseDetailsSortOrderMultipleOf).nullable(),
+  "featured": zod.boolean(),
+  "relatedProducts": zod.array(zod.string().max(createProductResponseDetailsRelatedProductsItemMax))
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -244,21 +629,94 @@ export const updateProductBodyDetailsStockCodeMax = 40;
 
 export const updateProductBodyDetailsGuideSectionMax = 120;
 
+export const updateProductBodyDetailsBotanicalNameMax = 180;
+
+export const updateProductBodyDetailsAlsoKnownAsItemMax = 120;
+
+export const updateProductBodyDetailsPackSizesItemLabelMax = 80;
+
+export const updateProductBodyDetailsPackSizesItemSizeMin = 0;
+
+export const updateProductBodyDetailsPackSizesItemUnitMax = 30;
+
 export const updateProductBodyDetailsTreatmentMax = 120;
 
-export const updateProductBodyDetailsRateMax = 80;
+export const updateProductBodyDetailsBredByOriginMax = 180;
 
-export const updateProductBodyDetailsRainfallMax = 80;
+export const updateProductBodyDetailsDistributedByMax = 120;
 
-export const updateProductBodyDetailsFloweringMax = 100;
+export const updateProductBodyDetailsSowingRatesItemMinMin = 0;
 
-export const updateProductBodyDetailsInoculantMax = 80;
+export const updateProductBodyDetailsSowingRatesItemMaxMin = 0;
+
+export const updateProductBodyDetailsSowingRatesItemUnitMax = 20;
+
+export const updateProductBodyDetailsRainfallMinMmMin = 0;
+export const updateProductBodyDetailsRainfallMinMmMultipleOf = 1;
+
+export const updateProductBodyDetailsSoilPhMinMin = 0;
+export const updateProductBodyDetailsSoilPhMinMax = 14;
+
+export const updateProductBodyDetailsSowingDepthMinCmMin = 0;
+
+export const updateProductBodyDetailsSowingDepthMaxCmMin = 0;
+
+export const updateProductBodyDetailsMaturityDaysMin = 0;
+export const updateProductBodyDetailsMaturityDaysMultipleOf = 1;
+
+export const updateProductBodyDetailsFloweringWindowMax = 80;
+
+export const updateProductBodyDetailsWinterActivityMax = 10;
+export const updateProductBodyDetailsWinterActivityMultipleOf = 1;
+
+export const updateProductBodyDetailsCompanionSpeciesItemMax = 120;
+
+export const updateProductBodyDetailsDiseasePestResistanceMax = 3000;
+
+export const updateProductBodyDetailsPersistenceLongevityMax = 180;
+
+export const updateProductBodyDetailsGrazingManagementNotesMax = 3000;
+
+export const updateProductBodyDetailsPbrDetailsMax = 300;
+
+export const updateProductBodyDetailsLicenceRestrictionMax = 1000;
+
+export const updateProductBodyDetailsSupplierNameMax = 180;
 
 export const updateProductBodyDetailsSummaryMax = 500;
 
 export const updateProductBodyDetailsDescriptionMax = 5000;
 
 export const updateProductBodyDetailsNotesMax = 2000;
+
+export const updateProductBodyDetailsComponentsItemProductLinkMax = 180;
+
+export const updateProductBodyDetailsComponentsItemSpeciesNameMax = 120;
+
+export const updateProductBodyDetailsComponentsItemInclusionRateMin = 0;
+
+export const updateProductBodyDetailsComponentsItemUnitMax = 20;
+
+export const updateProductBodyDetailsComponentsItemNoteMax = 240;
+
+export const updateProductBodyDetailsFormulationYearMax = 20;
+
+export const updateProductBodyDetailsPhotosItemSlotMax = 40;
+
+export const updateProductBodyDetailsPhotosItemFileMax = 240;
+
+export const updateProductBodyDetailsPhotosItemRatingMax = 80;
+
+export const updateProductBodyDetailsPhotosItemSrcMax = 500;
+
+export const updateProductBodyDetailsSeoTitleMax = 180;
+
+export const updateProductBodyDetailsSeoDescriptionMax = 320;
+
+export const updateProductBodyDetailsSortOrderMin = 0;
+export const updateProductBodyDetailsSortOrderMultipleOf = 1;
+
+export const updateProductBodyDetailsRelatedProductsItemMax = 180;
 
 
 
@@ -274,28 +732,81 @@ export const UpdateProductBody = zod.object({
   "details": zod.object({
   "stockCode": zod.string().max(updateProductBodyDetailsStockCodeMax),
   "guideSection": zod.string().max(updateProductBodyDetailsGuideSectionMax),
+  "recordType": zod.enum(['Mix', 'Variety', 'Commodity / generic']),
+  "botanicalName": zod.string().max(updateProductBodyDetailsBotanicalNameMax),
+  "alsoKnownAs": zod.array(zod.string().max(updateProductBodyDetailsAlsoKnownAsItemMax)),
+  "packSizes": zod.array(zod.object({
+  "label": zod.string().max(updateProductBodyDetailsPackSizesItemLabelMax),
+  "size": zod.number().min(updateProductBodyDetailsPackSizesItemSizeMin).nullable(),
+  "unit": zod.string().max(updateProductBodyDetailsPackSizesItemUnitMax)
+})),
   "treatment": zod.string().max(updateProductBodyDetailsTreatmentMax),
-  "kind": zod.enum(['Mix', 'Variety']),
-  "rate": zod.string().max(updateProductBodyDetailsRateMax),
-  "rainfall": zod.string().max(updateProductBodyDetailsRainfallMax),
-  "flowering": zod.string().max(updateProductBodyDetailsFloweringMax),
-  "inoculant": zod.string().max(updateProductBodyDetailsInoculantMax),
-  "soil": zod.array(zod.string()),
-  "tolerance": zod.array(zod.string()),
-  "livestock": zod.array(zod.string()),
+  "persistencyType": zod.enum(['', 'Annual', 'Biennial', 'Perennial', 'Hybrid perennial', 'Short-term (1–2 years)']),
+  "ploidy": zod.enum(['', 'Diploid', 'Tetraploid', 'Hexaploid', 'Mixed (blend)']),
+  "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
+  "bredByOrigin": zod.string().max(updateProductBodyDetailsBredByOriginMax),
+  "australianBred": zod.boolean(),
+  "distributedBy": zod.string().max(updateProductBodyDetailsDistributedByMax),
+  "sowingRates": zod.array(zod.object({
+  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "min": zod.number().min(updateProductBodyDetailsSowingRatesItemMinMin).nullable(),
+  "max": zod.number().min(updateProductBodyDetailsSowingRatesItemMaxMin).nullable(),
+  "unit": zod.string().max(updateProductBodyDetailsSowingRatesItemUnitMax)
+})),
+  "rainfallMinMm": zod.number().min(updateProductBodyDetailsRainfallMinMmMin).multipleOf(updateProductBodyDetailsRainfallMinMmMultipleOf).nullable(),
+  "soilPhMin": zod.number().min(updateProductBodyDetailsSoilPhMinMin).max(updateProductBodyDetailsSoilPhMinMax).nullable(),
+  "soilPhScale": zod.enum(['CaCl₂', 'water']),
+  "soilRangeLightest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "soilRangeHeaviest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "sowingDepthMinCm": zod.number().min(updateProductBodyDetailsSowingDepthMinCmMin).nullable(),
+  "sowingDepthMaxCm": zod.number().min(updateProductBodyDetailsSowingDepthMaxCmMin).nullable(),
+  "tolerance": zod.array(zod.object({
+  "name": zod.enum(['Low pH', 'Waterlogging', 'Salinity', 'Drought', 'Frost']),
+  "mild": zod.boolean()
+})),
+  "maturityMeasure": zod.enum(['', 'Days to flowering (Perth)', 'Heading date', 'Time of flowering', 'Winter activity rating']),
+  "maturityDays": zod.number().min(updateProductBodyDetailsMaturityDaysMin).multipleOf(updateProductBodyDetailsMaturityDaysMultipleOf).nullable(),
+  "headingDate": zod.enum(['', 'Very early', 'Early', 'Mid', 'Mid-late', 'Late']),
+  "floweringWindow": zod.string().max(updateProductBodyDetailsFloweringWindowMax),
+  "winterActivity": zod.number().min(1).max(updateProductBodyDetailsWinterActivityMax).multipleOf(updateProductBodyDetailsWinterActivityMultipleOf).nullable(),
+  "inoculantGroup": zod.enum(['None', 'C', 'G/S', 'G', 'S', 'AL', 'AM', 'B', 'BS', 'E', 'F/E', 'I']),
+  "seedTreatment": zod.array(zod.enum(['Bare / untreated', 'Gaucho', 'Thiram', 'Goldstrike', 'BioNPK Powder S', 'Lime coated'])),
+  "ecocertApproved": zod.boolean(),
+  "endUse": zod.array(zod.enum(['Grazing', 'Hay', 'Silage', 'Cover crop', 'Green manure', 'Grain', 'Stockfeed', 'Permanent pasture', 'Erosion control / stabilisation', 'Break crop', 'Biofumigant', 'Turf'])),
+  "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
+  "companionSpecies": zod.array(zod.string().max(updateProductBodyDetailsCompanionSpeciesItemMax)),
+  "diseasePestResistance": zod.string().max(updateProductBodyDetailsDiseasePestResistanceMax),
+  "persistenceLongevity": zod.string().max(updateProductBodyDetailsPersistenceLongevityMax),
+  "grazingManagementNotes": zod.string().max(updateProductBodyDetailsGrazingManagementNotesMax),
+  "pbrProtected": zod.boolean(),
+  "pbrDetails": zod.string().max(updateProductBodyDetailsPbrDetailsMax),
+  "licenceRestriction": zod.string().max(updateProductBodyDetailsLicenceRestrictionMax),
+  "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
+  "isThirdPartyProduct": zod.boolean(),
+  "supplierName": zod.string().max(updateProductBodyDetailsSupplierNameMax),
   "summary": zod.string().max(updateProductBodyDetailsSummaryMax),
   "description": zod.string().max(updateProductBodyDetailsDescriptionMax),
   "notes": zod.string().max(updateProductBodyDetailsNotesMax),
   "components": zod.array(zod.object({
-  "name": zod.string(),
-  "note": zod.string()
+  "productLink": zod.string().max(updateProductBodyDetailsComponentsItemProductLinkMax),
+  "speciesName": zod.string().max(updateProductBodyDetailsComponentsItemSpeciesNameMax),
+  "inclusionRate": zod.number().min(updateProductBodyDetailsComponentsItemInclusionRateMin).nullable(),
+  "unit": zod.string().max(updateProductBodyDetailsComponentsItemUnitMax),
+  "note": zod.string().max(updateProductBodyDetailsComponentsItemNoteMax)
 })),
+  "formulationYear": zod.string().max(updateProductBodyDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
-  "slot": zod.string(),
-  "file": zod.string(),
-  "rating": zod.string(),
-  "src": zod.string()
-}))
+  "slot": zod.string().max(updateProductBodyDetailsPhotosItemSlotMax),
+  "file": zod.string().max(updateProductBodyDetailsPhotosItemFileMax),
+  "rating": zod.string().max(updateProductBodyDetailsPhotosItemRatingMax),
+  "src": zod.string().max(updateProductBodyDetailsPhotosItemSrcMax)
+})),
+  "inCurrentPrintedGuide": zod.boolean(),
+  "seoTitle": zod.string().max(updateProductBodyDetailsSeoTitleMax),
+  "seoDescription": zod.string().max(updateProductBodyDetailsSeoDescriptionMax),
+  "sortOrder": zod.number().min(updateProductBodyDetailsSortOrderMin).multipleOf(updateProductBodyDetailsSortOrderMultipleOf).nullable(),
+  "featured": zod.boolean(),
+  "relatedProducts": zod.array(zod.string().max(updateProductBodyDetailsRelatedProductsItemMax))
 }).optional()
 })
 
@@ -303,15 +814,59 @@ export const updateProductResponseDetailsStockCodeMax = 40;
 
 export const updateProductResponseDetailsGuideSectionMax = 120;
 
+export const updateProductResponseDetailsBotanicalNameMax = 180;
+
+export const updateProductResponseDetailsAlsoKnownAsItemMax = 120;
+
+export const updateProductResponseDetailsPackSizesItemLabelMax = 80;
+
+export const updateProductResponseDetailsPackSizesItemSizeMin = 0;
+
+export const updateProductResponseDetailsPackSizesItemUnitMax = 30;
+
 export const updateProductResponseDetailsTreatmentMax = 120;
 
-export const updateProductResponseDetailsRateMax = 80;
+export const updateProductResponseDetailsBredByOriginMax = 180;
 
-export const updateProductResponseDetailsRainfallMax = 80;
+export const updateProductResponseDetailsDistributedByMax = 120;
 
-export const updateProductResponseDetailsFloweringMax = 100;
+export const updateProductResponseDetailsSowingRatesItemMinMin = 0;
 
-export const updateProductResponseDetailsInoculantMax = 80;
+export const updateProductResponseDetailsSowingRatesItemMaxMin = 0;
+
+export const updateProductResponseDetailsSowingRatesItemUnitMax = 20;
+
+export const updateProductResponseDetailsRainfallMinMmMin = 0;
+export const updateProductResponseDetailsRainfallMinMmMultipleOf = 1;
+
+export const updateProductResponseDetailsSoilPhMinMin = 0;
+export const updateProductResponseDetailsSoilPhMinMax = 14;
+
+export const updateProductResponseDetailsSowingDepthMinCmMin = 0;
+
+export const updateProductResponseDetailsSowingDepthMaxCmMin = 0;
+
+export const updateProductResponseDetailsMaturityDaysMin = 0;
+export const updateProductResponseDetailsMaturityDaysMultipleOf = 1;
+
+export const updateProductResponseDetailsFloweringWindowMax = 80;
+
+export const updateProductResponseDetailsWinterActivityMax = 10;
+export const updateProductResponseDetailsWinterActivityMultipleOf = 1;
+
+export const updateProductResponseDetailsCompanionSpeciesItemMax = 120;
+
+export const updateProductResponseDetailsDiseasePestResistanceMax = 3000;
+
+export const updateProductResponseDetailsPersistenceLongevityMax = 180;
+
+export const updateProductResponseDetailsGrazingManagementNotesMax = 3000;
+
+export const updateProductResponseDetailsPbrDetailsMax = 300;
+
+export const updateProductResponseDetailsLicenceRestrictionMax = 1000;
+
+export const updateProductResponseDetailsSupplierNameMax = 180;
 
 export const updateProductResponseDetailsSummaryMax = 500;
 
@@ -319,11 +874,41 @@ export const updateProductResponseDetailsDescriptionMax = 5000;
 
 export const updateProductResponseDetailsNotesMax = 2000;
 
+export const updateProductResponseDetailsComponentsItemProductLinkMax = 180;
+
+export const updateProductResponseDetailsComponentsItemSpeciesNameMax = 120;
+
+export const updateProductResponseDetailsComponentsItemInclusionRateMin = 0;
+
+export const updateProductResponseDetailsComponentsItemUnitMax = 20;
+
+export const updateProductResponseDetailsComponentsItemNoteMax = 240;
+
+export const updateProductResponseDetailsFormulationYearMax = 20;
+
+export const updateProductResponseDetailsPhotosItemSlotMax = 40;
+
+export const updateProductResponseDetailsPhotosItemFileMax = 240;
+
+export const updateProductResponseDetailsPhotosItemRatingMax = 80;
+
+export const updateProductResponseDetailsPhotosItemSrcMax = 500;
+
+export const updateProductResponseDetailsSeoTitleMax = 180;
+
+export const updateProductResponseDetailsSeoDescriptionMax = 320;
+
+export const updateProductResponseDetailsSortOrderMin = 0;
+export const updateProductResponseDetailsSortOrderMultipleOf = 1;
+
+export const updateProductResponseDetailsRelatedProductsItemMax = 180;
+
 
 
 export const UpdateProductResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "slug": zod.string(),
   "price": zod.string(),
   "packSize": zod.string(),
   "status": zod.string(),
@@ -334,28 +919,81 @@ export const UpdateProductResponse = zod.object({
   "details": zod.object({
   "stockCode": zod.string().max(updateProductResponseDetailsStockCodeMax),
   "guideSection": zod.string().max(updateProductResponseDetailsGuideSectionMax),
+  "recordType": zod.enum(['Mix', 'Variety', 'Commodity / generic']),
+  "botanicalName": zod.string().max(updateProductResponseDetailsBotanicalNameMax),
+  "alsoKnownAs": zod.array(zod.string().max(updateProductResponseDetailsAlsoKnownAsItemMax)),
+  "packSizes": zod.array(zod.object({
+  "label": zod.string().max(updateProductResponseDetailsPackSizesItemLabelMax),
+  "size": zod.number().min(updateProductResponseDetailsPackSizesItemSizeMin).nullable(),
+  "unit": zod.string().max(updateProductResponseDetailsPackSizesItemUnitMax)
+})),
   "treatment": zod.string().max(updateProductResponseDetailsTreatmentMax),
-  "kind": zod.enum(['Mix', 'Variety']),
-  "rate": zod.string().max(updateProductResponseDetailsRateMax),
-  "rainfall": zod.string().max(updateProductResponseDetailsRainfallMax),
-  "flowering": zod.string().max(updateProductResponseDetailsFloweringMax),
-  "inoculant": zod.string().max(updateProductResponseDetailsInoculantMax),
-  "soil": zod.array(zod.string()),
-  "tolerance": zod.array(zod.string()),
-  "livestock": zod.array(zod.string()),
+  "persistencyType": zod.enum(['', 'Annual', 'Biennial', 'Perennial', 'Hybrid perennial', 'Short-term (1–2 years)']),
+  "ploidy": zod.enum(['', 'Diploid', 'Tetraploid', 'Hexaploid', 'Mixed (blend)']),
+  "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
+  "bredByOrigin": zod.string().max(updateProductResponseDetailsBredByOriginMax),
+  "australianBred": zod.boolean(),
+  "distributedBy": zod.string().max(updateProductResponseDetailsDistributedByMax),
+  "sowingRates": zod.array(zod.object({
+  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "min": zod.number().min(updateProductResponseDetailsSowingRatesItemMinMin).nullable(),
+  "max": zod.number().min(updateProductResponseDetailsSowingRatesItemMaxMin).nullable(),
+  "unit": zod.string().max(updateProductResponseDetailsSowingRatesItemUnitMax)
+})),
+  "rainfallMinMm": zod.number().min(updateProductResponseDetailsRainfallMinMmMin).multipleOf(updateProductResponseDetailsRainfallMinMmMultipleOf).nullable(),
+  "soilPhMin": zod.number().min(updateProductResponseDetailsSoilPhMinMin).max(updateProductResponseDetailsSoilPhMinMax).nullable(),
+  "soilPhScale": zod.enum(['CaCl₂', 'water']),
+  "soilRangeLightest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "soilRangeHeaviest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "sowingDepthMinCm": zod.number().min(updateProductResponseDetailsSowingDepthMinCmMin).nullable(),
+  "sowingDepthMaxCm": zod.number().min(updateProductResponseDetailsSowingDepthMaxCmMin).nullable(),
+  "tolerance": zod.array(zod.object({
+  "name": zod.enum(['Low pH', 'Waterlogging', 'Salinity', 'Drought', 'Frost']),
+  "mild": zod.boolean()
+})),
+  "maturityMeasure": zod.enum(['', 'Days to flowering (Perth)', 'Heading date', 'Time of flowering', 'Winter activity rating']),
+  "maturityDays": zod.number().min(updateProductResponseDetailsMaturityDaysMin).multipleOf(updateProductResponseDetailsMaturityDaysMultipleOf).nullable(),
+  "headingDate": zod.enum(['', 'Very early', 'Early', 'Mid', 'Mid-late', 'Late']),
+  "floweringWindow": zod.string().max(updateProductResponseDetailsFloweringWindowMax),
+  "winterActivity": zod.number().min(1).max(updateProductResponseDetailsWinterActivityMax).multipleOf(updateProductResponseDetailsWinterActivityMultipleOf).nullable(),
+  "inoculantGroup": zod.enum(['None', 'C', 'G/S', 'G', 'S', 'AL', 'AM', 'B', 'BS', 'E', 'F/E', 'I']),
+  "seedTreatment": zod.array(zod.enum(['Bare / untreated', 'Gaucho', 'Thiram', 'Goldstrike', 'BioNPK Powder S', 'Lime coated'])),
+  "ecocertApproved": zod.boolean(),
+  "endUse": zod.array(zod.enum(['Grazing', 'Hay', 'Silage', 'Cover crop', 'Green manure', 'Grain', 'Stockfeed', 'Permanent pasture', 'Erosion control / stabilisation', 'Break crop', 'Biofumigant', 'Turf'])),
+  "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
+  "companionSpecies": zod.array(zod.string().max(updateProductResponseDetailsCompanionSpeciesItemMax)),
+  "diseasePestResistance": zod.string().max(updateProductResponseDetailsDiseasePestResistanceMax),
+  "persistenceLongevity": zod.string().max(updateProductResponseDetailsPersistenceLongevityMax),
+  "grazingManagementNotes": zod.string().max(updateProductResponseDetailsGrazingManagementNotesMax),
+  "pbrProtected": zod.boolean(),
+  "pbrDetails": zod.string().max(updateProductResponseDetailsPbrDetailsMax),
+  "licenceRestriction": zod.string().max(updateProductResponseDetailsLicenceRestrictionMax),
+  "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
+  "isThirdPartyProduct": zod.boolean(),
+  "supplierName": zod.string().max(updateProductResponseDetailsSupplierNameMax),
   "summary": zod.string().max(updateProductResponseDetailsSummaryMax),
   "description": zod.string().max(updateProductResponseDetailsDescriptionMax),
   "notes": zod.string().max(updateProductResponseDetailsNotesMax),
   "components": zod.array(zod.object({
-  "name": zod.string(),
-  "note": zod.string()
+  "productLink": zod.string().max(updateProductResponseDetailsComponentsItemProductLinkMax),
+  "speciesName": zod.string().max(updateProductResponseDetailsComponentsItemSpeciesNameMax),
+  "inclusionRate": zod.number().min(updateProductResponseDetailsComponentsItemInclusionRateMin).nullable(),
+  "unit": zod.string().max(updateProductResponseDetailsComponentsItemUnitMax),
+  "note": zod.string().max(updateProductResponseDetailsComponentsItemNoteMax)
 })),
+  "formulationYear": zod.string().max(updateProductResponseDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
-  "slot": zod.string(),
-  "file": zod.string(),
-  "rating": zod.string(),
-  "src": zod.string()
-}))
+  "slot": zod.string().max(updateProductResponseDetailsPhotosItemSlotMax),
+  "file": zod.string().max(updateProductResponseDetailsPhotosItemFileMax),
+  "rating": zod.string().max(updateProductResponseDetailsPhotosItemRatingMax),
+  "src": zod.string().max(updateProductResponseDetailsPhotosItemSrcMax)
+})),
+  "inCurrentPrintedGuide": zod.boolean(),
+  "seoTitle": zod.string().max(updateProductResponseDetailsSeoTitleMax),
+  "seoDescription": zod.string().max(updateProductResponseDetailsSeoDescriptionMax),
+  "sortOrder": zod.number().min(updateProductResponseDetailsSortOrderMin).multipleOf(updateProductResponseDetailsSortOrderMultipleOf).nullable(),
+  "featured": zod.boolean(),
+  "relatedProducts": zod.array(zod.string().max(updateProductResponseDetailsRelatedProductsItemMax))
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -379,21 +1017,94 @@ export const getAdminSummaryResponseRecentProductsItemDetailsStockCodeMax = 40;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsGuideSectionMax = 120;
 
+export const getAdminSummaryResponseRecentProductsItemDetailsBotanicalNameMax = 180;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsAlsoKnownAsItemMax = 120;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsPackSizesItemLabelMax = 80;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsPackSizesItemSizeMin = 0;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsPackSizesItemUnitMax = 30;
+
 export const getAdminSummaryResponseRecentProductsItemDetailsTreatmentMax = 120;
 
-export const getAdminSummaryResponseRecentProductsItemDetailsRateMax = 80;
+export const getAdminSummaryResponseRecentProductsItemDetailsBredByOriginMax = 180;
 
-export const getAdminSummaryResponseRecentProductsItemDetailsRainfallMax = 80;
+export const getAdminSummaryResponseRecentProductsItemDetailsDistributedByMax = 120;
 
-export const getAdminSummaryResponseRecentProductsItemDetailsFloweringMax = 100;
+export const getAdminSummaryResponseRecentProductsItemDetailsSowingRatesItemMinMin = 0;
 
-export const getAdminSummaryResponseRecentProductsItemDetailsInoculantMax = 80;
+export const getAdminSummaryResponseRecentProductsItemDetailsSowingRatesItemMaxMin = 0;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsSowingRatesItemUnitMax = 20;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsRainfallMinMmMin = 0;
+export const getAdminSummaryResponseRecentProductsItemDetailsRainfallMinMmMultipleOf = 1;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsSoilPhMinMin = 0;
+export const getAdminSummaryResponseRecentProductsItemDetailsSoilPhMinMax = 14;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsSowingDepthMinCmMin = 0;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsSowingDepthMaxCmMin = 0;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsMaturityDaysMin = 0;
+export const getAdminSummaryResponseRecentProductsItemDetailsMaturityDaysMultipleOf = 1;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsFloweringWindowMax = 80;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsWinterActivityMax = 10;
+export const getAdminSummaryResponseRecentProductsItemDetailsWinterActivityMultipleOf = 1;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsCompanionSpeciesItemMax = 120;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsDiseasePestResistanceMax = 3000;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsPersistenceLongevityMax = 180;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsGrazingManagementNotesMax = 3000;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsPbrDetailsMax = 300;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsLicenceRestrictionMax = 1000;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsSupplierNameMax = 180;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsSummaryMax = 500;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsDescriptionMax = 5000;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsNotesMax = 2000;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemProductLinkMax = 180;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemSpeciesNameMax = 120;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemInclusionRateMin = 0;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemUnitMax = 20;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemNoteMax = 240;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsFormulationYearMax = 20;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsPhotosItemSlotMax = 40;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsPhotosItemFileMax = 240;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsPhotosItemRatingMax = 80;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsPhotosItemSrcMax = 500;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsSeoTitleMax = 180;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsSeoDescriptionMax = 320;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsSortOrderMin = 0;
+export const getAdminSummaryResponseRecentProductsItemDetailsSortOrderMultipleOf = 1;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsRelatedProductsItemMax = 180;
 
 
 
@@ -405,6 +1116,7 @@ export const GetAdminSummaryResponse = zod.object({
   "recentProducts": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "slug": zod.string(),
   "price": zod.string(),
   "packSize": zod.string(),
   "status": zod.string(),
@@ -415,28 +1127,81 @@ export const GetAdminSummaryResponse = zod.object({
   "details": zod.object({
   "stockCode": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsStockCodeMax),
   "guideSection": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsGuideSectionMax),
+  "recordType": zod.enum(['Mix', 'Variety', 'Commodity / generic']),
+  "botanicalName": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsBotanicalNameMax),
+  "alsoKnownAs": zod.array(zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsAlsoKnownAsItemMax)),
+  "packSizes": zod.array(zod.object({
+  "label": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsPackSizesItemLabelMax),
+  "size": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsPackSizesItemSizeMin).nullable(),
+  "unit": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsPackSizesItemUnitMax)
+})),
   "treatment": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsTreatmentMax),
-  "kind": zod.enum(['Mix', 'Variety']),
-  "rate": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsRateMax),
-  "rainfall": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsRainfallMax),
-  "flowering": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsFloweringMax),
-  "inoculant": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsInoculantMax),
-  "soil": zod.array(zod.string()),
-  "tolerance": zod.array(zod.string()),
-  "livestock": zod.array(zod.string()),
+  "persistencyType": zod.enum(['', 'Annual', 'Biennial', 'Perennial', 'Hybrid perennial', 'Short-term (1–2 years)']),
+  "ploidy": zod.enum(['', 'Diploid', 'Tetraploid', 'Hexaploid', 'Mixed (blend)']),
+  "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
+  "bredByOrigin": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsBredByOriginMax),
+  "australianBred": zod.boolean(),
+  "distributedBy": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsDistributedByMax),
+  "sowingRates": zod.array(zod.object({
+  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "min": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsSowingRatesItemMinMin).nullable(),
+  "max": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsSowingRatesItemMaxMin).nullable(),
+  "unit": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSowingRatesItemUnitMax)
+})),
+  "rainfallMinMm": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsRainfallMinMmMin).multipleOf(getAdminSummaryResponseRecentProductsItemDetailsRainfallMinMmMultipleOf).nullable(),
+  "soilPhMin": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsSoilPhMinMin).max(getAdminSummaryResponseRecentProductsItemDetailsSoilPhMinMax).nullable(),
+  "soilPhScale": zod.enum(['CaCl₂', 'water']),
+  "soilRangeLightest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "soilRangeHeaviest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "sowingDepthMinCm": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsSowingDepthMinCmMin).nullable(),
+  "sowingDepthMaxCm": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsSowingDepthMaxCmMin).nullable(),
+  "tolerance": zod.array(zod.object({
+  "name": zod.enum(['Low pH', 'Waterlogging', 'Salinity', 'Drought', 'Frost']),
+  "mild": zod.boolean()
+})),
+  "maturityMeasure": zod.enum(['', 'Days to flowering (Perth)', 'Heading date', 'Time of flowering', 'Winter activity rating']),
+  "maturityDays": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsMaturityDaysMin).multipleOf(getAdminSummaryResponseRecentProductsItemDetailsMaturityDaysMultipleOf).nullable(),
+  "headingDate": zod.enum(['', 'Very early', 'Early', 'Mid', 'Mid-late', 'Late']),
+  "floweringWindow": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsFloweringWindowMax),
+  "winterActivity": zod.number().min(1).max(getAdminSummaryResponseRecentProductsItemDetailsWinterActivityMax).multipleOf(getAdminSummaryResponseRecentProductsItemDetailsWinterActivityMultipleOf).nullable(),
+  "inoculantGroup": zod.enum(['None', 'C', 'G/S', 'G', 'S', 'AL', 'AM', 'B', 'BS', 'E', 'F/E', 'I']),
+  "seedTreatment": zod.array(zod.enum(['Bare / untreated', 'Gaucho', 'Thiram', 'Goldstrike', 'BioNPK Powder S', 'Lime coated'])),
+  "ecocertApproved": zod.boolean(),
+  "endUse": zod.array(zod.enum(['Grazing', 'Hay', 'Silage', 'Cover crop', 'Green manure', 'Grain', 'Stockfeed', 'Permanent pasture', 'Erosion control / stabilisation', 'Break crop', 'Biofumigant', 'Turf'])),
+  "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
+  "companionSpecies": zod.array(zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsCompanionSpeciesItemMax)),
+  "diseasePestResistance": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsDiseasePestResistanceMax),
+  "persistenceLongevity": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsPersistenceLongevityMax),
+  "grazingManagementNotes": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsGrazingManagementNotesMax),
+  "pbrProtected": zod.boolean(),
+  "pbrDetails": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsPbrDetailsMax),
+  "licenceRestriction": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsLicenceRestrictionMax),
+  "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
+  "isThirdPartyProduct": zod.boolean(),
+  "supplierName": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSupplierNameMax),
   "summary": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSummaryMax),
   "description": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsDescriptionMax),
   "notes": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsNotesMax),
   "components": zod.array(zod.object({
-  "name": zod.string(),
-  "note": zod.string()
+  "productLink": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsComponentsItemProductLinkMax),
+  "speciesName": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsComponentsItemSpeciesNameMax),
+  "inclusionRate": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsComponentsItemInclusionRateMin).nullable(),
+  "unit": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsComponentsItemUnitMax),
+  "note": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsComponentsItemNoteMax)
 })),
+  "formulationYear": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
-  "slot": zod.string(),
-  "file": zod.string(),
-  "rating": zod.string(),
-  "src": zod.string()
-}))
+  "slot": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsPhotosItemSlotMax),
+  "file": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsPhotosItemFileMax),
+  "rating": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsPhotosItemRatingMax),
+  "src": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsPhotosItemSrcMax)
+})),
+  "inCurrentPrintedGuide": zod.boolean(),
+  "seoTitle": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSeoTitleMax),
+  "seoDescription": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSeoDescriptionMax),
+  "sortOrder": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsSortOrderMin).multipleOf(getAdminSummaryResponseRecentProductsItemDetailsSortOrderMultipleOf).nullable(),
+  "featured": zod.boolean(),
+  "relatedProducts": zod.array(zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsRelatedProductsItemMax))
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()

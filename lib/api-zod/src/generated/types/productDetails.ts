@@ -6,28 +6,95 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ProductComponent } from './productComponent';
-import type { ProductDetailsKind } from './productDetailsKind';
+import type { ProductDetailsCertificationItem } from './productDetailsCertificationItem';
+import type { ProductDetailsEndUseItem } from './productDetailsEndUseItem';
+import type { ProductDetailsFlowerColour } from './productDetailsFlowerColour';
+import type { ProductDetailsHeadingDate } from './productDetailsHeadingDate';
+import type { ProductDetailsInoculantGroup } from './productDetailsInoculantGroup';
+import type { ProductDetailsLivestockItem } from './productDetailsLivestockItem';
+import type { ProductDetailsMaturityMeasure } from './productDetailsMaturityMeasure';
+import type { ProductDetailsPersistencyType } from './productDetailsPersistencyType';
+import type { ProductDetailsPloidy } from './productDetailsPloidy';
+import type { ProductDetailsRecordType } from './productDetailsRecordType';
+import type { ProductDetailsSeedTreatmentItem } from './productDetailsSeedTreatmentItem';
+import type { ProductDetailsSoilPhScale } from './productDetailsSoilPhScale';
+import type { ProductDetailsSoilRangeHeaviest } from './productDetailsSoilRangeHeaviest';
+import type { ProductDetailsSoilRangeLightest } from './productDetailsSoilRangeLightest';
+import type { ProductPackSize } from './productPackSize';
 import type { ProductPhoto } from './productPhoto';
+import type { ProductSowingRate } from './productSowingRate';
+import type { ProductTolerance } from './productTolerance';
 
 export interface ProductDetails {
   /** @maxLength 40 */
   stockCode: string;
   /** @maxLength 120 */
   guideSection: string;
+  recordType: ProductDetailsRecordType;
+  /** @maxLength 180 */
+  botanicalName: string;
+  /** @items.maxLength 120 */
+  alsoKnownAs: string[];
+  packSizes: ProductPackSize[];
   /** @maxLength 120 */
   treatment: string;
-  kind: ProductDetailsKind;
+  persistencyType: ProductDetailsPersistencyType;
+  ploidy: ProductDetailsPloidy;
+  flowerColour: ProductDetailsFlowerColour;
+  /** @maxLength 180 */
+  bredByOrigin: string;
+  australianBred: boolean;
+  /** @maxLength 120 */
+  distributedBy: string;
+  sowingRates: ProductSowingRate[];
+  /** @minimum 0 */
+  rainfallMinMm: number | null;
+  /**
+     * @minimum 0
+     * @maximum 14
+     */
+  soilPhMin: number | null;
+  soilPhScale: ProductDetailsSoilPhScale;
+  soilRangeLightest: ProductDetailsSoilRangeLightest;
+  soilRangeHeaviest: ProductDetailsSoilRangeHeaviest;
+  /** @minimum 0 */
+  sowingDepthMinCm: number | null;
+  /** @minimum 0 */
+  sowingDepthMaxCm: number | null;
+  tolerance: ProductTolerance[];
+  maturityMeasure: ProductDetailsMaturityMeasure;
+  /** @minimum 0 */
+  maturityDays: number | null;
+  headingDate: ProductDetailsHeadingDate;
   /** @maxLength 80 */
-  rate: string;
-  /** @maxLength 80 */
-  rainfall: string;
-  /** @maxLength 100 */
-  flowering: string;
-  /** @maxLength 80 */
-  inoculant: string;
-  soil: string[];
-  tolerance: string[];
-  livestock: string[];
+  floweringWindow: string;
+  /**
+     * @minimum 1
+     * @maximum 10
+     */
+  winterActivity: number | null;
+  inoculantGroup: ProductDetailsInoculantGroup;
+  seedTreatment: ProductDetailsSeedTreatmentItem[];
+  ecocertApproved: boolean;
+  endUse: ProductDetailsEndUseItem[];
+  livestock: ProductDetailsLivestockItem[];
+  /** @items.maxLength 120 */
+  companionSpecies: string[];
+  /** @maxLength 3000 */
+  diseasePestResistance: string;
+  /** @maxLength 180 */
+  persistenceLongevity: string;
+  /** @maxLength 3000 */
+  grazingManagementNotes: string;
+  pbrProtected: boolean;
+  /** @maxLength 300 */
+  pbrDetails: string;
+  /** @maxLength 1000 */
+  licenceRestriction: string;
+  certification: ProductDetailsCertificationItem[];
+  isThirdPartyProduct: boolean;
+  /** @maxLength 180 */
+  supplierName: string;
   /** @maxLength 500 */
   summary: string;
   /** @maxLength 5000 */
@@ -35,5 +102,17 @@ export interface ProductDetails {
   /** @maxLength 2000 */
   notes: string;
   components: ProductComponent[];
+  /** @maxLength 20 */
+  formulationYear: string;
   photos: ProductPhoto[];
+  inCurrentPrintedGuide: boolean;
+  /** @maxLength 180 */
+  seoTitle: string;
+  /** @maxLength 320 */
+  seoDescription: string;
+  /** @minimum 0 */
+  sortOrder: number | null;
+  featured: boolean;
+  /** @items.maxLength 180 */
+  relatedProducts: string[];
 }

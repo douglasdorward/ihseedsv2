@@ -7,6 +7,14 @@
  */
 
 export interface ProductComponent {
-  name: string;
+  /** @maxLength 180 */
+  productLink: string;
+  /** @maxLength 120 */
+  speciesName: string;
+  /** @minimum 0 */
+  inclusionRate: number | null;
+  /** @maxLength 20 */
+  unit: string;
+  /** @maxLength 240 */
   note: string;
 }

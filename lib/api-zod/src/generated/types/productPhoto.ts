@@ -7,8 +7,12 @@
  */
 
 export interface ProductPhoto {
+  /** @maxLength 40 */
   slot: string;
+  /** @maxLength 240 */
   file: string;
+  /** @maxLength 80 */
   rating: string;
+  /** @maxLength 500 */
   src: string;
 }

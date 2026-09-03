@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "../router";
-import { useProducts, imageOptions } from "../hooks/useApi";
+import { useProducts, imageOptions, productPath } from "../hooks/useApi";
 import { StatusPill, Icon } from "../components/ui";
 
 export default function Home() {
@@ -43,7 +43,7 @@ export default function Home() {
           ) : (
             <div className="product-grid">
               {visibleProducts.map((product, index) => (
-                <Link href={`/products/${product.id}`} className="product-card" style={{ textDecoration: "none", color: "inherit" }} key={product.id} data-testid={`card-product-${product.id}`}>
+                <Link href={productPath(product)} className="product-card" style={{ textDecoration: "none", color: "inherit" }} key={product.id} data-testid={`card-product-${product.id}`}>
                   <div className="product-image" style={{ backgroundImage: `linear-gradient(180deg, transparent, rgba(29,40,28,.72)), url(${imageOptions[index % imageOptions.length]})` }}>
                     <StatusPill status={product.status} />
                   </div>

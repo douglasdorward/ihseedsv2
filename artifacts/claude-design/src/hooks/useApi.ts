@@ -3,10 +3,14 @@ import { useEffect, useState } from "react";
 export type Product = {
   id: number;
   name: string;
+  slug?: string | null;
   price: string;
   packSize: string;
   status: "in-stock" | "low" | "very-low" | "unavailable";
   note: string;
+  details?: {
+    relatedProducts?: string[];
+  };
 };
 
 export type EnquiryForm = {
@@ -30,6 +34,10 @@ const fallbackProducts: Product[] = [
 
 export function slugify(text: string) {
   return text.toLowerCase().replace(/™/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
+}
+
+export function productPath(product: Pick<Product, "name" | "slug">) {
+  return `/products/${product.slug || slugify(product.name)}`;
 }
 
 export function useProducts() {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useParams } from "../router";
-import { imageOptions, useProducts } from "../hooks/useApi";
+import { imageOptions, productPath, useProducts } from "../hooks/useApi";
 import { StatusPill } from "../components/ui";
 
 const CATEGORY_MAP: Record<string, { light: string; bold: string; lead: string; count: string; rainfall: string; img: string }> = {
@@ -102,7 +102,7 @@ export default function Category() {
             {visibleProducts.length > 0 ? (
             <div className="category-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 32 }}>
               {visibleProducts.map((p, index) => (
-                <Link key={p.id} href={`/products/${p.id}`} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 16 }}>
+                <Link key={p.id} href={productPath(p)} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 16 }}>
                   <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", minHeight: 220, background: "#C5CCC5", position: "relative" }}>
                     <div role="img" aria-label={p.name} style={{ display: "block", width: "100%", height: 220, backgroundImage: `url(${imageOptions[index % imageOptions.length]})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
                     <div style={{ position: "absolute", top: 12, left: 12 }}>

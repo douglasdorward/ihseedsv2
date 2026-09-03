@@ -10,6 +10,7 @@ import type { ProductDetails } from './productDetails';
 export interface Product {
   id: number;
   name: string;
+  slug: string;
   price: string;
   packSize: string;
   status: string;
