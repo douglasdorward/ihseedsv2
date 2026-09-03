@@ -220,6 +220,9 @@ components:
         tolerance:
           type: array
           items: { type: string }
+        livestock:
+          type: array
+          items: { type: string }
         summary: { type: string, maxLength: 500 }
         description: { type: string, maxLength: 5000 }
         notes: { type: string, maxLength: 2000 }
@@ -231,7 +234,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ProductPhoto"
-      required: [stockCode, guideSection, treatment, kind, rate, rainfall, flowering, inoculant, soil, tolerance, summary, description, notes, components, photos]
+      required: [stockCode, guideSection, treatment, kind, rate, rainfall, flowering, inoculant, soil, tolerance, livestock, summary, description, notes, components, photos]
     ProductComponent:
       type: object
       properties:

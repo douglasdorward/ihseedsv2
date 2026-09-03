@@ -27,6 +27,7 @@ export interface ProductDetails {
   inoculant: string;
   soil: string[];
   tolerance: string[];
+  livestock: string[];
   /** @maxLength 500 */
   summary: string;
   /** @maxLength 5000 */

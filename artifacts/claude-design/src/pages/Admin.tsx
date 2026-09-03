@@ -18,6 +18,7 @@ type ProductDetails = {
   inoculant: string;
   soil: string[];
   tolerance: string[];
+  livestock: string[];
   summary: string;
   description: string;
   notes: string;
@@ -62,6 +63,7 @@ const blankProduct: ProductInput = {
     inoculant: "",
     soil: [],
     tolerance: [],
+    livestock: [],
     summary: "",
     description: "",
     notes: "",
@@ -344,7 +346,15 @@ function ProductEditor({
     category: item.category,
     techSheet: item.techSheet,
     publishStatus: item.publishStatus,
-    details: { ...blankProduct.details, ...item.details },
+    details: {
+      ...blankProduct.details,
+      ...item.details,
+      soil: item.details?.soil ?? [],
+      tolerance: item.details?.tolerance ?? [],
+      livestock: item.details?.livestock ?? [],
+      components: item.details?.components ?? [],
+      photos: item.details?.photos ?? blankProduct.details.photos,
+    },
   } : { ...blankProduct, details: { ...blankProduct.details, components: [...blankProduct.details.components], photos: [...blankProduct.details.photos] } };
   const [form, setForm] = useState<ProductInput>(() => toForm(product));
   const [saving, setSaving] = useState(false);
@@ -356,7 +366,10 @@ function ProductEditor({
 
   const setField = <K extends keyof ProductInput,>(key: K, value: ProductInput[K]) => setForm((current) => ({ ...current, [key]: value }));
   const setDetail = <K extends keyof ProductDetails,>(key: K, value: ProductDetails[K]) => setForm((current) => ({ ...current, details: { ...current.details, [key]: value } }));
-  const toggleList = (key: "soil" | "tolerance", value: string) => setDetail(key, form.details[key].includes(value) ? form.details[key].filter((item) => item !== value) : [...form.details[key], value]);
+  const toggleList = (key: "soil" | "tolerance" | "livestock", value: string) => {
+    const current = form.details[key] ?? [];
+    setDetail(key, current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
+  };
   const updateComponent = (index: number, patch: Partial<ProductComponent>) => setDetail("components", form.details.components.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
   const removeComponent = (index: number) => setDetail("components", form.details.components.filter((_, itemIndex) => itemIndex !== index));
   const updatePhoto = (index: number, patch: Partial<ProductPhoto>) => setDetail("photos", form.details.photos.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
@@ -432,8 +445,9 @@ function ProductEditor({
               <label>Flowering / heading<input value={form.details.flowering} onChange={(event) => setDetail("flowering", event.target.value)} placeholder="Aug-Nov, Mid, or All Year Round"/></label>
               <label>Inoculant group<input value={form.details.inoculant} onChange={(event) => setDetail("inoculant", event.target.value)} placeholder="Blank if not applicable"/></label>
             </div>
-            <div className="admin-choice-field"><span>Ideal soil range</span><div>{[{ code: "LS", label: "LS — light sand" }, { code: "S", label: "S — sand" }, { code: "L", label: "L — loam" }, { code: "H", label: "H — heavy" }].map((soil) => <button key={soil.code} type="button" className={form.details.soil.includes(soil.code) ? "selected" : ""} onClick={() => toggleList("soil", soil.code)}>{soil.label}</button>)}</div><small>Pick the lightest and heaviest soil this suits — selected: {form.details.soil.join(" – ") || "no range set"}.</small></div>
-            <div className="admin-choice-field"><span>Tolerance</span><div>{["Drought", "Frost", "Waterlogging"].map((tolerance) => <button key={tolerance} type="button" className={form.details.tolerance.includes(tolerance) ? "selected" : ""} onClick={() => toggleList("tolerance", tolerance)}>{tolerance}</button>)}</div><small>{form.details.tolerance.length ? `Shown on the page as ${form.details.tolerance.join(", ")}.` : "No tolerance indicators selected."}</small></div>
+            <div className="admin-choice-field"><span>Ideal soil range</span><div>{[{ code: "LS", label: "LS — light sand" }, { code: "S", label: "S — sand" }, { code: "L", label: "L — loam" }, { code: "H", label: "H — heavy" }].map((soil) => <button key={soil.code} type="button" className={(form.details.soil ?? []).includes(soil.code) ? "selected" : ""} onClick={() => toggleList("soil", soil.code)}>{soil.label}</button>)}</div><small>Pick the lightest and heaviest soil this suits — selected: {(form.details.soil ?? []).join(" – ") || "no range set"}.</small></div>
+            <div className="admin-choice-field"><span>Tolerance</span><div>{["Drought", "Frost", "Waterlogging"].map((tolerance) => <button key={tolerance} type="button" className={(form.details.tolerance ?? []).includes(tolerance) ? "selected" : ""} onClick={() => toggleList("tolerance", tolerance)}>{tolerance}</button>)}</div><small>{(form.details.tolerance ?? []).length ? `Shown on the page as ${(form.details.tolerance ?? []).join(", ")}.` : "No tolerance indicators selected."}</small></div>
+            <div className="admin-choice-field"><span>Livestock</span><div>{["Beef", "Dairy", "Sheep", "Equine", "Goat", "Chicken", "Alpaca"].map((animal) => <button key={animal} type="button" className={(form.details.livestock ?? []).includes(animal) ? "selected" : ""} onClick={() => toggleList("livestock", animal)}>{animal}</button>)}</div><small>{(form.details.livestock ?? []).length ? `Suitable for: ${(form.details.livestock ?? []).join(", ")}.` : "Select the livestock this product is suited to."}</small></div>
           </section>
 
           <section className="admin-panel admin-form-card">

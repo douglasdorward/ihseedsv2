@@ -12,6 +12,7 @@ export type ProductDetails = {
   inoculant: string;
   soil: string[];
   tolerance: string[];
+  livestock: string[];
   summary: string;
   description: string;
   notes: string;
@@ -40,6 +41,7 @@ export const productsTable = pgTable("ih_products", {
     inoculant: "",
     soil: [],
     tolerance: [],
+    livestock: [],
     summary: "",
     description: "",
     notes: "",
@@ -70,6 +72,7 @@ export const insertProductSchema = z.object({
     inoculant: z.string().max(80),
     soil: z.array(z.string().max(20)),
     tolerance: z.array(z.string().max(20)),
+    livestock: z.array(z.string().max(30)),
     summary: z.string().max(500),
     description: z.string().max(5000),
     notes: z.string().max(2000),
@@ -86,6 +89,7 @@ export const insertProductSchema = z.object({
     inoculant: "",
     soil: [],
     tolerance: [],
+    livestock: [],
     summary: "",
     description: "",
     notes: "",
