@@ -158,7 +158,6 @@ export default function Category() {
                           <span key={i} className="fact-chip">{chip}</span>
                         ))}
                       </div>
-                      <div style={{ marginTop: "auto", fontSize: 14, fontWeight: 700, color: "var(--green)", textDecoration: "underline" }}>View product</div>
                     </Link>
                   )
                 })}
