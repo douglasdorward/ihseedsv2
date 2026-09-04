@@ -164,14 +164,6 @@ const statusOptions: { value: ProductStatus; label: string }[] = [
   { value: "unavailable", label: "Unavailable" },
 ];
 
-const guideSections = [
-  "",
-  "Subterranean Clovers", "Aerial Seeded Clovers & White Clovers", "Serradellas & Medic",
-  "Specialist Seed Mixes", "Annual Tetraploid Ryegrasses", "Annual Diploid Ryegrasses",
-  "Short Term – Biennials & Perennial Ryegrass Varieties", "Lucerne", "Other Grasses",
-  "Sub Tropical Perennial Grasses & Mixes", "Alternative Crops", "Biologicals"
-];
-
 const formatDate = (value: string | null | undefined) =>
   value ? new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "Never";
 
@@ -615,9 +607,9 @@ function ProductTable() {
         {message && <p className="admin-inline-message">{message}</p>}
         <div className="admin-table-card">
           <table>
-            <thead><tr><th aria-label="Select"></th><th>Product</th><th>Category</th><th>Listing state</th><th>Status</th><th>In guide</th><th>Completeness</th><th>Availability</th><th>Stock codes</th><th>Updated</th><th></th></tr></thead>
+            <thead><tr><th aria-label="Select"></th><th>Product</th><th>Category</th><th>Listing state</th><th>Status</th><th>Completeness</th><th>Availability</th><th>Stock codes</th><th>Updated</th><th></th></tr></thead>
             <tbody>
-              {isLoading ? <tr><td colSpan={11} className="admin-empty">Loading catalogue…</td></tr> : rows.map((product) => {
+              {isLoading ? <tr><td colSpan={10} className="admin-empty">Loading catalogue…</td></tr> : rows.map((product) => {
                 const completeness = getOverallCompleteness(product);
                 const listingState = getListingState(product);
                 return (
@@ -634,7 +626,6 @@ function ProductTable() {
                   <td>{product.category}<small>{product.subcategoryId ? taxonomy.find((t: any) => t.id === product.subcategoryId)?.name : ""}</small></td>
                   <td><span className={`admin-listing-badge ${listingState.toLowerCase()}`}>{listingState}</span></td>
                   <td><StatusPill status={product.status as any}/></td>
-                  <td>{product.details?.inCurrentPrintedGuide ? "Yes" : "No"}</td>
                   <td>
                     <div className="admin-v2-completeness" title={`${completeness}% complete`}>
                       <div className="admin-v2-completeness-bar"><div className="admin-v2-completeness-fill" style={{width: `${completeness}%`}}></div></div>
@@ -651,7 +642,7 @@ function ProductTable() {
                   </td>
                 </tr>
               )})}
-              {!isLoading && rows.length === 0 && <tr><td colSpan={11} className="admin-empty">No products match those filters.</td></tr>}
+              {!isLoading && rows.length === 0 && <tr><td colSpan={10} className="admin-empty">No products match those filters.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -1024,9 +1015,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                   </label>
                   <div className="admin-choice-field wide"><span className="admin-label-title">Record type<span className="admin-required-star" aria-hidden="true">*</span></span><div>{(["Mix", "Variety", "Commodity / generic"] as RecordKind[]).map((kind) => <button key={kind} type="button" className={currentForm.details.recordType === kind ? "selected" : ""} onClick={() => setDetail("recordType", kind as any)}>{kind}</button>)}</div></div>
                   {!isMix && <label>Botanical name<input value={currentForm.details.botanicalName} onChange={(event) => setDetail("botanicalName", event.target.value)} placeholder="e.g. Lolium multiflorum"/></label>}
-                  <label>Guide section<select value={currentForm.details.guideSection} onChange={(event) => setDetail("guideSection", event.target.value)}>{guideSections.map((section) => <option key={section || "not-set"} value={section}>{section || "Not set"}</option>)}</select></label>
-                  <label>Guide year<input type="text" value={currentForm.guideYear} onChange={(event) => setField("guideYear", event.target.value)} placeholder="e.g. 2026"/></label>
-                  <label className="admin-check-row wide"><input type="checkbox" checked={currentForm.details.inCurrentPrintedGuide} onChange={(event) => setDetail("inCurrentPrintedGuide", event.target.checked)}/><span><strong>In current printed guide</strong></span></label>
                   <label>Persistency type<select value={currentForm.details.persistencyType} onChange={(event) => setDetail("persistencyType", event.target.value as any)}><option value="">Not set</option>{["Annual", "Biennial", "Perennial", "Hybrid perennial", "Short-term (1–2 years)"].map((value) => <option key={value}>{value}</option>)}</select></label>
                   {!isMix && <label>Bred by / origin<input value={currentForm.details.bredByOrigin} onChange={(event) => setDetail("bredByOrigin", event.target.value)} placeholder="e.g. Agricom (NZ)"/></label>}
                   <label className="admin-check-row"><input type="checkbox" checked={currentForm.details.australianBred} onChange={(event) => setDetail("australianBred", event.target.checked)}/><span><strong>Australian bred</strong></span></label>
