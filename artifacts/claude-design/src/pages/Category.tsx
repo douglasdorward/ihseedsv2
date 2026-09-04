@@ -2,14 +2,7 @@ import React, { useState } from "react";
 import { Link, useParams } from "../router";
 import { imageOptions, productPath, useProducts } from "../hooks/useApi";
 import { StatusPill } from "../components/ui";
-
-const CATEGORY_MAP: Record<string, { light: string; bold: string; lead: string; count: string; rainfall: string; img: string }> = {
-  mixes: { light: "Specialty", bold: "Mixes", lead: "Blended to order for the paddock they are going into. Designed for specific rainfall zones and grazing plans.", count: "18", rainfall: "400 - 800+ mm", img: imageOptions[0] },
-  ryegrass: { light: "Pasture", bold: "Ryegrass", lead: "Annual, Italian and perennial types for high rainfall and irrigated country.", count: "21", rainfall: "500 - 900+ mm", img: imageOptions[1] },
-  clovers: { light: "Sub &", bold: "Clovers", lead: "Sub, balansa, arrowleaf and Persian clovers across the rainfall range.", count: "16", rainfall: "300 - 700+ mm", img: imageOptions[2] },
-  lucerne: { light: "Winter-active", bold: "Lucerne", lead: "Persistent hay and grazing stands selected across winter-activity classes.", count: "9", rainfall: "350 - 650+ mm", img: imageOptions[3] },
-  serradella: { light: "Serradella &", bold: "Medic", lead: "Hard-seeded regenerating legumes for lighter soils and the wheatbelt.", count: "12", rainfall: "300 - 500+ mm", img: imageOptions[0] },
-};
+import { getCatalogueCategory, getProductCategorySlug } from "../catalogueCategories";
 
 const MIX_GROUPS = [
   { label: "All", matcher: /.*/ },
@@ -20,22 +13,18 @@ const MIX_GROUPS = [
 
 export default function Category() {
   const { slug } = useParams<{ slug: string }>();
-  const categoryMeta = CATEGORY_MAP[slug ?? ""];
-  const { products } = useProducts();
+  const categoryMeta = getCatalogueCategory(slug);
+  const { products, loading, error, retry } = useProducts();
   const [activeGroup, setActiveGroup] = useState("All");
-  const productMatchers: Record<string, RegExp> = {
-    mixes: /mix/i,
-    ryegrass: /ryegrass/i,
-    clovers: /clover/i,
-    lucerne: /lucerne/i,
-    serradella: /serradella|medic/i,
-  };
-  const categoryProducts = productMatchers[slug]?.test
-    ? products.filter((product) => productMatchers[slug].test(product.name))
-    : [];
+  const categoryProducts = products.filter((product) => getProductCategorySlug(product) === slug);
   const groups = slug === "mixes" ? MIX_GROUPS : MIX_GROUPS.slice(0, 1);
   const activeMatcher = groups.find((group) => group.label === activeGroup)?.matcher ?? /.*/;
-  const visibleProducts = categoryProducts.filter((product) => activeMatcher.test(product.name));
+  const visibleProducts = categoryProducts
+    .filter((product) => activeMatcher.test(product.name))
+    .sort((first, second) => {
+      const dateDifference = Date.parse(second.updatedAt ?? "") - Date.parse(first.updatedAt ?? "");
+      return Number.isNaN(dateDifference) || dateDifference === 0 ? second.id - first.id : dateDifference;
+    });
 
   if (!categoryMeta) {
     return (
@@ -60,7 +49,7 @@ export default function Category() {
             <div style={{ display: "flex", gap: 32, flexWrap: "wrap", paddingTop: 8 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)" }}>Lines in this category</div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "var(--green)" }}>{categoryMeta.count}</div>
+                 <div style={{ fontSize: 24, fontWeight: 700, color: "var(--green)" }}>{loading ? "—" : categoryProducts.length}</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)" }}>Rainfall range</div>
@@ -69,7 +58,7 @@ export default function Category() {
             </div>
           </div>
           <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", minHeight: 340, background: "#C5CCC5" }}>
-            <div role="img" aria-label={categoryMeta.light} style={{ display: "block", width: "100%", height: 340, backgroundImage: `url(${categoryMeta.img})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
+             <div role="img" aria-label={categoryMeta.light} style={{ display: "block", width: "100%", height: 340, backgroundImage: `url(${categoryMeta.image})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
           </div>
         </div>
       </section>
@@ -95,11 +84,22 @@ export default function Category() {
         <div className="page-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "64px 40px 96px", display: "flex", flexDirection: "column", gap: 64 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 16, borderBottom: "2px solid var(--green)", paddingBottom: 12 }}>
-              <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)" }}>{activeGroup === "All" ? "Featured Mixes" : activeGroup}</h2>
+               <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)" }}>{activeGroup === "All" ? categoryMeta.name : activeGroup}</h2>
               <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)" }}>All regions · {visibleProducts.length} lines</span>
             </div>
             
-            {visibleProducts.length > 0 ? (
+             {loading ? (
+               <div className="empty-state" aria-live="polite">
+                 <strong>Loading products…</strong>
+                 <span>The latest published products are being fetched from the catalogue.</span>
+               </div>
+             ) : error ? (
+               <div className="empty-state" role="alert">
+                 <strong>Catalogue unavailable</strong>
+                 <span>{error}</span>
+                 <button type="button" className="button button-primary" onClick={retry}>Try again</button>
+               </div>
+             ) : visibleProducts.length > 0 ? (
             <div className="category-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 32 }}>
               {visibleProducts.map((p, index) => (
                 <Link key={p.id} href={productPath(p)} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 16 }}>

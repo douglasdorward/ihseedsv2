@@ -1,18 +1,18 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "../router";
 import { Icon } from "../components/ui";
-
-const CATEGORIES = [
-  { slug: "mixes", group: "Mixes", name: "Specialty Mixes", count: "18 lines", blurb: "Blended to order for the paddock they are going into — SouWest™, Maximix, Silahay™.", image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80" },
-  { slug: "ryegrass", group: "Grasses", name: "Ryegrass", count: "21 lines", blurb: "Annual, Italian and perennial types for high rainfall and irrigated country.", image: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=900&q=80" },
-  { slug: "clovers", group: "Legumes", name: "Clovers", count: "16 lines", blurb: "Sub, balansa, arrowleaf and Persian clovers across the rainfall range.", image: "https://images.unsplash.com/photo-1530507629858-e4977d30e9e0?auto=format&fit=crop&w=900&q=80" },
-  { slug: "lucerne", group: "Legumes", name: "Lucerne", count: "9 lines", blurb: "Winter-active through to highly winter-active, for hay and grazing stands.", image: "https://images.unsplash.com/photo-1499529112087-3cb3b73cec95?auto=format&fit=crop&w=900&q=80" },
-  { slug: "serradella", group: "Legumes", name: "Serradella & Medic", count: "12 lines", blurb: "Hard-seeded regenerating legumes for lighter soils and the wheatbelt.", image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80" }
-];
+import { CATALOGUE_CATEGORIES, countProductsByCategory } from "../catalogueCategories";
+import { useProducts } from "../hooks/useApi";
 
 export default function Products() {
   const [filter, setFilter] = useState("All products");
-  const visibleCategories = filter === "All products" ? CATEGORIES : CATEGORIES.filter((category) => category.group === filter);
+  const { products, loading, error, retry } = useProducts();
+  const categoryCounts = useMemo(() => countProductsByCategory(products), [products]);
+  const availableCategories = CATALOGUE_CATEGORIES.filter((category) => categoryCounts[category.slug] > 0);
+  const visibleCategories = filter === "All products"
+    ? availableCategories
+    : availableCategories.filter((category) => category.group === filter);
+  const filters = ["All products", ...Array.from(new Set(availableCategories.map((category) => category.group)))];
 
   return (
     <>
@@ -21,7 +21,7 @@ export default function Products() {
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)" }}>Products</div>
             <h1 style={{ margin: 0, fontSize: 48, lineHeight: 1.2, fontWeight: 300, color: "var(--green)", maxWidth: "16ch" }}>Find the seed that fits your <span style={{ fontWeight: 700 }}>paddock</span></h1>
-            <p style={{ margin: 0, fontSize: 18, lineHeight: 1.6, color: "var(--black-green)", maxWidth: "52ch" }}>Browse the current online range across five pasture categories, sourced and tested for Western Australian conditions, then order through your local rural reseller.</p>
+            <p style={{ margin: 0, fontSize: 18, lineHeight: 1.6, color: "var(--black-green)", maxWidth: "52ch" }}>Browse the current online range by pasture category, sourced and tested for Western Australian conditions, then order through your local rural reseller.</p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap", paddingTop: 8 }}>
               <Link href="/contact" className="button button-primary">Get in Touch</Link>
               <Link href="/contact" className="button button-outline">Find a reseller</Link>
@@ -36,7 +36,7 @@ export default function Products() {
       <section style={{ background: "#FFFFFF" }}>
         <div className="page-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "96px 40px 64px" }}>
           <div className="chip-scroller" style={{ display: "flex", flexWrap: "wrap", gap: 12, paddingBottom: 48 }}>
-            {["All products", "Mixes", "Grasses", "Legumes"].map((f) => (
+             {filters.map((f) => (
               <button 
                 key={f} 
                 onClick={() => setFilter(f)} 
@@ -51,24 +51,42 @@ export default function Products() {
             ))}
           </div>
           
-          <div className="category-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 32 }}>
+          {loading ? (
+            <div className="empty-state" aria-live="polite">
+              <strong>Loading the current catalogue…</strong>
+              <span>Product categories are being fetched from the IH Seeds catalogue.</span>
+            </div>
+          ) : error ? (
+            <div className="empty-state" role="alert">
+              <strong>Catalogue unavailable</strong>
+              <span>{error}</span>
+              <button type="button" className="button button-primary" onClick={retry}>Try again</button>
+            </div>
+          ) : visibleCategories.length > 0 ? (
+           <div className="category-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 32 }}>
             {visibleCategories.map((c) => (
               <Link key={c.slug} href={`/category/${c.slug}`} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 16 }}>
                 <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", position: "relative" }}>
                   <img src={c.image} alt={c.name} style={{ display: "block", width: "100%", height: 240, objectFit: "cover" }} />
                   <div style={{ position: "absolute", inset: "40% 0 0 0", background: "linear-gradient(to bottom, rgba(29,40,28,0) 0%, rgba(29,40,28,0.55) 100%)", pointerEvents: "none" }}></div>
                   <div style={{ position: "absolute", bottom: 12, left: 16, right: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FFFFFF" }}>{c.count}</span>
+                     <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FFFFFF" }}>{categoryCounts[c.slug]} {categoryCounts[c.slug] === 1 ? "line" : "lines"}</span>
                     <div className="icon-button" style={{ width: 40, height: 40, background: "var(--yellow)", border: "none" }}><Icon name="arrow-right" size={18} /></div>
                   </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <div style={{ fontSize: 24, fontWeight: 700, color: "var(--green)", lineHeight: 1.4 }}>{c.name}</div>
-                  <div style={{ fontSize: 16, lineHeight: 1.6, color: "var(--black-green)", maxWidth: "38ch" }}>{c.blurb}</div>
+                   <div style={{ fontSize: 16, lineHeight: 1.6, color: "var(--black-green)", maxWidth: "38ch" }}>{c.lead}</div>
                 </div>
               </Link>
             ))}
           </div>
+          ) : (
+            <div className="empty-state">
+              <strong>No published products in this view.</strong>
+              <span>Choose another category group or check back when the catalogue is updated.</span>
+            </div>
+          )}
         </div>
       </section>
 

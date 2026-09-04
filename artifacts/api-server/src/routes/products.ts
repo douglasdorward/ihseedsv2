@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { asc, eq, inArray } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import {
   db,
   normalizeProductDetails,
@@ -59,7 +59,8 @@ function getPublishValidationErrors(product: Product, payload: ProductEditablePa
 }
 
 async function ensureProducts() {
-  const existing = await db.select().from(productsTable).orderBy(asc(productsTable.id));
+  const existing = await db.select().from(productsTable)
+    .orderBy(desc(productsTable.updatedAt), desc(productsTable.id));
   if (existing.length > 0) {
     const normalized = existing.map((product) => ({
       ...product,
@@ -80,7 +81,8 @@ async function ensureProducts() {
           .set({ slug: product.slug, details: product.details, publishedAt: product.publishedAt })
           .where(eq(productsTable.id, product.id)),
       ));
-      return db.select().from(productsTable).orderBy(asc(productsTable.id));
+      return db.select().from(productsTable)
+        .orderBy(desc(productsTable.updatedAt), desc(productsTable.id));
     }
     return existing;
   }
@@ -96,7 +98,8 @@ async function ensureProducts() {
     publishStatus: "Published",
     publishedAt: new Date(),
   }))).onConflictDoNothing({ target: productsTable.name });
-  return db.select().from(productsTable).orderBy(asc(productsTable.id));
+  return db.select().from(productsTable)
+    .orderBy(desc(productsTable.updatedAt), desc(productsTable.id));
 }
 
 async function findMissingProductReferences(details: InsertProduct["details"]) {
@@ -138,6 +141,7 @@ function validId(rawId: string) {
 
 router.get("/products", async (req, res): Promise<void> => {
   const products = await ensureProducts();
+  res.set("Cache-Control", "no-store");
   res.json(products.filter((product) => product.publishStatus === "Published")
     .map((product) => ({ ...product, details: normalizeProductDetails(product.details, product.packSize) })));
 });
@@ -177,6 +181,7 @@ router.post("/products", async (req, res): Promise<void> => {
 
 router.get("/admin/products", async (_req, res): Promise<void> => {
   const products = await ensureProducts();
+  res.set("Cache-Control", "no-store");
   res.json(await Promise.all(products.map(getAdminProduct)));
 });
 

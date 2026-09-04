@@ -4,10 +4,13 @@ export type Product = {
   id: number;
   name: string;
   slug?: string | null;
+  category: string;
   price: string;
   packSize: string;
   status: "in-stock" | "low" | "very-low" | "unavailable";
   note: string;
+  createdAt?: string;
+  updatedAt?: string;
   details?: {
     relatedProducts?: string[];
   };
@@ -21,17 +24,6 @@ export type EnquiryForm = {
   message: string;
 };
 
-const fallbackProducts: Product[] = [
-  { id: 1, name: "SouWest™ Pasture Mix", price: "$25.00 per kg", packSize: "25 kg bag", status: "in-stock", note: "Blended to order, 500 mm+ zones" },
-  { id: 2, name: "Maximix", price: "$25.00 per kg", packSize: "25 kg bag", status: "in-stock", note: "Versatile pasture mix for broad-acre sowing" },
-  { id: 3, name: "Silahay™ Mix", price: "$25.00 per kg", packSize: "25 kg bag", status: "low", note: "Hay and silage, mid rainfall" },
-  { id: 4, name: "Self Regeneration Pasture Mix", price: "$25.00 per kg", packSize: "25 kg bag", status: "in-stock", note: "Built for persistence and recovery" },
-  { id: 5, name: "Ceres PG One50 Ryegrass", price: "$14.50 per kg", packSize: "25 kg bag", status: "in-stock", note: "Perennial, 600 mm+ zones" },
-  { id: 6, name: "Margurita French Serradella", price: "$9.80 per kg", packSize: "25 kg bag", status: "low", note: "Reliable early-season legume" },
-  { id: 7, name: "SARDI Seven Lucerne", price: "$18.00 per kg", packSize: "25 kg bag", status: "in-stock", note: "High quality feed for rotational systems" },
-  { id: 8, name: "Dalkeith Subterranean Clover", price: "$11.20 per kg", packSize: "25 kg bag", status: "very-low", note: "Early season, 325–450 mm" },
-];
-
 export function slugify(text: string) {
   return text.toLowerCase().replace(/™/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
 }
@@ -43,16 +35,34 @@ export function productPath(product: Pick<Product, "name" | "slug">) {
 export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [requestVersion, setRequestVersion] = useState(0);
 
   useEffect(() => {
-    fetch("/api/products")
+    const controller = new AbortController();
+    let active = true;
+    setLoading(true);
+    setError("");
+    fetch("/api/products", { cache: "no-store", signal: controller.signal })
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("Catalogue unavailable")))
-      .then((data: Product[]) => setProducts(data))
-      .catch(() => setProducts([]))
-      .finally(() => setLoading(false));
-  }, []);
+      .then((data: Product[]) => {
+        if (active) setProducts(data);
+      })
+      .catch((requestError: Error) => {
+        if (!active || requestError.name === "AbortError") return;
+        setProducts([]);
+        setError("The product catalogue could not be loaded from the server.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [requestVersion]);
 
-  return { products, loading };
+  return { products, loading, error, retry: () => setRequestVersion((version) => version + 1) };
 }
 
 export function useAvailability() {

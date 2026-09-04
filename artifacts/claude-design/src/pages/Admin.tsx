@@ -252,24 +252,36 @@ function ProductTable() {
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [view, setView] = useState<"Published" | "Draft" | "Archived">("Published");
+  const [view, setView] = useState<"Published" | "Draft" | "Archived">(() => {
+    const requestedView = new URLSearchParams(window.location.search).get("view");
+    return requestedView === "Draft" || requestedView === "Archived" ? requestedView : "Published";
+  });
   const [selected, setSelected] = useState<number[]>([]);
   const [bulkStatus, setBulkStatus] = useState<ProductInputStatus>("in-stock");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const rows = useMemo(() => products.filter((product) => {
-    if (view === "Published") return product.lifecycleStatus === "Published";
-    if (view === "Draft") return product.lifecycleStatus === "Draft" || product.hasDraft;
-    if (view === "Archived") return product.lifecycleStatus === "Archived";
-    return true;
-  }).map((product) => view === "Draft" && product.hasDraft && product.draft
-    ? { ...product, ...product.draft, updatedAt: product.draft.savedAt }
-    : product
-  ).filter((product) =>
-    (!query || `${product.name} ${product.note} ${product.category}`.toLowerCase().includes(query.toLowerCase())) &&
-    (!statusFilter || product.status === statusFilter)
-  ), [products, query, statusFilter, view]);
+  const rows = useMemo(() => products
+    .filter((product) => {
+      if (view === "Published") return product.lifecycleStatus === "Published";
+      if (view === "Draft") return product.lifecycleStatus === "Draft" || product.hasDraft;
+      if (view === "Archived") return product.lifecycleStatus === "Archived";
+      return true;
+    })
+    .map((product) => view === "Draft" && product.hasDraft && product.draft
+      ? { ...product, ...product.draft, updatedAt: product.draft.savedAt }
+      : product
+    )
+    .filter((product) =>
+      (!query || `${product.name} ${product.note} ${product.category}`.toLowerCase().includes(query.toLowerCase())) &&
+      (!statusFilter || product.status === statusFilter)
+    )
+    .sort((first, second) => {
+      const firstActivity = first.draftSavedAt ?? first.updatedAt;
+      const secondActivity = second.draftSavedAt ?? second.updatedAt;
+      const dateDifference = Date.parse(secondActivity ?? "") - Date.parse(firstActivity ?? "");
+      return Number.isNaN(dateDifference) || dateDifference === 0 ? second.id - first.id : dateDifference;
+    }), [products, query, statusFilter, view]);
 
   const publishedCount = products.filter(p => p.lifecycleStatus === "Published").length;
   const draftCount = products.filter(p => p.lifecycleStatus === "Draft" || p.hasDraft).length;
@@ -281,7 +293,7 @@ function ProductTable() {
   }, [view]);
 
   const refreshCatalogue = async () => {
-    await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey() });
+    await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey(), refetchType: "all" });
     await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
   };
 
@@ -518,7 +530,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     const action = submitter?.value; // "back", "draft", or "publish"
 
     if (action === "back" && (viewMode === "live" || isArchived)) {
-      navigate("/admin/products");
+      navigate(`/admin/products?view=${isArchived ? "Archived" : "Published"}`);
       return;
     }
 
@@ -559,9 +571,9 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         if (action === "publish") {
           await publishMutation.mutateAsync({ id: newProd.id });
         }
-        await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey() });
+        await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey(), refetchType: "all" });
         await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
-        navigate(action === "back" ? "/admin/products" : `/admin/products/${newProd.id}`);
+        navigate(action === "back" ? "/admin/products?view=Draft" : `/admin/products/${newProd.id}`);
       } else {
         const { slug, publishStatus, ...draftPayload } = payload;
         await saveDraftMutation.mutateAsync({ id: productId!, data: draftPayload });
@@ -569,9 +581,9 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
           await publishMutation.mutateAsync({ id: productId! });
         }
         await queryClient.invalidateQueries({ queryKey: getGetAdminProductQueryKey(productId!) });
-        await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey() });
+        await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey(), refetchType: "all" });
         await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
-        if (action === "back") navigate("/admin/products");
+        if (action === "back") navigate("/admin/products?view=Draft");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to save product.");

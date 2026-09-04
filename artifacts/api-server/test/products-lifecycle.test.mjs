@@ -217,7 +217,9 @@ test("catalogue lifecycle transition matrix protects public content", async () =
   const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
   assert.equal(published.lifecycleStatus, "Published");
   assert.equal(published.hasDraft, false);
-  assert.equal(includesProduct(await publicProducts(), product.id), true);
+  const publicProduct = (await publicProducts()).find((item) => item.id === product.id);
+  assert.ok(publicProduct);
+  assert.equal(publicProduct.category, "Automated tests");
   assert.equal(includesProduct(await availability(), product.id), true);
 
   const revisionName = `Lifecycle revision ${testRunId}`;
