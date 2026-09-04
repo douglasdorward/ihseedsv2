@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "../router";
 import { imageOptions, productPath, useProducts } from "../hooks/useApi";
-import { StatusPill } from "../components/ui";
+import { Icon, StatusPill } from "../components/ui";
 import { useListCategories } from "@workspace/api-client-react";
 import { getFactChips } from "../utils/CategoryUtils";
 
@@ -144,6 +144,9 @@ export default function Category() {
                         <div role="img" aria-label={p.name} style={{ display: "block", width: "100%", height: 220, backgroundImage: `url(${imageOptions[index % imageOptions.length]})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
                         <div style={{ position: "absolute", top: 12, left: 12 }}>
                           <StatusPill status={p.status} />
+                        </div>
+                        <div className="icon-button" aria-hidden="true" style={{ position: "absolute", right: 12, bottom: 12, width: 40, height: 40, background: "var(--yellow)", border: "none" }}>
+                          <Icon name="arrow-right" size={18} />
                         </div>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
