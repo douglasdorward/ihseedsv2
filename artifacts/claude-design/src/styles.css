@@ -390,6 +390,11 @@ h1 strong { display:block; font-weight:800; }
   .admin-repeat-row-pack,.admin-repeat-row-rate { grid-template-columns:1fr 1fr 34px; }
   .admin-repeat-row-pack > button,.admin-repeat-row-rate > button { grid-column:3; grid-row:1 / span 2; }
   .admin-toggle-grid { grid-template-columns:1fr; }
+  .admin-taxonomy-row { align-items:stretch !important; flex-direction:column; gap:14px; }
+  .admin-taxonomy-identity { min-width:0; }
+  .admin-taxonomy-meta { min-width:0; flex-wrap:wrap; }
+  .admin-taxonomy-meta > span { overflow-wrap:anywhere; }
+  .admin-taxonomy-actions { justify-content:flex-end; flex-wrap:wrap; }
 }
 @media (max-width:480px) {
   .admin-stats { grid-template-columns:1fr; }

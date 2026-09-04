@@ -32,6 +32,7 @@ export interface ProductUpdate {
      * @maxLength 120
      */
   category?: string;
+  subcategoryId?: number | null;
   /** @maxLength 240 */
   techSheet?: string;
   details?: ProductDetails;

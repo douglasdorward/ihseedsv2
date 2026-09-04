@@ -1,5 +1,6 @@
 import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
+import { catalogueCategoriesTable } from "./categories";
 
 export type ProductDetails = {
   stockCode: string;
@@ -66,6 +67,7 @@ export type ProductEditablePayload = {
   status: "in-stock" | "low" | "very-low" | "unavailable";
   note: string;
   category: string;
+  subcategoryId: number | null;
   techSheet: string;
   details: ProductDetails;
 };
@@ -214,6 +216,7 @@ export const productsTable = pgTable("ih_products", {
   status: text("status").notNull(),
   note: text("note").notNull(),
   category: text("category").notNull().default("Other"),
+  subcategoryId: integer("subcategory_id").references(() => catalogueCategoriesTable.id, { onDelete: "restrict" }),
   techSheet: text("tech_sheet").notNull().default(""),
   publishStatus: text("publish_status").notNull().default("Published"),
   publishedAt: timestamp("published_at", { withTimezone: true }),
@@ -296,6 +299,7 @@ export const insertProductSchema = z.object({
   status: z.enum(["in-stock", "low", "very-low", "unavailable"]),
   note: z.string().trim().max(500),
   category: z.string().trim().max(120),
+  subcategoryId: z.number().int().positive().nullable().default(null),
   techSheet: z.string().trim().max(240),
   publishStatus: z.enum(["Published", "Draft", "Archived"]),
   details: productDetailsSchema,
@@ -303,7 +307,10 @@ export const insertProductSchema = z.object({
 export const updateProductSchema = insertProductSchema
   .omit({ slug: true, details: true })
   .partial()
-  .extend({ details: productDetailsObjectSchema.optional() });
+  .extend({
+    subcategoryId: z.number().int().positive().nullable().optional(),
+    details: productDetailsObjectSchema.optional(),
+  });
 export const productDraftSchema = insertProductSchema.omit({ slug: true, publishStatus: true });
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type UpdateProduct = z.infer<typeof updateProductSchema>;

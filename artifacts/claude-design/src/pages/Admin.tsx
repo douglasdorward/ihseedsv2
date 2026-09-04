@@ -14,6 +14,7 @@ import {
   useArchiveProduct,
   useRestoreProduct,
   useDiscardProductDraft,
+  useListAdminCategories,
   getListAdminProductsQueryKey,
   getGetAdminProductQueryKey,
   getGetAdminSummaryQueryKey
@@ -30,7 +31,9 @@ import type {
   ProductInputStatus,
   ProductDetailsRecordType,
   ProductInput,
-  ProductDraftInput
+  ProductDraftInput,
+  CatalogueCategory,
+  ProductInputPublishStatus
 } from "@workspace/api-client-react";
 
 type ProductStatus = "in-stock" | "low" | "very-low" | "unavailable";
@@ -44,6 +47,7 @@ const blankProduct: ProductInput = {
   status: "in-stock",
   note: "",
   category: "Mixes",
+  subcategoryId: null,
   techSheet: "",
   publishStatus: "Draft",
   details: {
@@ -115,11 +119,6 @@ const statusOptions: { value: ProductStatus; label: string }[] = [
   { value: "unavailable", label: "Unavailable" },
 ];
 
-const categories = [
-  "Ryegrasses", "Clovers", "Fescues & Other Grasses", "Serradellas & Medics",
-  "Lucerne", "Herbs", "Sub-Tropical Grasses", "Biologicals", "Forage & Grain Crops", "Mixes",
-  "Specialty Mixes", "Other"
-];
 
 const guideSections = [
   "",
@@ -355,7 +354,7 @@ function ProductTable() {
 
   return (
     <>
-      <PageHeader eyebrow="Content" title={<>Products &amp; <strong>mixes</strong></>} action={<button className="admin-button primary" onClick={() => navigate("/admin/products/new")}><Icon name="plus" size={18}/>Add a product</button>} />
+      <PageHeader eyebrow="Content" title={<>Products &amp; <strong>mixes</strong></>} action={<div style={{ display: 'flex', gap: 12 }}><button className="admin-button outline" style={{ width: 46, padding: 0 }} aria-label="Taxonomy settings" onClick={() => navigate("/admin/products/categories")}><Icon name="settings" size={18}/></button><button className="admin-button primary" onClick={() => navigate("/admin/products/new")}><Icon name="plus" size={18}/>Add a product</button></div>} />
       <div className="admin-content">
         <div className="admin-table-tabs">
           <button className={view === "Published" ? "active" : ""} onClick={() => setView("Published")}>Published <span>{publishedCount}</span></button>
@@ -416,6 +415,11 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const queryClient = useQueryClient();
   const { data: product, isLoading: loadingProduct } = useGetAdminProduct(productId!, { query: { enabled: !!productId, queryKey: getGetAdminProductQueryKey(productId!) } });
   const { data: products = [] } = useListAdminProducts();
+  const {
+    data: taxonomy = [],
+    isLoading: loadingTaxonomy,
+    error: taxonomyError,
+  } = useListAdminCategories();
   const createMutation = useCreateProduct();
   const saveDraftMutation = useSaveProductDraftRevision();
   const publishMutation = usePublishProduct();
@@ -454,6 +458,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
       status: item.status as ProductInputStatus,
       note: item.note,
       category: item.category,
+      subcategoryId: item.subcategoryId ?? null,
       techSheet: item.techSheet,
       publishStatus: ("publishStatus" in item ? item.publishStatus : "Draft") as ProductInputPublishStatus,
       details: {
@@ -645,6 +650,22 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const isArchived = product?.lifecycleStatus === "Archived";
   const isLive = product?.lifecycleStatus === "Published";
   const hasDraft = product?.hasDraft;
+  const selectedTaxonomy = currentForm.subcategoryId
+    ? taxonomy.find((category) => category.id === currentForm.subcategoryId)
+    : undefined;
+  const selectedRoot = selectedTaxonomy?.parentId === null
+    ? selectedTaxonomy
+    : selectedTaxonomy?.parentId
+      ? taxonomy.find((category) => category.id === selectedTaxonomy.parentId)
+      : taxonomy.find((category) => category.parentId === null && category.name === currentForm.category);
+  const rootOptions = taxonomy
+    .filter((category) => category.parentId === null && (category.active || category.id === selectedRoot?.id))
+    .sort((first, second) => first.sortOrder - second.sortOrder);
+  const childOptions = selectedRoot
+    ? taxonomy
+      .filter((category) => category.parentId === selectedRoot.id && (category.active || category.id === selectedTaxonomy?.id))
+      .sort((first, second) => first.sortOrder - second.sortOrder)
+    : [];
 
   return (
     <>
@@ -685,7 +706,33 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                <label><span className="admin-label-title">Slug<span className="admin-required-star" aria-hidden="true">*</span></span><input disabled={!isNew} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={currentForm.slug} onChange={(event) => setField("slug", event.target.value.toLowerCase())} placeholder="souwest-pasture-mix"/><small>Stable URL key. It cannot be changed after the product is created. Required to publish.</small></label>
               <label>Stock code<input value={currentForm.details.stockCode} onChange={(event) => setDetail("stockCode", event.target.value)} placeholder="e.g. EQUI or SOU / SOU500"/></label>
               <label>Botanical name<input value={currentForm.details.botanicalName} onChange={(event) => setDetail("botanicalName", event.target.value)} placeholder="e.g. Lolium multiflorum"/></label>
-               <label><span className="admin-label-title">Category<span className="admin-required-star" aria-hidden="true">*</span></span><small>Required to publish.</small><select value={currentForm.category} onChange={(event) => setField("category", event.target.value)}>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+               <label><span className="admin-label-title">Category<span className="admin-required-star" aria-hidden="true">*</span></span><small>{loadingTaxonomy ? "Loading categories…" : taxonomyError ? "Categories could not be loaded." : "Required to publish."}</small>
+                 <select
+                   value={selectedRoot?.id ?? ""}
+                   disabled={loadingTaxonomy || Boolean(taxonomyError)}
+                   onChange={(event) => {
+                     const root = taxonomy.find((category) => category.id === Number(event.target.value));
+                     setForm((current) => ({
+                       ...current,
+                       category: root?.name ?? "",
+                       subcategoryId: root?.id ?? null,
+                     }));
+                   }}
+                 >
+                  <option value="">Select a category</option>
+                   {rootOptions.map((category) => <option key={category.id} value={category.id}>{category.name}{!category.active ? " (Inactive)" : ""}</option>)}
+                </select>
+              </label>
+              <label><span className="admin-label-title">Subcategory</span><small>Optional filter group.</small>
+                 <select
+                   value={selectedTaxonomy && selectedTaxonomy.parentId === selectedRoot?.id ? selectedTaxonomy.id : ""}
+                   onChange={(event) => setField("subcategoryId", event.target.value ? Number(event.target.value) : selectedRoot?.id ?? null)}
+                   disabled={!selectedRoot || loadingTaxonomy || Boolean(taxonomyError)}
+                 >
+                  <option value="">None</option>
+                   {childOptions.map((category) => <option key={category.id} value={category.id}>{category.name}{!category.active ? " (Inactive)" : ""}</option>)}
+                </select>
+              </label>
                <label>Guide section<select value={currentForm.details.guideSection} onChange={(event) => setDetail("guideSection", event.target.value)}>{guideSections.map((section) => <option key={section || "not-set"} value={section}>{section || "Not set"}</option>)}</select></label>
             </div>
                <div className="admin-choice-field"><span className="admin-label-title">Record type<span className="admin-required-star" aria-hidden="true">*</span><small>Required to publish.</small></span><div>{(["Mix", "Variety", "Commodity / generic"] as RecordKind[]).map((kind) => <button key={kind} type="button" className={currentForm.details.recordType === kind ? "selected" : ""} onClick={() => setDetail("recordType", kind as any)}>{kind}</button>)}</div></div>
@@ -703,7 +750,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
             <div><h2>Classification</h2><p>Structured catalogue attributes used for filtering and comparison.</p></div>
             <div className="admin-form-grid">
               <label>Persistency type<select value={currentForm.details.persistencyType} onChange={(event) => setDetail("persistencyType", event.target.value as any)}><option value="">Not set</option>{["Annual", "Biennial", "Perennial", "Hybrid perennial", "Short-term (1–2 years)"].map((value) => <option key={value}>{value}</option>)}</select></label>
-              {currentForm.category === "Ryegrasses" && <label>Ploidy<select value={currentForm.details.ploidy} onChange={(event) => setDetail("ploidy", event.target.value as any)}><option value="">Not set</option>{["Diploid", "Tetraploid", "Hexaploid", "Mixed (blend)"].map((value) => <option key={value}>{value}</option>)}</select></label>}
+              {selectedRoot?.slug === "ryegrass" && <label>Ploidy<select value={currentForm.details.ploidy} onChange={(event) => setDetail("ploidy", event.target.value as any)}><option value="">Not set</option>{["Diploid", "Tetraploid", "Hexaploid", "Mixed (blend)"].map((value) => <option key={value}>{value}</option>)}</select></label>}
               <label>Flower colour<select value={currentForm.details.flowerColour} onChange={(event) => setDetail("flowerColour", event.target.value as any)}><option value="">Not set</option>{["Pink", "Yellow", "White", "Crimson", "Red", "Purple"].map((value) => <option key={value}>{value}</option>)}</select></label>
               <label>Bred by / origin<input value={currentForm.details.bredByOrigin} onChange={(event) => setDetail("bredByOrigin", event.target.value)} placeholder="e.g. Agricom (NZ)"/></label>
               <label>Distributed by<input value={currentForm.details.distributedBy} onChange={(event) => setDetail("distributedBy", event.target.value)} placeholder="IH Seeds"/></label>
@@ -843,6 +890,8 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   );
 }
 
+import AdminCategories from "./AdminCategories";
+
 export default function Admin() {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -854,6 +903,7 @@ export default function Admin() {
   let content: ReactNode;
   if (isNew) content = <ProductEditor isNew/>;
   else if (productId) content = <ProductEditor isNew={false} productId={productId}/>;
+  else if (location === "/admin/products/categories") content = <AdminCategories />;
   else if (location === "/admin/products") content = <ProductTable />;
   else content = <Dashboard />;
 

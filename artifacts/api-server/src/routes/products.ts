@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { desc, eq, inArray } from "drizzle-orm";
 import {
   db,
+  catalogueCategoriesTable,
   normalizeProductDetails,
   productDraftSchema,
   productDraftsTable,
@@ -38,13 +39,37 @@ function editableFromProduct(product: Product): ProductEditablePayload {
     status: product.status as ProductEditablePayload["status"],
     note: product.note,
     category: product.category,
+    subcategoryId: product.subcategoryId,
     techSheet: product.techSheet,
     details: normalizeProductDetails(product.details, product.packSize),
   };
 }
 
 function normalizeEditable(payload: ProductEditablePayload): ProductEditablePayload {
-  return { ...payload, details: normalizeProductDetails(payload.details, payload.packSize) };
+  return { ...payload, subcategoryId: payload.subcategoryId ?? null, details: normalizeProductDetails(payload.details, payload.packSize) };
+}
+
+async function resolveTaxonomyCategory(subcategoryId: number | null): Promise<{ category: string; active: boolean } | null> {
+  if (subcategoryId === null) return null;
+  const [selected] = await db.select().from(catalogueCategoriesTable)
+    .where(eq(catalogueCategoriesTable.id, subcategoryId));
+  if (!selected) return null;
+  if (selected.parentId === null) return { category: selected.name, active: selected.active };
+  const [parent] = await db.select().from(catalogueCategoriesTable)
+    .where(eq(catalogueCategoriesTable.id, selected.parentId));
+  return parent?.parentId === null
+    ? { category: parent.name, active: selected.active && parent.active }
+    : null;
+}
+
+async function applyTaxonomyCategory<T extends { category: string; subcategoryId: number | null }>(
+  payload: T,
+  allowedInactiveIds = new Set<number>(),
+): Promise<T | null> {
+  const taxonomy = await resolveTaxonomyCategory(payload.subcategoryId);
+  if (payload.subcategoryId === null) return payload;
+  if (taxonomy === null || (!taxonomy.active && !allowedInactiveIds.has(payload.subcategoryId))) return null;
+  return { ...payload, category: taxonomy.category };
 }
 
 function getPublishValidationErrors(product: Product, payload: ProductEditablePayload) {
@@ -62,28 +87,6 @@ async function ensureProducts() {
   const existing = await db.select().from(productsTable)
     .orderBy(desc(productsTable.updatedAt), desc(productsTable.id));
   if (existing.length > 0) {
-    const normalized = existing.map((product) => ({
-      ...product,
-      slug: product.slug || createSlug(product.name),
-      details: normalizeProductDetails(product.details, product.packSize),
-      publishedAt: product.publishStatus === "Published" && !product.publishedAt
-        ? product.createdAt
-        : product.publishedAt,
-    }));
-    const changed = normalized.filter((product, index) =>
-      product.slug !== existing[index].slug ||
-      JSON.stringify(product.details) !== JSON.stringify(existing[index].details) ||
-      product.publishedAt?.getTime() !== existing[index].publishedAt?.getTime(),
-    );
-    if (changed.length > 0) {
-      await Promise.all(changed.map((product) =>
-        db.update(productsTable)
-          .set({ slug: product.slug, details: product.details, publishedAt: product.publishedAt })
-          .where(eq(productsTable.id, product.id)),
-      ));
-      return db.select().from(productsTable)
-        .orderBy(desc(productsTable.updatedAt), desc(productsTable.id));
-    }
     return existing;
   }
   await db.insert(productsTable).values(seedProducts.map(([name, price, packSize, status, note, category]) => ({
@@ -157,14 +160,19 @@ router.post("/products", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Please complete all required product fields." });
     return;
   }
-  const missingReferences = await findMissingProductReferences(parsed.data.details);
+  const taxonomyPayload = await applyTaxonomyCategory(parsed.data);
+  if (!taxonomyPayload) {
+    res.status(400).json({ error: "Selected category does not exist or has an invalid parent." });
+    return;
+  }
+  const missingReferences = await findMissingProductReferences(taxonomyPayload.details);
   if (missingReferences.length > 0) {
     res.status(400).json({ error: `Unknown linked product: ${missingReferences.join(", ")}.` });
     return;
   }
   try {
     const [product] = await db.insert(productsTable).values({
-      ...parsed.data,
+      ...taxonomyPayload,
       publishStatus: "Draft",
       publishedAt: null,
     }).returning();
@@ -219,12 +227,21 @@ router.post("/admin/products/:id/draft", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Please complete all required product fields." });
     return;
   }
-  const missingReferences = await findMissingProductReferences(parsed.data.details);
+  const [existingDraft] = await db.select().from(productDraftsTable)
+    .where(eq(productDraftsTable.productId, id));
+  const allowedInactiveIds = new Set([product.subcategoryId, existingDraft?.snapshot.subcategoryId]
+    .filter((categoryId): categoryId is number => categoryId !== null && categoryId !== undefined));
+  const taxonomyPayload = await applyTaxonomyCategory(parsed.data, allowedInactiveIds);
+  if (!taxonomyPayload) {
+    res.status(400).json({ error: "Selected category does not exist or has an invalid parent." });
+    return;
+  }
+  const missingReferences = await findMissingProductReferences(taxonomyPayload.details);
   if (missingReferences.length > 0) {
     res.status(400).json({ error: `Unknown linked product: ${missingReferences.join(", ")}.` });
     return;
   }
-  const snapshot = normalizeEditable(parsed.data);
+  const snapshot = normalizeEditable(taxonomyPayload);
   try {
     const updated = await db.transaction(async (tx) => {
       const [lockedProduct] = await tx.select().from(productsTable)
@@ -291,7 +308,12 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       const [draft] = await tx.select().from(productDraftsTable)
         .where(eq(productDraftsTable.productId, id));
       const payload = draft?.snapshot ?? editableFromProduct(lockedProduct);
-      const normalizedPayload = normalizeEditable(payload);
+      const resolvedPayload = await applyTaxonomyCategory(
+        normalizeEditable(payload),
+        lockedProduct.subcategoryId === null ? new Set() : new Set([lockedProduct.subcategoryId]),
+      );
+      if (!resolvedPayload) throw new Error("INVALID_CATEGORY");
+      const normalizedPayload = resolvedPayload;
       const missingFields = getPublishValidationErrors(lockedProduct, normalizedPayload);
       if (missingFields.length > 0) throw new Error(`PUBLISH_VALIDATION:${missingFields.join(", ")}`);
       const [published] = await tx.update(productsTable).set({
@@ -311,6 +333,10 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
     }
     if (error instanceof Error && error.message === "PRODUCT_ARCHIVED") {
       res.status(409).json({ error: "Restore this product to Draft before publishing it." });
+      return;
+    }
+    if (error instanceof Error && error.message === "INVALID_CATEGORY") {
+      res.status(400).json({ error: "Selected category does not exist or has an invalid parent." });
       return;
     }
     if (error instanceof Error && error.message.startsWith("PUBLISH_VALIDATION:")) {
@@ -377,6 +403,18 @@ router.post("/admin/products/:id/restore", async (req, res): Promise<void> => {
     res.status(409).json({ error: "Only archived products can be restored." });
     return;
   }
+  const [pendingDraft] = await db.select().from(productDraftsTable)
+    .where(eq(productDraftsTable.productId, id));
+  const restoredDraftPayload = pendingDraft
+    ? await applyTaxonomyCategory(
+      normalizeEditable(pendingDraft.snapshot),
+      product.subcategoryId === null ? new Set() : new Set([product.subcategoryId]),
+    )
+    : null;
+  if (pendingDraft && !restoredDraftPayload) {
+    res.status(400).json({ error: "Selected category does not exist or has an invalid parent." });
+    return;
+  }
   const updated = await db.transaction(async (tx) => {
     const [lockedProduct] = await tx.select().from(productsTable)
       .where(eq(productsTable.id, id)).for("update");
@@ -386,7 +424,7 @@ router.post("/admin/products/:id/restore", async (req, res): Promise<void> => {
     const [draft] = await tx.select().from(productDraftsTable)
       .where(eq(productDraftsTable.productId, id));
     const [restored] = await tx.update(productsTable).set({
-      ...(draft ? normalizeEditable(draft.snapshot) : {}),
+      ...(draft && restoredDraftPayload ? restoredDraftPayload : {}),
       publishStatus: "Draft",
       updatedAt: new Date(),
     }).where(eq(productsTable.id, id)).returning();
@@ -448,6 +486,11 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Please provide at least one valid product field." });
     return;
   }
+  const currentProduct = await findProduct(id);
+  if (!currentProduct) {
+    res.status(404).json({ error: "Product not found." });
+    return;
+  }
   const { publishStatus, ...changes } = parsed.data;
   if (publishStatus) {
     res.status(409).json({ error: "Use the lifecycle actions to change publication status." });
@@ -459,6 +502,17 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
       res.status(400).json({ error: `Unknown linked product: ${missingReferences.join(", ")}.` });
       return;
     }
+  }
+  if (changes.subcategoryId !== undefined) {
+    const taxonomyChanges = await applyTaxonomyCategory({
+      category: changes.category ?? "",
+      subcategoryId: changes.subcategoryId,
+    }, currentProduct.subcategoryId === null ? new Set() : new Set([currentProduct.subcategoryId]));
+    if (!taxonomyChanges) {
+      res.status(400).json({ error: "Selected category does not exist or has an invalid parent." });
+      return;
+    }
+    if (changes.subcategoryId !== null) changes.category = taxonomyChanges.category;
   }
   const updateResult = await db.transaction(async (tx) => {
     const [lockedProduct] = await tx.select().from(productsTable)

@@ -2,3 +2,4 @@
 - [OpenAPI integer generation](openapi-integer-generation.md) — summary counts use number because this workspace's generator emits Zod-v4-only z.int() for integer schemas.
 - [Catalogue lifecycle safety](catalogue-lifecycle-safety.md) — public fallbacks must never resurrect non-published records; lifecycle writes serialize on the product row.
 - [Catalogue data backfills](catalogue-data-backfills.md) — corrective backfills must be persisted one-time migrations, never request-time reconciliation.
+- [Catalogue taxonomy draft integrity](catalogue-taxonomy-drafts.md) — taxonomy lifecycle rules must account for assignments stored inside pending product snapshots.

@@ -361,6 +361,7 @@ export interface Product {
   status: string;
   note: string;
   category: string;
+  subcategoryId?: number | null;
   techSheet: string;
   publishStatus: ProductPublishStatus;
   publishedAt?: string | null;
@@ -403,6 +404,7 @@ export interface ProductDraftInput {
      * @maxLength 120
      */
   category: string;
+  subcategoryId?: number | null;
   /** @maxLength 240 */
   techSheet: string;
   details: ProductDetails;
@@ -477,6 +479,7 @@ export interface ProductInput {
      * @maxLength 120
      */
   category: string;
+  subcategoryId?: number | null;
   /** @maxLength 240 */
   techSheet: string;
   publishStatus: ProductInputPublishStatus;
@@ -523,6 +526,7 @@ export interface ProductCreateInput {
      * @maxLength 120
      */
   category: string;
+  subcategoryId?: number | null;
   /** @maxLength 240 */
   techSheet: string;
   details: ProductDetails;
@@ -562,6 +566,7 @@ export interface ProductUpdate {
      * @maxLength 120
      */
   category?: string;
+  subcategoryId?: number | null;
   /** @maxLength 240 */
   techSheet?: string;
   details?: ProductDetails;
@@ -583,6 +588,89 @@ export interface AvailabilityRow {
   name: string;
   note: string;
   status: string;
+}
+
+export interface CatalogueCategory {
+  id: number;
+  parentId: number | null;
+  slug: string;
+  name: string;
+  groupLabel: string;
+  lead: string;
+  rainfall: string;
+  image: string;
+  sortOrder: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PublicCatalogueCategory = CatalogueCategory & {
+  /** @minimum 0 */
+  productCount: number;
+};
+
+export interface CatalogueCategoryInput {
+  parentId: number | null;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+     */
+  slug: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  groupLabel: string;
+  /** @maxLength 1000 */
+  lead: string;
+  /** @maxLength 120 */
+  rainfall: string;
+  /** @maxLength 500 */
+  image: string;
+  /** @minimum 0 */
+  sortOrder: number;
+  active: boolean;
+}
+
+export interface CatalogueCategoryUpdate {
+  parentId?: number | null;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name?: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  groupLabel?: string;
+  /** @maxLength 1000 */
+  lead?: string;
+  /** @maxLength 120 */
+  rainfall?: string;
+  /** @maxLength 500 */
+  image?: string;
+  /** @minimum 0 */
+  sortOrder?: number;
+  active?: boolean;
+}
+
+export type CatalogueCategoryReorderItemsItem = {
+  id: number;
+  /** @minimum 0 */
+  sortOrder: number;
+};
+
+export interface CatalogueCategoryReorder {
+  /** @minItems 1 */
+  items: CatalogueCategoryReorderItemsItem[];
 }
 
 export interface EnquiryInput {

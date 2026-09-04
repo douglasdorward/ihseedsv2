@@ -5,6 +5,7 @@ export type Product = {
   name: string;
   slug?: string | null;
   category: string;
+  subcategoryId?: number | null;
   price: string;
   packSize: string;
   status: "in-stock" | "low" | "very-low" | "unavailable";

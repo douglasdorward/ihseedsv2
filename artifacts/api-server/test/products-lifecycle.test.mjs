@@ -84,12 +84,13 @@ function draftPayload(product, overrides = {}) {
     status: overrides.status ?? product.status,
     note: overrides.note ?? product.note,
     category: overrides.category ?? product.category,
+    subcategoryId: overrides.subcategoryId ?? product.subcategoryId ?? null,
     techSheet: overrides.techSheet ?? product.techSheet,
     details: overrides.details ?? product.details,
   };
 }
 
-async function createProduct(label) {
+async function createProduct(label, overrides = {}) {
   const slug = `lifecycle-test-${testRunId}-${label}`;
   const product = assertStatus(await request("POST", "/products", {
     name: `Lifecycle test ${testRunId} ${label}`,
@@ -98,7 +99,8 @@ async function createProduct(label) {
     packSize: "25 kg bag",
     status: "in-stock",
     note: "Lifecycle test record",
-    category: "Automated tests",
+    category: overrides.category ?? "Automated tests",
+    subcategoryId: overrides.subcategoryId ?? null,
     techSheet: "",
   }), 201);
   createdProductIds.push(product.id);
@@ -149,6 +151,76 @@ test("drafts only require a product name but publishing requires public catalogu
   assert.match(publishResult.data.error, /Category/);
   assert.match(publishResult.data.error, /Summary/);
   assert.match(publishResult.data.error, /Product description/);
+});
+
+test("inactive taxonomy cannot be newly assigned but an existing assignment remains publishable", async () => {
+  const suffix = `inactive-category-${testRunId}`;
+  const categoryInput = (slug, active = true) => ({
+    parentId: null, slug, name: slug, groupLabel: "Automated tests", lead: "", rainfall: "", image: "", sortOrder: 999, active,
+  });
+  const retained = assertStatus(await request("POST", "/admin/categories", categoryInput(`${suffix}-retained`)), 201);
+  const blocked = assertStatus(await request("POST", "/admin/categories", categoryInput(`${suffix}-blocked`)), 201);
+  const retainedProduct = await createProduct("inactive-retained", { subcategoryId: retained.id });
+  const pendingProduct = await createProduct("inactive-pending");
+  try {
+    assertStatus(await request("POST", `/admin/products/${retainedProduct.id}/publish`), 200);
+    assertStatus(await request("PATCH", `/admin/categories/${retained.id}`, { active: false }), 200);
+    assertStatus(await request("POST", `/admin/products/${retainedProduct.id}/draft`, draftPayload(retainedProduct, {
+      name: `Inactive retained revision ${testRunId}`,
+      subcategoryId: retained.id,
+    })), 200);
+    assertStatus(await request("POST", `/admin/products/${retainedProduct.id}/publish`), 200);
+
+    assertStatus(await request("POST", `/products`, {
+      name: `Inactive blocked ${testRunId}`, slug: `${suffix}-blocked-product`, price: "", packSize: "",
+      status: "in-stock", note: "", category: "", subcategoryId: retained.id, techSheet: "",
+    }), 400);
+    assertStatus(await request("POST", `/admin/products/${pendingProduct.id}/publish`), 200);
+    assertStatus(await request("POST", `/admin/products/${pendingProduct.id}/draft`, draftPayload(pendingProduct, {
+      subcategoryId: blocked.id,
+    })), 200);
+    assertStatus(await request("PATCH", `/admin/categories/${blocked.id}`, { active: false }), 200);
+    assertStatus(await request("POST", `/admin/products/${pendingProduct.id}/publish`), 400);
+  } finally {
+    await request("DELETE", `/products/${retainedProduct.id}`);
+    await request("DELETE", `/products/${pendingProduct.id}`);
+    await request("DELETE", `/admin/categories/${retained.id}`);
+    await request("DELETE", `/admin/categories/${blocked.id}`);
+  }
+});
+
+test("renaming a root taxonomy category updates assigned product and draft labels atomically", async () => {
+  const suffix = `rename-category-${testRunId}`;
+  const root = assertStatus(await request("POST", "/admin/categories", {
+    parentId: null, slug: `${suffix}-root`, name: `Original root ${testRunId}`, groupLabel: "Automated tests",
+    lead: "", rainfall: "", image: "", sortOrder: 999, active: true,
+  }), 201);
+  const child = assertStatus(await request("POST", "/admin/categories", {
+    parentId: root.id, slug: `${suffix}-child`, name: `Child ${testRunId}`, groupLabel: "Automated tests",
+    lead: "", rainfall: "", image: "", sortOrder: 999, active: true,
+  }), 201);
+  const rootProduct = await createProduct("rename-root", { subcategoryId: root.id });
+  const childProduct = await createProduct("rename-child", { subcategoryId: child.id });
+  try {
+    assertStatus(await request("POST", `/admin/products/${rootProduct.id}/publish`), 200);
+    const publishedChild = assertStatus(await request("POST", `/admin/products/${childProduct.id}/publish`), 200);
+    assertStatus(await request("POST", `/admin/products/${childProduct.id}/draft`, draftPayload(publishedChild, {
+      name: `Renamed category draft ${testRunId}`,
+      subcategoryId: child.id,
+    })), 200);
+
+    const renamed = `Renamed root ${testRunId}`;
+    assertStatus(await request("PATCH", `/admin/categories/${root.id}`, { name: renamed }), 200);
+    assert.equal((await adminProduct(rootProduct.id)).category, renamed);
+    const childAdmin = await adminProduct(childProduct.id);
+    assert.equal(childAdmin.category, renamed);
+    assert.equal(childAdmin.draft.category, renamed);
+  } finally {
+    await request("DELETE", `/products/${rootProduct.id}`);
+    await request("DELETE", `/products/${childProduct.id}`);
+    await request("DELETE", `/admin/categories/${child.id}`);
+    await request("DELETE", `/admin/categories/${root.id}`);
+  }
 });
 
 test("the one-time migration corrects legacy published seed categories without changing lifecycle state", async () => {
@@ -205,8 +277,11 @@ test("the one-time migration corrects legacy published seed categories without c
 test("a later published category choice for a seed product is not reverted", async () => {
   const product = (await publicProducts()).find((item) => item.slug === "ceres-pg-one50-ryegrass");
   assert.ok(product);
+  const otherCategory = assertStatus(await request("GET", "/categories"), 200)
+    .find((category) => category.slug === "other");
+  assert.ok(otherCategory);
   const timestamps = sql(`
-    SELECT published_at::text, updated_at::text
+    SELECT published_at::text, updated_at::text, COALESCE(subcategory_id::text, '')
     FROM ih_products
     WHERE id = ${product.id}
   `).split("\t");
@@ -214,6 +289,7 @@ test("a later published category choice for a seed product is not reverted", asy
   try {
     assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
       category: "Other",
+      subcategoryId: otherCategory.id,
       details: {
         ...product.details,
         recordType: "Variety",
@@ -226,17 +302,64 @@ test("a later published category choice for a seed product is not reverted", asy
 
     const published = (await publicProducts()).find((item) => item.id === product.id);
     assert.ok(published);
-    assert.equal(published.category, "Other");
+    assert.equal(published.category, otherCategory.name);
     assert.equal(published.publishStatus, "Published");
   } finally {
     sql(`
       DELETE FROM ih_product_drafts WHERE product_id = ${product.id};
       UPDATE ih_products
       SET category = '${product.category.replaceAll("'", "''")}',
+          subcategory_id = ${timestamps[2] ? Number(timestamps[2]) : "NULL"},
           published_at = '${timestamps[0].replaceAll("'", "''")}'::timestamptz,
           updated_at = '${timestamps[1].replaceAll("'", "''")}'::timestamptz
       WHERE id = ${product.id}
     `);
+  }
+});
+
+test("category administration enforces nesting, activation, and deletion protection", async () => {
+  const suffix = `category-test-${testRunId}`;
+  const categoryInput = (slug, name, parentId = null) => ({
+    parentId,
+    slug,
+    name,
+    groupLabel: "Automated tests",
+    lead: "Category API test",
+    rainfall: "Any",
+    image: "",
+    sortOrder: 999,
+    active: true,
+  });
+  const parent = assertStatus(await request("POST", "/admin/categories",
+    categoryInput(`${suffix}-parent`, `Category parent ${testRunId}`)), 201);
+  const child = assertStatus(await request("POST", "/admin/categories",
+    categoryInput(`${suffix}-child`, `Category child ${testRunId}`, parent.id)), 201);
+  try {
+    assertStatus(await request("POST", "/admin/categories",
+      categoryInput(`${suffix}-grandchild`, `Category grandchild ${testRunId}`, child.id)), 400);
+    assertStatus(await request("POST", "/admin/categories",
+      categoryInput(parent.slug, `Duplicate slug ${testRunId}`)), 409);
+
+    const product = await createProduct("category-draft-reference");
+    const publishedProduct = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+    assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(publishedProduct, {
+      subcategoryId: child.id,
+    })), 200);
+    assertStatus(await request("DELETE", `/admin/categories/${child.id}`), 409);
+
+    assertStatus(await request("PATCH", `/admin/categories/${parent.id}`, { active: false }), 200);
+    const publicCategories = assertStatus(await request("GET", "/categories"), 200);
+    assert.equal(publicCategories.some((category) => category.id === parent.id), false);
+    assert.equal(publicCategories.some((category) => category.id === child.id), false);
+    assertStatus(await request("DELETE", `/admin/categories/${parent.id}`), 409);
+
+    assertStatus(await request("DELETE", `/products/${product.id}`), 204);
+    assertStatus(await request("DELETE", `/admin/categories/${child.id}`), 204);
+    assertStatus(await request("DELETE", `/admin/categories/${parent.id}`), 204);
+  } finally {
+    // Deletes are intentionally best-effort because a prior assertion may have removed either row.
+    await request("DELETE", `/admin/categories/${child.id}`);
+    await request("DELETE", `/admin/categories/${parent.id}`);
   }
 });
 
@@ -384,6 +507,35 @@ test("catalogue lifecycle transition matrix protects public content", async () =
 
   assertStatus(await request("POST", "/admin/products/not-an-id/publish"), 400);
   assertStatus(await request("GET", "/admin/products/999999999"), 404);
+});
+
+test("taxonomy assignment is saved as a draft and only reaches public products on publish", async () => {
+  const product = await createProduct("taxonomy-assignment");
+  const categories = assertStatus(await request("GET", "/admin/categories"), 200);
+  const ryegrass = categories.find((category) => category.slug === "ryegrass");
+  assert.ok(ryegrass, "Expected seeded ryegrass taxonomy category");
+
+  const initiallyPublished = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  assert.equal(initiallyPublished.subcategoryId, null);
+  assert.equal((await publicProducts()).find((item) => item.id === product.id).subcategoryId, null);
+
+  const revised = assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(initiallyPublished, {
+    category: "Not the taxonomy display name",
+    subcategoryId: ryegrass.id,
+  })), 200);
+  assert.equal(revised.subcategoryId, null);
+  assert.equal(revised.draft.subcategoryId, ryegrass.id);
+  assert.equal(revised.draft.category, ryegrass.name);
+  const stillPublic = (await publicProducts()).find((item) => item.id === product.id);
+  assert.equal(stillPublic.subcategoryId, null);
+  assert.equal(stillPublic.category, "Automated tests");
+
+  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  assert.equal(published.subcategoryId, ryegrass.id);
+  assert.equal(published.category, ryegrass.name);
+  const publicProduct = (await publicProducts()).find((item) => item.id === product.id);
+  assert.equal(publicProduct.subcategoryId, ryegrass.id);
+  assert.equal(publicProduct.category, ryegrass.name);
 });
 
 test("generic updates cannot race publish or archive into live content", async () => {

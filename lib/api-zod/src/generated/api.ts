@@ -20,6 +20,8 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary List pasture seed products
  */
+export const listProductsResponseSubcategoryIdMultipleOf = 1;
+
 export const listProductsResponseDetailsStockCodeMax = 40;
 
 export const listProductsResponseDetailsGuideSectionMax = 120;
@@ -124,6 +126,7 @@ export const ListProductsResponseItem = zod.object({
   "status": zod.string(),
   "note": zod.string(),
   "category": zod.string(),
+  "subcategoryId": zod.number().multipleOf(listProductsResponseSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
@@ -228,6 +231,8 @@ export const createProductBodyPackSizeMax = 80;
 export const createProductBodyNoteMax = 500;
 
 export const createProductBodyCategoryMax = 120;
+
+export const createProductBodySubcategoryIdMultipleOf = 1;
 
 export const createProductBodyTechSheetMax = 240;
 
@@ -334,6 +339,7 @@ export const CreateProductBody = zod.object({
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(createProductBodyNoteMax),
   "category": zod.string().min(1).max(createProductBodyCategoryMax),
+  "subcategoryId": zod.number().multipleOf(createProductBodySubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(createProductBodyTechSheetMax),
   "details": zod.object({
   "stockCode": zod.string().max(createProductBodyDetailsStockCodeMax),
@@ -415,6 +421,8 @@ export const CreateProductBody = zod.object({
   "relatedProducts": zod.array(zod.string().max(createProductBodyDetailsRelatedProductsItemMax))
 })
 })
+
+export const createProductResponseSubcategoryIdMultipleOf = 1;
 
 export const createProductResponseDetailsStockCodeMax = 40;
 
@@ -520,6 +528,7 @@ export const CreateProductResponse = zod.object({
   "status": zod.string(),
   "note": zod.string(),
   "category": zod.string(),
+  "subcategoryId": zod.number().multipleOf(createProductResponseSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
@@ -623,6 +632,8 @@ export const updateProductBodyPackSizeMax = 80;
 export const updateProductBodyNoteMax = 500;
 
 export const updateProductBodyCategoryMax = 120;
+
+export const updateProductBodySubcategoryIdMultipleOf = 1;
 
 export const updateProductBodyTechSheetMax = 240;
 
@@ -728,6 +739,7 @@ export const UpdateProductBody = zod.object({
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']).optional(),
   "note": zod.string().max(updateProductBodyNoteMax).optional(),
   "category": zod.string().min(1).max(updateProductBodyCategoryMax).optional(),
+  "subcategoryId": zod.number().multipleOf(updateProductBodySubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(updateProductBodyTechSheetMax).optional(),
   "details": zod.object({
   "stockCode": zod.string().max(updateProductBodyDetailsStockCodeMax),
@@ -809,6 +821,8 @@ export const UpdateProductBody = zod.object({
   "relatedProducts": zod.array(zod.string().max(updateProductBodyDetailsRelatedProductsItemMax))
 }).optional()
 })
+
+export const updateProductResponseSubcategoryIdMultipleOf = 1;
 
 export const updateProductResponseDetailsStockCodeMax = 40;
 
@@ -914,6 +928,7 @@ export const UpdateProductResponse = zod.object({
   "status": zod.string(),
   "note": zod.string(),
   "category": zod.string(),
+  "subcategoryId": zod.number().multipleOf(updateProductResponseSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
@@ -1014,6 +1029,8 @@ export const DeleteProductResponse = zod.void()
 /**
  * @summary Get product management dashboard summary
  */
+export const getAdminSummaryResponseRecentProductsItemSubcategoryIdMultipleOf = 1;
+
 export const getAdminSummaryResponseRecentProductsItemDetailsStockCodeMax = 40;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsGuideSectionMax = 120;
@@ -1126,6 +1143,7 @@ export const GetAdminSummaryResponse = zod.object({
   "status": zod.string(),
   "note": zod.string(),
   "category": zod.string(),
+  "subcategoryId": zod.number().multipleOf(getAdminSummaryResponseRecentProductsItemSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
@@ -1217,6 +1235,8 @@ export const GetAdminSummaryResponse = zod.object({
 /**
  * @summary List catalogue products with lifecycle metadata
  */
+export const listAdminProductsResponseOneSubcategoryIdMultipleOf = 1;
+
 export const listAdminProductsResponseOneDetailsStockCodeMax = 40;
 
 export const listAdminProductsResponseOneDetailsGuideSectionMax = 120;
@@ -1319,6 +1339,8 @@ export const listAdminProductsResponseTwoDraftOneOnePackSizeMax = 80;
 export const listAdminProductsResponseTwoDraftOneOneNoteMax = 500;
 
 export const listAdminProductsResponseTwoDraftOneOneCategoryMax = 120;
+
+export const listAdminProductsResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const listAdminProductsResponseTwoDraftOneOneTechSheetMax = 240;
 
@@ -1426,6 +1448,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "status": zod.string(),
   "note": zod.string(),
   "category": zod.string(),
+  "subcategoryId": zod.number().multipleOf(listAdminProductsResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
@@ -1521,6 +1544,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(listAdminProductsResponseTwoDraftOneOneNoteMax),
   "category": zod.string().min(1).max(listAdminProductsResponseTwoDraftOneOneCategoryMax),
+  "subcategoryId": zod.number().multipleOf(listAdminProductsResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(listAdminProductsResponseTwoDraftOneOneTechSheetMax),
   "details": zod.object({
   "stockCode": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsStockCodeMax),
@@ -1614,6 +1638,8 @@ export const ListAdminProductsResponse = zod.array(ListAdminProductsResponseItem
 export const GetAdminProductParams = zod.object({
   "id": zod.coerce.number().int()
 })
+
+export const getAdminProductResponseOneSubcategoryIdMultipleOf = 1;
 
 export const getAdminProductResponseOneDetailsStockCodeMax = 40;
 
@@ -1717,6 +1743,8 @@ export const getAdminProductResponseTwoDraftOneOnePackSizeMax = 80;
 export const getAdminProductResponseTwoDraftOneOneNoteMax = 500;
 
 export const getAdminProductResponseTwoDraftOneOneCategoryMax = 120;
+
+export const getAdminProductResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const getAdminProductResponseTwoDraftOneOneTechSheetMax = 240;
 
@@ -1824,6 +1852,7 @@ export const GetAdminProductResponse = zod.object({
   "status": zod.string(),
   "note": zod.string(),
   "category": zod.string(),
+  "subcategoryId": zod.number().multipleOf(getAdminProductResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
@@ -1919,6 +1948,7 @@ export const GetAdminProductResponse = zod.object({
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(getAdminProductResponseTwoDraftOneOneNoteMax),
   "category": zod.string().min(1).max(getAdminProductResponseTwoDraftOneOneCategoryMax),
+  "subcategoryId": zod.number().multipleOf(getAdminProductResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(getAdminProductResponseTwoDraftOneOneTechSheetMax),
   "details": zod.object({
   "stockCode": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsStockCodeMax),
@@ -2021,6 +2051,8 @@ export const saveProductDraftRevisionBodyPackSizeMax = 80;
 export const saveProductDraftRevisionBodyNoteMax = 500;
 
 export const saveProductDraftRevisionBodyCategoryMax = 120;
+
+export const saveProductDraftRevisionBodySubcategoryIdMultipleOf = 1;
 
 export const saveProductDraftRevisionBodyTechSheetMax = 240;
 
@@ -2126,6 +2158,7 @@ export const SaveProductDraftRevisionBody = zod.object({
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(saveProductDraftRevisionBodyNoteMax),
   "category": zod.string().min(1).max(saveProductDraftRevisionBodyCategoryMax),
+  "subcategoryId": zod.number().multipleOf(saveProductDraftRevisionBodySubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(saveProductDraftRevisionBodyTechSheetMax),
   "details": zod.object({
   "stockCode": zod.string().max(saveProductDraftRevisionBodyDetailsStockCodeMax),
@@ -2207,6 +2240,8 @@ export const SaveProductDraftRevisionBody = zod.object({
   "relatedProducts": zod.array(zod.string().max(saveProductDraftRevisionBodyDetailsRelatedProductsItemMax))
 })
 })
+
+export const saveProductDraftRevisionResponseOneSubcategoryIdMultipleOf = 1;
 
 export const saveProductDraftRevisionResponseOneDetailsStockCodeMax = 40;
 
@@ -2310,6 +2345,8 @@ export const saveProductDraftRevisionResponseTwoDraftOneOnePackSizeMax = 80;
 export const saveProductDraftRevisionResponseTwoDraftOneOneNoteMax = 500;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneCategoryMax = 120;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneTechSheetMax = 240;
 
@@ -2417,6 +2454,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "status": zod.string(),
   "note": zod.string(),
   "category": zod.string(),
+  "subcategoryId": zod.number().multipleOf(saveProductDraftRevisionResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
@@ -2512,6 +2550,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneNoteMax),
   "category": zod.string().min(1).max(saveProductDraftRevisionResponseTwoDraftOneOneCategoryMax),
+  "subcategoryId": zod.number().multipleOf(saveProductDraftRevisionResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneTechSheetMax),
   "details": zod.object({
   "stockCode": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsStockCodeMax),
@@ -2604,6 +2643,8 @@ export const SaveProductDraftRevisionResponse = zod.object({
 export const PublishProductParams = zod.object({
   "id": zod.coerce.number().int()
 })
+
+export const publishProductResponseOneSubcategoryIdMultipleOf = 1;
 
 export const publishProductResponseOneDetailsStockCodeMax = 40;
 
@@ -2707,6 +2748,8 @@ export const publishProductResponseTwoDraftOneOnePackSizeMax = 80;
 export const publishProductResponseTwoDraftOneOneNoteMax = 500;
 
 export const publishProductResponseTwoDraftOneOneCategoryMax = 120;
+
+export const publishProductResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const publishProductResponseTwoDraftOneOneTechSheetMax = 240;
 
@@ -2814,6 +2857,7 @@ export const PublishProductResponse = zod.object({
   "status": zod.string(),
   "note": zod.string(),
   "category": zod.string(),
+  "subcategoryId": zod.number().multipleOf(publishProductResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
@@ -2909,6 +2953,7 @@ export const PublishProductResponse = zod.object({
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(publishProductResponseTwoDraftOneOneNoteMax),
   "category": zod.string().min(1).max(publishProductResponseTwoDraftOneOneCategoryMax),
+  "subcategoryId": zod.number().multipleOf(publishProductResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(publishProductResponseTwoDraftOneOneTechSheetMax),
   "details": zod.object({
   "stockCode": zod.string().max(publishProductResponseTwoDraftOneOneDetailsStockCodeMax),
@@ -3001,6 +3046,8 @@ export const PublishProductResponse = zod.object({
 export const ArchiveProductParams = zod.object({
   "id": zod.coerce.number().int()
 })
+
+export const archiveProductResponseOneSubcategoryIdMultipleOf = 1;
 
 export const archiveProductResponseOneDetailsStockCodeMax = 40;
 
@@ -3104,6 +3151,8 @@ export const archiveProductResponseTwoDraftOneOnePackSizeMax = 80;
 export const archiveProductResponseTwoDraftOneOneNoteMax = 500;
 
 export const archiveProductResponseTwoDraftOneOneCategoryMax = 120;
+
+export const archiveProductResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const archiveProductResponseTwoDraftOneOneTechSheetMax = 240;
 
@@ -3211,6 +3260,7 @@ export const ArchiveProductResponse = zod.object({
   "status": zod.string(),
   "note": zod.string(),
   "category": zod.string(),
+  "subcategoryId": zod.number().multipleOf(archiveProductResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
@@ -3306,6 +3356,7 @@ export const ArchiveProductResponse = zod.object({
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(archiveProductResponseTwoDraftOneOneNoteMax),
   "category": zod.string().min(1).max(archiveProductResponseTwoDraftOneOneCategoryMax),
+  "subcategoryId": zod.number().multipleOf(archiveProductResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(archiveProductResponseTwoDraftOneOneTechSheetMax),
   "details": zod.object({
   "stockCode": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsStockCodeMax),
@@ -3398,6 +3449,8 @@ export const ArchiveProductResponse = zod.object({
 export const RestoreProductParams = zod.object({
   "id": zod.coerce.number().int()
 })
+
+export const restoreProductResponseOneSubcategoryIdMultipleOf = 1;
 
 export const restoreProductResponseOneDetailsStockCodeMax = 40;
 
@@ -3501,6 +3554,8 @@ export const restoreProductResponseTwoDraftOneOnePackSizeMax = 80;
 export const restoreProductResponseTwoDraftOneOneNoteMax = 500;
 
 export const restoreProductResponseTwoDraftOneOneCategoryMax = 120;
+
+export const restoreProductResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const restoreProductResponseTwoDraftOneOneTechSheetMax = 240;
 
@@ -3608,6 +3663,7 @@ export const RestoreProductResponse = zod.object({
   "status": zod.string(),
   "note": zod.string(),
   "category": zod.string(),
+  "subcategoryId": zod.number().multipleOf(restoreProductResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
@@ -3703,6 +3759,7 @@ export const RestoreProductResponse = zod.object({
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(restoreProductResponseTwoDraftOneOneNoteMax),
   "category": zod.string().min(1).max(restoreProductResponseTwoDraftOneOneCategoryMax),
+  "subcategoryId": zod.number().multipleOf(restoreProductResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(restoreProductResponseTwoDraftOneOneTechSheetMax),
   "details": zod.object({
   "stockCode": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsStockCodeMax),
@@ -3795,6 +3852,8 @@ export const RestoreProductResponse = zod.object({
 export const DiscardProductDraftParams = zod.object({
   "id": zod.coerce.number().int()
 })
+
+export const discardProductDraftResponseOneSubcategoryIdMultipleOf = 1;
 
 export const discardProductDraftResponseOneDetailsStockCodeMax = 40;
 
@@ -3898,6 +3957,8 @@ export const discardProductDraftResponseTwoDraftOneOnePackSizeMax = 80;
 export const discardProductDraftResponseTwoDraftOneOneNoteMax = 500;
 
 export const discardProductDraftResponseTwoDraftOneOneCategoryMax = 120;
+
+export const discardProductDraftResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const discardProductDraftResponseTwoDraftOneOneTechSheetMax = 240;
 
@@ -4005,6 +4066,7 @@ export const DiscardProductDraftResponse = zod.object({
   "status": zod.string(),
   "note": zod.string(),
   "category": zod.string(),
+  "subcategoryId": zod.number().multipleOf(discardProductDraftResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
@@ -4100,6 +4162,7 @@ export const DiscardProductDraftResponse = zod.object({
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(discardProductDraftResponseTwoDraftOneOneNoteMax),
   "category": zod.string().min(1).max(discardProductDraftResponseTwoDraftOneOneCategoryMax),
+  "subcategoryId": zod.number().multipleOf(discardProductDraftResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(discardProductDraftResponseTwoDraftOneOneTechSheetMax),
   "details": zod.object({
   "stockCode": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsStockCodeMax),
@@ -4196,6 +4259,239 @@ export const ListAvailabilityResponseItem = zod.object({
   "status": zod.string()
 })
 export const ListAvailabilityResponse = zod.array(ListAvailabilityResponseItem)
+
+
+/**
+ * @summary List active catalogue categories
+ */
+export const listCategoriesResponseOneIdMultipleOf = 1;
+
+export const listCategoriesResponseOneParentIdMultipleOf = 1;
+
+export const listCategoriesResponseOneSortOrderMultipleOf = 1;
+
+export const listCategoriesResponseTwoProductCountMin = 0;
+export const listCategoriesResponseTwoProductCountMultipleOf = 1;
+
+
+
+export const ListCategoriesResponseItem = zod.object({
+  "id": zod.number().multipleOf(listCategoriesResponseOneIdMultipleOf),
+  "parentId": zod.number().multipleOf(listCategoriesResponseOneParentIdMultipleOf).nullable(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "groupLabel": zod.string(),
+  "lead": zod.string(),
+  "rainfall": zod.string(),
+  "image": zod.string(),
+  "sortOrder": zod.number().multipleOf(listCategoriesResponseOneSortOrderMultipleOf),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "productCount": zod.number().min(listCategoriesResponseTwoProductCountMin).multipleOf(listCategoriesResponseTwoProductCountMultipleOf)
+}))
+export const ListCategoriesResponse = zod.array(ListCategoriesResponseItem)
+
+
+/**
+ * @summary List all catalogue categories
+ */
+export const listAdminCategoriesResponseIdMultipleOf = 1;
+
+export const listAdminCategoriesResponseParentIdMultipleOf = 1;
+
+export const listAdminCategoriesResponseSortOrderMultipleOf = 1;
+
+
+
+export const ListAdminCategoriesResponseItem = zod.object({
+  "id": zod.number().multipleOf(listAdminCategoriesResponseIdMultipleOf),
+  "parentId": zod.number().multipleOf(listAdminCategoriesResponseParentIdMultipleOf).nullable(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "groupLabel": zod.string(),
+  "lead": zod.string(),
+  "rainfall": zod.string(),
+  "image": zod.string(),
+  "sortOrder": zod.number().multipleOf(listAdminCategoriesResponseSortOrderMultipleOf),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListAdminCategoriesResponse = zod.array(ListAdminCategoriesResponseItem)
+
+
+/**
+ * @summary Create a catalogue category
+ */
+export const createCategoryBodyParentIdMultipleOf = 1;
+
+export const createCategoryBodySlugMax = 120;
+
+
+export const createCategoryBodySlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
+export const createCategoryBodyNameMax = 120;
+
+export const createCategoryBodyGroupLabelMax = 80;
+
+export const createCategoryBodyLeadMax = 1000;
+
+export const createCategoryBodyRainfallMax = 120;
+
+export const createCategoryBodyImageMax = 500;
+
+export const createCategoryBodySortOrderMin = 0;
+export const createCategoryBodySortOrderMultipleOf = 1;
+
+
+
+export const CreateCategoryBody = zod.object({
+  "parentId": zod.number().multipleOf(createCategoryBodyParentIdMultipleOf).nullable(),
+  "slug": zod.string().min(1).max(createCategoryBodySlugMax).regex(createCategoryBodySlugRegExp),
+  "name": zod.string().min(1).max(createCategoryBodyNameMax),
+  "groupLabel": zod.string().min(1).max(createCategoryBodyGroupLabelMax),
+  "lead": zod.string().max(createCategoryBodyLeadMax),
+  "rainfall": zod.string().max(createCategoryBodyRainfallMax),
+  "image": zod.string().max(createCategoryBodyImageMax),
+  "sortOrder": zod.number().min(createCategoryBodySortOrderMin).multipleOf(createCategoryBodySortOrderMultipleOf),
+  "active": zod.boolean()
+})
+
+export const createCategoryResponseIdMultipleOf = 1;
+
+export const createCategoryResponseParentIdMultipleOf = 1;
+
+export const createCategoryResponseSortOrderMultipleOf = 1;
+
+
+
+export const CreateCategoryResponse = zod.object({
+  "id": zod.number().multipleOf(createCategoryResponseIdMultipleOf),
+  "parentId": zod.number().multipleOf(createCategoryResponseParentIdMultipleOf).nullable(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "groupLabel": zod.string(),
+  "lead": zod.string(),
+  "rainfall": zod.string(),
+  "image": zod.string(),
+  "sortOrder": zod.number().multipleOf(createCategoryResponseSortOrderMultipleOf),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Reorder catalogue categories
+ */
+export const reorderCategoriesBodyItemsItemIdMultipleOf = 1;
+
+export const reorderCategoriesBodyItemsItemSortOrderMin = 0;
+export const reorderCategoriesBodyItemsItemSortOrderMultipleOf = 1;
+
+
+
+
+export const ReorderCategoriesBody = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number().multipleOf(reorderCategoriesBodyItemsItemIdMultipleOf),
+  "sortOrder": zod.number().min(reorderCategoriesBodyItemsItemSortOrderMin).multipleOf(reorderCategoriesBodyItemsItemSortOrderMultipleOf)
+})).min(1)
+})
+
+export const reorderCategoriesResponseIdMultipleOf = 1;
+
+export const reorderCategoriesResponseParentIdMultipleOf = 1;
+
+export const reorderCategoriesResponseSortOrderMultipleOf = 1;
+
+
+
+export const ReorderCategoriesResponseItem = zod.object({
+  "id": zod.number().multipleOf(reorderCategoriesResponseIdMultipleOf),
+  "parentId": zod.number().multipleOf(reorderCategoriesResponseParentIdMultipleOf).nullable(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "groupLabel": zod.string(),
+  "lead": zod.string(),
+  "rainfall": zod.string(),
+  "image": zod.string(),
+  "sortOrder": zod.number().multipleOf(reorderCategoriesResponseSortOrderMultipleOf),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ReorderCategoriesResponse = zod.array(ReorderCategoriesResponseItem)
+
+
+/**
+ * @summary Update a catalogue category or its active state
+ */
+export const UpdateCategoryParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const updateCategoryBodyParentIdMultipleOf = 1;
+
+export const updateCategoryBodyNameMax = 120;
+
+export const updateCategoryBodyGroupLabelMax = 80;
+
+export const updateCategoryBodyLeadMax = 1000;
+
+export const updateCategoryBodyRainfallMax = 120;
+
+export const updateCategoryBodyImageMax = 500;
+
+export const updateCategoryBodySortOrderMin = 0;
+export const updateCategoryBodySortOrderMultipleOf = 1;
+
+
+
+export const UpdateCategoryBody = zod.object({
+  "parentId": zod.number().multipleOf(updateCategoryBodyParentIdMultipleOf).nullish(),
+  "name": zod.string().min(1).max(updateCategoryBodyNameMax).optional(),
+  "groupLabel": zod.string().min(1).max(updateCategoryBodyGroupLabelMax).optional(),
+  "lead": zod.string().max(updateCategoryBodyLeadMax).optional(),
+  "rainfall": zod.string().max(updateCategoryBodyRainfallMax).optional(),
+  "image": zod.string().max(updateCategoryBodyImageMax).optional(),
+  "sortOrder": zod.number().min(updateCategoryBodySortOrderMin).multipleOf(updateCategoryBodySortOrderMultipleOf).optional(),
+  "active": zod.boolean().optional()
+})
+
+export const updateCategoryResponseIdMultipleOf = 1;
+
+export const updateCategoryResponseParentIdMultipleOf = 1;
+
+export const updateCategoryResponseSortOrderMultipleOf = 1;
+
+
+
+export const UpdateCategoryResponse = zod.object({
+  "id": zod.number().multipleOf(updateCategoryResponseIdMultipleOf),
+  "parentId": zod.number().multipleOf(updateCategoryResponseParentIdMultipleOf).nullable(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "groupLabel": zod.string(),
+  "lead": zod.string(),
+  "rainfall": zod.string(),
+  "image": zod.string(),
+  "sortOrder": zod.number().multipleOf(updateCategoryResponseSortOrderMultipleOf),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete an unused catalogue category
+ */
+export const DeleteCategoryParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteCategoryResponse = zod.void()
 
 
 /**

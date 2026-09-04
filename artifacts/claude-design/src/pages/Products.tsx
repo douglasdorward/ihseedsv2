@@ -1,18 +1,21 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "../router";
 import { Icon } from "../components/ui";
-import { CATALOGUE_CATEGORIES, countProductsByCategory } from "../catalogueCategories";
-import { useProducts } from "../hooks/useApi";
+import { useListCategories } from "@workspace/api-client-react";
 
 export default function Products() {
   const [filter, setFilter] = useState("All products");
-  const { products, loading, error, retry } = useProducts();
-  const categoryCounts = useMemo(() => countProductsByCategory(products), [products]);
-  const availableCategories = CATALOGUE_CATEGORIES.filter((category) => categoryCounts[category.slug] > 0);
+  const { data: categories = [], isLoading, error, refetch } = useListCategories();
+
+  const activeRootCategories = categories
+    .filter(c => c.parentId === null && c.active && c.productCount > 0)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
   const visibleCategories = filter === "All products"
-    ? availableCategories
-    : availableCategories.filter((category) => category.group === filter);
-  const filters = ["All products", ...Array.from(new Set(availableCategories.map((category) => category.group)))];
+    ? activeRootCategories
+    : activeRootCategories.filter((category) => category.groupLabel === filter);
+
+  const filters = ["All products", ...Array.from(new Set(activeRootCategories.map((category) => category.groupLabel).filter(Boolean)))];
 
   return (
     <>
@@ -51,7 +54,7 @@ export default function Products() {
             ))}
           </div>
           
-          {loading ? (
+          {isLoading ? (
             <div className="empty-state" aria-live="polite">
               <strong>Loading the current catalogue…</strong>
               <span>Product categories are being fetched from the IH Seeds catalogue.</span>
@@ -59,8 +62,8 @@ export default function Products() {
           ) : error ? (
             <div className="empty-state" role="alert">
               <strong>Catalogue unavailable</strong>
-              <span>{error}</span>
-              <button type="button" className="button button-primary" onClick={retry}>Try again</button>
+              <span>Failed to load categories.</span>
+              <button type="button" className="button button-primary" onClick={() => refetch()}>Try again</button>
             </div>
           ) : visibleCategories.length > 0 ? (
            <div className="category-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 32 }}>
@@ -70,7 +73,7 @@ export default function Products() {
                   <img src={c.image} alt={c.name} style={{ display: "block", width: "100%", height: 240, objectFit: "cover" }} />
                   <div style={{ position: "absolute", inset: "40% 0 0 0", background: "linear-gradient(to bottom, rgba(29,40,28,0) 0%, rgba(29,40,28,0.55) 100%)", pointerEvents: "none" }}></div>
                   <div style={{ position: "absolute", bottom: 12, left: 16, right: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                     <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FFFFFF" }}>{categoryCounts[c.slug]} {categoryCounts[c.slug] === 1 ? "line" : "lines"}</span>
+                     <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FFFFFF" }}>{c.productCount} {c.productCount === 1 ? "line" : "lines"}</span>
                     <div className="icon-button" style={{ width: 40, height: 40, background: "var(--yellow)", border: "none" }}><Icon name="arrow-right" size={18} /></div>
                   </div>
                 </div>

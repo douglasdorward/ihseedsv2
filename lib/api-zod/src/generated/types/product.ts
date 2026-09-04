@@ -17,6 +17,7 @@ export interface Product {
   status: string;
   note: string;
   category: string;
+  subcategoryId?: number | null;
   techSheet: string;
   publishStatus: ProductPublishStatus;
   publishedAt?: Date | null;

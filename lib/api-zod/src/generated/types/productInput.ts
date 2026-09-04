@@ -39,6 +39,7 @@ export interface ProductInput {
      * @maxLength 120
      */
   category: string;
+  subcategoryId?: number | null;
   /** @maxLength 240 */
   techSheet: string;
   publishStatus: ProductInputPublishStatus;
