@@ -52,6 +52,18 @@
   white-space: nowrap;
 }
 
+.product-card-tagline {
+  display: -webkit-box;
+  min-height: 3em;
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: var(--black-green);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .legacy-grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));

@@ -138,6 +138,7 @@ export default function Category() {
                 {visibleProducts.map((p, index) => {
                   const subCat = childCategories.find(c => c.id === p.subcategoryId)?.name;
                   const chips = getFactChips(p, subCat);
+                   const tagline = p.details.summary?.trim();
                   return (
                     <Link key={p.id} href={productPath(p)} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 16 }}>
                       <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", minHeight: 220, background: "#C5CCC5", position: "relative" }}>
@@ -152,6 +153,7 @@ export default function Category() {
                       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                         <div style={{ fontSize: 20, fontWeight: 600, color: "var(--green)", lineHeight: 1.3 }}>{p.name}</div>
                         {subCat && <div style={{ fontSize: 14, color: "#75766E" }}>{subCat}</div>}
+                       {tagline && <p className="product-card-tagline">{tagline}</p>}
                       </div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                         {chips.map((chip, i) => (
