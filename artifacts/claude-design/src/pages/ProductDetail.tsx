@@ -83,6 +83,7 @@ export default function ProductDetail() {
   }
 
   const d = product.details;
+  const hasComponentRates = d.components.some((component) => component.inclusionRate != null);
   const categoryMeta = categories.find((category) => category.parentId === null && category.name === product.category);
   const categorySlug = categoryMeta?.slug || slugify(product.category);
   const productPhoto = d.photos.find((photo) => photo.src.trim())?.src;
@@ -225,7 +226,7 @@ export default function ProductDetail() {
                     <thead>
                       <tr style={{ background: "var(--sage)", color: "var(--green)", fontSize: 14 }}>
                         <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Component</th>
-                        <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Rate</th>
+                        {hasComponentRates && <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Rate</th>}
                         <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Note</th>
                       </tr>
                     </thead>
@@ -239,11 +240,11 @@ export default function ProductDetail() {
                               ? <Link href={productPath(componentProduct)} style={{ color: "inherit" }}>{component.speciesName}</Link>
                               : component.speciesName}
                           </td>
-                          <td style={{ padding: "12px 16px" }}>
+                          {hasComponentRates && <td style={{ padding: "12px 16px" }}>
                             {component.inclusionRate !== null
                               ? `${component.inclusionRate}${component.unit ? `${component.unit === "%" ? "" : " "}${component.unit}` : ""}`
                               : "—"}
-                          </td>
+                          </td>}
                           <td style={{ padding: "12px 16px" }}>{component.note || "—"}</td>
                         </tr>
                         );
