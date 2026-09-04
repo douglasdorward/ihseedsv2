@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { after, before, test } from "node:test";
 
@@ -60,6 +60,20 @@ async function request(method, path, body) {
 function assertStatus(result, status) {
   assert.equal(result.response.status, status, JSON.stringify(result.data));
   return result.data;
+}
+
+function sql(query) {
+  return execFileSync("psql", [process.env.DATABASE_URL, "-X", "-v", "ON_ERROR_STOP=1", "-At", "-F", "\t", "-c", query], {
+    encoding: "utf8",
+  }).trim();
+}
+
+function runMigrations() {
+  execFileSync(process.execPath, ["./migrate.mjs"], {
+    cwd: new URL("../../../lib/db", import.meta.url),
+    env: process.env,
+    encoding: "utf8",
+  });
 }
 
 function draftPayload(product, overrides = {}) {
@@ -135,6 +149,95 @@ test("drafts only require a product name but publishing requires public catalogu
   assert.match(publishResult.data.error, /Category/);
   assert.match(publishResult.data.error, /Summary/);
   assert.match(publishResult.data.error, /Product description/);
+});
+
+test("the one-time migration corrects legacy published seed categories without changing lifecycle state", async () => {
+  const expectedCategories = new Map([
+    ["silahay-mix", "Specialty Mixes"],
+    ["self-regeneration-pasture-mix", "Specialty Mixes"],
+    ["ceres-pg-one50-ryegrass", "Ryegrasses"],
+    ["margurita-french-serradella", "Serradellas & Medics"],
+    ["sardi-seven-lucerne", "Lucerne"],
+    ["dalkeith-subterranean-clover", "Clovers"],
+  ]);
+  const slugs = [...expectedCategories.keys()];
+  const quotedSlugs = slugs.map((slug) => `'${slug.replaceAll("'", "''")}'`).join(", ");
+  const originalRows = sql(`
+    SELECT slug, category, publish_status
+    FROM ih_products
+    WHERE slug IN (${quotedSlugs})
+    ORDER BY slug
+  `).split("\n").filter(Boolean).map((row) => row.split("\t"));
+  assert.equal(originalRows.length, expectedCategories.size);
+
+  try {
+    sql(`
+      UPDATE ih_products
+      SET category = 'Other'
+      WHERE slug IN (${quotedSlugs})
+        AND publish_status = 'Published'
+        AND NOT EXISTS (
+          SELECT 1 FROM ih_product_drafts d WHERE d.product_id = ih_products.id
+        )
+    `);
+    sql(`DELETE FROM ih_schema_migrations WHERE name = '0002_correct_catalogue_categories.sql'`);
+    runMigrations();
+
+    const products = await publicProducts();
+    for (const [slug, expectedCategory] of expectedCategories) {
+      const product = products.find((item) => item.slug === slug);
+      assert.ok(product, `Expected ${slug} in the public catalogue`);
+      assert.equal(product.category, expectedCategory);
+      assert.equal(product.publishStatus, "Published");
+    }
+  } finally {
+    for (const [slug, category, publishStatus] of originalRows) {
+      sql(`
+        UPDATE ih_products
+        SET category = '${category.replaceAll("'", "''")}'
+        WHERE slug = '${slug.replaceAll("'", "''")}'
+          AND publish_status = '${publishStatus.replaceAll("'", "''")}'
+      `);
+    }
+  }
+});
+
+test("a later published category choice for a seed product is not reverted", async () => {
+  const product = (await publicProducts()).find((item) => item.slug === "ceres-pg-one50-ryegrass");
+  assert.ok(product);
+  const timestamps = sql(`
+    SELECT published_at::text, updated_at::text
+    FROM ih_products
+    WHERE id = ${product.id}
+  `).split("\t");
+
+  try {
+    assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+      category: "Other",
+      details: {
+        ...product.details,
+        recordType: "Variety",
+        summary: "Migration regression test summary",
+        description: "Migration regression test product description.",
+      },
+    })), 200);
+    assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+    runMigrations();
+
+    const published = (await publicProducts()).find((item) => item.id === product.id);
+    assert.ok(published);
+    assert.equal(published.category, "Other");
+    assert.equal(published.publishStatus, "Published");
+  } finally {
+    sql(`
+      DELETE FROM ih_product_drafts WHERE product_id = ${product.id};
+      UPDATE ih_products
+      SET category = '${product.category.replaceAll("'", "''")}',
+          published_at = '${timestamps[0].replaceAll("'", "''")}'::timestamptz,
+          updated_at = '${timestamps[1].replaceAll("'", "''")}'::timestamptz
+      WHERE id = ${product.id}
+    `);
+  }
 });
 
 before(async () => {

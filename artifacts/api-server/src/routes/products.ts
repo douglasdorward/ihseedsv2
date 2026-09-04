@@ -16,14 +16,14 @@ import { insertProductSchema } from "@workspace/db";
 const router: IRouter = Router();
 
 const seedProducts = [
-  ["SouWest™ Pasture Mix", "$25.00 per kg", "25 kg bag", "in-stock", "Blended to order, 500 mm+ zones"],
-  ["Maximix", "$25.00 per kg", "25 kg bag", "in-stock", "Versatile pasture mix for broad-acre sowing"],
-  ["Silahay™ Mix", "$25.00 per kg", "25 kg bag", "low", "Hay and silage, mid rainfall"],
-  ["Self Regeneration Pasture Mix", "$25.00 per kg", "25 kg bag", "in-stock", "Built for persistence and recovery"],
-  ["Ceres PG One50 Ryegrass", "$14.50 per kg", "25 kg bag", "in-stock", "Perennial, 600 mm+ zones"],
-  ["Margurita French Serradella", "$9.80 per kg", "25 kg bag", "low", "Reliable early-season legume"],
-  ["SARDI Seven Lucerne", "$18.00 per kg", "25 kg bag", "in-stock", "High quality feed for rotational systems"],
-  ["Dalkeith Subterranean Clover", "$11.20 per kg", "25 kg bag", "very-low", "Early season, 325–450 mm"],
+  ["SouWest™ Pasture Mix", "$25.00 per kg", "25 kg bag", "in-stock", "Blended to order, 500 mm+ zones", "Specialty Mixes"],
+  ["Maximix", "$25.00 per kg", "25 kg bag", "in-stock", "Versatile pasture mix for broad-acre sowing", "Specialty Mixes"],
+  ["Silahay™ Mix", "$25.00 per kg", "25 kg bag", "low", "Hay and silage, mid rainfall", "Specialty Mixes"],
+  ["Self Regeneration Pasture Mix", "$25.00 per kg", "25 kg bag", "in-stock", "Built for persistence and recovery", "Specialty Mixes"],
+  ["Ceres PG One50 Ryegrass", "$14.50 per kg", "25 kg bag", "in-stock", "Perennial, 600 mm+ zones", "Ryegrasses"],
+  ["Margurita French Serradella", "$9.80 per kg", "25 kg bag", "low", "Reliable early-season legume", "Serradellas & Medics"],
+  ["SARDI Seven Lucerne", "$18.00 per kg", "25 kg bag", "in-stock", "High quality feed for rotational systems", "Lucerne"],
+  ["Dalkeith Subterranean Clover", "$11.20 per kg", "25 kg bag", "very-low", "Early season, 325–450 mm", "Clovers"],
 ] as const;
 
 const createSlug = (name: string) =>
@@ -86,14 +86,14 @@ async function ensureProducts() {
     }
     return existing;
   }
-  await db.insert(productsTable).values(seedProducts.map(([name, price, packSize, status, note]) => ({
+  await db.insert(productsTable).values(seedProducts.map(([name, price, packSize, status, note, category]) => ({
     name,
     slug: createSlug(name),
     price,
     packSize,
     status,
     note,
-    category: "Specialty Mixes",
+    category,
     techSheet: "",
     publishStatus: "Published",
     publishedAt: new Date(),
