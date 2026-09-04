@@ -30,13 +30,17 @@ import type {
   EnquiryCreated,
   EnquiryInput,
   HealthStatus,
+  LegacyProductName,
   LookupRedirectParams,
   Product,
   ProductCreateInput,
   ProductDraftInput,
   ProductUpdate,
   PublicCatalogueCategory,
+  PublicProduct,
+  RedirectLookup,
   WorkbookCommit,
+  WorkbookReport,
   WorkbookUpload
 } from './api.schemas';
 
@@ -156,9 +160,9 @@ export const getListProductsUrl = () => {
 /**
  * @summary List pasture seed products
  */
-export const listProducts = async ( options?: Parameters<typeof customFetch>[1]): Promise<Product[]> => {
+export const listProducts = async ( options?: Parameters<typeof customFetch>[1]): Promise<PublicProduct[]> => {
 
-  return customFetch<Product[]>(getListProductsUrl(),
+  return customFetch<PublicProduct[]>(getListProductsUrl(),
   {
     ...options,
     method: 'GET'
@@ -1111,9 +1115,9 @@ export const getListLegacyCategoryNamesUrl = (category: string,) => {
 /**
  * @summary List Legacy product names only
  */
-export const listLegacyCategoryNames = async (category: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const listLegacyCategoryNames = async (category: string, options?: Parameters<typeof customFetch>[1]): Promise<LegacyProductName[]> => {
 
-  return customFetch<void>(getListLegacyCategoryNamesUrl(category),
+  return customFetch<LegacyProductName[]>(getListLegacyCategoryNamesUrl(category),
   {
     ...options,
     method: 'GET'
@@ -1195,9 +1199,9 @@ export const getLookupRedirectUrl = (params: LookupRedirectParams,) => {
 /**
  * @summary Resolve a legacy SPA path
  */
-export const lookupRedirect = async (params: LookupRedirectParams, options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
+export const lookupRedirect = async (params: LookupRedirectParams, options?: Parameters<typeof customFetch>[1]): Promise<RedirectLookup> => {
 
-  return customFetch<unknown>(getLookupRedirectUrl(params),
+  return customFetch<RedirectLookup>(getLookupRedirectUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1272,9 +1276,9 @@ export const getGetProductSitemapUrl = () => {
 /**
  * @summary Active product sitemap
  */
-export const getProductSitemap = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const getProductSitemap = async ( options?: Parameters<typeof customFetch>[1]): Promise<string> => {
 
-  return customFetch<void>(getGetProductSitemapUrl(),
+  return customFetch<string>(getGetProductSitemapUrl(),
   {
     ...options,
     method: 'GET'
@@ -1349,9 +1353,9 @@ export const getDryRunProductImportUrl = () => {
 /**
  * @summary Validate an XLSX import
  */
-export const dryRunProductImport = async (workbookUpload: WorkbookUpload, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const dryRunProductImport = async (workbookUpload: WorkbookUpload, options?: Parameters<typeof customFetch>[1]): Promise<WorkbookReport> => {
 
-  return customFetch<void>(getDryRunProductImportUrl(),
+  return customFetch<WorkbookReport>(getDryRunProductImportUrl(),
   {
     ...options,
     method: 'POST',
@@ -1420,9 +1424,9 @@ export const getCommitProductImportUrl = () => {
 /**
  * @summary Commit a validated XLSX import
  */
-export const commitProductImport = async (workbookCommit: WorkbookCommit, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const commitProductImport = async (workbookCommit: WorkbookCommit, options?: Parameters<typeof customFetch>[1]): Promise<WorkbookReport> => {
 
-  return customFetch<void>(getCommitProductImportUrl(),
+  return customFetch<WorkbookReport>(getCommitProductImportUrl(),
   {
     ...options,
     method: 'POST',
@@ -1491,9 +1495,9 @@ export const getExportProductWorkbookUrl = () => {
 /**
  * @summary Export product workbook
  */
-export const exportProductWorkbook = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const exportProductWorkbook = async ( options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
 
-  return customFetch<void>(getExportProductWorkbookUrl(),
+  return customFetch<Blob>(getExportProductWorkbookUrl(),
   {
     ...options,
     method: 'GET'

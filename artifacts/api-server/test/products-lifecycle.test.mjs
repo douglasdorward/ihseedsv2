@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { createServer } from "node:net";
+import { readFile } from "node:fs/promises";
 import { after, before, test } from "node:test";
+import xlsx from "xlsx";
 
 const serverRoot = new URL("..", import.meta.url);
 const testRunId = `${process.pid}-${Date.now()}`;
@@ -129,6 +131,54 @@ function includesProduct(products, id) {
   return products.some((product) => product.id === id);
 }
 
+test("imported workbook lifecycle baseline remains exactly 77 Published and 73 Draft", async (t) => {
+  const source = await readFile(new URL("../../../attached_assets/IH_Seeds_-_Product_Data_Workbook_(pre-filled)_1788496018969.xlsx", import.meta.url));
+  const workbook = xlsx.read(source);
+  const workbookSlugs = xlsx.utils.sheet_to_json(workbook.Sheets["1 Products"], { defval: "", raw: false })
+    .map((row) => String(row.slug ?? "")).filter(Boolean);
+  const quotedSlugs = workbookSlugs.map((slug) => `'${slug.replaceAll("'", "''")}'`).join(", ");
+  const importedTotal = Number(sql(`SELECT COUNT(*) FROM ih_products WHERE slug IN (${quotedSlugs})`));
+  if (importedTotal !== workbookSlugs.length) {
+    t.skip("Catalogue workbook has not been committed in this environment yet");
+    return;
+  }
+  const counts = sql(`
+    SELECT publish_status, COUNT(*)
+    FROM ih_products
+    WHERE slug IN (${quotedSlugs})
+      AND publish_status IN ('Published', 'Draft')
+    GROUP BY publish_status
+    ORDER BY publish_status
+  `).split("\n").filter(Boolean).map((row) => row.split("\t"));
+  assert.deepEqual(Object.fromEntries(counts.map(([status, count]) => [status, Number(count)])), {
+    Draft: 73,
+    Published: 77,
+  });
+  const draftIds = new Set(sql(`SELECT id FROM ih_products WHERE slug IN (${quotedSlugs}) AND publish_status = 'Draft'`)
+    .split("\n").filter(Boolean).map(Number));
+  assert.equal((await publicProducts()).some((product) => draftIds.has(product.id)), false);
+});
+
+test("redirect lookup returns JSON while the legacy public route emits the HTTP redirect", async () => {
+  const lookup = assertStatus(await request("GET", "/redirects/lookup?fromPath=%2Fproduct%2Fsouwest-pasture-mix"), 200);
+  assert.deepEqual(lookup, { toPath: "/product/souwest-pasture-mix-2" });
+  assertStatus(await request("GET", "/redirects/lookup?fromPath=%2Fproduct%2Fnot-registered"), 404);
+
+  const redirect = await fetch(`${baseUrl}/product/souwest-pasture-mix`, { redirect: "manual" });
+  assert.equal(redirect.status, 301);
+  assert.equal(redirect.headers.get("location"), "/product/souwest-pasture-mix-2");
+});
+
+test("sitemap contains only canonical Active Published product paths", async () => {
+  const publicCatalogue = await publicProducts();
+  const response = await fetch(`${baseUrl}/api/sitemap-products`);
+  assert.equal(response.status, 200);
+  const xml = await response.text();
+  const locations = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
+  assert.deepEqual(locations.sort(), publicCatalogue.map((product) => `/product/${encodeURIComponent(product.slug)}`).sort());
+  assert.equal(locations.some((location) => location.startsWith("/products/")), false);
+});
+
 test("drafts only require a product name but publishing requires public catalogue fields", async () => {
   const product = assertStatus(await request("POST", "/products", {
     name: `Incomplete lifecycle draft ${testRunId}`,
@@ -224,25 +274,32 @@ test("renaming a root taxonomy category updates assigned product and draft label
 });
 
 test("the one-time migration corrects legacy published seed categories without changing lifecycle state", async () => {
-  const expectedCategories = new Map([
-    ["silahay-mix", "Specialty Mixes"],
-    ["self-regeneration-pasture-mix", "Specialty Mixes"],
-    ["ceres-pg-one50-ryegrass", "Ryegrasses"],
-    ["margurita-french-serradella", "Serradellas & Medics"],
-    ["sardi-seven-lucerne", "Lucerne"],
-    ["dalkeith-subterranean-clover", "Clovers"],
+  const expected = new Map([
+    ["silahay-mix", { name: "Silahay™ Mix", category: "Specialty Mixes" }],
+    ["self-regeneration-pasture-mix", { name: "Self Regeneration Pasture Mix", category: "Specialty Mixes" }],
+    ["ceres-pg-one50-ryegrass", { name: "Ceres PG One50 Ryegrass", category: "Ryegrasses" }],
+    ["margurita-french-serradella", { name: "Margurita French Serradella", category: "Serradellas & Medics" }],
+    ["sardi-seven-lucerne", { name: "SARDI Seven Lucerne", category: "Lucerne" }],
+    ["dalkeith-subterranean-clover", { name: "Dalkeith Subterranean Clover", category: "Clovers" }],
   ]);
-  const slugs = [...expectedCategories.keys()];
+  const slugs = [...expected.keys()];
   const quotedSlugs = slugs.map((slug) => `'${slug.replaceAll("'", "''")}'`).join(", ");
   const originalRows = sql(`
-    SELECT slug, category, publish_status
+    SELECT slug, name, category, publish_status
     FROM ih_products
     WHERE slug IN (${quotedSlugs})
     ORDER BY slug
   `).split("\n").filter(Boolean).map((row) => row.split("\t"));
-  assert.equal(originalRows.length, expectedCategories.size);
+  assert.equal(originalRows.length, expected.size);
 
   try {
+    for (const [slug, fixture] of expected) {
+      sql(`
+        UPDATE ih_products
+        SET name = '${fixture.name.replaceAll("'", "''")}'
+        WHERE slug = '${slug.replaceAll("'", "''")}'
+      `);
+    }
     sql(`
       UPDATE ih_products
       SET category = 'Other'
@@ -256,17 +313,18 @@ test("the one-time migration corrects legacy published seed categories without c
     runMigrations();
 
     const products = await publicProducts();
-    for (const [slug, expectedCategory] of expectedCategories) {
+    for (const [slug, fixture] of expected) {
       const product = products.find((item) => item.slug === slug);
       assert.ok(product, `Expected ${slug} in the public catalogue`);
-      assert.equal(product.category, expectedCategory);
-      assert.equal(product.publishStatus, "Published");
+      assert.equal(product.category, fixture.category);
+      assert.equal(sql(`SELECT publish_status FROM ih_products WHERE id = ${product.id}`), "Published");
     }
   } finally {
-    for (const [slug, category, publishStatus] of originalRows) {
+    for (const [slug, name, category, publishStatus] of originalRows) {
       sql(`
         UPDATE ih_products
-        SET category = '${category.replaceAll("'", "''")}'
+        SET name = '${name.replaceAll("'", "''")}',
+            category = '${category.replaceAll("'", "''")}'
         WHERE slug = '${slug.replaceAll("'", "''")}'
           AND publish_status = '${publishStatus.replaceAll("'", "''")}'
       `);
@@ -275,8 +333,9 @@ test("the one-time migration corrects legacy published seed categories without c
 });
 
 test("a later published category choice for a seed product is not reverted", async () => {
-  const product = (await publicProducts()).find((item) => item.slug === "ceres-pg-one50-ryegrass");
-  assert.ok(product);
+  const publicProduct = (await publicProducts()).find((item) => item.slug === "ceres-pg-one50-ryegrass");
+  assert.ok(publicProduct);
+  const product = await adminProduct(publicProduct.id);
   const otherCategory = assertStatus(await request("GET", "/categories"), 200)
     .find((category) => category.slug === "other");
   assert.ok(otherCategory);
@@ -303,7 +362,7 @@ test("a later published category choice for a seed product is not reverted", asy
     const published = (await publicProducts()).find((item) => item.id === product.id);
     assert.ok(published);
     assert.equal(published.category, otherCategory.name);
-    assert.equal(published.publishStatus, "Published");
+    assert.equal(sql(`SELECT publish_status FROM ih_products WHERE id = ${product.id}`), "Published");
   } finally {
     sql(`
       DELETE FROM ih_product_drafts WHERE product_id = ${product.id};
@@ -446,6 +505,10 @@ test("catalogue lifecycle transition matrix protects public content", async () =
   const publicProduct = (await publicProducts()).find((item) => item.id === product.id);
   assert.ok(publicProduct);
   assert.equal(publicProduct.category, "Automated tests");
+  for (const adminOnly of ["descriptionSource", "websiteUrlLegacy", "availabilityOverride", "listingOverride", "publishStatus", "publishedAt", "createdAt", "updatedAt"]) {
+    assert.equal(adminOnly in publicProduct, false, `Public product exposed ${adminOnly}`);
+  }
+  assert.equal("notes" in publicProduct.details, false, "Public product exposed internal notes");
   assert.equal(includesProduct(await availability(), product.id), true);
 
   const revisionName = `Lifecycle revision ${testRunId}`;
@@ -507,6 +570,50 @@ test("catalogue lifecycle transition matrix protects public content", async () =
 
   assertStatus(await request("POST", "/admin/products/not-an-id/publish"), 400);
   assertStatus(await request("GET", "/admin/products/999999999"), 404);
+});
+
+test("source and exported workbooks satisfy the round-trip parser contract", async () => {
+  const source = await readFile(new URL("../../../attached_assets/IH_Seeds_-_Product_Data_Workbook_(pre-filled)_1788496018969.xlsx", import.meta.url));
+  const sourceReport = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: source.toString("base64"),
+  }), 200);
+  assert.deepEqual(Object.fromEntries(Object.entries(sourceReport.sheets).slice(0, 7).map(([name, report]) => [name, report.rows])), {
+    "1 Products": 150,
+    "2 Sowing rates": 242,
+    "3 Category specifics": 150,
+    "4 Sale lines": 112,
+    "5 Mix components": 118,
+    "6 Companions": 229,
+    "7 Website SEO": 79,
+  });
+  assert.deepEqual(Object.fromEntries(Object.entries(sourceReport.sheets).slice(0, 7).map(([name, report]) => [name, {
+    accepted: report.accepted, skipped: report.skipped,
+  }])), {
+    "1 Products": { accepted: 150, skipped: 0 },
+    "2 Sowing rates": { accepted: 242, skipped: 0 },
+    "3 Category specifics": { accepted: 150, skipped: 0 },
+    "4 Sale lines": { accepted: 102, skipped: 10 },
+    "5 Mix components": { accepted: 118, skipped: 0 },
+    "6 Companions": { accepted: 229, skipped: 0 },
+    "7 Website SEO": { accepted: 79, skipped: 0 },
+  });
+
+  const exportResponse = await fetch(`${baseUrl}/api/admin/import/export`);
+  assert.equal(exportResponse.status, 200);
+  const exported = Buffer.from(await exportResponse.arrayBuffer());
+  const book = xlsx.read(exported, { type: "buffer" });
+  assert.deepEqual(book.SheetNames, [
+    "1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines",
+    "5 Mix components", "6 Companions", "7 Website SEO", "Lists",
+  ]);
+  const listsIndex = book.SheetNames.indexOf("Lists");
+  assert.equal(book.Workbook?.Sheets?.[listsIndex]?.Hidden, 1);
+
+  const exportReport = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: exported.toString("base64"),
+  }), 200);
+  assert.deepEqual(exportReport.issues, []);
+  assert.equal(exportReport.sheets["1 Products"].rows > 0, true);
 });
 
 test("taxonomy assignment is saved as a draft and only reaches public products on publish", async () => {

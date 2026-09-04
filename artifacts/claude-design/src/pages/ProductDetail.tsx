@@ -2,33 +2,47 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams, useLocation, navigate } from "../router";
 import { useProducts, imageOptions, productPath, slugify } from "../hooks/useApi";
 import { Icon, StatusPill } from "../components/ui";
+import { useListCategories } from "@workspace/api-client-react";
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const [location] = useLocation();
   const { products, loading } = useProducts();
-  const [lookupError, setLookupError] = useState(false);
+  const { data: categories = [] } = useListCategories();
+  const [redirectLookup, setRedirectLookup] = useState<{ path: string; status: "loading" | "not-found" } | null>(null);
   
   const product = products.find((item) =>
     item.slug === slug ||
-    item.id.toString() === slug ||
     (!item.slug && slugify(item.name) === slug),
   );
 
   useEffect(() => {
-    if (!loading && !product && slug) {
-      // Not found in active products, try lookup
-      fetch(`/api/redirects/lookup?fromPath=${encodeURIComponent(location)}`)
-        .then(res => {
-          if (res.ok) return res.text();
-          throw new Error();
-        })
-        .then(redirectUrl => {
-          if (redirectUrl) navigate(redirectUrl, true);
-          else setLookupError(true);
-        })
-        .catch(() => setLookupError(true));
-    }
+    if (loading || product || !slug) return;
+
+    const controller = new AbortController();
+    setRedirectLookup({ path: location, status: "loading" });
+    fetch(`/api/redirects/lookup?fromPath=${encodeURIComponent(location)}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Redirect not found");
+        const body: unknown = await response.json();
+        if (
+          !body ||
+          typeof body !== "object" ||
+          !("toPath" in body) ||
+          typeof body.toPath !== "string" ||
+          !body.toPath.startsWith("/")
+        ) {
+          throw new Error("Invalid redirect response");
+        }
+        navigate(body.toPath, { replace: true });
+      })
+      .catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          setRedirectLookup({ path: location, status: "not-found" });
+        }
+      });
+
+    return () => controller.abort();
   }, [loading, product, slug, location]);
 
   useEffect(() => {
@@ -38,17 +52,19 @@ export default function ProductDetail() {
       if (desc) desc.setAttribute("content", product.details?.seoDescription || product.note || "");
       
       const link = document.querySelector('link[rel="canonical"]');
-      if (link) link.setAttribute("href", `${window.location.origin}/products/${product.slug}`);
+      const canonicalUrl = `${window.location.origin}${productPath(product)}`;
+      if (link) link.setAttribute("href", canonicalUrl);
       else {
         const newLink = document.createElement("link");
         newLink.rel = "canonical";
-        newLink.href = `${window.location.origin}/products/${product.slug}`;
+        newLink.href = canonicalUrl;
         document.head.appendChild(newLink);
       }
     }
   }, [product]);
 
-  if (loading || (!product && !lookupError)) {
+  const redirectNotFound = redirectLookup?.path === location && redirectLookup.status === "not-found";
+  if (loading || (!product && !redirectNotFound)) {
     return (
       <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="loading-state">Loading product...</div>
@@ -67,6 +83,10 @@ export default function ProductDetail() {
   }
 
   const d = product.details;
+  const categoryMeta = categories.find((category) => category.parentId === null && category.name === product.category);
+  const categorySlug = categoryMeta?.slug || slugify(product.category);
+  const productPhoto = d.photos.find((photo) => photo.src.trim())?.src;
+  const heroImage = productPhoto || imageOptions[0];
   const relatedProducts = (d?.relatedProducts ?? [])
     .map((relatedSlug) => products.find((item) => item.slug === relatedSlug))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
@@ -100,39 +120,38 @@ export default function ProductDetail() {
   }
   if (product.category === "Ryegrasses" || product.category === "Fescues & Other Grasses") {
     if (d.headingDate) catSpecs.push({ label: "Heading date", value: d.headingDate });
-    if ((d as any).endophyte) catSpecs.push({ label: "Endophyte", value: (d as any).endophyte });
+    if (d.endophyte) catSpecs.push({ label: "Endophyte", value: d.endophyte });
   }
   if (product.category === "Ryegrasses") {
-    if ((d as any).headingOffsetDays) catSpecs.push({ label: "Heading offset", value: `${(d as any).headingOffsetDays} days vs Nui` });
-    if ((d as any).argtResistant) catSpecs.push({ label: "ARGT resistance", value: "Resistant" });
+    if (d.headingOffsetDays) catSpecs.push({ label: "Heading offset", value: `${d.headingOffsetDays} days vs Nui` });
+    if (d.argtResistant) catSpecs.push({ label: "ARGT resistance", value: "Resistant" });
   }
   if (product.category === "Clovers" || product.category === "Serradellas & Medics") {
     if (d.maturityDays) catSpecs.push({ label: "Days to flowering", value: d.maturityDays });
-    if ((d as any).hardSeedLevel) catSpecs.push({ label: "Hard seed level", value: (d as any).hardSeedLevel });
+    if (d.hardSeedLevel) catSpecs.push({ label: "Hard seed level", value: d.hardSeedLevel });
     if (d.flowerColour) catSpecs.push({ label: "Flower colour", value: d.flowerColour });
   }
   if (product.category === "Clovers") {
-    if ((d as any).oestrogenLevel) catSpecs.push({ label: "Oestrogen level", value: (d as any).oestrogenLevel });
+    if (d.oestrogenLevel) catSpecs.push({ label: "Oestrogen level", value: d.oestrogenLevel });
   }
   if (product.category === "Clovers" || product.category === "Serradellas & Medics") {
-    if ((d as any).bloatRisk) catSpecs.push({ label: "Bloat risk", value: (d as any).bloatRisk });
+    if (d.bloatRisk) catSpecs.push({ label: "Bloat risk", value: d.bloatRisk });
   }
   if (product.category === "Lucerne") {
-    const wa = d.maturityMeasure === "Winter activity rating" ? d.maturityDays : (d as any).winterActivity;
-    if (wa) catSpecs.push({ label: "Winter activity", value: wa });
+    if (d.winterActivity) catSpecs.push({ label: "Winter activity", value: d.winterActivity });
   }
   if (product.category === "Fescues & Other Grasses" || product.category === "Sub-Tropical Grasses") {
-    if ((d as any).growthSeason) catSpecs.push({ label: "Growth season", value: (d as any).growthSeason });
+    if (d.growthSeason) catSpecs.push({ label: "Growth season", value: d.growthSeason });
   }
   if (product.category === "Forage & Grain Crops") {
-    if ((d as any).growingSeason) catSpecs.push({ label: "Growing season", value: (d as any).growingSeason });
-    if ((d as any).weeksToFirstGrazing) catSpecs.push({ label: "Weeks to first grazing", value: (d as any).weeksToFirstGrazing });
-    if ((d as any).prussicAcidRisk) catSpecs.push({ label: "Prussic acid risk", value: (d as any).prussicAcidRisk });
-    if ((d as any).regrowth) catSpecs.push({ label: "Regrowth", value: (d as any).regrowth });
+    if (d.growingSeason) catSpecs.push({ label: "Growing season", value: d.growingSeason });
+    if (d.weeksToFirstGrazing) catSpecs.push({ label: "Weeks to first grazing", value: d.weeksToFirstGrazing });
+    if (d.prussicAcidRisk) catSpecs.push({ label: "Prussic acid risk", value: d.prussicAcidRisk });
+    if (d.regrowth) catSpecs.push({ label: "Regrowth", value: d.regrowth });
   }
   if (product.category === "Biologicals") {
-    if ((d as any).productForm) catSpecs.push({ label: "Product form", value: (d as any).productForm });
-    if ((d as any).applicationRate) catSpecs.push({ label: "Application rate", value: (d as any).applicationRate });
+    if (d.productForm) catSpecs.push({ label: "Product form", value: d.productForm });
+    if (d.applicationRate) catSpecs.push({ label: "Application rate", value: d.applicationRate });
   }
 
   // Schema markup
@@ -142,7 +161,7 @@ export default function ProductDetail() {
     "name": product.name,
     "brand": { "@type": "Brand", "name": "IH Seeds" },
     "description": d.seoDescription || product.note,
-    "image": imageOptions[0], // we would use real image if available
+    ...(productPhoto ? { "image": productPhoto } : {}),
     "additionalProperty": quickFacts.map(q => ({
       "@type": "PropertyValue",
       "name": q.label,
@@ -154,15 +173,15 @@ export default function ProductDetail() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div style={{ position: "relative" }}>
-        <div style={{ position: "relative", minHeight: 520, backgroundImage: `url(${imageOptions[0]})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+        <div style={{ position: "relative", minHeight: 520, backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center" }}>
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(29,40,28,0.55) 0%, rgba(29,40,28,0.28) 45%, rgba(29,40,28,0.72) 100%)" }}></div>
            <div className="product-hero-content" style={{ position: "relative", maxWidth: 1180, margin: "0 auto", padding: "160px 40px 64px", display: "flex", flexDirection: "column", gap: 20 }}>
             <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--yellow)" }}>
-              <Link href="/products" style={{ color: "inherit", textDecoration: "none" }}>Products</Link> › <Link href={`/category/${product.category.toLowerCase()}`} style={{ color: "inherit", textDecoration: "none" }}>{product.category}</Link>
+               <Link href="/products" style={{ color: "inherit", textDecoration: "none" }}>Products</Link> › <Link href={`/products/${categorySlug}`} style={{ color: "inherit", textDecoration: "none" }}>{product.category}</Link>
             </div>
              <h1 className="product-title" style={{ margin: 0, fontSize: 64, lineHeight: 1.05, letterSpacing: "-0.01em", fontWeight: 700, color: "#FFFFFF", maxWidth: "20ch" }}>{product.name}</h1>
              {d.botanicalName && <div style={{ fontSize: 20, fontStyle: "italic", color: "#C5CCC5" }}>{d.botanicalName}</div>}
-            <p style={{ margin: 0, fontSize: 22, lineHeight: 1.6, color: "#FFFFFF", maxWidth: "52ch" }}>{product.note}</p>
+             {(d.summary || product.note) && <p style={{ margin: 0, fontSize: 22, lineHeight: 1.6, color: "#FFFFFF", maxWidth: "52ch" }}>{d.summary || product.note}</p>}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, paddingTop: 8, alignItems: "center" }}>
               <StatusPill status={product.status} />
               {product.techSheet && (
@@ -197,7 +216,7 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {product.category === "Mixes" ? (
+            {d.recordType === "Mix" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <h4 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--green)" }}>Mix Components</h4>
                 {d.formulationYear && <div style={{ fontSize: 14, color: "var(--muted)" }}>Formulation {d.formulationYear}</div>}
@@ -211,15 +230,24 @@ export default function ProductDetail() {
                       </tr>
                     </thead>
                     <tbody>
-                      {d.mixComponents?.map((c: any, i: number) => (
+                      {d.components.map((component, i) => {
+                        const componentProduct = products.find((item) => item.slug === component.productLink);
+                        return (
                         <tr key={i} style={{ borderBottom: "1px solid var(--line)" }}>
                           <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--green)" }}>
-                            {c.componentSlug ? <Link href={`/products/${c.componentSlug}`} style={{ color: "inherit" }}>{c.componentName}</Link> : c.componentName}
+                            {componentProduct
+                              ? <Link href={productPath(componentProduct)} style={{ color: "inherit" }}>{component.speciesName}</Link>
+                              : component.speciesName}
                           </td>
-                          <td style={{ padding: "12px 16px" }}>{c.ratePercentage ? `${c.ratePercentage}%` : "—"}</td>
-                          <td style={{ padding: "12px 16px" }}>{c.note || "—"}</td>
+                          <td style={{ padding: "12px 16px" }}>
+                            {component.inclusionRate !== null
+                              ? `${component.inclusionRate}${component.unit ? `${component.unit === "%" ? "" : " "}${component.unit}` : ""}`
+                              : "—"}
+                          </td>
+                          <td style={{ padding: "12px 16px" }}>{component.note || "—"}</td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -250,10 +278,10 @@ export default function ProductDetail() {
             )}
 
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {(d as any).grazingManagementNotes && (
+              {d.grazingManagementNotes && (
                 <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}>
                   <summary style={{ fontSize: 20, fontWeight: 700, color: "var(--green)", cursor: "pointer", listStyle: "none" }}>Planting & grazing notes</summary>
-                  <p style={{ margin: "16px 0 0", fontSize: 16, lineHeight: 1.6, color: "var(--black-green)" }}>{(d as any).grazingManagementNotes}</p>
+                  <p style={{ margin: "16px 0 0", fontSize: 16, lineHeight: 1.6, color: "var(--black-green)" }}>{d.grazingManagementNotes}</p>
                 </details>
               )}
               {d.diseasePestResistance && (
@@ -262,10 +290,10 @@ export default function ProductDetail() {
                   <p style={{ margin: "16px 0 0", fontSize: 16, lineHeight: 1.6, color: "var(--black-green)" }}>{d.diseasePestResistance}</p>
                 </details>
               )}
-              {(d as any).standLifeNotes && (
+              {d.standLifeNotes && (
                 <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}>
                   <summary style={{ fontSize: 20, fontWeight: 700, color: "var(--green)", cursor: "pointer", listStyle: "none" }}>Stand life</summary>
-                  <p style={{ margin: "16px 0 0", fontSize: 16, lineHeight: 1.6, color: "var(--black-green)" }}>{(d as any).standLifeNotes}</p>
+                  <p style={{ margin: "16px 0 0", fontSize: 16, lineHeight: 1.6, color: "var(--black-green)" }}>{d.standLifeNotes}</p>
                 </details>
               )}
             </div>
@@ -290,7 +318,9 @@ export default function ProductDetail() {
                         <td style={{ padding: "12px 16px" }}>{line.seedGrade || "—"}</td>
                         <td style={{ padding: "12px 16px" }}>{line.packKg ? `${line.packKg} ${line.packUnit}` : "—"}</td>
                         <td style={{ padding: "12px 16px" }}>
-                           <StatusPill status={({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as any)[line.availability]} />
+                           {line.availability
+                             ? <StatusPill status={({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as any)[line.availability]} />
+                             : <span style={{ color: "var(--muted)", fontWeight: 600 }}>TBA</span>}
                         </td>
                         <td style={{ padding: "12px 16px", color: "var(--muted)" }}>{line.priceDisplay}</td>
                       </tr>
@@ -335,8 +365,8 @@ export default function ProductDetail() {
             <div style={{ fontSize: 12, color: "#75766E", marginTop: 16 }}>
               {d.bredByOrigin && <div style={{ marginBottom: 4 }}>Bred by: {d.bredByOrigin}</div>}
               {d.distributedBy && <div style={{ marginBottom: 4 }}>Distributed by: {d.distributedBy}</div>}
-              {(d as any).certification && <div style={{ marginBottom: 4 }}>Certification: {(d as any).certification}</div>}
-              {(d as any).pbrStatus && <div style={{ marginBottom: 4 }}>PBR: {(d as any).pbrStatus}</div>}
+               {d.certification.length > 0 && <div style={{ marginBottom: 4 }}>Certification: {d.certification.join(", ")}</div>}
+               {d.pbrProtected && <div style={{ marginBottom: 4 }}>PBR: {d.pbrDetails || "Protected"}</div>}
             </div>
           </div>
 

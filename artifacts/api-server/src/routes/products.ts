@@ -18,6 +18,45 @@ import {
 import { insertProductSchema } from "@workspace/db";
 
 const router: IRouter = Router();
+const publicSiteBaseUrl = (process.env.PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "");
+
+function escapeXml(value: string) {
+  return value.replace(/[<>&'"]/g, (character) =>
+    ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", "\"": "&quot;" })[character]!);
+}
+
+function canonicalProductUrl(slug: string) {
+  return `${publicSiteBaseUrl}/product/${encodeURIComponent(slug)}`;
+}
+
+type PublicProduct = {
+  id: number; name: string; slug: string; price: string; packSize: string; status: string;
+  note: string; category: string; subcategoryId: number | null; techSheet: string; guideYear: string;
+  listingState: "Active"; saleLines: SaleLine[]; details: ReturnType<typeof toPublicDetails>;
+};
+
+function toPublicDetails(value: unknown, packSize: string) {
+  const d = normalizeProductDetails(value, packSize);
+  return {
+    recordType: d.recordType, botanicalName: d.botanicalName, bredByOrigin: d.bredByOrigin,
+    distributedBy: d.distributedBy, persistencyType: d.persistencyType, ploidy: d.ploidy,
+    flowerColour: d.flowerColour, sowingRates: d.sowingRates, rainfallMinMm: d.rainfallMinMm,
+    soilPhMin: d.soilPhMin, soilPhScale: d.soilPhScale, soilRangeLightest: d.soilRangeLightest,
+    soilRangeHeaviest: d.soilRangeHeaviest, tolerance: d.tolerance, endUse: d.endUse,
+    livestock: d.livestock, maturityMeasure: d.maturityMeasure, maturityDays: d.maturityDays,
+    headingDate: d.headingDate, headingOffsetDays: d.headingOffsetDays, winterActivity: d.winterActivity,
+    argtResistant: d.argtResistant, endophyte: d.endophyte, growthSeason: d.growthSeason,
+    hardSeedLevel: d.hardSeedLevel, oestrogenLevel: d.oestrogenLevel, bloatRisk: d.bloatRisk,
+    growingSeason: d.growingSeason, weeksToFirstGrazing: d.weeksToFirstGrazing,
+    prussicAcidRisk: d.prussicAcidRisk, regrowth: d.regrowth, productForm: d.productForm,
+    applicationRate: d.applicationRate, diseasePestResistance: d.diseasePestResistance,
+    standLifeNotes: d.standLifeNotes, grazingManagementNotes: d.grazingManagementNotes,
+    pbrProtected: d.pbrProtected, pbrDetails: d.pbrDetails, certification: d.certification,
+    summary: d.summary, description: d.description, components: d.components,
+    relatedProducts: d.relatedProducts, formulationYear: d.formulationYear, photos: d.photos,
+    featured: d.featured, seoTitle: d.seoTitle, seoDescription: d.seoDescription,
+  };
+}
 
 const seedProducts = [
   ["SouWest™ Pasture Mix", "$25.00 per kg", "25 kg bag", "in-stock", "Blended to order, 500 mm+ zones", "Specialty Mixes"],
@@ -49,6 +88,12 @@ function toSaleLine(line: typeof saleLinesTable.$inferSelect): SaleLine {
 async function liveSaleLines(productId: number): Promise<SaleLine[]> {
   return (await db.select().from(saleLinesTable).where(eq(saleLinesTable.productId, productId)))
     .sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.sortOrder - b.sortOrder || a.id - b.id).map(toSaleLine);
+}
+
+function isActiveListing(product: Product, productLines: SaleLine[]) {
+  if (product.listingOverride === "Force active") return true;
+  if (product.listingOverride === "Force legacy") return false;
+  return productLines.length === 0 || productLines.some((line) => line.availability !== "Unavailable");
 }
 
 function editableFromProduct(product: Product, saleLines: SaleLine[] = []): ProductEditablePayload {
@@ -181,18 +226,18 @@ router.get("/products", async (req, res): Promise<void> => {
   for (const line of lines) linesByProduct.set(line.productId, [...(linesByProduct.get(line.productId) ?? []), toSaleLine(line)]);
   res.json(products.filter((product) => {
     if (product.publishStatus !== "Published") return false;
-    const listing = product.listingOverride === "Force active" ? "Active"
-      : product.listingOverride === "Force legacy" ? "Legacy"
-        // Rows created before v2 have no sale-lines. Treat them as the legacy
-        // product-level availability until they are explicitly migrated.
-        : (() => { const productLines = linesByProduct.get(product.id) ?? []; return productLines.length === 0 || productLines.some((line) => line.availability !== "Unavailable"); })() ? "Active" : "Legacy";
-    return listing === "Active";
-  }).map((product) => {
+    return isActiveListing(product, linesByProduct.get(product.id) ?? []);
+  }).map((product): PublicProduct => {
     const productLines = linesByProduct.get(product.id) ?? [];
     const availability = product.availabilityOverride ?? productLines.find((line) => line.isDefault)?.availability
       ?? productLines.find((line) => line.availability !== "Unavailable")?.availability ?? "Unavailable";
-    return { ...product, status: ({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as const)[availability],
-      listingState: "Active", saleLines: productLines, details: normalizeProductDetails(product.details, product.packSize) };
+    return {
+      id: product.id, name: product.name, slug: product.slug, price: product.price, packSize: product.packSize,
+      status: ({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as const)[availability] ?? "unavailable",
+      note: product.note, category: product.category, subcategoryId: product.subcategoryId, techSheet: product.techSheet,
+      guideYear: product.guideYear, listingState: "Active", saleLines: productLines,
+      details: toPublicDetails(product.details, product.packSize),
+    };
   }));
 });
 
@@ -208,7 +253,7 @@ router.get("/products/category/:category/legacy", async (req, res): Promise<void
   res.json(products.filter((product) => product.publishStatus === "Published" &&
     (product.listingOverride === "Force legacy" ||
       (product.listingOverride !== "Force active" && (() => { const productLines = byProduct.get(product.id) ?? []; return productLines.length > 0 && !productLines.some((line) => line.availability !== "Unavailable"); })())))
-    .map((product) => ({ name: product.name, slug: product.slug, category: product.category })));
+    .map((product) => ({ name: product.name })));
 });
 
 router.get("/redirects/lookup", async (req, res): Promise<void> => {
@@ -222,17 +267,17 @@ router.get("/redirects/lookup", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Redirect not found." });
     return;
   }
-  res.status(301).set("Location", redirect.toPath).json({ toPath: redirect.toPath });
+  res.json({ toPath: redirect.toPath });
 });
 
 router.get("/sitemap-products", async (_req, res): Promise<void> => {
   const products = await db.select().from(productsTable).where(eq(productsTable.publishStatus, "Published"));
   const lines = await db.select().from(saleLinesTable);
-  const live = new Set(lines.filter((line) => line.availability !== "Unavailable").map((line) => line.productId));
+  const linesByProduct = new Map<number, SaleLine[]>();
+  for (const line of lines) linesByProduct.set(line.productId, [...(linesByProduct.get(line.productId) ?? []), toSaleLine(line)]);
   res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${
-    products.filter((product) => product.listingOverride === "Force active" ||
-      (product.listingOverride !== "Force legacy" && live.has(product.id)))
-      .map((product) => `<url><loc>/product/${product.slug}</loc></url>`).join("")
+    products.filter((product) => isActiveListing(product, linesByProduct.get(product.id) ?? []))
+      .map((product) => `<url><loc>${escapeXml(canonicalProductUrl(product.slug))}</loc></url>`).join("")
   }</urlset>`);
 });
 

@@ -75,7 +75,13 @@ const blankProduct: ProductInput = {
   category: "",
   subcategoryId: null,
   techSheet: "",
+  guideYear: "",
+  descriptionSource: "",
+  websiteUrlLegacy: "",
+  availabilityOverride: null,
+  listingOverride: null,
   publishStatus: "Draft",
+  saleLines: [],
   details: {
     stockCode: "",
     guideSection: "",
@@ -244,11 +250,15 @@ function getDerivedAvailability(product: any) {
   if (!product.saleLines || product.saleLines.length === 0) return "Unavailable";
   const levels = OPTS.availability;
   let best = 3;
+  let hasKnownAvailability = false;
   product.saleLines.forEach((line: any) => {
     const idx = levels.indexOf(line.availability);
-    if (idx !== -1 && idx < best) best = idx;
+    if (idx !== -1) {
+      hasKnownAvailability = true;
+      if (idx < best) best = idx;
+    }
   });
-  return levels[best];
+  return hasKnownAvailability ? levels[best] : "TBA";
 }
 
 function getListingState(product: any) {
@@ -1120,7 +1130,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                    )}
                    {isBio && (
                      <>
-                       <label>Product form <select value={currentForm.details.productForm} onChange={(e) => setDetail("productForm", e.target.value)}>{OPTS.productForm.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
+                        <label>Product form <input value={currentForm.details.productForm} onChange={(e) => setDetail("productForm", e.target.value)} placeholder="e.g. Powder|Liquid|Peat"/></label>
                        <label>Application rate <input type="text" value={currentForm.details.applicationRate} onChange={(e) => setDetail("applicationRate", e.target.value)}/></label>
                      </>
                    )}
@@ -1152,7 +1162,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                        <select value={line.seedGrade} onChange={(e) => updateSaleLine(i, { seedGrade: e.target.value })}>{OPTS.seedGrade.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select>
                        <input type="number" min="0" step="0.01" value={line.packKg ?? ""} onChange={(e) => updateSaleLine(i, { packKg: e.target.value === "" ? null : Number(e.target.value) })} placeholder="kg" />
                        <input value={line.packUnit} onChange={(e) => updateSaleLine(i, { packUnit: e.target.value })} placeholder="kg" />
-                       <select value={line.availability} onChange={(e) => updateSaleLine(i, { availability: e.target.value as any })}>{OPTS.availability.map(o => <option key={o} value={o}>{o}</option>)}</select>
+                        <select value={line.availability ?? ""} onChange={(e) => updateSaleLine(i, { availability: e.target.value || null })}><option value="">TBA</option>{OPTS.availability.map(o => <option key={o} value={o}>{o}</option>)}</select>
                        <input value={line.priceDisplay} onChange={(e) => updateSaleLine(i, { priceDisplay: e.target.value })} placeholder="Contact for pricing" />
                        <div className="radio-group"><input type="radio" name="saleLineDefault" checked={line.isDefault} onChange={() => {
                           const newLines = currentForm.saleLines.map((l: any, idx: number) => ({...l, isDefault: idx === i}));

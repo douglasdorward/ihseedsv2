@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ProductDetails } from './productDetails';
+import type { ProductDraftInputAvailabilityOverride } from './productDraftInputAvailabilityOverride';
+import type { ProductDraftInputListingOverride } from './productDraftInputListingOverride';
 import type { ProductDraftInputStatus } from './productDraftInputStatus';
 import type { SaleLine } from './saleLine';
 
@@ -15,27 +17,28 @@ export interface ProductDraftInput {
      * @maxLength 160
      */
   name: string;
-  /**
-     * @minLength 1
-     * @maxLength 80
-     */
+  /** @maxLength 80 */
   price: string;
-  /**
-     * @minLength 1
-     * @maxLength 80
-     */
+  /** @maxLength 80 */
   packSize: string;
   status: ProductDraftInputStatus;
   /** @maxLength 500 */
   note: string;
-  /**
-     * @minLength 1
-     * @maxLength 120
-     */
+  /** @maxLength 120 */
   category: string;
   subcategoryId?: number | null;
   /** @maxLength 240 */
   techSheet: string;
+  /** @maxLength 12 */
+  guideYear: string;
+  /** @maxLength 240 */
+  descriptionSource: string;
+  /** @maxLength 500 */
+  websiteUrlLegacy: string;
+  /** @nullable */
+  availabilityOverride: ProductDraftInputAvailabilityOverride;
+  /** @nullable */
+  listingOverride: ProductDraftInputListingOverride;
   details: ProductDetails;
   saleLines?: SaleLine[];
 }

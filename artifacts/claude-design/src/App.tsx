@@ -20,8 +20,8 @@ export default function App() {
     if (location.startsWith("/admin")) return <Admin />;
     if (location === "/") return <Home />;
     if (location === "/products") return <Products />;
-    if (/^\/category\/[^/]+$/.test(location)) return <Category />;
-    if (/^\/products\/[^/]+$/.test(location)) return <ProductDetail />;
+    if (/^\/category\/[^/]+$/.test(location) || /^\/products\/[^/]+$/.test(location)) return <Category />;
+    if (/^\/product\/[^/]+$/.test(location)) return <ProductDetail />;
     if (location === "/resources") return <Resources />;
     if (location === "/guide") return <Guide />;
     if (location === "/availability") return <Availability />;
@@ -47,9 +47,9 @@ export default function App() {
     };
     const label = location.startsWith("/admin")
       ? "Admin"
-      : location.startsWith("/category/")
+      : location.startsWith("/category/") || location.startsWith("/products/")
       ? "Seed Category"
-      : location.startsWith("/products/") || location.startsWith("/product/")
+      : location.startsWith("/product/")
         ? "Product Details"
         : labels[location] ?? "Page not found";
     document.title = `${label} — IH Seeds`;

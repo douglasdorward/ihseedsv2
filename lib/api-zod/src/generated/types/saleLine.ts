@@ -14,6 +14,7 @@ export interface SaleLine {
   /** @nullable */
   packKg: number | null;
   packUnit: string;
+  /** @nullable */
   availability: SaleLineAvailability;
   priceDisplay: string;
   isDefault: boolean;

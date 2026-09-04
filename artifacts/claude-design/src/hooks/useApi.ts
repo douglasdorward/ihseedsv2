@@ -5,11 +5,17 @@ import type { Product, EnquiryInput } from "@workspace/api-client-react";
 export type { Product };
 
 export function slugify(text: string) {
-  return text.toLowerCase().replace(/™/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
+  return text
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/™/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
 }
 
 export function productPath(product: Pick<Product, "name" | "slug">) {
-  return `/products/${product.slug || slugify(product.name)}`;
+  return `/product/${product.slug || slugify(product.name)}`;
 }
 
 export function useProducts() {

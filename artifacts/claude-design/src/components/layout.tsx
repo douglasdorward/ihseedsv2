@@ -42,9 +42,9 @@ export function Footer() {
         <div className="footer-columns">
           <div>
             <h4>Products</h4>
-            <Link href="/category/mixes" className="footer-link" data-testid="footer-products">Specialty Mixes</Link>
-            <Link href="/category/ryegrass" className="footer-link" data-testid="footer-ryegrass">Ryegrass</Link>
-            <Link href="/category/clovers" className="footer-link" data-testid="footer-clovers">Clovers</Link>
+            <Link href="/products/mixes" className="footer-link" data-testid="footer-products">Mixes</Link>
+            <Link href="/products/ryegrass" className="footer-link" data-testid="footer-ryegrass">Ryegrasses</Link>
+            <Link href="/products/clovers" className="footer-link" data-testid="footer-clovers">Clovers</Link>
           </div>
           <div>
             <h4>Resources</h4>

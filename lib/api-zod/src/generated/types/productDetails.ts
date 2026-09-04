@@ -41,7 +41,7 @@ export interface ProductDetails {
   persistencyType: ProductDetailsPersistencyType;
   ploidy: ProductDetailsPloidy;
   flowerColour: ProductDetailsFlowerColour;
-  /** @maxLength 180 */
+  /** @maxLength 2000 */
   bredByOrigin: string;
   australianBred: boolean;
   /** @maxLength 120 */
@@ -97,7 +97,7 @@ export interface ProductDetails {
   supplierName: string;
   /** @maxLength 500 */
   summary: string;
-  /** @maxLength 5000 */
+  /** @maxLength 200000 */
   description: string;
   /** @maxLength 2000 */
   notes: string;
@@ -108,7 +108,7 @@ export interface ProductDetails {
   inCurrentPrintedGuide: boolean;
   /** @maxLength 180 */
   seoTitle: string;
-  /** @maxLength 320 */
+  /** @maxLength 2000 */
   seoDescription: string;
   /** @minimum 0 */
   sortOrder: number | null;
@@ -127,6 +127,7 @@ export interface ProductDetails {
   weeksToFirstGrazing: string;
   prussicAcidRisk: string;
   regrowth: string;
+  /** @maxLength 120 */
   productForm: string;
   applicationRate: string;
 }

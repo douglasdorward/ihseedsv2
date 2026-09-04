@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ProductDetails } from './productDetails';
+import type { ProductUpdateAvailabilityOverride } from './productUpdateAvailabilityOverride';
+import type { ProductUpdateListingOverride } from './productUpdateListingOverride';
 import type { ProductUpdateStatus } from './productUpdateStatus';
 
 export interface ProductUpdate {
@@ -35,5 +37,15 @@ export interface ProductUpdate {
   subcategoryId?: number | null;
   /** @maxLength 240 */
   techSheet?: string;
+  /** @maxLength 12 */
+  guideYear?: string;
+  /** @maxLength 240 */
+  descriptionSource?: string;
+  /** @maxLength 500 */
+  websiteUrlLegacy?: string;
+  /** @nullable */
+  availabilityOverride?: ProductUpdateAvailabilityOverride;
+  /** @nullable */
+  listingOverride?: ProductUpdateListingOverride;
   details?: ProductDetails;
 }

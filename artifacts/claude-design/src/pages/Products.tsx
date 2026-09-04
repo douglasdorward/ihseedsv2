@@ -70,7 +70,7 @@ export default function Products() {
           ) : visibleCategories.length > 0 ? (
            <div className="category-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 32 }}>
             {visibleCategories.map((c) => (
-              <Link key={c.slug} href={`/category/${c.slug}`} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 16 }}>
+              <Link key={c.slug} href={`/products/${c.slug}`} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 16 }}>
                 <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", position: "relative" }}>
                   <img src={c.image} alt={c.name} style={{ display: "block", width: "100%", height: 240, objectFit: "cover" }} />
                   <div style={{ position: "absolute", inset: "40% 0 0 0", background: "linear-gradient(to bottom, rgba(29,40,28,0) 0%, rgba(29,40,28,0.55) 100%)", pointerEvents: "none" }}></div>

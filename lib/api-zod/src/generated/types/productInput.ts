@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ProductDetails } from './productDetails';
+import type { ProductInputAvailabilityOverride } from './productInputAvailabilityOverride';
+import type { ProductInputListingOverride } from './productInputListingOverride';
 import type { ProductInputPublishStatus } from './productInputPublishStatus';
 import type { ProductInputStatus } from './productInputStatus';
 
@@ -21,27 +23,28 @@ export interface ProductInput {
      * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
      */
   slug: string;
-  /**
-     * @minLength 1
-     * @maxLength 80
-     */
+  /** @maxLength 80 */
   price: string;
-  /**
-     * @minLength 1
-     * @maxLength 80
-     */
+  /** @maxLength 80 */
   packSize: string;
   status: ProductInputStatus;
   /** @maxLength 500 */
   note: string;
-  /**
-     * @minLength 1
-     * @maxLength 120
-     */
+  /** @maxLength 120 */
   category: string;
   subcategoryId?: number | null;
   /** @maxLength 240 */
   techSheet: string;
+  /** @maxLength 12 */
+  guideYear: string;
+  /** @maxLength 240 */
+  descriptionSource: string;
+  /** @maxLength 500 */
+  websiteUrlLegacy: string;
+  /** @nullable */
+  availabilityOverride: ProductInputAvailabilityOverride;
+  /** @nullable */
+  listingOverride: ProductInputListingOverride;
   publishStatus: ProductInputPublishStatus;
   details: ProductDetails;
 }

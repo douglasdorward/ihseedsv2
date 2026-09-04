@@ -15,6 +15,6 @@ export interface ProductComponent {
   inclusionRate: number | null;
   /** @maxLength 20 */
   unit: string;
-  /** @maxLength 240 */
+  /** @maxLength 4000 */
   note: string;
 }

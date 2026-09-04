@@ -43,7 +43,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Product"
+                  $ref: "#/components/schemas/PublicProduct"
     post:
       operationId: createProduct
       tags: [admin]
@@ -293,7 +293,13 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        "200": { description: Legacy names }
+        "200":
+          description: Legacy names
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/LegacyProductName" }
   /redirects/lookup:
     get:
       operationId: lookupRedirect
@@ -305,7 +311,11 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        "301": { description: Redirect target }
+        "200":
+          description: Redirect target
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RedirectLookup" }
         "404": { description: Redirect not found }
   /sitemap-products:
     get:
@@ -313,7 +323,11 @@ paths:
       tags: [catalogue]
       summary: Active product sitemap
       responses:
-        "200": { description: XML sitemap }
+        "200":
+          description: XML sitemap
+          content:
+            application/xml:
+              schema: { type: string }
   /admin/import/dry-run:
     post:
       operationId: dryRunProductImport
@@ -325,7 +339,11 @@ paths:
           application/json:
             schema: { $ref: "#/components/schemas/WorkbookUpload" }
       responses:
-        "200": { description: Dry-run report }
+        "200":
+          description: Dry-run report
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkbookReport" }
   /admin/import/commit:
     post:
       operationId: commitProductImport
@@ -337,7 +355,11 @@ paths:
           application/json:
             schema: { $ref: "#/components/schemas/WorkbookCommit" }
       responses:
-        "200": { description: Import committed }
+        "200":
+          description: Import committed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkbookReport" }
         "400": { description: Invalid or stale token }
   /admin/import/export:
     get:
@@ -345,7 +367,11 @@ paths:
       tags: [admin]
       summary: Export product workbook
       responses:
-        "200": { description: XLSX export }
+        "200":
+          description: XLSX export
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
   /categories:
     get:
       operationId: listCategories
@@ -500,23 +526,111 @@ components:
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
       required: [id, name, slug, price, packSize, status, note, category, techSheet, publishStatus, details, createdAt, updatedAt]
+    PublicProduct:
+      type: object
+      description: Published, Active catalogue data. Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.
+      properties:
+        id: { type: number }
+        name: { type: string }
+        slug: { type: string }
+        price: { type: string }
+        packSize: { type: string }
+        status: { type: string, enum: [in-stock, low, very-low, unavailable] }
+        note: { type: string }
+        category: { type: string }
+        subcategoryId: { type: [number, "null"], multipleOf: 1 }
+        techSheet: { type: string }
+        guideYear: { type: string }
+        listingState: { type: string, enum: [Active] }
+        saleLines:
+          type: array
+          items: { $ref: "#/components/schemas/SaleLine" }
+        details:
+          $ref: "#/components/schemas/PublicProductDetails"
+      required: [id, name, slug, price, packSize, status, note, category, subcategoryId, techSheet, guideYear, listingState, saleLines, details]
+    PublicProductDetails:
+      type: object
+      description: Public-facing agronomy, merchandising, and SEO fields only.
+      properties:
+        recordType: { type: string }
+        botanicalName: { type: string }
+        bredByOrigin: { type: string }
+        distributedBy: { type: string }
+        persistencyType: { type: string }
+        ploidy: { type: string }
+        flowerColour: { type: string }
+        sowingRates:
+          type: array
+          items: { $ref: "#/components/schemas/ProductSowingRate" }
+        rainfallMinMm: { type: [number, "null"] }
+        soilPhMin: { type: [number, "null"] }
+        soilPhScale: { type: string }
+        soilRangeLightest: { type: string }
+        soilRangeHeaviest: { type: string }
+        tolerance:
+          type: array
+          items: { $ref: "#/components/schemas/ProductTolerance" }
+        endUse: { type: array, items: { type: string } }
+        livestock: { type: array, items: { type: string } }
+        maturityMeasure: { type: string }
+        maturityDays: { type: [number, "null"] }
+        headingDate: { type: string }
+        headingOffsetDays: { type: [number, "null"] }
+        winterActivity: { type: [number, "null"] }
+        argtResistant: { type: boolean }
+        endophyte: { type: string }
+        growthSeason: { type: string }
+        hardSeedLevel: { type: string }
+        oestrogenLevel: { type: string }
+        bloatRisk: { type: string }
+        growingSeason: { type: string }
+        weeksToFirstGrazing: { type: string }
+        prussicAcidRisk: { type: string }
+        regrowth: { type: string }
+        productForm: { type: string }
+        applicationRate: { type: string }
+        diseasePestResistance: { type: string }
+        standLifeNotes: { type: string }
+        grazingManagementNotes: { type: string }
+        pbrProtected: { type: boolean }
+        pbrDetails: { type: string }
+        certification: { type: array, items: { type: string } }
+        summary: { type: string }
+        description: { type: string }
+        components:
+          type: array
+          items: { $ref: "#/components/schemas/ProductComponent" }
+        relatedProducts: { type: array, items: { type: string } }
+        formulationYear: { type: string }
+        photos:
+          type: array
+          items: { $ref: "#/components/schemas/ProductPhoto" }
+        featured: { type: boolean }
+        seoTitle: { type: string }
+        seoDescription: { type: string }
+      required: [recordType, botanicalName, bredByOrigin, distributedBy, persistencyType, ploidy, flowerColour, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, tolerance, endUse, livestock, maturityMeasure, maturityDays, headingDate, headingOffsetDays, winterActivity, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, certification, summary, description, components, relatedProducts, formulationYear, photos, featured, seoTitle, seoDescription]
     ProductDraftInput:
       type: object
       properties:
         name: { type: string, minLength: 1, maxLength: 160 }
-        price: { type: string, minLength: 1, maxLength: 80 }
-        packSize: { type: string, minLength: 1, maxLength: 80 }
+        price: { type: string, maxLength: 80 }
+        packSize: { type: string, maxLength: 80 }
         status: { type: string, enum: [in-stock, low, very-low, unavailable] }
         note: { type: string, maxLength: 500 }
-        category: { type: string, minLength: 1, maxLength: 120 }
+        category: { type: string, maxLength: 120 }
         subcategoryId: { type: number, multipleOf: 1, nullable: true }
         techSheet: { type: string, maxLength: 240 }
+        guideYear: { type: string, maxLength: 12 }
+        descriptionSource: { type: string, maxLength: 240 }
+        websiteUrlLegacy: { type: string, maxLength: 500 }
+        availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
+        listingOverride: { type: [string, "null"], enum: ["Force active", "Force legacy", null] }
         details:
           $ref: "#/components/schemas/ProductDetails"
         saleLines:
           type: array
           items: { $ref: "#/components/schemas/SaleLine" }
-      required: [name, price, packSize, status, note, category, techSheet, details]
+      required: [name, price, packSize, status, note, category, techSheet, guideYear, descriptionSource, websiteUrlLegacy, availabilityOverride, listingOverride, details]
     ProductDraft:
       allOf:
         - $ref: "#/components/schemas/ProductDraftInput"
@@ -542,17 +656,22 @@ components:
       properties:
         name: { type: string, minLength: 1, maxLength: 160 }
         slug: { type: string, minLength: 1, maxLength: 180, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
-        price: { type: string, minLength: 1, maxLength: 80 }
-        packSize: { type: string, minLength: 1, maxLength: 80 }
+        price: { type: string, maxLength: 80 }
+        packSize: { type: string, maxLength: 80 }
         status: { type: string, enum: [in-stock, low, very-low, unavailable] }
         note: { type: string, maxLength: 500 }
-        category: { type: string, minLength: 1, maxLength: 120 }
+        category: { type: string, maxLength: 120 }
         subcategoryId: { type: number, multipleOf: 1, nullable: true }
         techSheet: { type: string, maxLength: 240 }
+        guideYear: { type: string, maxLength: 12 }
+        descriptionSource: { type: string, maxLength: 240 }
+        websiteUrlLegacy: { type: string, maxLength: 500 }
+        availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
+        listingOverride: { type: [string, "null"], enum: ["Force active", "Force legacy", null] }
         publishStatus: { type: string, enum: [Published, Draft, Archived] }
         details:
           $ref: "#/components/schemas/ProductDetails"
-      required: [name, slug, price, packSize, status, note, category, techSheet, publishStatus, details]
+      required: [name, slug, price, packSize, status, note, category, techSheet, guideYear, descriptionSource, websiteUrlLegacy, availabilityOverride, listingOverride, publishStatus, details]
     ProductCreateInput:
       type: object
       properties:
@@ -579,6 +698,11 @@ components:
         category: { type: string, minLength: 1, maxLength: 120 }
         subcategoryId: { type: number, multipleOf: 1, nullable: true }
         techSheet: { type: string, maxLength: 240 }
+        guideYear: { type: string, maxLength: 12 }
+        descriptionSource: { type: string, maxLength: 240 }
+        websiteUrlLegacy: { type: string, maxLength: 500 }
+        availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
+        listingOverride: { type: [string, "null"], enum: ["Force active", "Force legacy", null] }
         details:
           $ref: "#/components/schemas/ProductDetails"
     ProductDetails:
@@ -599,7 +723,7 @@ components:
         persistencyType: { type: string, enum: ["", Annual, Biennial, Perennial, "Hybrid perennial", "Short-term (1–2 years)"] }
         ploidy: { type: string, enum: ["", Diploid, Tetraploid, Hexaploid, "Mixed (blend)"] }
         flowerColour: { type: string, enum: ["", Pink, Yellow, White, Crimson, Red, Purple] }
-        bredByOrigin: { type: string, maxLength: 180 }
+        bredByOrigin: { type: string, maxLength: 2000 }
         australianBred: { type: boolean }
         distributedBy: { type: string, maxLength: 120 }
         sowingRates:
@@ -648,7 +772,7 @@ components:
         isThirdPartyProduct: { type: boolean }
         supplierName: { type: string, maxLength: 180 }
         summary: { type: string, maxLength: 500 }
-        description: { type: string, maxLength: 5000 }
+        description: { type: string, maxLength: 200000 }
         notes: { type: string, maxLength: 2000 }
         components:
           type: array
@@ -661,7 +785,7 @@ components:
             $ref: "#/components/schemas/ProductPhoto"
         inCurrentPrintedGuide: { type: boolean }
         seoTitle: { type: string, maxLength: 180 }
-        seoDescription: { type: string, maxLength: 320 }
+        seoDescription: { type: string, maxLength: 2000 }
         sortOrder: { type: number, minimum: 0, multipleOf: 1, nullable: true }
         featured: { type: boolean }
         relatedProducts:
@@ -678,7 +802,7 @@ components:
         weeksToFirstGrazing: { type: string }
         prussicAcidRisk: { type: string }
         regrowth: { type: string }
-        productForm: { type: string }
+        productForm: { type: string, maxLength: 120 }
         applicationRate: { type: string }
       required: [stockCode, guideSection, recordType, botanicalName, alsoKnownAs, packSizes, treatment, persistencyType, ploidy, flowerColour, bredByOrigin, australianBred, distributedBy, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, sowingDepthMinCm, sowingDepthMaxCm, tolerance, maturityMeasure, maturityDays, headingDate, floweringWindow, winterActivity, inoculantGroup, seedTreatment, ecocertApproved, endUse, livestock, companionSpecies, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, licenceRestriction, certification, isThirdPartyProduct, supplierName, summary, description, notes, components, formulationYear, photos, inCurrentPrintedGuide, seoTitle, seoDescription, sortOrder, featured, relatedProducts, headingOffsetDays, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate]
     SaleLine:
@@ -689,7 +813,7 @@ components:
         seedGrade: { type: string }
         packKg: { type: [number, "null"] }
         packUnit: { type: string }
-        availability: { type: string, enum: ["Good stock", "Low stock", "Very low", Unavailable] }
+        availability: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
         priceDisplay: { type: string }
         isDefault: { type: boolean }
         sortOrder: { type: number, multipleOf: 1 }
@@ -704,7 +828,7 @@ components:
     ProductSowingRate:
       type: object
       properties:
-        context: { type: string, enum: [Monoculture, "In a mix", Dryland, Irrigation, Pasture, Turf] }
+        context: { type: string, enum: ["", General, Monoculture, "In a mix", Dryland, Irrigation, Pasture, Turf, Podded, "De-hulled", Coated] }
         min: { type: number, minimum: 0, nullable: true }
         max: { type: number, minimum: 0, nullable: true }
         unit: { type: string, maxLength: 20 }
@@ -722,7 +846,7 @@ components:
         speciesName: { type: string, maxLength: 120 }
         inclusionRate: { type: number, minimum: 0, nullable: true }
         unit: { type: string, maxLength: 20 }
-        note: { type: string, maxLength: 240 }
+        note: { type: string, maxLength: 4000 }
       required: [productLink, speciesName, inclusionRate, unit, note]
     ProductPhoto:
       type: object
@@ -827,6 +951,44 @@ components:
           properties:
             token: { type: string }
           required: [token]
+    WorkbookSheetReport:
+      type: object
+      properties:
+        rows: { type: number, multipleOf: 1 }
+        accepted: { type: number, multipleOf: 1 }
+        skipped: { type: number, multipleOf: 1 }
+        reasons: { type: array, items: { type: string } }
+      required: [rows, accepted, skipped, reasons]
+    WorkbookIssue:
+      type: object
+      properties:
+        sheet: { type: string }
+        row: { type: number, multipleOf: 1 }
+        column: { type: string }
+        problem: { type: string }
+      required: [sheet, row, column, problem]
+    WorkbookReport:
+      type: object
+      properties:
+        token: { type: string }
+        hash: { type: string }
+        sheets:
+          type: object
+          additionalProperties: { $ref: "#/components/schemas/WorkbookSheetReport" }
+        issues: { type: array, items: { $ref: "#/components/schemas/WorkbookIssue" } }
+        warnings: { type: array, items: { type: string } }
+        plannedChanges: { type: array, items: { type: string } }
+      required: [token, hash, sheets, issues, warnings, plannedChanges]
+    LegacyProductName:
+      type: object
+      properties:
+        name: { type: string }
+      required: [name]
+    RedirectLookup:
+      type: object
+      properties:
+        toPath: { type: string }
+      required: [toPath]
     EnquiryInput:
       type: object
       properties:

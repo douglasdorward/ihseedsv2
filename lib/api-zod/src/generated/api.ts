@@ -24,69 +24,11 @@ export const listProductsResponseSubcategoryIdMultipleOf = 1;
 
 export const listProductsResponseSaleLinesItemSortOrderMultipleOf = 1;
 
-export const listProductsResponseDetailsStockCodeMax = 40;
-
-export const listProductsResponseDetailsGuideSectionMax = 120;
-
-export const listProductsResponseDetailsBotanicalNameMax = 180;
-
-export const listProductsResponseDetailsAlsoKnownAsItemMax = 120;
-
-export const listProductsResponseDetailsPackSizesItemLabelMax = 80;
-
-export const listProductsResponseDetailsPackSizesItemSizeMin = 0;
-
-export const listProductsResponseDetailsPackSizesItemUnitMax = 30;
-
-export const listProductsResponseDetailsTreatmentMax = 120;
-
-export const listProductsResponseDetailsBredByOriginMax = 180;
-
-export const listProductsResponseDetailsDistributedByMax = 120;
-
 export const listProductsResponseDetailsSowingRatesItemMinMin = 0;
 
 export const listProductsResponseDetailsSowingRatesItemMaxMin = 0;
 
 export const listProductsResponseDetailsSowingRatesItemUnitMax = 20;
-
-export const listProductsResponseDetailsRainfallMinMmMin = 0;
-export const listProductsResponseDetailsRainfallMinMmMultipleOf = 1;
-
-export const listProductsResponseDetailsSoilPhMinMin = 0;
-export const listProductsResponseDetailsSoilPhMinMax = 14;
-
-export const listProductsResponseDetailsSowingDepthMinCmMin = 0;
-
-export const listProductsResponseDetailsSowingDepthMaxCmMin = 0;
-
-export const listProductsResponseDetailsMaturityDaysMin = 0;
-export const listProductsResponseDetailsMaturityDaysMultipleOf = 1;
-
-export const listProductsResponseDetailsFloweringWindowMax = 80;
-
-export const listProductsResponseDetailsWinterActivityMax = 10;
-export const listProductsResponseDetailsWinterActivityMultipleOf = 1;
-
-export const listProductsResponseDetailsCompanionSpeciesItemMax = 120;
-
-export const listProductsResponseDetailsDiseasePestResistanceMax = 3000;
-
-export const listProductsResponseDetailsStandLifeNotesMax = 3000;
-
-export const listProductsResponseDetailsGrazingManagementNotesMax = 3000;
-
-export const listProductsResponseDetailsPbrDetailsMax = 300;
-
-export const listProductsResponseDetailsLicenceRestrictionMax = 1000;
-
-export const listProductsResponseDetailsSupplierNameMax = 180;
-
-export const listProductsResponseDetailsSummaryMax = 500;
-
-export const listProductsResponseDetailsDescriptionMax = 5000;
-
-export const listProductsResponseDetailsNotesMax = 2000;
 
 export const listProductsResponseDetailsComponentsItemProductLinkMax = 180;
 
@@ -96,9 +38,7 @@ export const listProductsResponseDetailsComponentsItemInclusionRateMin = 0;
 
 export const listProductsResponseDetailsComponentsItemUnitMax = 20;
 
-export const listProductsResponseDetailsComponentsItemNoteMax = 240;
-
-export const listProductsResponseDetailsFormulationYearMax = 20;
+export const listProductsResponseDetailsComponentsItemNoteMax = 4000;
 
 export const listProductsResponseDetailsPhotosItemSlotMax = 40;
 
@@ -108,17 +48,6 @@ export const listProductsResponseDetailsPhotosItemRatingMax = 80;
 
 export const listProductsResponseDetailsPhotosItemSrcMax = 500;
 
-export const listProductsResponseDetailsSeoTitleMax = 180;
-
-export const listProductsResponseDetailsSeoDescriptionMax = 320;
-
-export const listProductsResponseDetailsSortOrderMin = 0;
-export const listProductsResponseDetailsSortOrderMultipleOf = 1;
-
-export const listProductsResponseDetailsRelatedProductsItemMax = 180;
-
-export const listProductsResponseDetailsHeadingOffsetDaysMultipleOf = 1;
-
 
 
 export const ListProductsResponseItem = zod.object({
@@ -127,109 +56,54 @@ export const ListProductsResponseItem = zod.object({
   "slug": zod.string(),
   "price": zod.string(),
   "packSize": zod.string(),
-  "status": zod.string(),
+  "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string(),
   "category": zod.string(),
-  "subcategoryId": zod.number().multipleOf(listProductsResponseSubcategoryIdMultipleOf).nullish(),
+  "subcategoryId": zod.number().multipleOf(listProductsResponseSubcategoryIdMultipleOf).nullable(),
   "techSheet": zod.string(),
-  "guideYear": zod.string().optional(),
-  "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
-  "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
-  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "guideYear": zod.string(),
+  "listingState": zod.enum(['Active']),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(listProductsResponseSaleLinesItemSortOrderMultipleOf)
-})).optional(),
-  "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
-  "publishedAt": zod.coerce.date().nullish(),
-  "details": zod.object({
-  "stockCode": zod.string().max(listProductsResponseDetailsStockCodeMax),
-  "guideSection": zod.string().max(listProductsResponseDetailsGuideSectionMax),
-  "recordType": zod.enum(['Mix', 'Variety', 'Commodity / generic']),
-  "botanicalName": zod.string().max(listProductsResponseDetailsBotanicalNameMax),
-  "alsoKnownAs": zod.array(zod.string().max(listProductsResponseDetailsAlsoKnownAsItemMax)),
-  "packSizes": zod.array(zod.object({
-  "label": zod.string().max(listProductsResponseDetailsPackSizesItemLabelMax),
-  "size": zod.number().min(listProductsResponseDetailsPackSizesItemSizeMin).nullable(),
-  "unit": zod.string().max(listProductsResponseDetailsPackSizesItemUnitMax)
 })),
-  "treatment": zod.string().max(listProductsResponseDetailsTreatmentMax),
-  "persistencyType": zod.enum(['', 'Annual', 'Biennial', 'Perennial', 'Hybrid perennial', 'Short-term (1–2 years)']),
-  "ploidy": zod.enum(['', 'Diploid', 'Tetraploid', 'Hexaploid', 'Mixed (blend)']),
-  "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
-  "bredByOrigin": zod.string().max(listProductsResponseDetailsBredByOriginMax),
-  "australianBred": zod.boolean(),
-  "distributedBy": zod.string().max(listProductsResponseDetailsDistributedByMax),
+  "details": zod.object({
+  "recordType": zod.string(),
+  "botanicalName": zod.string(),
+  "bredByOrigin": zod.string(),
+  "distributedBy": zod.string(),
+  "persistencyType": zod.string(),
+  "ploidy": zod.string(),
+  "flowerColour": zod.string(),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(listProductsResponseDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(listProductsResponseDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(listProductsResponseDetailsSowingRatesItemUnitMax)
 })),
-  "rainfallMinMm": zod.number().min(listProductsResponseDetailsRainfallMinMmMin).multipleOf(listProductsResponseDetailsRainfallMinMmMultipleOf).nullable(),
-  "soilPhMin": zod.number().min(listProductsResponseDetailsSoilPhMinMin).max(listProductsResponseDetailsSoilPhMinMax).nullable(),
-  "soilPhScale": zod.enum(['CaCl₂', 'water']),
-  "soilRangeLightest": zod.enum(['', 'LS', 'S', 'L', 'H']),
-  "soilRangeHeaviest": zod.enum(['', 'LS', 'S', 'L', 'H']),
-  "sowingDepthMinCm": zod.number().min(listProductsResponseDetailsSowingDepthMinCmMin).nullable(),
-  "sowingDepthMaxCm": zod.number().min(listProductsResponseDetailsSowingDepthMaxCmMin).nullable(),
+  "rainfallMinMm": zod.number().nullable(),
+  "soilPhMin": zod.number().nullable(),
+  "soilPhScale": zod.string(),
+  "soilRangeLightest": zod.string(),
+  "soilRangeHeaviest": zod.string(),
   "tolerance": zod.array(zod.object({
   "name": zod.enum(['Low pH', 'Waterlogging', 'Salinity', 'Drought', 'Frost']),
   "mild": zod.boolean()
 })),
-  "maturityMeasure": zod.enum(['', 'Days to flowering (Perth)', 'Heading date', 'Time of flowering', 'Winter activity rating']),
-  "maturityDays": zod.number().min(listProductsResponseDetailsMaturityDaysMin).multipleOf(listProductsResponseDetailsMaturityDaysMultipleOf).nullable(),
-  "headingDate": zod.enum(['', 'Very early', 'Early', 'Mid', 'Mid-late', 'Late']),
-  "floweringWindow": zod.string().max(listProductsResponseDetailsFloweringWindowMax),
-  "winterActivity": zod.number().min(1).max(listProductsResponseDetailsWinterActivityMax).multipleOf(listProductsResponseDetailsWinterActivityMultipleOf).nullable(),
-  "inoculantGroup": zod.enum(['None', 'C', 'G/S', 'G', 'S', 'AL', 'AM', 'B', 'BS', 'E', 'F/E', 'I']),
-  "seedTreatment": zod.array(zod.enum(['Bare / untreated', 'Gaucho', 'Thiram', 'Goldstrike', 'BioNPK Powder S', 'Lime coated'])),
-  "ecocertApproved": zod.boolean(),
-  "endUse": zod.array(zod.enum(['Grazing', 'Hay', 'Silage', 'Cover crop', 'Green manure', 'Grain', 'Stockfeed', 'Permanent pasture', 'Erosion control / stabilisation', 'Break crop', 'Biofumigant', 'Turf'])),
-  "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
-  "companionSpecies": zod.array(zod.string().max(listProductsResponseDetailsCompanionSpeciesItemMax)),
-  "diseasePestResistance": zod.string().max(listProductsResponseDetailsDiseasePestResistanceMax),
-  "standLifeNotes": zod.string().max(listProductsResponseDetailsStandLifeNotesMax),
-  "grazingManagementNotes": zod.string().max(listProductsResponseDetailsGrazingManagementNotesMax),
-  "pbrProtected": zod.boolean(),
-  "pbrDetails": zod.string().max(listProductsResponseDetailsPbrDetailsMax),
-  "licenceRestriction": zod.string().max(listProductsResponseDetailsLicenceRestrictionMax),
-  "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
-  "isThirdPartyProduct": zod.boolean(),
-  "supplierName": zod.string().max(listProductsResponseDetailsSupplierNameMax),
-  "summary": zod.string().max(listProductsResponseDetailsSummaryMax),
-  "description": zod.string().max(listProductsResponseDetailsDescriptionMax),
-  "notes": zod.string().max(listProductsResponseDetailsNotesMax),
-  "components": zod.array(zod.object({
-  "productLink": zod.string().max(listProductsResponseDetailsComponentsItemProductLinkMax),
-  "speciesName": zod.string().max(listProductsResponseDetailsComponentsItemSpeciesNameMax),
-  "inclusionRate": zod.number().min(listProductsResponseDetailsComponentsItemInclusionRateMin).nullable(),
-  "unit": zod.string().max(listProductsResponseDetailsComponentsItemUnitMax),
-  "note": zod.string().max(listProductsResponseDetailsComponentsItemNoteMax)
-})),
-  "formulationYear": zod.string().max(listProductsResponseDetailsFormulationYearMax),
-  "photos": zod.array(zod.object({
-  "slot": zod.string().max(listProductsResponseDetailsPhotosItemSlotMax),
-  "file": zod.string().max(listProductsResponseDetailsPhotosItemFileMax),
-  "rating": zod.string().max(listProductsResponseDetailsPhotosItemRatingMax),
-  "src": zod.string().max(listProductsResponseDetailsPhotosItemSrcMax)
-})),
-  "inCurrentPrintedGuide": zod.boolean(),
-  "seoTitle": zod.string().max(listProductsResponseDetailsSeoTitleMax),
-  "seoDescription": zod.string().max(listProductsResponseDetailsSeoDescriptionMax),
-  "sortOrder": zod.number().min(listProductsResponseDetailsSortOrderMin).multipleOf(listProductsResponseDetailsSortOrderMultipleOf).nullable(),
-  "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(listProductsResponseDetailsRelatedProductsItemMax)),
-  "headingOffsetDays": zod.number().multipleOf(listProductsResponseDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "endUse": zod.array(zod.string()),
+  "livestock": zod.array(zod.string()),
+  "maturityMeasure": zod.string(),
+  "maturityDays": zod.number().nullable(),
+  "headingDate": zod.string(),
+  "headingOffsetDays": zod.number().nullable(),
+  "winterActivity": zod.number().nullable(),
   "argtResistant": zod.boolean(),
   "endophyte": zod.string(),
   "growthSeason": zod.string(),
@@ -241,11 +115,35 @@ export const ListProductsResponseItem = zod.object({
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
   "productForm": zod.string(),
-  "applicationRate": zod.string()
-}),
-  "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
-})
+  "applicationRate": zod.string(),
+  "diseasePestResistance": zod.string(),
+  "standLifeNotes": zod.string(),
+  "grazingManagementNotes": zod.string(),
+  "pbrProtected": zod.boolean(),
+  "pbrDetails": zod.string(),
+  "certification": zod.array(zod.string()),
+  "summary": zod.string(),
+  "description": zod.string(),
+  "components": zod.array(zod.object({
+  "productLink": zod.string().max(listProductsResponseDetailsComponentsItemProductLinkMax),
+  "speciesName": zod.string().max(listProductsResponseDetailsComponentsItemSpeciesNameMax),
+  "inclusionRate": zod.number().min(listProductsResponseDetailsComponentsItemInclusionRateMin).nullable(),
+  "unit": zod.string().max(listProductsResponseDetailsComponentsItemUnitMax),
+  "note": zod.string().max(listProductsResponseDetailsComponentsItemNoteMax)
+})),
+  "relatedProducts": zod.array(zod.string()),
+  "formulationYear": zod.string(),
+  "photos": zod.array(zod.object({
+  "slot": zod.string().max(listProductsResponseDetailsPhotosItemSlotMax),
+  "file": zod.string().max(listProductsResponseDetailsPhotosItemFileMax),
+  "rating": zod.string().max(listProductsResponseDetailsPhotosItemRatingMax),
+  "src": zod.string().max(listProductsResponseDetailsPhotosItemSrcMax)
+})),
+  "featured": zod.boolean(),
+  "seoTitle": zod.string(),
+  "seoDescription": zod.string()
+}).describe('Public-facing agronomy, merchandising, and SEO fields only.')
+}).describe('Published, Active catalogue data. Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.')
 export const ListProductsResponse = zod.array(ListProductsResponseItem)
 
 
@@ -286,7 +184,7 @@ export const createProductBodyDetailsPackSizesItemUnitMax = 30;
 
 export const createProductBodyDetailsTreatmentMax = 120;
 
-export const createProductBodyDetailsBredByOriginMax = 180;
+export const createProductBodyDetailsBredByOriginMax = 2000;
 
 export const createProductBodyDetailsDistributedByMax = 120;
 
@@ -330,7 +228,7 @@ export const createProductBodyDetailsSupplierNameMax = 180;
 
 export const createProductBodyDetailsSummaryMax = 500;
 
-export const createProductBodyDetailsDescriptionMax = 5000;
+export const createProductBodyDetailsDescriptionMax = 200000;
 
 export const createProductBodyDetailsNotesMax = 2000;
 
@@ -342,7 +240,7 @@ export const createProductBodyDetailsComponentsItemInclusionRateMin = 0;
 
 export const createProductBodyDetailsComponentsItemUnitMax = 20;
 
-export const createProductBodyDetailsComponentsItemNoteMax = 240;
+export const createProductBodyDetailsComponentsItemNoteMax = 4000;
 
 export const createProductBodyDetailsFormulationYearMax = 20;
 
@@ -356,7 +254,7 @@ export const createProductBodyDetailsPhotosItemSrcMax = 500;
 
 export const createProductBodyDetailsSeoTitleMax = 180;
 
-export const createProductBodyDetailsSeoDescriptionMax = 320;
+export const createProductBodyDetailsSeoDescriptionMax = 2000;
 
 export const createProductBodyDetailsSortOrderMin = 0;
 export const createProductBodyDetailsSortOrderMultipleOf = 1;
@@ -364,6 +262,8 @@ export const createProductBodyDetailsSortOrderMultipleOf = 1;
 export const createProductBodyDetailsRelatedProductsItemMax = 180;
 
 export const createProductBodyDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const createProductBodyDetailsProductFormMax = 120;
 
 
 
@@ -396,7 +296,7 @@ export const CreateProductBody = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(createProductBodyDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(createProductBodyDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(createProductBodyDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(createProductBodyDetailsSowingRatesItemUnitMax)
@@ -466,7 +366,7 @@ export const CreateProductBody = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(createProductBodyDetailsProductFormMax),
   "applicationRate": zod.string()
 })
 })
@@ -491,7 +391,7 @@ export const createProductResponseDetailsPackSizesItemUnitMax = 30;
 
 export const createProductResponseDetailsTreatmentMax = 120;
 
-export const createProductResponseDetailsBredByOriginMax = 180;
+export const createProductResponseDetailsBredByOriginMax = 2000;
 
 export const createProductResponseDetailsDistributedByMax = 120;
 
@@ -535,7 +435,7 @@ export const createProductResponseDetailsSupplierNameMax = 180;
 
 export const createProductResponseDetailsSummaryMax = 500;
 
-export const createProductResponseDetailsDescriptionMax = 5000;
+export const createProductResponseDetailsDescriptionMax = 200000;
 
 export const createProductResponseDetailsNotesMax = 2000;
 
@@ -547,7 +447,7 @@ export const createProductResponseDetailsComponentsItemInclusionRateMin = 0;
 
 export const createProductResponseDetailsComponentsItemUnitMax = 20;
 
-export const createProductResponseDetailsComponentsItemNoteMax = 240;
+export const createProductResponseDetailsComponentsItemNoteMax = 4000;
 
 export const createProductResponseDetailsFormulationYearMax = 20;
 
@@ -561,7 +461,7 @@ export const createProductResponseDetailsPhotosItemSrcMax = 500;
 
 export const createProductResponseDetailsSeoTitleMax = 180;
 
-export const createProductResponseDetailsSeoDescriptionMax = 320;
+export const createProductResponseDetailsSeoDescriptionMax = 2000;
 
 export const createProductResponseDetailsSortOrderMin = 0;
 export const createProductResponseDetailsSortOrderMultipleOf = 1;
@@ -569,6 +469,8 @@ export const createProductResponseDetailsSortOrderMultipleOf = 1;
 export const createProductResponseDetailsRelatedProductsItemMax = 180;
 
 export const createProductResponseDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const createProductResponseDetailsProductFormMax = 120;
 
 
 
@@ -595,7 +497,7 @@ export const CreateProductResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(createProductResponseSaleLinesItemSortOrderMultipleOf)
@@ -621,7 +523,7 @@ export const CreateProductResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(createProductResponseDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(createProductResponseDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(createProductResponseDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(createProductResponseDetailsSowingRatesItemUnitMax)
@@ -691,7 +593,7 @@ export const CreateProductResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(createProductResponseDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
@@ -720,6 +622,12 @@ export const updateProductBodySubcategoryIdMultipleOf = 1;
 
 export const updateProductBodyTechSheetMax = 240;
 
+export const updateProductBodyGuideYearMax = 12;
+
+export const updateProductBodyDescriptionSourceMax = 240;
+
+export const updateProductBodyWebsiteUrlLegacyMax = 500;
+
 export const updateProductBodyDetailsStockCodeMax = 40;
 
 export const updateProductBodyDetailsGuideSectionMax = 120;
@@ -736,7 +644,7 @@ export const updateProductBodyDetailsPackSizesItemUnitMax = 30;
 
 export const updateProductBodyDetailsTreatmentMax = 120;
 
-export const updateProductBodyDetailsBredByOriginMax = 180;
+export const updateProductBodyDetailsBredByOriginMax = 2000;
 
 export const updateProductBodyDetailsDistributedByMax = 120;
 
@@ -780,7 +688,7 @@ export const updateProductBodyDetailsSupplierNameMax = 180;
 
 export const updateProductBodyDetailsSummaryMax = 500;
 
-export const updateProductBodyDetailsDescriptionMax = 5000;
+export const updateProductBodyDetailsDescriptionMax = 200000;
 
 export const updateProductBodyDetailsNotesMax = 2000;
 
@@ -792,7 +700,7 @@ export const updateProductBodyDetailsComponentsItemInclusionRateMin = 0;
 
 export const updateProductBodyDetailsComponentsItemUnitMax = 20;
 
-export const updateProductBodyDetailsComponentsItemNoteMax = 240;
+export const updateProductBodyDetailsComponentsItemNoteMax = 4000;
 
 export const updateProductBodyDetailsFormulationYearMax = 20;
 
@@ -806,7 +714,7 @@ export const updateProductBodyDetailsPhotosItemSrcMax = 500;
 
 export const updateProductBodyDetailsSeoTitleMax = 180;
 
-export const updateProductBodyDetailsSeoDescriptionMax = 320;
+export const updateProductBodyDetailsSeoDescriptionMax = 2000;
 
 export const updateProductBodyDetailsSortOrderMin = 0;
 export const updateProductBodyDetailsSortOrderMultipleOf = 1;
@@ -814,6 +722,8 @@ export const updateProductBodyDetailsSortOrderMultipleOf = 1;
 export const updateProductBodyDetailsRelatedProductsItemMax = 180;
 
 export const updateProductBodyDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const updateProductBodyDetailsProductFormMax = 120;
 
 
 
@@ -826,6 +736,11 @@ export const UpdateProductBody = zod.object({
   "category": zod.string().min(1).max(updateProductBodyCategoryMax).optional(),
   "subcategoryId": zod.number().multipleOf(updateProductBodySubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(updateProductBodyTechSheetMax).optional(),
+  "guideYear": zod.string().max(updateProductBodyGuideYearMax).optional(),
+  "descriptionSource": zod.string().max(updateProductBodyDescriptionSourceMax).optional(),
+  "websiteUrlLegacy": zod.string().max(updateProductBodyWebsiteUrlLegacyMax).optional(),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
   "details": zod.object({
   "stockCode": zod.string().max(updateProductBodyDetailsStockCodeMax),
   "guideSection": zod.string().max(updateProductBodyDetailsGuideSectionMax),
@@ -845,7 +760,7 @@ export const UpdateProductBody = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(updateProductBodyDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(updateProductBodyDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(updateProductBodyDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(updateProductBodyDetailsSowingRatesItemUnitMax)
@@ -915,7 +830,7 @@ export const UpdateProductBody = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(updateProductBodyDetailsProductFormMax),
   "applicationRate": zod.string()
 }).optional()
 })
@@ -940,7 +855,7 @@ export const updateProductResponseDetailsPackSizesItemUnitMax = 30;
 
 export const updateProductResponseDetailsTreatmentMax = 120;
 
-export const updateProductResponseDetailsBredByOriginMax = 180;
+export const updateProductResponseDetailsBredByOriginMax = 2000;
 
 export const updateProductResponseDetailsDistributedByMax = 120;
 
@@ -984,7 +899,7 @@ export const updateProductResponseDetailsSupplierNameMax = 180;
 
 export const updateProductResponseDetailsSummaryMax = 500;
 
-export const updateProductResponseDetailsDescriptionMax = 5000;
+export const updateProductResponseDetailsDescriptionMax = 200000;
 
 export const updateProductResponseDetailsNotesMax = 2000;
 
@@ -996,7 +911,7 @@ export const updateProductResponseDetailsComponentsItemInclusionRateMin = 0;
 
 export const updateProductResponseDetailsComponentsItemUnitMax = 20;
 
-export const updateProductResponseDetailsComponentsItemNoteMax = 240;
+export const updateProductResponseDetailsComponentsItemNoteMax = 4000;
 
 export const updateProductResponseDetailsFormulationYearMax = 20;
 
@@ -1010,7 +925,7 @@ export const updateProductResponseDetailsPhotosItemSrcMax = 500;
 
 export const updateProductResponseDetailsSeoTitleMax = 180;
 
-export const updateProductResponseDetailsSeoDescriptionMax = 320;
+export const updateProductResponseDetailsSeoDescriptionMax = 2000;
 
 export const updateProductResponseDetailsSortOrderMin = 0;
 export const updateProductResponseDetailsSortOrderMultipleOf = 1;
@@ -1018,6 +933,8 @@ export const updateProductResponseDetailsSortOrderMultipleOf = 1;
 export const updateProductResponseDetailsRelatedProductsItemMax = 180;
 
 export const updateProductResponseDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const updateProductResponseDetailsProductFormMax = 120;
 
 
 
@@ -1044,7 +961,7 @@ export const UpdateProductResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(updateProductResponseSaleLinesItemSortOrderMultipleOf)
@@ -1070,7 +987,7 @@ export const UpdateProductResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(updateProductResponseDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(updateProductResponseDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(updateProductResponseDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(updateProductResponseDetailsSowingRatesItemUnitMax)
@@ -1140,7 +1057,7 @@ export const UpdateProductResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(updateProductResponseDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
@@ -1181,7 +1098,7 @@ export const getAdminSummaryResponseRecentProductsItemDetailsPackSizesItemUnitMa
 
 export const getAdminSummaryResponseRecentProductsItemDetailsTreatmentMax = 120;
 
-export const getAdminSummaryResponseRecentProductsItemDetailsBredByOriginMax = 180;
+export const getAdminSummaryResponseRecentProductsItemDetailsBredByOriginMax = 2000;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsDistributedByMax = 120;
 
@@ -1225,7 +1142,7 @@ export const getAdminSummaryResponseRecentProductsItemDetailsSupplierNameMax = 1
 
 export const getAdminSummaryResponseRecentProductsItemDetailsSummaryMax = 500;
 
-export const getAdminSummaryResponseRecentProductsItemDetailsDescriptionMax = 5000;
+export const getAdminSummaryResponseRecentProductsItemDetailsDescriptionMax = 200000;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsNotesMax = 2000;
 
@@ -1237,7 +1154,7 @@ export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemInclu
 
 export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemUnitMax = 20;
 
-export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemNoteMax = 240;
+export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemNoteMax = 4000;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsFormulationYearMax = 20;
 
@@ -1251,7 +1168,7 @@ export const getAdminSummaryResponseRecentProductsItemDetailsPhotosItemSrcMax = 
 
 export const getAdminSummaryResponseRecentProductsItemDetailsSeoTitleMax = 180;
 
-export const getAdminSummaryResponseRecentProductsItemDetailsSeoDescriptionMax = 320;
+export const getAdminSummaryResponseRecentProductsItemDetailsSeoDescriptionMax = 2000;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsSortOrderMin = 0;
 export const getAdminSummaryResponseRecentProductsItemDetailsSortOrderMultipleOf = 1;
@@ -1259,6 +1176,8 @@ export const getAdminSummaryResponseRecentProductsItemDetailsSortOrderMultipleOf
 export const getAdminSummaryResponseRecentProductsItemDetailsRelatedProductsItemMax = 180;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsProductFormMax = 120;
 
 
 
@@ -1293,7 +1212,7 @@ export const GetAdminSummaryResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(getAdminSummaryResponseRecentProductsItemSaleLinesItemSortOrderMultipleOf)
@@ -1319,7 +1238,7 @@ export const GetAdminSummaryResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSowingRatesItemUnitMax)
@@ -1389,7 +1308,7 @@ export const GetAdminSummaryResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
@@ -1421,7 +1340,7 @@ export const listAdminProductsResponseOneDetailsPackSizesItemUnitMax = 30;
 
 export const listAdminProductsResponseOneDetailsTreatmentMax = 120;
 
-export const listAdminProductsResponseOneDetailsBredByOriginMax = 180;
+export const listAdminProductsResponseOneDetailsBredByOriginMax = 2000;
 
 export const listAdminProductsResponseOneDetailsDistributedByMax = 120;
 
@@ -1465,7 +1384,7 @@ export const listAdminProductsResponseOneDetailsSupplierNameMax = 180;
 
 export const listAdminProductsResponseOneDetailsSummaryMax = 500;
 
-export const listAdminProductsResponseOneDetailsDescriptionMax = 5000;
+export const listAdminProductsResponseOneDetailsDescriptionMax = 200000;
 
 export const listAdminProductsResponseOneDetailsNotesMax = 2000;
 
@@ -1477,7 +1396,7 @@ export const listAdminProductsResponseOneDetailsComponentsItemInclusionRateMin =
 
 export const listAdminProductsResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const listAdminProductsResponseOneDetailsComponentsItemNoteMax = 240;
+export const listAdminProductsResponseOneDetailsComponentsItemNoteMax = 4000;
 
 export const listAdminProductsResponseOneDetailsFormulationYearMax = 20;
 
@@ -1491,7 +1410,7 @@ export const listAdminProductsResponseOneDetailsPhotosItemSrcMax = 500;
 
 export const listAdminProductsResponseOneDetailsSeoTitleMax = 180;
 
-export const listAdminProductsResponseOneDetailsSeoDescriptionMax = 320;
+export const listAdminProductsResponseOneDetailsSeoDescriptionMax = 2000;
 
 export const listAdminProductsResponseOneDetailsSortOrderMin = 0;
 export const listAdminProductsResponseOneDetailsSortOrderMultipleOf = 1;
@@ -1499,6 +1418,8 @@ export const listAdminProductsResponseOneDetailsSortOrderMultipleOf = 1;
 export const listAdminProductsResponseOneDetailsRelatedProductsItemMax = 180;
 
 export const listAdminProductsResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const listAdminProductsResponseOneDetailsProductFormMax = 120;
 
 export const listAdminProductsResponseTwoDraftOneOneNameMax = 160;
 
@@ -1513,6 +1434,12 @@ export const listAdminProductsResponseTwoDraftOneOneCategoryMax = 120;
 export const listAdminProductsResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const listAdminProductsResponseTwoDraftOneOneTechSheetMax = 240;
+
+export const listAdminProductsResponseTwoDraftOneOneGuideYearMax = 12;
+
+export const listAdminProductsResponseTwoDraftOneOneDescriptionSourceMax = 240;
+
+export const listAdminProductsResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -1530,7 +1457,7 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsPackSizesItemUnitMax 
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsTreatmentMax = 120;
 
-export const listAdminProductsResponseTwoDraftOneOneDetailsBredByOriginMax = 180;
+export const listAdminProductsResponseTwoDraftOneOneDetailsBredByOriginMax = 2000;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsDistributedByMax = 120;
 
@@ -1574,7 +1501,7 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsSupplierNameMax = 180
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsSummaryMax = 500;
 
-export const listAdminProductsResponseTwoDraftOneOneDetailsDescriptionMax = 5000;
+export const listAdminProductsResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsNotesMax = 2000;
 
@@ -1586,7 +1513,7 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemInclusi
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 240;
+export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
@@ -1600,7 +1527,7 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 50
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
-export const listAdminProductsResponseTwoDraftOneOneDetailsSeoDescriptionMax = 320;
+export const listAdminProductsResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const listAdminProductsResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -1608,6 +1535,8 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsSortOrderMultipleOf =
 export const listAdminProductsResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const listAdminProductsResponseTwoDraftOneOneDetailsProductFormMax = 120;
 
 export const listAdminProductsResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
 
@@ -1636,7 +1565,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(listAdminProductsResponseOneSaleLinesItemSortOrderMultipleOf)
@@ -1662,7 +1591,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(listAdminProductsResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(listAdminProductsResponseOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(listAdminProductsResponseOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(listAdminProductsResponseOneDetailsSowingRatesItemUnitMax)
@@ -1732,7 +1661,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(listAdminProductsResponseOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
@@ -1743,13 +1672,18 @@ export const ListAdminProductsResponseItem = zod.object({
   "draftSavedAt": zod.coerce.date().nullable(),
   "draft": zod.union([zod.object({
   "name": zod.string().min(1).max(listAdminProductsResponseTwoDraftOneOneNameMax),
-  "price": zod.string().min(1).max(listAdminProductsResponseTwoDraftOneOnePriceMax),
-  "packSize": zod.string().min(1).max(listAdminProductsResponseTwoDraftOneOnePackSizeMax),
+  "price": zod.string().max(listAdminProductsResponseTwoDraftOneOnePriceMax),
+  "packSize": zod.string().max(listAdminProductsResponseTwoDraftOneOnePackSizeMax),
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(listAdminProductsResponseTwoDraftOneOneNoteMax),
-  "category": zod.string().min(1).max(listAdminProductsResponseTwoDraftOneOneCategoryMax),
+  "category": zod.string().max(listAdminProductsResponseTwoDraftOneOneCategoryMax),
   "subcategoryId": zod.number().multipleOf(listAdminProductsResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(listAdminProductsResponseTwoDraftOneOneTechSheetMax),
+  "guideYear": zod.string().max(listAdminProductsResponseTwoDraftOneOneGuideYearMax),
+  "descriptionSource": zod.string().max(listAdminProductsResponseTwoDraftOneOneDescriptionSourceMax),
+  "websiteUrlLegacy": zod.string().max(listAdminProductsResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
   "details": zod.object({
   "stockCode": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -1769,7 +1703,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(listAdminProductsResponseTwoDraftOneOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(listAdminProductsResponseTwoDraftOneOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsSowingRatesItemUnitMax)
@@ -1839,7 +1773,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "saleLines": zod.array(zod.object({
@@ -1848,7 +1782,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(listAdminProductsResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
@@ -1887,7 +1821,7 @@ export const getAdminProductResponseOneDetailsPackSizesItemUnitMax = 30;
 
 export const getAdminProductResponseOneDetailsTreatmentMax = 120;
 
-export const getAdminProductResponseOneDetailsBredByOriginMax = 180;
+export const getAdminProductResponseOneDetailsBredByOriginMax = 2000;
 
 export const getAdminProductResponseOneDetailsDistributedByMax = 120;
 
@@ -1931,7 +1865,7 @@ export const getAdminProductResponseOneDetailsSupplierNameMax = 180;
 
 export const getAdminProductResponseOneDetailsSummaryMax = 500;
 
-export const getAdminProductResponseOneDetailsDescriptionMax = 5000;
+export const getAdminProductResponseOneDetailsDescriptionMax = 200000;
 
 export const getAdminProductResponseOneDetailsNotesMax = 2000;
 
@@ -1943,7 +1877,7 @@ export const getAdminProductResponseOneDetailsComponentsItemInclusionRateMin = 0
 
 export const getAdminProductResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const getAdminProductResponseOneDetailsComponentsItemNoteMax = 240;
+export const getAdminProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
 export const getAdminProductResponseOneDetailsFormulationYearMax = 20;
 
@@ -1957,7 +1891,7 @@ export const getAdminProductResponseOneDetailsPhotosItemSrcMax = 500;
 
 export const getAdminProductResponseOneDetailsSeoTitleMax = 180;
 
-export const getAdminProductResponseOneDetailsSeoDescriptionMax = 320;
+export const getAdminProductResponseOneDetailsSeoDescriptionMax = 2000;
 
 export const getAdminProductResponseOneDetailsSortOrderMin = 0;
 export const getAdminProductResponseOneDetailsSortOrderMultipleOf = 1;
@@ -1965,6 +1899,8 @@ export const getAdminProductResponseOneDetailsSortOrderMultipleOf = 1;
 export const getAdminProductResponseOneDetailsRelatedProductsItemMax = 180;
 
 export const getAdminProductResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const getAdminProductResponseOneDetailsProductFormMax = 120;
 
 export const getAdminProductResponseTwoDraftOneOneNameMax = 160;
 
@@ -1979,6 +1915,12 @@ export const getAdminProductResponseTwoDraftOneOneCategoryMax = 120;
 export const getAdminProductResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const getAdminProductResponseTwoDraftOneOneTechSheetMax = 240;
+
+export const getAdminProductResponseTwoDraftOneOneGuideYearMax = 12;
+
+export const getAdminProductResponseTwoDraftOneOneDescriptionSourceMax = 240;
+
+export const getAdminProductResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -1996,7 +1938,7 @@ export const getAdminProductResponseTwoDraftOneOneDetailsPackSizesItemUnitMax = 
 
 export const getAdminProductResponseTwoDraftOneOneDetailsTreatmentMax = 120;
 
-export const getAdminProductResponseTwoDraftOneOneDetailsBredByOriginMax = 180;
+export const getAdminProductResponseTwoDraftOneOneDetailsBredByOriginMax = 2000;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsDistributedByMax = 120;
 
@@ -2040,7 +1982,7 @@ export const getAdminProductResponseTwoDraftOneOneDetailsSupplierNameMax = 180;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsSummaryMax = 500;
 
-export const getAdminProductResponseTwoDraftOneOneDetailsDescriptionMax = 5000;
+export const getAdminProductResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsNotesMax = 2000;
 
@@ -2052,7 +1994,7 @@ export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemInclusion
 
 export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 240;
+export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
@@ -2066,7 +2008,7 @@ export const getAdminProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
-export const getAdminProductResponseTwoDraftOneOneDetailsSeoDescriptionMax = 320;
+export const getAdminProductResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const getAdminProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -2074,6 +2016,8 @@ export const getAdminProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1
 export const getAdminProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const getAdminProductResponseTwoDraftOneOneDetailsProductFormMax = 120;
 
 export const getAdminProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
 
@@ -2102,7 +2046,7 @@ export const GetAdminProductResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(getAdminProductResponseOneSaleLinesItemSortOrderMultipleOf)
@@ -2128,7 +2072,7 @@ export const GetAdminProductResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(getAdminProductResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(getAdminProductResponseOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(getAdminProductResponseOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(getAdminProductResponseOneDetailsSowingRatesItemUnitMax)
@@ -2198,7 +2142,7 @@ export const GetAdminProductResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(getAdminProductResponseOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
@@ -2209,13 +2153,18 @@ export const GetAdminProductResponse = zod.object({
   "draftSavedAt": zod.coerce.date().nullable(),
   "draft": zod.union([zod.object({
   "name": zod.string().min(1).max(getAdminProductResponseTwoDraftOneOneNameMax),
-  "price": zod.string().min(1).max(getAdminProductResponseTwoDraftOneOnePriceMax),
-  "packSize": zod.string().min(1).max(getAdminProductResponseTwoDraftOneOnePackSizeMax),
+  "price": zod.string().max(getAdminProductResponseTwoDraftOneOnePriceMax),
+  "packSize": zod.string().max(getAdminProductResponseTwoDraftOneOnePackSizeMax),
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(getAdminProductResponseTwoDraftOneOneNoteMax),
-  "category": zod.string().min(1).max(getAdminProductResponseTwoDraftOneOneCategoryMax),
+  "category": zod.string().max(getAdminProductResponseTwoDraftOneOneCategoryMax),
   "subcategoryId": zod.number().multipleOf(getAdminProductResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(getAdminProductResponseTwoDraftOneOneTechSheetMax),
+  "guideYear": zod.string().max(getAdminProductResponseTwoDraftOneOneGuideYearMax),
+  "descriptionSource": zod.string().max(getAdminProductResponseTwoDraftOneOneDescriptionSourceMax),
+  "websiteUrlLegacy": zod.string().max(getAdminProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
   "details": zod.object({
   "stockCode": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -2235,7 +2184,7 @@ export const GetAdminProductResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(getAdminProductResponseTwoDraftOneOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(getAdminProductResponseTwoDraftOneOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsSowingRatesItemUnitMax)
@@ -2305,7 +2254,7 @@ export const GetAdminProductResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "saleLines": zod.array(zod.object({
@@ -2314,7 +2263,7 @@ export const GetAdminProductResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(getAdminProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
@@ -2346,6 +2295,12 @@ export const saveProductDraftRevisionBodySubcategoryIdMultipleOf = 1;
 
 export const saveProductDraftRevisionBodyTechSheetMax = 240;
 
+export const saveProductDraftRevisionBodyGuideYearMax = 12;
+
+export const saveProductDraftRevisionBodyDescriptionSourceMax = 240;
+
+export const saveProductDraftRevisionBodyWebsiteUrlLegacyMax = 500;
+
 export const saveProductDraftRevisionBodyDetailsStockCodeMax = 40;
 
 export const saveProductDraftRevisionBodyDetailsGuideSectionMax = 120;
@@ -2362,7 +2317,7 @@ export const saveProductDraftRevisionBodyDetailsPackSizesItemUnitMax = 30;
 
 export const saveProductDraftRevisionBodyDetailsTreatmentMax = 120;
 
-export const saveProductDraftRevisionBodyDetailsBredByOriginMax = 180;
+export const saveProductDraftRevisionBodyDetailsBredByOriginMax = 2000;
 
 export const saveProductDraftRevisionBodyDetailsDistributedByMax = 120;
 
@@ -2406,7 +2361,7 @@ export const saveProductDraftRevisionBodyDetailsSupplierNameMax = 180;
 
 export const saveProductDraftRevisionBodyDetailsSummaryMax = 500;
 
-export const saveProductDraftRevisionBodyDetailsDescriptionMax = 5000;
+export const saveProductDraftRevisionBodyDetailsDescriptionMax = 200000;
 
 export const saveProductDraftRevisionBodyDetailsNotesMax = 2000;
 
@@ -2418,7 +2373,7 @@ export const saveProductDraftRevisionBodyDetailsComponentsItemInclusionRateMin =
 
 export const saveProductDraftRevisionBodyDetailsComponentsItemUnitMax = 20;
 
-export const saveProductDraftRevisionBodyDetailsComponentsItemNoteMax = 240;
+export const saveProductDraftRevisionBodyDetailsComponentsItemNoteMax = 4000;
 
 export const saveProductDraftRevisionBodyDetailsFormulationYearMax = 20;
 
@@ -2432,7 +2387,7 @@ export const saveProductDraftRevisionBodyDetailsPhotosItemSrcMax = 500;
 
 export const saveProductDraftRevisionBodyDetailsSeoTitleMax = 180;
 
-export const saveProductDraftRevisionBodyDetailsSeoDescriptionMax = 320;
+export const saveProductDraftRevisionBodyDetailsSeoDescriptionMax = 2000;
 
 export const saveProductDraftRevisionBodyDetailsSortOrderMin = 0;
 export const saveProductDraftRevisionBodyDetailsSortOrderMultipleOf = 1;
@@ -2441,19 +2396,26 @@ export const saveProductDraftRevisionBodyDetailsRelatedProductsItemMax = 180;
 
 export const saveProductDraftRevisionBodyDetailsHeadingOffsetDaysMultipleOf = 1;
 
+export const saveProductDraftRevisionBodyDetailsProductFormMax = 120;
+
 export const saveProductDraftRevisionBodySaleLinesItemSortOrderMultipleOf = 1;
 
 
 
 export const SaveProductDraftRevisionBody = zod.object({
   "name": zod.string().min(1).max(saveProductDraftRevisionBodyNameMax),
-  "price": zod.string().min(1).max(saveProductDraftRevisionBodyPriceMax),
-  "packSize": zod.string().min(1).max(saveProductDraftRevisionBodyPackSizeMax),
+  "price": zod.string().max(saveProductDraftRevisionBodyPriceMax),
+  "packSize": zod.string().max(saveProductDraftRevisionBodyPackSizeMax),
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(saveProductDraftRevisionBodyNoteMax),
-  "category": zod.string().min(1).max(saveProductDraftRevisionBodyCategoryMax),
+  "category": zod.string().max(saveProductDraftRevisionBodyCategoryMax),
   "subcategoryId": zod.number().multipleOf(saveProductDraftRevisionBodySubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(saveProductDraftRevisionBodyTechSheetMax),
+  "guideYear": zod.string().max(saveProductDraftRevisionBodyGuideYearMax),
+  "descriptionSource": zod.string().max(saveProductDraftRevisionBodyDescriptionSourceMax),
+  "websiteUrlLegacy": zod.string().max(saveProductDraftRevisionBodyWebsiteUrlLegacyMax),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
   "details": zod.object({
   "stockCode": zod.string().max(saveProductDraftRevisionBodyDetailsStockCodeMax),
   "guideSection": zod.string().max(saveProductDraftRevisionBodyDetailsGuideSectionMax),
@@ -2473,7 +2435,7 @@ export const SaveProductDraftRevisionBody = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(saveProductDraftRevisionBodyDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(saveProductDraftRevisionBodyDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(saveProductDraftRevisionBodyDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(saveProductDraftRevisionBodyDetailsSowingRatesItemUnitMax)
@@ -2543,7 +2505,7 @@ export const SaveProductDraftRevisionBody = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(saveProductDraftRevisionBodyDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "saleLines": zod.array(zod.object({
@@ -2552,7 +2514,7 @@ export const SaveProductDraftRevisionBody = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(saveProductDraftRevisionBodySaleLinesItemSortOrderMultipleOf)
@@ -2579,7 +2541,7 @@ export const saveProductDraftRevisionResponseOneDetailsPackSizesItemUnitMax = 30
 
 export const saveProductDraftRevisionResponseOneDetailsTreatmentMax = 120;
 
-export const saveProductDraftRevisionResponseOneDetailsBredByOriginMax = 180;
+export const saveProductDraftRevisionResponseOneDetailsBredByOriginMax = 2000;
 
 export const saveProductDraftRevisionResponseOneDetailsDistributedByMax = 120;
 
@@ -2623,7 +2585,7 @@ export const saveProductDraftRevisionResponseOneDetailsSupplierNameMax = 180;
 
 export const saveProductDraftRevisionResponseOneDetailsSummaryMax = 500;
 
-export const saveProductDraftRevisionResponseOneDetailsDescriptionMax = 5000;
+export const saveProductDraftRevisionResponseOneDetailsDescriptionMax = 200000;
 
 export const saveProductDraftRevisionResponseOneDetailsNotesMax = 2000;
 
@@ -2635,7 +2597,7 @@ export const saveProductDraftRevisionResponseOneDetailsComponentsItemInclusionRa
 
 export const saveProductDraftRevisionResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const saveProductDraftRevisionResponseOneDetailsComponentsItemNoteMax = 240;
+export const saveProductDraftRevisionResponseOneDetailsComponentsItemNoteMax = 4000;
 
 export const saveProductDraftRevisionResponseOneDetailsFormulationYearMax = 20;
 
@@ -2649,7 +2611,7 @@ export const saveProductDraftRevisionResponseOneDetailsPhotosItemSrcMax = 500;
 
 export const saveProductDraftRevisionResponseOneDetailsSeoTitleMax = 180;
 
-export const saveProductDraftRevisionResponseOneDetailsSeoDescriptionMax = 320;
+export const saveProductDraftRevisionResponseOneDetailsSeoDescriptionMax = 2000;
 
 export const saveProductDraftRevisionResponseOneDetailsSortOrderMin = 0;
 export const saveProductDraftRevisionResponseOneDetailsSortOrderMultipleOf = 1;
@@ -2657,6 +2619,8 @@ export const saveProductDraftRevisionResponseOneDetailsSortOrderMultipleOf = 1;
 export const saveProductDraftRevisionResponseOneDetailsRelatedProductsItemMax = 180;
 
 export const saveProductDraftRevisionResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const saveProductDraftRevisionResponseOneDetailsProductFormMax = 120;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneNameMax = 160;
 
@@ -2671,6 +2635,12 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneCategoryMax = 120;
 export const saveProductDraftRevisionResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneTechSheetMax = 240;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneGuideYearMax = 12;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDescriptionSourceMax = 240;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -2688,7 +2658,7 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsPackSizesItemU
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsTreatmentMax = 120;
 
-export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsBredByOriginMax = 180;
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsBredByOriginMax = 2000;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsDistributedByMax = 120;
 
@@ -2732,7 +2702,7 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSupplierNameMa
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSummaryMax = 500;
 
-export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsDescriptionMax = 5000;
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsNotesMax = 2000;
 
@@ -2744,7 +2714,7 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItem
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 240;
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
@@ -2758,7 +2728,7 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsPhotosItemSrcM
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
-export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSeoDescriptionMax = 320;
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -2766,6 +2736,8 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSortOrderMulti
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsProductFormMax = 120;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
 
@@ -2794,7 +2766,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(saveProductDraftRevisionResponseOneSaleLinesItemSortOrderMultipleOf)
@@ -2820,7 +2792,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(saveProductDraftRevisionResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(saveProductDraftRevisionResponseOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(saveProductDraftRevisionResponseOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(saveProductDraftRevisionResponseOneDetailsSowingRatesItemUnitMax)
@@ -2890,7 +2862,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(saveProductDraftRevisionResponseOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
@@ -2901,13 +2873,18 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "draftSavedAt": zod.coerce.date().nullable(),
   "draft": zod.union([zod.object({
   "name": zod.string().min(1).max(saveProductDraftRevisionResponseTwoDraftOneOneNameMax),
-  "price": zod.string().min(1).max(saveProductDraftRevisionResponseTwoDraftOneOnePriceMax),
-  "packSize": zod.string().min(1).max(saveProductDraftRevisionResponseTwoDraftOneOnePackSizeMax),
+  "price": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOnePriceMax),
+  "packSize": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOnePackSizeMax),
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneNoteMax),
-  "category": zod.string().min(1).max(saveProductDraftRevisionResponseTwoDraftOneOneCategoryMax),
+  "category": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneCategoryMax),
   "subcategoryId": zod.number().multipleOf(saveProductDraftRevisionResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneTechSheetMax),
+  "guideYear": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneGuideYearMax),
+  "descriptionSource": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDescriptionSourceMax),
+  "websiteUrlLegacy": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
   "details": zod.object({
   "stockCode": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -2927,7 +2904,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSowingRatesItemUnitMax)
@@ -2997,7 +2974,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "saleLines": zod.array(zod.object({
@@ -3006,7 +2983,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(saveProductDraftRevisionResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
@@ -3044,7 +3021,7 @@ export const publishProductResponseOneDetailsPackSizesItemUnitMax = 30;
 
 export const publishProductResponseOneDetailsTreatmentMax = 120;
 
-export const publishProductResponseOneDetailsBredByOriginMax = 180;
+export const publishProductResponseOneDetailsBredByOriginMax = 2000;
 
 export const publishProductResponseOneDetailsDistributedByMax = 120;
 
@@ -3088,7 +3065,7 @@ export const publishProductResponseOneDetailsSupplierNameMax = 180;
 
 export const publishProductResponseOneDetailsSummaryMax = 500;
 
-export const publishProductResponseOneDetailsDescriptionMax = 5000;
+export const publishProductResponseOneDetailsDescriptionMax = 200000;
 
 export const publishProductResponseOneDetailsNotesMax = 2000;
 
@@ -3100,7 +3077,7 @@ export const publishProductResponseOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const publishProductResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const publishProductResponseOneDetailsComponentsItemNoteMax = 240;
+export const publishProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
 export const publishProductResponseOneDetailsFormulationYearMax = 20;
 
@@ -3114,7 +3091,7 @@ export const publishProductResponseOneDetailsPhotosItemSrcMax = 500;
 
 export const publishProductResponseOneDetailsSeoTitleMax = 180;
 
-export const publishProductResponseOneDetailsSeoDescriptionMax = 320;
+export const publishProductResponseOneDetailsSeoDescriptionMax = 2000;
 
 export const publishProductResponseOneDetailsSortOrderMin = 0;
 export const publishProductResponseOneDetailsSortOrderMultipleOf = 1;
@@ -3122,6 +3099,8 @@ export const publishProductResponseOneDetailsSortOrderMultipleOf = 1;
 export const publishProductResponseOneDetailsRelatedProductsItemMax = 180;
 
 export const publishProductResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const publishProductResponseOneDetailsProductFormMax = 120;
 
 export const publishProductResponseTwoDraftOneOneNameMax = 160;
 
@@ -3136,6 +3115,12 @@ export const publishProductResponseTwoDraftOneOneCategoryMax = 120;
 export const publishProductResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const publishProductResponseTwoDraftOneOneTechSheetMax = 240;
+
+export const publishProductResponseTwoDraftOneOneGuideYearMax = 12;
+
+export const publishProductResponseTwoDraftOneOneDescriptionSourceMax = 240;
+
+export const publishProductResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
 
 export const publishProductResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -3153,7 +3138,7 @@ export const publishProductResponseTwoDraftOneOneDetailsPackSizesItemUnitMax = 3
 
 export const publishProductResponseTwoDraftOneOneDetailsTreatmentMax = 120;
 
-export const publishProductResponseTwoDraftOneOneDetailsBredByOriginMax = 180;
+export const publishProductResponseTwoDraftOneOneDetailsBredByOriginMax = 2000;
 
 export const publishProductResponseTwoDraftOneOneDetailsDistributedByMax = 120;
 
@@ -3197,7 +3182,7 @@ export const publishProductResponseTwoDraftOneOneDetailsSupplierNameMax = 180;
 
 export const publishProductResponseTwoDraftOneOneDetailsSummaryMax = 500;
 
-export const publishProductResponseTwoDraftOneOneDetailsDescriptionMax = 5000;
+export const publishProductResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
 export const publishProductResponseTwoDraftOneOneDetailsNotesMax = 2000;
 
@@ -3209,7 +3194,7 @@ export const publishProductResponseTwoDraftOneOneDetailsComponentsItemInclusionR
 
 export const publishProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const publishProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 240;
+export const publishProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
 export const publishProductResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
@@ -3223,7 +3208,7 @@ export const publishProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
 
 export const publishProductResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
-export const publishProductResponseTwoDraftOneOneDetailsSeoDescriptionMax = 320;
+export const publishProductResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
 
 export const publishProductResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const publishProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -3231,6 +3216,8 @@ export const publishProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
 export const publishProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
 export const publishProductResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const publishProductResponseTwoDraftOneOneDetailsProductFormMax = 120;
 
 export const publishProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
 
@@ -3259,7 +3246,7 @@ export const PublishProductResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(publishProductResponseOneSaleLinesItemSortOrderMultipleOf)
@@ -3285,7 +3272,7 @@ export const PublishProductResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(publishProductResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(publishProductResponseOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(publishProductResponseOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(publishProductResponseOneDetailsSowingRatesItemUnitMax)
@@ -3355,7 +3342,7 @@ export const PublishProductResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(publishProductResponseOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
@@ -3366,13 +3353,18 @@ export const PublishProductResponse = zod.object({
   "draftSavedAt": zod.coerce.date().nullable(),
   "draft": zod.union([zod.object({
   "name": zod.string().min(1).max(publishProductResponseTwoDraftOneOneNameMax),
-  "price": zod.string().min(1).max(publishProductResponseTwoDraftOneOnePriceMax),
-  "packSize": zod.string().min(1).max(publishProductResponseTwoDraftOneOnePackSizeMax),
+  "price": zod.string().max(publishProductResponseTwoDraftOneOnePriceMax),
+  "packSize": zod.string().max(publishProductResponseTwoDraftOneOnePackSizeMax),
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(publishProductResponseTwoDraftOneOneNoteMax),
-  "category": zod.string().min(1).max(publishProductResponseTwoDraftOneOneCategoryMax),
+  "category": zod.string().max(publishProductResponseTwoDraftOneOneCategoryMax),
   "subcategoryId": zod.number().multipleOf(publishProductResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(publishProductResponseTwoDraftOneOneTechSheetMax),
+  "guideYear": zod.string().max(publishProductResponseTwoDraftOneOneGuideYearMax),
+  "descriptionSource": zod.string().max(publishProductResponseTwoDraftOneOneDescriptionSourceMax),
+  "websiteUrlLegacy": zod.string().max(publishProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
   "details": zod.object({
   "stockCode": zod.string().max(publishProductResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(publishProductResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -3392,7 +3384,7 @@ export const PublishProductResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(publishProductResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(publishProductResponseTwoDraftOneOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(publishProductResponseTwoDraftOneOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(publishProductResponseTwoDraftOneOneDetailsSowingRatesItemUnitMax)
@@ -3462,7 +3454,7 @@ export const PublishProductResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(publishProductResponseTwoDraftOneOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "saleLines": zod.array(zod.object({
@@ -3471,7 +3463,7 @@ export const PublishProductResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(publishProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
@@ -3509,7 +3501,7 @@ export const archiveProductResponseOneDetailsPackSizesItemUnitMax = 30;
 
 export const archiveProductResponseOneDetailsTreatmentMax = 120;
 
-export const archiveProductResponseOneDetailsBredByOriginMax = 180;
+export const archiveProductResponseOneDetailsBredByOriginMax = 2000;
 
 export const archiveProductResponseOneDetailsDistributedByMax = 120;
 
@@ -3553,7 +3545,7 @@ export const archiveProductResponseOneDetailsSupplierNameMax = 180;
 
 export const archiveProductResponseOneDetailsSummaryMax = 500;
 
-export const archiveProductResponseOneDetailsDescriptionMax = 5000;
+export const archiveProductResponseOneDetailsDescriptionMax = 200000;
 
 export const archiveProductResponseOneDetailsNotesMax = 2000;
 
@@ -3565,7 +3557,7 @@ export const archiveProductResponseOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const archiveProductResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const archiveProductResponseOneDetailsComponentsItemNoteMax = 240;
+export const archiveProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
 export const archiveProductResponseOneDetailsFormulationYearMax = 20;
 
@@ -3579,7 +3571,7 @@ export const archiveProductResponseOneDetailsPhotosItemSrcMax = 500;
 
 export const archiveProductResponseOneDetailsSeoTitleMax = 180;
 
-export const archiveProductResponseOneDetailsSeoDescriptionMax = 320;
+export const archiveProductResponseOneDetailsSeoDescriptionMax = 2000;
 
 export const archiveProductResponseOneDetailsSortOrderMin = 0;
 export const archiveProductResponseOneDetailsSortOrderMultipleOf = 1;
@@ -3587,6 +3579,8 @@ export const archiveProductResponseOneDetailsSortOrderMultipleOf = 1;
 export const archiveProductResponseOneDetailsRelatedProductsItemMax = 180;
 
 export const archiveProductResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const archiveProductResponseOneDetailsProductFormMax = 120;
 
 export const archiveProductResponseTwoDraftOneOneNameMax = 160;
 
@@ -3601,6 +3595,12 @@ export const archiveProductResponseTwoDraftOneOneCategoryMax = 120;
 export const archiveProductResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const archiveProductResponseTwoDraftOneOneTechSheetMax = 240;
+
+export const archiveProductResponseTwoDraftOneOneGuideYearMax = 12;
+
+export const archiveProductResponseTwoDraftOneOneDescriptionSourceMax = 240;
+
+export const archiveProductResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
 
 export const archiveProductResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -3618,7 +3618,7 @@ export const archiveProductResponseTwoDraftOneOneDetailsPackSizesItemUnitMax = 3
 
 export const archiveProductResponseTwoDraftOneOneDetailsTreatmentMax = 120;
 
-export const archiveProductResponseTwoDraftOneOneDetailsBredByOriginMax = 180;
+export const archiveProductResponseTwoDraftOneOneDetailsBredByOriginMax = 2000;
 
 export const archiveProductResponseTwoDraftOneOneDetailsDistributedByMax = 120;
 
@@ -3662,7 +3662,7 @@ export const archiveProductResponseTwoDraftOneOneDetailsSupplierNameMax = 180;
 
 export const archiveProductResponseTwoDraftOneOneDetailsSummaryMax = 500;
 
-export const archiveProductResponseTwoDraftOneOneDetailsDescriptionMax = 5000;
+export const archiveProductResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
 export const archiveProductResponseTwoDraftOneOneDetailsNotesMax = 2000;
 
@@ -3674,7 +3674,7 @@ export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemInclusionR
 
 export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 240;
+export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
 export const archiveProductResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
@@ -3688,7 +3688,7 @@ export const archiveProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
 
 export const archiveProductResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
-export const archiveProductResponseTwoDraftOneOneDetailsSeoDescriptionMax = 320;
+export const archiveProductResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
 
 export const archiveProductResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const archiveProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -3696,6 +3696,8 @@ export const archiveProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
 export const archiveProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
 export const archiveProductResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const archiveProductResponseTwoDraftOneOneDetailsProductFormMax = 120;
 
 export const archiveProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
 
@@ -3724,7 +3726,7 @@ export const ArchiveProductResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(archiveProductResponseOneSaleLinesItemSortOrderMultipleOf)
@@ -3750,7 +3752,7 @@ export const ArchiveProductResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(archiveProductResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(archiveProductResponseOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(archiveProductResponseOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(archiveProductResponseOneDetailsSowingRatesItemUnitMax)
@@ -3820,7 +3822,7 @@ export const ArchiveProductResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(archiveProductResponseOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
@@ -3831,13 +3833,18 @@ export const ArchiveProductResponse = zod.object({
   "draftSavedAt": zod.coerce.date().nullable(),
   "draft": zod.union([zod.object({
   "name": zod.string().min(1).max(archiveProductResponseTwoDraftOneOneNameMax),
-  "price": zod.string().min(1).max(archiveProductResponseTwoDraftOneOnePriceMax),
-  "packSize": zod.string().min(1).max(archiveProductResponseTwoDraftOneOnePackSizeMax),
+  "price": zod.string().max(archiveProductResponseTwoDraftOneOnePriceMax),
+  "packSize": zod.string().max(archiveProductResponseTwoDraftOneOnePackSizeMax),
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(archiveProductResponseTwoDraftOneOneNoteMax),
-  "category": zod.string().min(1).max(archiveProductResponseTwoDraftOneOneCategoryMax),
+  "category": zod.string().max(archiveProductResponseTwoDraftOneOneCategoryMax),
   "subcategoryId": zod.number().multipleOf(archiveProductResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(archiveProductResponseTwoDraftOneOneTechSheetMax),
+  "guideYear": zod.string().max(archiveProductResponseTwoDraftOneOneGuideYearMax),
+  "descriptionSource": zod.string().max(archiveProductResponseTwoDraftOneOneDescriptionSourceMax),
+  "websiteUrlLegacy": zod.string().max(archiveProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
   "details": zod.object({
   "stockCode": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -3857,7 +3864,7 @@ export const ArchiveProductResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(archiveProductResponseTwoDraftOneOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(archiveProductResponseTwoDraftOneOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsSowingRatesItemUnitMax)
@@ -3927,7 +3934,7 @@ export const ArchiveProductResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "saleLines": zod.array(zod.object({
@@ -3936,7 +3943,7 @@ export const ArchiveProductResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(archiveProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
@@ -3974,7 +3981,7 @@ export const restoreProductResponseOneDetailsPackSizesItemUnitMax = 30;
 
 export const restoreProductResponseOneDetailsTreatmentMax = 120;
 
-export const restoreProductResponseOneDetailsBredByOriginMax = 180;
+export const restoreProductResponseOneDetailsBredByOriginMax = 2000;
 
 export const restoreProductResponseOneDetailsDistributedByMax = 120;
 
@@ -4018,7 +4025,7 @@ export const restoreProductResponseOneDetailsSupplierNameMax = 180;
 
 export const restoreProductResponseOneDetailsSummaryMax = 500;
 
-export const restoreProductResponseOneDetailsDescriptionMax = 5000;
+export const restoreProductResponseOneDetailsDescriptionMax = 200000;
 
 export const restoreProductResponseOneDetailsNotesMax = 2000;
 
@@ -4030,7 +4037,7 @@ export const restoreProductResponseOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const restoreProductResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const restoreProductResponseOneDetailsComponentsItemNoteMax = 240;
+export const restoreProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
 export const restoreProductResponseOneDetailsFormulationYearMax = 20;
 
@@ -4044,7 +4051,7 @@ export const restoreProductResponseOneDetailsPhotosItemSrcMax = 500;
 
 export const restoreProductResponseOneDetailsSeoTitleMax = 180;
 
-export const restoreProductResponseOneDetailsSeoDescriptionMax = 320;
+export const restoreProductResponseOneDetailsSeoDescriptionMax = 2000;
 
 export const restoreProductResponseOneDetailsSortOrderMin = 0;
 export const restoreProductResponseOneDetailsSortOrderMultipleOf = 1;
@@ -4052,6 +4059,8 @@ export const restoreProductResponseOneDetailsSortOrderMultipleOf = 1;
 export const restoreProductResponseOneDetailsRelatedProductsItemMax = 180;
 
 export const restoreProductResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const restoreProductResponseOneDetailsProductFormMax = 120;
 
 export const restoreProductResponseTwoDraftOneOneNameMax = 160;
 
@@ -4066,6 +4075,12 @@ export const restoreProductResponseTwoDraftOneOneCategoryMax = 120;
 export const restoreProductResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const restoreProductResponseTwoDraftOneOneTechSheetMax = 240;
+
+export const restoreProductResponseTwoDraftOneOneGuideYearMax = 12;
+
+export const restoreProductResponseTwoDraftOneOneDescriptionSourceMax = 240;
+
+export const restoreProductResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
 
 export const restoreProductResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -4083,7 +4098,7 @@ export const restoreProductResponseTwoDraftOneOneDetailsPackSizesItemUnitMax = 3
 
 export const restoreProductResponseTwoDraftOneOneDetailsTreatmentMax = 120;
 
-export const restoreProductResponseTwoDraftOneOneDetailsBredByOriginMax = 180;
+export const restoreProductResponseTwoDraftOneOneDetailsBredByOriginMax = 2000;
 
 export const restoreProductResponseTwoDraftOneOneDetailsDistributedByMax = 120;
 
@@ -4127,7 +4142,7 @@ export const restoreProductResponseTwoDraftOneOneDetailsSupplierNameMax = 180;
 
 export const restoreProductResponseTwoDraftOneOneDetailsSummaryMax = 500;
 
-export const restoreProductResponseTwoDraftOneOneDetailsDescriptionMax = 5000;
+export const restoreProductResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
 export const restoreProductResponseTwoDraftOneOneDetailsNotesMax = 2000;
 
@@ -4139,7 +4154,7 @@ export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemInclusionR
 
 export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 240;
+export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
 export const restoreProductResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
@@ -4153,7 +4168,7 @@ export const restoreProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
 
 export const restoreProductResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
-export const restoreProductResponseTwoDraftOneOneDetailsSeoDescriptionMax = 320;
+export const restoreProductResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
 
 export const restoreProductResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const restoreProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -4161,6 +4176,8 @@ export const restoreProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
 export const restoreProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
 export const restoreProductResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const restoreProductResponseTwoDraftOneOneDetailsProductFormMax = 120;
 
 export const restoreProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
 
@@ -4189,7 +4206,7 @@ export const RestoreProductResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(restoreProductResponseOneSaleLinesItemSortOrderMultipleOf)
@@ -4215,7 +4232,7 @@ export const RestoreProductResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(restoreProductResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(restoreProductResponseOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(restoreProductResponseOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(restoreProductResponseOneDetailsSowingRatesItemUnitMax)
@@ -4285,7 +4302,7 @@ export const RestoreProductResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(restoreProductResponseOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
@@ -4296,13 +4313,18 @@ export const RestoreProductResponse = zod.object({
   "draftSavedAt": zod.coerce.date().nullable(),
   "draft": zod.union([zod.object({
   "name": zod.string().min(1).max(restoreProductResponseTwoDraftOneOneNameMax),
-  "price": zod.string().min(1).max(restoreProductResponseTwoDraftOneOnePriceMax),
-  "packSize": zod.string().min(1).max(restoreProductResponseTwoDraftOneOnePackSizeMax),
+  "price": zod.string().max(restoreProductResponseTwoDraftOneOnePriceMax),
+  "packSize": zod.string().max(restoreProductResponseTwoDraftOneOnePackSizeMax),
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(restoreProductResponseTwoDraftOneOneNoteMax),
-  "category": zod.string().min(1).max(restoreProductResponseTwoDraftOneOneCategoryMax),
+  "category": zod.string().max(restoreProductResponseTwoDraftOneOneCategoryMax),
   "subcategoryId": zod.number().multipleOf(restoreProductResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(restoreProductResponseTwoDraftOneOneTechSheetMax),
+  "guideYear": zod.string().max(restoreProductResponseTwoDraftOneOneGuideYearMax),
+  "descriptionSource": zod.string().max(restoreProductResponseTwoDraftOneOneDescriptionSourceMax),
+  "websiteUrlLegacy": zod.string().max(restoreProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
   "details": zod.object({
   "stockCode": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -4322,7 +4344,7 @@ export const RestoreProductResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(restoreProductResponseTwoDraftOneOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(restoreProductResponseTwoDraftOneOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsSowingRatesItemUnitMax)
@@ -4392,7 +4414,7 @@ export const RestoreProductResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "saleLines": zod.array(zod.object({
@@ -4401,7 +4423,7 @@ export const RestoreProductResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(restoreProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
@@ -4439,7 +4461,7 @@ export const discardProductDraftResponseOneDetailsPackSizesItemUnitMax = 30;
 
 export const discardProductDraftResponseOneDetailsTreatmentMax = 120;
 
-export const discardProductDraftResponseOneDetailsBredByOriginMax = 180;
+export const discardProductDraftResponseOneDetailsBredByOriginMax = 2000;
 
 export const discardProductDraftResponseOneDetailsDistributedByMax = 120;
 
@@ -4483,7 +4505,7 @@ export const discardProductDraftResponseOneDetailsSupplierNameMax = 180;
 
 export const discardProductDraftResponseOneDetailsSummaryMax = 500;
 
-export const discardProductDraftResponseOneDetailsDescriptionMax = 5000;
+export const discardProductDraftResponseOneDetailsDescriptionMax = 200000;
 
 export const discardProductDraftResponseOneDetailsNotesMax = 2000;
 
@@ -4495,7 +4517,7 @@ export const discardProductDraftResponseOneDetailsComponentsItemInclusionRateMin
 
 export const discardProductDraftResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const discardProductDraftResponseOneDetailsComponentsItemNoteMax = 240;
+export const discardProductDraftResponseOneDetailsComponentsItemNoteMax = 4000;
 
 export const discardProductDraftResponseOneDetailsFormulationYearMax = 20;
 
@@ -4509,7 +4531,7 @@ export const discardProductDraftResponseOneDetailsPhotosItemSrcMax = 500;
 
 export const discardProductDraftResponseOneDetailsSeoTitleMax = 180;
 
-export const discardProductDraftResponseOneDetailsSeoDescriptionMax = 320;
+export const discardProductDraftResponseOneDetailsSeoDescriptionMax = 2000;
 
 export const discardProductDraftResponseOneDetailsSortOrderMin = 0;
 export const discardProductDraftResponseOneDetailsSortOrderMultipleOf = 1;
@@ -4517,6 +4539,8 @@ export const discardProductDraftResponseOneDetailsSortOrderMultipleOf = 1;
 export const discardProductDraftResponseOneDetailsRelatedProductsItemMax = 180;
 
 export const discardProductDraftResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const discardProductDraftResponseOneDetailsProductFormMax = 120;
 
 export const discardProductDraftResponseTwoDraftOneOneNameMax = 160;
 
@@ -4531,6 +4555,12 @@ export const discardProductDraftResponseTwoDraftOneOneCategoryMax = 120;
 export const discardProductDraftResponseTwoDraftOneOneSubcategoryIdMultipleOf = 1;
 
 export const discardProductDraftResponseTwoDraftOneOneTechSheetMax = 240;
+
+export const discardProductDraftResponseTwoDraftOneOneGuideYearMax = 12;
+
+export const discardProductDraftResponseTwoDraftOneOneDescriptionSourceMax = 240;
+
+export const discardProductDraftResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -4548,7 +4578,7 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsPackSizesItemUnitMa
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsTreatmentMax = 120;
 
-export const discardProductDraftResponseTwoDraftOneOneDetailsBredByOriginMax = 180;
+export const discardProductDraftResponseTwoDraftOneOneDetailsBredByOriginMax = 2000;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsDistributedByMax = 120;
 
@@ -4592,7 +4622,7 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsSupplierNameMax = 1
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsSummaryMax = 500;
 
-export const discardProductDraftResponseTwoDraftOneOneDetailsDescriptionMax = 5000;
+export const discardProductDraftResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsNotesMax = 2000;
 
@@ -4604,7 +4634,7 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemInclu
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 240;
+export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
@@ -4618,7 +4648,7 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
-export const discardProductDraftResponseTwoDraftOneOneDetailsSeoDescriptionMax = 320;
+export const discardProductDraftResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const discardProductDraftResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -4626,6 +4656,8 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsSortOrderMultipleOf
 export const discardProductDraftResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const discardProductDraftResponseTwoDraftOneOneDetailsProductFormMax = 120;
 
 export const discardProductDraftResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
 
@@ -4654,7 +4686,7 @@ export const DiscardProductDraftResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(discardProductDraftResponseOneSaleLinesItemSortOrderMultipleOf)
@@ -4680,7 +4712,7 @@ export const DiscardProductDraftResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(discardProductDraftResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(discardProductDraftResponseOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(discardProductDraftResponseOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(discardProductDraftResponseOneDetailsSowingRatesItemUnitMax)
@@ -4750,7 +4782,7 @@ export const DiscardProductDraftResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(discardProductDraftResponseOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
@@ -4761,13 +4793,18 @@ export const DiscardProductDraftResponse = zod.object({
   "draftSavedAt": zod.coerce.date().nullable(),
   "draft": zod.union([zod.object({
   "name": zod.string().min(1).max(discardProductDraftResponseTwoDraftOneOneNameMax),
-  "price": zod.string().min(1).max(discardProductDraftResponseTwoDraftOneOnePriceMax),
-  "packSize": zod.string().min(1).max(discardProductDraftResponseTwoDraftOneOnePackSizeMax),
+  "price": zod.string().max(discardProductDraftResponseTwoDraftOneOnePriceMax),
+  "packSize": zod.string().max(discardProductDraftResponseTwoDraftOneOnePackSizeMax),
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(discardProductDraftResponseTwoDraftOneOneNoteMax),
-  "category": zod.string().min(1).max(discardProductDraftResponseTwoDraftOneOneCategoryMax),
+  "category": zod.string().max(discardProductDraftResponseTwoDraftOneOneCategoryMax),
   "subcategoryId": zod.number().multipleOf(discardProductDraftResponseTwoDraftOneOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(discardProductDraftResponseTwoDraftOneOneTechSheetMax),
+  "guideYear": zod.string().max(discardProductDraftResponseTwoDraftOneOneGuideYearMax),
+  "descriptionSource": zod.string().max(discardProductDraftResponseTwoDraftOneOneDescriptionSourceMax),
+  "websiteUrlLegacy": zod.string().max(discardProductDraftResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
   "details": zod.object({
   "stockCode": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -4787,7 +4824,7 @@ export const DiscardProductDraftResponse = zod.object({
   "australianBred": zod.boolean(),
   "distributedBy": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
-  "context": zod.enum(['Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf']),
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
   "min": zod.number().min(discardProductDraftResponseTwoDraftOneOneDetailsSowingRatesItemMinMin).nullable(),
   "max": zod.number().min(discardProductDraftResponseTwoDraftOneOneDetailsSowingRatesItemMaxMin).nullable(),
   "unit": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsSowingRatesItemUnitMax)
@@ -4857,7 +4894,7 @@ export const DiscardProductDraftResponse = zod.object({
   "weeksToFirstGrazing": zod.string(),
   "prussicAcidRisk": zod.string(),
   "regrowth": zod.string(),
-  "productForm": zod.string(),
+  "productForm": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsProductFormMax),
   "applicationRate": zod.string()
 }),
   "saleLines": zod.array(zod.object({
@@ -4866,7 +4903,7 @@ export const DiscardProductDraftResponse = zod.object({
   "seedGrade": zod.string(),
   "packKg": zod.number().nullable(),
   "packUnit": zod.string(),
-  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "priceDisplay": zod.string(),
   "isDefault": zod.boolean(),
   "sortOrder": zod.number().multipleOf(discardProductDraftResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
@@ -4896,7 +4933,10 @@ export const ListLegacyCategoryNamesParams = zod.object({
   "category": zod.coerce.string()
 })
 
-export const ListLegacyCategoryNamesResponse = zod.unknown()
+export const ListLegacyCategoryNamesResponseItem = zod.object({
+  "name": zod.string()
+})
+export const ListLegacyCategoryNamesResponse = zod.array(ListLegacyCategoryNamesResponseItem)
 
 
 /**
@@ -4906,7 +4946,9 @@ export const LookupRedirectQueryParams = zod.object({
   "fromPath": zod.coerce.string()
 })
 
-export const LookupRedirectResponse = zod.void()
+export const LookupRedirectResponse = zod.object({
+  "toPath": zod.string()
+})
 
 
 /**
@@ -4922,7 +4964,34 @@ export const DryRunProductImportBody = zod.object({
   "workbookBase64": zod.string()
 })
 
-export const DryRunProductImportResponse = zod.unknown()
+export const dryRunProductImportResponseSheetsRowsMultipleOf = 1;
+
+export const dryRunProductImportResponseSheetsAcceptedMultipleOf = 1;
+
+export const dryRunProductImportResponseSheetsSkippedMultipleOf = 1;
+
+export const dryRunProductImportResponseIssuesItemRowMultipleOf = 1;
+
+
+
+export const DryRunProductImportResponse = zod.object({
+  "token": zod.string(),
+  "hash": zod.string(),
+  "sheets": zod.record(zod.string(), zod.object({
+  "rows": zod.number().multipleOf(dryRunProductImportResponseSheetsRowsMultipleOf),
+  "accepted": zod.number().multipleOf(dryRunProductImportResponseSheetsAcceptedMultipleOf),
+  "skipped": zod.number().multipleOf(dryRunProductImportResponseSheetsSkippedMultipleOf),
+  "reasons": zod.array(zod.string())
+})),
+  "issues": zod.array(zod.object({
+  "sheet": zod.string(),
+  "row": zod.number().multipleOf(dryRunProductImportResponseIssuesItemRowMultipleOf),
+  "column": zod.string(),
+  "problem": zod.string()
+})),
+  "warnings": zod.array(zod.string()),
+  "plannedChanges": zod.array(zod.string())
+})
 
 
 /**
@@ -4934,7 +5003,34 @@ export const CommitProductImportBody = zod.object({
   "token": zod.string()
 }))
 
-export const CommitProductImportResponse = zod.unknown()
+export const commitProductImportResponseSheetsRowsMultipleOf = 1;
+
+export const commitProductImportResponseSheetsAcceptedMultipleOf = 1;
+
+export const commitProductImportResponseSheetsSkippedMultipleOf = 1;
+
+export const commitProductImportResponseIssuesItemRowMultipleOf = 1;
+
+
+
+export const CommitProductImportResponse = zod.object({
+  "token": zod.string(),
+  "hash": zod.string(),
+  "sheets": zod.record(zod.string(), zod.object({
+  "rows": zod.number().multipleOf(commitProductImportResponseSheetsRowsMultipleOf),
+  "accepted": zod.number().multipleOf(commitProductImportResponseSheetsAcceptedMultipleOf),
+  "skipped": zod.number().multipleOf(commitProductImportResponseSheetsSkippedMultipleOf),
+  "reasons": zod.array(zod.string())
+})),
+  "issues": zod.array(zod.object({
+  "sheet": zod.string(),
+  "row": zod.number().multipleOf(commitProductImportResponseIssuesItemRowMultipleOf),
+  "column": zod.string(),
+  "problem": zod.string()
+})),
+  "warnings": zod.array(zod.string()),
+  "plannedChanges": zod.array(zod.string())
+})
 
 
 /**

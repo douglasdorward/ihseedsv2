@@ -5,18 +5,22 @@ import { StatusPill } from "../components/ui";
 import { useListCategories } from "@workspace/api-client-react";
 import { getFactChips } from "../utils/CategoryUtils";
 
+const slugifyCategory = (value: string) =>
+  value.toLowerCase().replace(/&/g, " ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
 export default function Category() {
   const { slug } = useParams<{ slug: string }>();
   const { data: categories = [], isLoading: loadingCategories } = useListCategories();
 
-  const categoryMeta = categories.find(c => c.slug === slug && c.parentId === null);
+  const categoryMeta = categories.find(c => c.parentId === null &&
+    (c.slug === slug || slugifyCategory(c.name) === slug));
   const childCategories = categoryMeta ? categories.filter(c => c.parentId === categoryMeta.id && c.active).sort((a,b) => a.sortOrder - b.sortOrder) : [];
 
   const { products, loading: loadingProducts, error, retry } = useProducts();
   const [activeGroup, setActiveGroup] = useState<number | "All">("All");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
-  const [legacy, setLegacy] = useState<{name: string, slug: string, category: string}[]>([]);
+  const [legacy, setLegacy] = useState<{ name: string }[]>([]);
   useEffect(() => {
     if (!categoryMeta?.name) return;
     fetch(`/api/products/category/${encodeURIComponent(categoryMeta.name)}/legacy`)
@@ -218,8 +222,8 @@ export default function Category() {
               <div className="legacy-group">
                 <h6>{categoryMeta?.name} Legacy Lines</h6>
                 <ul>
-                  {legacy.map(l => (
-                    <li key={l.slug}>{l.name}</li>
+                  {legacy.map((item, index) => (
+                    <li key={`${item.name}-${index}`}>{item.name}</li>
                   ))}
                 </ul>
               </div>

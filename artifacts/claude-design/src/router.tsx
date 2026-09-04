@@ -6,14 +6,29 @@ function getPathname() {
   return window.location.pathname.replace(/\/+$/, "") || "/";
 }
 
-export function navigate(href: string, replace = false) {
-  if (href === getPathname()) {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+type NavigateOptions = {
+  replace?: boolean;
+};
+
+export function navigate(href: string, options: NavigateOptions | boolean = {}) {
+  const replace = typeof options === "boolean" ? options : options.replace ?? false;
+  const target = new URL(href, window.location.href);
+  const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const destination = `${target.pathname}${target.search}${target.hash}`;
+
+  if (destination === current) {
+    if (target.hash) document.getElementById(decodeURIComponent(target.hash.slice(1)))?.scrollIntoView();
+    else window.scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
-  if (replace) window.history.replaceState({}, "", href);
-  else window.history.pushState({}, "", href);
+  if (replace) window.history.replaceState({}, "", destination);
+  else window.history.pushState({}, "", destination);
   window.dispatchEvent(new Event(navigationEvent));
+  if (target.hash) {
+    window.requestAnimationFrame(() => {
+      document.getElementById(decodeURIComponent(target.hash.slice(1)))?.scrollIntoView();
+    });
+  }
 }
 
 export function useLocation() {

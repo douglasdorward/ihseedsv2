@@ -9,10 +9,10 @@
 /**
  * @nullable
  */
-export type SaleLineAvailability = typeof SaleLineAvailability[keyof typeof SaleLineAvailability] | null;
+export type ProductDraftInputAvailabilityOverride = typeof ProductDraftInputAvailabilityOverride[keyof typeof ProductDraftInputAvailabilityOverride] | null;
 
 
-export const SaleLineAvailability = {
+export const ProductDraftInputAvailabilityOverride = {
   Good_stock: 'Good stock',
   Low_stock: 'Low stock',
   Very_low: 'Very low',

@@ -16,7 +16,7 @@ export type ProductDetails = {
   bredByOrigin: string;
   australianBred: boolean;
   distributedBy: string;
-  sowingRates: { context: "Monoculture" | "In a mix" | "Dryland" | "Irrigation" | "Pasture" | "Turf"; min: number | null; max: number | null; unit: string }[];
+  sowingRates: { context: "" | "General" | "Monoculture" | "In a mix" | "Dryland" | "Irrigation" | "Pasture" | "Turf" | "Podded" | "De-hulled" | "Coated"; min: number | null; max: number | null; unit: string }[];
   rainfallMinMm: number | null;
   soilPhMin: number | null;
   soilPhScale: "CaCl₂" | "water";
@@ -70,13 +70,13 @@ export type ProductDetails = {
   weeksToFirstGrazing: string;
   prussicAcidRisk: "" | "None" | "Low" | "Standard – manage";
   regrowth: "" | "Single cut" | "Multi-cut / regrazes";
-  productForm: "" | "Powder" | "Liquid" | "Peat" | "Granule";
+  productForm: string;
   applicationRate: string;
 };
 export type SaleLine = {
   stockCode: string; seedForm: "" | "Bare / de-hulled" | "Podded" | "Coated" | "Coated + Gaucho" | "BioNPK-S coated" | "Goldstrike coated" | "Scarified" | "Lime coated";
   seedGrade: "" | "Certified" | "Tested" | "Certified & Tested" | "VNS";
-  packKg: number | null; packUnit: string; availability: "Good stock" | "Low stock" | "Very low" | "Unavailable";
+  packKg: number | null; packUnit: string; availability: "Good stock" | "Low stock" | "Very low" | "Unavailable" | null;
   priceDisplay: string; isDefault: boolean; sortOrder: number;
 };
 
@@ -269,7 +269,7 @@ export const saleLinesTable = pgTable("ih_sale_lines", {
   seedGrade: text("seed_grade").notNull().default(""),
   packKg: numeric("pack_kg", { precision: 8, scale: 2 }),
   packUnit: text("pack_unit").notNull().default("kg"),
-  availability: text("availability").notNull().default("Unavailable"),
+  availability: text("availability").default("Unavailable"),
   priceDisplay: text("price_display").notNull().default("Contact for pricing"),
   isDefault: boolean("is_default").notNull().default(false),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -311,10 +311,10 @@ const productDetailsObjectSchema = z.object({
   persistencyType: z.enum(["", "Annual", "Biennial", "Perennial", "Hybrid perennial", "Short-term (1–2 years)"]),
   ploidy: z.enum(["", "Diploid", "Tetraploid", "Hexaploid", "Mixed (blend)"]),
   flowerColour: z.enum(["", "Pink", "Yellow", "White", "Crimson", "Red", "Purple"]),
-  bredByOrigin: z.string().max(180),
+  bredByOrigin: z.string().max(2000),
   australianBred: z.boolean(),
   distributedBy: z.string().max(120),
-  sowingRates: z.array(z.object({ context: z.enum(["Monoculture", "In a mix", "Dryland", "Irrigation", "Pasture", "Turf"]), min: z.number().min(0).nullable(), max: z.number().min(0).nullable(), unit: z.string().max(20) })),
+  sowingRates: z.array(z.object({ context: z.enum(["", "General", "Monoculture", "In a mix", "Dryland", "Irrigation", "Pasture", "Turf", "Podded", "De-hulled", "Coated"]), min: z.number().min(0).nullable(), max: z.number().min(0).nullable(), unit: z.string().max(20) })),
   rainfallMinMm: z.number().int().min(0).nullable(),
   soilPhMin: z.number().min(0).max(14).nullable(),
   soilPhScale: z.enum(["CaCl₂", "water"]),
@@ -344,14 +344,14 @@ const productDetailsObjectSchema = z.object({
   isThirdPartyProduct: z.boolean(),
   supplierName: z.string().max(180),
   summary: z.string().max(500),
-  description: z.string().max(5000),
+  description: z.string().max(200000),
   notes: z.string().max(2000),
-  components: z.array(z.object({ productLink: z.string().max(180), speciesName: z.string().max(120), inclusionRate: z.number().nullable(), unit: z.string().max(20), note: z.string().max(240) })),
+  components: z.array(z.object({ productLink: z.string().max(180), speciesName: z.string().max(120), inclusionRate: z.number().nullable(), unit: z.string().max(20), note: z.string().max(4000) })),
   formulationYear: z.string().max(20),
   photos: z.array(z.object({ slot: z.string().max(40), file: z.string().max(240), rating: z.string().max(80), src: z.string().max(500) })),
   inCurrentPrintedGuide: z.boolean(),
   seoTitle: z.string().max(180),
-  seoDescription: z.string().max(320),
+  seoDescription: z.string().max(2000),
   sortOrder: z.number().int().min(0).nullable(),
   featured: z.boolean(),
   relatedProducts: z.array(z.string().max(180)),
@@ -366,7 +366,7 @@ const productDetailsObjectSchema = z.object({
   weeksToFirstGrazing: z.string().max(80),
   prussicAcidRisk: z.enum(["", "None", "Low", "Standard – manage"]),
   regrowth: z.enum(["", "Single cut", "Multi-cut / regrazes"]),
-  productForm: z.enum(["", "Powder", "Liquid", "Peat", "Granule"]),
+  productForm: z.string().max(120),
   applicationRate: z.string().max(240),
 });
 const productDetailsSchema = productDetailsObjectSchema.default(emptyProductDetails);
@@ -402,7 +402,7 @@ export const saleLineSchema = z.object({
   seedGrade: z.enum(["", "Certified", "Tested", "Certified & Tested", "VNS"]),
   packKg: z.number().min(0).nullable(),
   packUnit: z.string().trim().min(1).max(20).default("kg"),
-  availability: z.enum(["Good stock", "Low stock", "Very low", "Unavailable"]),
+  availability: z.enum(["Good stock", "Low stock", "Very low", "Unavailable"]).nullable(),
   priceDisplay: z.string().trim().max(120).default("Contact for pricing"),
   isDefault: z.boolean(),
   sortOrder: z.number().int().min(0),

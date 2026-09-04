@@ -10,10 +10,15 @@ export type ProductSowingRateContext = typeof ProductSowingRateContext[keyof typ
 
 
 export const ProductSowingRateContext = {
+  '': '',
+  General: 'General',
   Monoculture: 'Monoculture',
   In_a_mix: 'In a mix',
   Dryland: 'Dryland',
   Irrigation: 'Irrigation',
   Pasture: 'Pasture',
   Turf: 'Turf',
+  Podded: 'Podded',
+  'De-hulled': 'De-hulled',
+  Coated: 'Coated',
 } as const;
