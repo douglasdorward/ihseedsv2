@@ -282,6 +282,70 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AvailabilityRow"
+  /products/category/{category}/legacy:
+    get:
+      operationId: listLegacyCategoryNames
+      tags: [catalogue]
+      summary: List Legacy product names only
+      parameters:
+        - name: category
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Legacy names }
+  /redirects/lookup:
+    get:
+      operationId: lookupRedirect
+      tags: [catalogue]
+      summary: Resolve a legacy SPA path
+      parameters:
+        - name: fromPath
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "301": { description: Redirect target }
+        "404": { description: Redirect not found }
+  /sitemap-products:
+    get:
+      operationId: getProductSitemap
+      tags: [catalogue]
+      summary: Active product sitemap
+      responses:
+        "200": { description: XML sitemap }
+  /admin/import/dry-run:
+    post:
+      operationId: dryRunProductImport
+      tags: [admin]
+      summary: Validate an XLSX import
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WorkbookUpload" }
+      responses:
+        "200": { description: Dry-run report }
+  /admin/import/commit:
+    post:
+      operationId: commitProductImport
+      tags: [admin]
+      summary: Commit a validated XLSX import
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WorkbookCommit" }
+      responses:
+        "200": { description: Import committed }
+        "400": { description: Invalid or stale token }
+  /admin/import/export:
+    get:
+      operationId: exportProductWorkbook
+      tags: [admin]
+      summary: Export product workbook
+      responses:
+        "200": { description: XLSX export }
   /categories:
     get:
       operationId: listCategories
@@ -420,6 +484,15 @@ components:
         category: { type: string }
         subcategoryId: { type: number, multipleOf: 1, nullable: true }
         techSheet: { type: string }
+        guideYear: { type: string }
+        descriptionSource: { type: string, description: Admin-only provenance }
+        websiteUrlLegacy: { type: string, description: Admin-only legacy URL }
+        availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
+        listingOverride: { type: [string, "null"], enum: ["Force active", "Force legacy", null] }
+        listingState: { type: string, enum: [Active, Legacy] }
+        saleLines:
+          type: array
+          items: { $ref: "#/components/schemas/SaleLine" }
         publishStatus: { type: string, enum: [Published, Draft, Archived] }
         publishedAt: { type: string, format: date-time, nullable: true }
         details:
@@ -440,6 +513,9 @@ components:
         techSheet: { type: string, maxLength: 240 }
         details:
           $ref: "#/components/schemas/ProductDetails"
+        saleLines:
+          type: array
+          items: { $ref: "#/components/schemas/SaleLine" }
       required: [name, price, packSize, status, note, category, techSheet, details]
     ProductDraft:
       allOf:
@@ -561,7 +637,7 @@ components:
           type: array
           items: { type: string, maxLength: 120 }
         diseasePestResistance: { type: string, maxLength: 3000 }
-        persistenceLongevity: { type: string, maxLength: 180 }
+        standLifeNotes: { type: string, maxLength: 3000 }
         grazingManagementNotes: { type: string, maxLength: 3000 }
         pbrProtected: { type: boolean }
         pbrDetails: { type: string, maxLength: 300 }
@@ -591,7 +667,33 @@ components:
         relatedProducts:
           type: array
           items: { type: string, maxLength: 180 }
-      required: [stockCode, guideSection, recordType, botanicalName, alsoKnownAs, packSizes, treatment, persistencyType, ploidy, flowerColour, bredByOrigin, australianBred, distributedBy, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, sowingDepthMinCm, sowingDepthMaxCm, tolerance, maturityMeasure, maturityDays, headingDate, floweringWindow, winterActivity, inoculantGroup, seedTreatment, ecocertApproved, endUse, livestock, companionSpecies, diseasePestResistance, persistenceLongevity, grazingManagementNotes, pbrProtected, pbrDetails, licenceRestriction, certification, isThirdPartyProduct, supplierName, summary, description, notes, components, formulationYear, photos, inCurrentPrintedGuide, seoTitle, seoDescription, sortOrder, featured, relatedProducts]
+        headingOffsetDays: { type: [number, "null"], multipleOf: 1 }
+        argtResistant: { type: boolean }
+        endophyte: { type: string }
+        growthSeason: { type: string }
+        hardSeedLevel: { type: string }
+        oestrogenLevel: { type: string }
+        bloatRisk: { type: string }
+        growingSeason: { type: string }
+        weeksToFirstGrazing: { type: string }
+        prussicAcidRisk: { type: string }
+        regrowth: { type: string }
+        productForm: { type: string }
+        applicationRate: { type: string }
+      required: [stockCode, guideSection, recordType, botanicalName, alsoKnownAs, packSizes, treatment, persistencyType, ploidy, flowerColour, bredByOrigin, australianBred, distributedBy, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, sowingDepthMinCm, sowingDepthMaxCm, tolerance, maturityMeasure, maturityDays, headingDate, floweringWindow, winterActivity, inoculantGroup, seedTreatment, ecocertApproved, endUse, livestock, companionSpecies, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, licenceRestriction, certification, isThirdPartyProduct, supplierName, summary, description, notes, components, formulationYear, photos, inCurrentPrintedGuide, seoTitle, seoDescription, sortOrder, featured, relatedProducts, headingOffsetDays, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate]
+    SaleLine:
+      type: object
+      properties:
+        stockCode: { type: string }
+        seedForm: { type: string }
+        seedGrade: { type: string }
+        packKg: { type: [number, "null"] }
+        packUnit: { type: string }
+        availability: { type: string, enum: ["Good stock", "Low stock", "Very low", Unavailable] }
+        priceDisplay: { type: string }
+        isDefault: { type: boolean }
+        sortOrder: { type: number, multipleOf: 1 }
+      required: [stockCode, seedForm, seedGrade, packKg, packUnit, availability, priceDisplay, isDefault, sortOrder]
     ProductPackSize:
       type: object
       properties:
@@ -713,6 +815,18 @@ components:
               sortOrder: { type: number, minimum: 0, multipleOf: 1 }
             required: [id, sortOrder]
       required: [items]
+    WorkbookUpload:
+      type: object
+      properties:
+        workbookBase64: { type: string }
+      required: [workbookBase64]
+    WorkbookCommit:
+      allOf:
+        - $ref: "#/components/schemas/WorkbookUpload"
+        - type: object
+          properties:
+            token: { type: string }
+          required: [token]
     EnquiryInput:
       type: object
       properties:

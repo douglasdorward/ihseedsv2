@@ -6,6 +6,7 @@ import {
   insertCatalogueCategorySchema,
   productDraftsTable,
   productsTable,
+  saleLinesTable,
   reorderCatalogueCategoriesSchema,
   updateCatalogueCategorySchema,
 } from "@workspace/db";
@@ -43,16 +44,20 @@ async function validateParent(id: number | undefined, parentId: number | null, c
 }
 
 router.get("/categories", async (_req, res): Promise<void> => {
-  const [categories, products] = await Promise.all([
+  const [categories, products, saleLines] = await Promise.all([
     orderedCategories(),
-    db.select({ subcategoryId: productsTable.subcategoryId, publishStatus: productsTable.publishStatus })
+    db.select({ id: productsTable.id, subcategoryId: productsTable.subcategoryId, publishStatus: productsTable.publishStatus, listingOverride: productsTable.listingOverride })
       .from(productsTable),
+    db.select({ productId: saleLinesTable.productId, availability: saleLinesTable.availability }).from(saleLinesTable),
   ]);
+  const availableProductIds = new Set(saleLines.filter((line) => line.availability !== "Unavailable").map((line) => line.productId));
   const categoriesById = new Map(categories.map((category) => [category.id, category]));
   const activeIds = new Set(categories.filter((category) => category.active).map((category) => category.id));
   const counts = new Map<number, number>();
   for (const product of products) {
-    if (product.publishStatus === "Published" && product.subcategoryId !== null) {
+    if (product.publishStatus === "Published" && product.subcategoryId !== null &&
+      (product.listingOverride === "Force active" ||
+        (product.listingOverride !== "Force legacy" && (availableProductIds.has(product.id) || !saleLines.some((line) => line.productId === product.id))))) {
       const selected = categoriesById.get(product.subcategoryId);
       const selectedIsPublic = selected?.active
         && (selected.parentId === null || activeIds.has(selected.parentId));

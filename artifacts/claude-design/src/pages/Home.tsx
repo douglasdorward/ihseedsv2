@@ -13,7 +13,7 @@ export default function Home() {
         <div className="hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.98) 0%, rgba(29,40,28,.84) 47%, rgba(29,40,28,.42) 100%), url(${imageOptions[0]})` }}>
           <div className="hero-copy">
             <h1><span>Western Australia's</span><strong>Pasture Seed Specialists</strong></h1>
-            <p>Independently owned since 1966. We source, test and blend improved pasture seed for every region of the state — from Esperance to Derby.</p>
+            <p>Independently owned since 1966. We source, test and blend {products.length > 0 ? `${products.length}+ varieties and mixes` : "improved pasture seed"} for every region of the state — from Esperance to Derby.</p>
             <div className="hero-actions">
               <Link href="/contact" className="button button-primary" data-testid="button-advice">Advice</Link>
               <Link href="/products" className="button button-light" data-testid="button-browse-catalogue">Browse the catalogue</Link>

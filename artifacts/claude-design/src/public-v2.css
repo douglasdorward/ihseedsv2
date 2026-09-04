@@ -1,0 +1,126 @@
+/* V2 Public specific additions while preserving existing visual language */
+.feature-panel {
+  display: flex;
+  background: var(--green);
+  border-radius: 16px;
+  overflow: hidden;
+  color: white;
+}
+
+.feature-panel .feature-copy {
+  flex: 1;
+  padding: 64px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.feature-panel .feature-image {
+  flex: 1;
+  background-size: cover;
+  background-position: center;
+  min-height: 100%;
+}
+
+.chip-scroller {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.chip-scroller::-webkit-scrollbar {
+  display: none;
+}
+@media (max-width: 768px) {
+  .chip-scroller {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+}
+
+.fact-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Raleway', Tahoma, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--green);
+  background-color: var(--sage);
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.legacy-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (min-width: 768px) {
+  .legacy-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.legacy-group h6 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--black-green);
+  margin-bottom: 8px;
+}
+.legacy-group ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.legacy-group li {
+  font-size: 16px;
+  color: #75766E;
+}
+
+.comparison-table-wrapper {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+.comparison-table th {
+  position: sticky;
+  top: 0;
+  background: var(--sage);
+  color: var(--green);
+  font-weight: 700;
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #C5CCC5;
+}
+.comparison-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+  color: var(--black-green);
+}
+.comparison-table tr:hover td {
+  background: rgba(0,0,0,0.02);
+}
+
+@media (max-width: 768px) {
+  .feature-panel {
+    flex-direction: column;
+  }
+  .feature-panel .feature-copy {
+    padding: 40px 24px;
+  }
+  .feature-panel .feature-image {
+    min-height: 240px;
+  }
+}

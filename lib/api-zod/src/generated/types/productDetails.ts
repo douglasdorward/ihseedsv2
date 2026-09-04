@@ -82,8 +82,8 @@ export interface ProductDetails {
   companionSpecies: string[];
   /** @maxLength 3000 */
   diseasePestResistance: string;
-  /** @maxLength 180 */
-  persistenceLongevity: string;
+  /** @maxLength 3000 */
+  standLifeNotes: string;
   /** @maxLength 3000 */
   grazingManagementNotes: string;
   pbrProtected: boolean;
@@ -115,4 +115,18 @@ export interface ProductDetails {
   featured: boolean;
   /** @items.maxLength 180 */
   relatedProducts: string[];
+  /** @nullable */
+  headingOffsetDays: number | null;
+  argtResistant: boolean;
+  endophyte: string;
+  growthSeason: string;
+  hardSeedLevel: string;
+  oestrogenLevel: string;
+  bloatRisk: string;
+  growingSeason: string;
+  weeksToFirstGrazing: string;
+  prussicAcidRisk: string;
+  regrowth: string;
+  productForm: string;
+  applicationRate: string;
 }

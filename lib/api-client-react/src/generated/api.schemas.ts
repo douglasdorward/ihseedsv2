@@ -9,6 +9,38 @@ export interface HealthStatus {
   status: string;
 }
 
+/**
+ * @nullable
+ */
+export type ProductAvailabilityOverride = typeof ProductAvailabilityOverride[keyof typeof ProductAvailabilityOverride] | null;
+
+
+export const ProductAvailabilityOverride = {
+  Good_stock: 'Good stock',
+  Low_stock: 'Low stock',
+  Very_low: 'Very low',
+  Unavailable: 'Unavailable',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ProductListingOverride = typeof ProductListingOverride[keyof typeof ProductListingOverride] | null;
+
+
+export const ProductListingOverride = {
+  Force_active: 'Force active',
+  Force_legacy: 'Force legacy',
+} as const;
+
+export type ProductListingState = typeof ProductListingState[keyof typeof ProductListingState];
+
+
+export const ProductListingState = {
+  Active: 'Active',
+  Legacy: 'Legacy',
+} as const;
+
 export type ProductPublishStatus = typeof ProductPublishStatus[keyof typeof ProductPublishStatus];
 
 
@@ -17,6 +49,29 @@ export const ProductPublishStatus = {
   Draft: 'Draft',
   Archived: 'Archived',
 } as const;
+
+export type SaleLineAvailability = typeof SaleLineAvailability[keyof typeof SaleLineAvailability];
+
+
+export const SaleLineAvailability = {
+  Good_stock: 'Good stock',
+  Low_stock: 'Low stock',
+  Very_low: 'Very low',
+  Unavailable: 'Unavailable',
+} as const;
+
+export interface SaleLine {
+  stockCode: string;
+  seedForm: string;
+  seedGrade: string;
+  /** @nullable */
+  packKg: number | null;
+  packUnit: string;
+  availability: SaleLineAvailability;
+  priceDisplay: string;
+  isDefault: boolean;
+  sortOrder: number;
+}
 
 export type ProductDetailsRecordType = typeof ProductDetailsRecordType[keyof typeof ProductDetailsRecordType];
 
@@ -317,8 +372,8 @@ export interface ProductDetails {
   companionSpecies: string[];
   /** @maxLength 3000 */
   diseasePestResistance: string;
-  /** @maxLength 180 */
-  persistenceLongevity: string;
+  /** @maxLength 3000 */
+  standLifeNotes: string;
   /** @maxLength 3000 */
   grazingManagementNotes: string;
   pbrProtected: boolean;
@@ -350,6 +405,20 @@ export interface ProductDetails {
   featured: boolean;
   /** @items.maxLength 180 */
   relatedProducts: string[];
+  /** @nullable */
+  headingOffsetDays: number | null;
+  argtResistant: boolean;
+  endophyte: string;
+  growthSeason: string;
+  hardSeedLevel: string;
+  oestrogenLevel: string;
+  bloatRisk: string;
+  growingSeason: string;
+  weeksToFirstGrazing: string;
+  prussicAcidRisk: string;
+  regrowth: string;
+  productForm: string;
+  applicationRate: string;
 }
 
 export interface Product {
@@ -363,6 +432,17 @@ export interface Product {
   category: string;
   subcategoryId?: number | null;
   techSheet: string;
+  guideYear?: string;
+  /** Admin-only provenance */
+  descriptionSource?: string;
+  /** Admin-only legacy URL */
+  websiteUrlLegacy?: string;
+  /** @nullable */
+  availabilityOverride?: ProductAvailabilityOverride;
+  /** @nullable */
+  listingOverride?: ProductListingOverride;
+  listingState?: ProductListingState;
+  saleLines?: SaleLine[];
   publishStatus: ProductPublishStatus;
   publishedAt?: string | null;
   details: ProductDetails;
@@ -408,6 +488,7 @@ export interface ProductDraftInput {
   /** @maxLength 240 */
   techSheet: string;
   details: ProductDetails;
+  saleLines?: SaleLine[];
 }
 
 export type ProductDraft = ProductDraftInput & {
@@ -673,6 +754,14 @@ export interface CatalogueCategoryReorder {
   items: CatalogueCategoryReorderItemsItem[];
 }
 
+export interface WorkbookUpload {
+  workbookBase64: string;
+}
+
+export type WorkbookCommit = WorkbookUpload & {
+  token: string;
+};
+
 export interface EnquiryInput {
   /**
      * @minLength 2
@@ -700,4 +789,8 @@ export interface EnquiryCreated {
   id: number;
   createdAt: string;
 }
+
+export type LookupRedirectParams = {
+fromPath: string;
+};
 

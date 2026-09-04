@@ -1,9 +1,10 @@
 import React from "react";
-import { imageOptions } from "../hooks/useApi";
+import { imageOptions, useProducts } from "../hooks/useApi";
 import { Icon } from "../components/ui";
 import { Link } from "../router";
 
 export default function About() {
+  const { products } = useProducts();
   const values = [
     { icon: "map-pin", title: "Regional expertise", body: "Local conditions, understood and applied. Sixty years of sowing across every WA rainfall zone." },
     { icon: "sprout", title: "Proven performance", body: "Varieties and mixes proven over generations across Australia, with trial data behind them." },
@@ -29,7 +30,7 @@ export default function About() {
           <p style={{ margin: 0, fontSize: 22, lineHeight: 1.6, fontWeight: 600, color: "var(--green)" }}>It started with a question every farmer in the south-west was asking: which seed will actually perform on my ground, in my rainfall, under my grazing plan.</p>
           <p style={{ margin: 0, fontSize: 17, lineHeight: 1.8, color: "var(--black-green)" }}>Irwin Hunter &amp; Co was founded in 1966 by growers who were tired of buying seed blended for somewhere else. They started sourcing, testing and blending pasture seed for Western Australian conditions specifically — not the eastern states, not overseas trial data, but paddocks from Esperance to Derby.</p>
           <p style={{ margin: 0, fontSize: 17, lineHeight: 1.8, color: "var(--black-green)" }}>Sixty years on, the company is still independently owned and run by the same family. We have watched varieties come and go, rainfall patterns shift, and three generations of resellers build their businesses alongside ours. What has not changed is the question we start with: what will actually grow here.</p>
-          <p style={{ margin: 0, fontSize: 17, lineHeight: 1.8, color: "var(--black-green)" }}>Today we supply through rural resellers across the state — from the wheatbelt to the Kimberley — with true to type seed from credible growers, and the technical advice to back it. We are an Australian Seed Federation member, and every mix we blend still gets tested against the same standard the founders set: would we sow it on our own place.</p>
+          <p style={{ margin: 0, fontSize: 17, lineHeight: 1.8, color: "var(--black-green)" }}>Today we supply through rural resellers across the state — from the wheatbelt to the Kimberley — with true to type seed across {products.length > 0 ? `${products.length}+ varieties and mixes` : "the catalogue"} from credible growers, and the technical advice to back it. We are an Australian Seed Federation member, and every mix we blend still gets tested against the same standard the founders set: would we sow it on our own place.</p>
         </div>
       </section>
 

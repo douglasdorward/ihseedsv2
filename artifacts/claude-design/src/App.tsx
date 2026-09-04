@@ -49,7 +49,7 @@ export default function App() {
       ? "Admin"
       : location.startsWith("/category/")
       ? "Seed Category"
-      : location.startsWith("/products/")
+      : location.startsWith("/products/") || location.startsWith("/product/")
         ? "Product Details"
         : labels[location] ?? "Page not found";
     document.title = `${label} — IH Seeds`;

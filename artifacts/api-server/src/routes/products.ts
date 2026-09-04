@@ -7,6 +7,9 @@ import {
   productDraftSchema,
   productDraftsTable,
   productsTable,
+  saleLinesTable,
+  redirectsTable,
+  type SaleLine,
   updateProductSchema,
   type InsertProduct,
   type Product,
@@ -31,7 +34,24 @@ const createSlug = (name: string) =>
   name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
-function editableFromProduct(product: Product): ProductEditablePayload {
+function toSaleLine(line: typeof saleLinesTable.$inferSelect): SaleLine {
+  return {
+    stockCode: line.stockCode,
+    seedForm: line.seedForm as SaleLine["seedForm"],
+    seedGrade: line.seedGrade as SaleLine["seedGrade"],
+    packKg: line.packKg === null ? null : Number(line.packKg),
+    packUnit: line.packUnit,
+    availability: line.availability as SaleLine["availability"],
+    priceDisplay: line.priceDisplay, isDefault: line.isDefault, sortOrder: line.sortOrder,
+  };
+}
+
+async function liveSaleLines(productId: number): Promise<SaleLine[]> {
+  return (await db.select().from(saleLinesTable).where(eq(saleLinesTable.productId, productId)))
+    .sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.sortOrder - b.sortOrder || a.id - b.id).map(toSaleLine);
+}
+
+function editableFromProduct(product: Product, saleLines: SaleLine[] = []): ProductEditablePayload {
   return {
     name: product.name,
     price: product.price,
@@ -41,12 +61,19 @@ function editableFromProduct(product: Product): ProductEditablePayload {
     category: product.category,
     subcategoryId: product.subcategoryId,
     techSheet: product.techSheet,
+    guideYear: product.guideYear,
+    descriptionSource: product.descriptionSource,
+    websiteUrlLegacy: product.websiteUrlLegacy,
+    availabilityOverride: product.availabilityOverride as ProductEditablePayload["availabilityOverride"],
+    listingOverride: product.listingOverride as ProductEditablePayload["listingOverride"],
     details: normalizeProductDetails(product.details, product.packSize),
+    saleLines,
   };
 }
 
 function normalizeEditable(payload: ProductEditablePayload): ProductEditablePayload {
-  return { ...payload, subcategoryId: payload.subcategoryId ?? null, details: normalizeProductDetails(payload.details, payload.packSize) };
+  return { ...payload, subcategoryId: payload.subcategoryId ?? null, saleLines: payload.saleLines ?? [],
+    details: normalizeProductDetails(payload.details, payload.packSize) };
 }
 
 async function resolveTaxonomyCategory(subcategoryId: number | null): Promise<{ category: string; active: boolean } | null> {
@@ -80,6 +107,8 @@ function getPublishValidationErrors(product: Product, payload: ProductEditablePa
     !payload.details.recordType && "Record type",
     !payload.details.summary.trim() && "Summary",
     !payload.details.description.trim() && "Product description",
+    payload.saleLines.length > 0 && payload.saleLines.filter((line) => line.isDefault).length !== 1 && "Exactly one default sale line",
+    new Set(payload.saleLines.map((line) => line.stockCode)).size !== payload.saleLines.length && "Unique sale line stock codes",
   ].filter(Boolean) as string[];
 }
 
@@ -121,6 +150,7 @@ async function findMissingProductReferences(details: InsertProduct["details"]) {
 async function getAdminProduct(product: Product) {
   const [draft] = await db.select().from(productDraftsTable)
     .where(eq(productDraftsTable.productId, product.id));
+  const lines = await liveSaleLines(product.id);
   return {
     ...product,
     details: normalizeProductDetails(product.details, product.packSize),
@@ -128,6 +158,7 @@ async function getAdminProduct(product: Product) {
     hasDraft: Boolean(draft),
     draftSavedAt: draft?.updatedAt ?? null,
     publishedAt: product.publishedAt,
+    saleLines: lines,
     draft: draft ? { ...normalizeEditable(draft.snapshot), savedAt: draft.updatedAt } : null,
   };
 }
@@ -145,8 +176,64 @@ function validId(rawId: string) {
 router.get("/products", async (req, res): Promise<void> => {
   const products = await ensureProducts();
   res.set("Cache-Control", "no-store");
-  res.json(products.filter((product) => product.publishStatus === "Published")
-    .map((product) => ({ ...product, details: normalizeProductDetails(product.details, product.packSize) })));
+  const lines = await db.select().from(saleLinesTable);
+  const linesByProduct = new Map<number, SaleLine[]>();
+  for (const line of lines) linesByProduct.set(line.productId, [...(linesByProduct.get(line.productId) ?? []), toSaleLine(line)]);
+  res.json(products.filter((product) => {
+    if (product.publishStatus !== "Published") return false;
+    const listing = product.listingOverride === "Force active" ? "Active"
+      : product.listingOverride === "Force legacy" ? "Legacy"
+        // Rows created before v2 have no sale-lines. Treat them as the legacy
+        // product-level availability until they are explicitly migrated.
+        : (() => { const productLines = linesByProduct.get(product.id) ?? []; return productLines.length === 0 || productLines.some((line) => line.availability !== "Unavailable"); })() ? "Active" : "Legacy";
+    return listing === "Active";
+  }).map((product) => {
+    const productLines = linesByProduct.get(product.id) ?? [];
+    const availability = product.availabilityOverride ?? productLines.find((line) => line.isDefault)?.availability
+      ?? productLines.find((line) => line.availability !== "Unavailable")?.availability ?? "Unavailable";
+    return { ...product, status: ({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as const)[availability],
+      listingState: "Active", saleLines: productLines, details: normalizeProductDetails(product.details, product.packSize) };
+  }));
+});
+
+// Deliberately name-only: category pages can expose catalogue history without
+// accidentally making Legacy product detail data public.
+router.get("/products/category/:category/legacy", async (req, res): Promise<void> => {
+  const category = decodeURIComponent(String(req.params.category));
+  const products = await db.select().from(productsTable)
+    .where(eq(productsTable.category, category));
+  const lines = await db.select().from(saleLinesTable);
+  const byProduct = new Map<number, SaleLine[]>();
+  for (const line of lines) byProduct.set(line.productId, [...(byProduct.get(line.productId) ?? []), toSaleLine(line)]);
+  res.json(products.filter((product) => product.publishStatus === "Published" &&
+    (product.listingOverride === "Force legacy" ||
+      (product.listingOverride !== "Force active" && (() => { const productLines = byProduct.get(product.id) ?? []; return productLines.length > 0 && !productLines.some((line) => line.availability !== "Unavailable"); })())))
+    .map((product) => ({ name: product.name, slug: product.slug, category: product.category })));
+});
+
+router.get("/redirects/lookup", async (req, res): Promise<void> => {
+  const fromPath = typeof req.query.fromPath === "string" ? req.query.fromPath : "";
+  if (!fromPath.startsWith("/") || fromPath.length > 500) {
+    res.status(400).json({ error: "A valid absolute fromPath is required." });
+    return;
+  }
+  const [redirect] = await db.select().from(redirectsTable).where(eq(redirectsTable.fromPath, fromPath));
+  if (!redirect) {
+    res.status(404).json({ error: "Redirect not found." });
+    return;
+  }
+  res.status(301).set("Location", redirect.toPath).json({ toPath: redirect.toPath });
+});
+
+router.get("/sitemap-products", async (_req, res): Promise<void> => {
+  const products = await db.select().from(productsTable).where(eq(productsTable.publishStatus, "Published"));
+  const lines = await db.select().from(saleLinesTable);
+  const live = new Set(lines.filter((line) => line.availability !== "Unavailable").map((line) => line.productId));
+  res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${
+    products.filter((product) => product.listingOverride === "Force active" ||
+      (product.listingOverride !== "Force legacy" && live.has(product.id)))
+      .map((product) => `<url><loc>/product/${product.slug}</loc></url>`).join("")
+  }</urlset>`);
 });
 
 router.post("/products", async (req, res): Promise<void> => {
@@ -307,7 +394,7 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       if (lockedProduct.publishStatus === "Archived") throw new Error("PRODUCT_ARCHIVED");
       const [draft] = await tx.select().from(productDraftsTable)
         .where(eq(productDraftsTable.productId, id));
-      const payload = draft?.snapshot ?? editableFromProduct(lockedProduct);
+       const payload = draft?.snapshot ?? editableFromProduct(lockedProduct, await liveSaleLines(lockedProduct.id));
       const resolvedPayload = await applyTaxonomyCategory(
         normalizeEditable(payload),
         lockedProduct.subcategoryId === null ? new Set() : new Set([lockedProduct.subcategoryId]),
@@ -322,6 +409,15 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
         publishedAt: new Date(),
         updatedAt: new Date(),
       }).where(eq(productsTable.id, id)).returning();
+       // Sale lines are deliberately snapshot-only until this transaction.
+       await tx.delete(saleLinesTable).where(eq(saleLinesTable.productId, id));
+       if (normalizedPayload.saleLines.length) {
+         await tx.insert(saleLinesTable).values(normalizedPayload.saleLines.map((line) => ({
+           productId: id, stockCode: line.stockCode, seedForm: line.seedForm, seedGrade: line.seedGrade,
+           packKg: line.packKg === null ? null : String(line.packKg), packUnit: line.packUnit,
+           availability: line.availability, priceDisplay: line.priceDisplay, isDefault: line.isDefault, sortOrder: line.sortOrder,
+         })));
+       }
       if (draft) await tx.delete(productDraftsTable).where(eq(productDraftsTable.id, draft.id));
       return published;
     });
@@ -492,6 +588,11 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     return;
   }
   const { publishStatus, ...changes } = parsed.data;
+  // v2 insert defaults must not turn a status-only patch into an attempted
+  // published-content edit when Zod supplies their default values.
+  for (const key of ["guideYear", "descriptionSource", "websiteUrlLegacy", "availabilityOverride", "listingOverride"] as const) {
+    if (!(key in req.body)) delete changes[key];
+  }
   if (publishStatus) {
     res.status(409).json({ error: "Use the lifecycle actions to change publication status." });
     return;
@@ -604,7 +705,11 @@ router.get("/admin/summary", async (_req, res): Promise<void> => {
 
 router.get("/availability", async (_req, res): Promise<void> => {
   const products = await ensureProducts();
-  res.json(products.filter((product) => product.publishStatus === "Published")
+  const lines = await db.select().from(saleLinesTable);
+  const hasAvailableLine = new Set(lines.filter((line) => line.availability !== "Unavailable").map((line) => line.productId));
+  res.json(products.filter((product) => product.publishStatus === "Published" &&
+    (product.listingOverride === "Force active" ||
+      (product.listingOverride !== "Force legacy" && (hasAvailableLine.has(product.id) || !lines.some((line) => line.productId === product.id)))))
     .map(({ id, name, note, status }) => ({ id, name, note, status })));
 });
 

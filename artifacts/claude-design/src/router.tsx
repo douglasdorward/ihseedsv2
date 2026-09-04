@@ -6,12 +6,13 @@ function getPathname() {
   return window.location.pathname.replace(/\/+$/, "") || "/";
 }
 
-export function navigate(href: string) {
+export function navigate(href: string, replace = false) {
   if (href === getPathname()) {
     window.scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
-  window.history.pushState({}, "", href);
+  if (replace) window.history.replaceState({}, "", href);
+  else window.history.pushState({}, "", href);
   window.dispatchEvent(new Event(navigationEvent));
 }
 

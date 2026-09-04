@@ -22,6 +22,8 @@ export const HealthCheckResponse = zod.object({
  */
 export const listProductsResponseSubcategoryIdMultipleOf = 1;
 
+export const listProductsResponseSaleLinesItemSortOrderMultipleOf = 1;
+
 export const listProductsResponseDetailsStockCodeMax = 40;
 
 export const listProductsResponseDetailsGuideSectionMax = 120;
@@ -70,7 +72,7 @@ export const listProductsResponseDetailsCompanionSpeciesItemMax = 120;
 
 export const listProductsResponseDetailsDiseasePestResistanceMax = 3000;
 
-export const listProductsResponseDetailsPersistenceLongevityMax = 180;
+export const listProductsResponseDetailsStandLifeNotesMax = 3000;
 
 export const listProductsResponseDetailsGrazingManagementNotesMax = 3000;
 
@@ -115,6 +117,8 @@ export const listProductsResponseDetailsSortOrderMultipleOf = 1;
 
 export const listProductsResponseDetailsRelatedProductsItemMax = 180;
 
+export const listProductsResponseDetailsHeadingOffsetDaysMultipleOf = 1;
+
 
 
 export const ListProductsResponseItem = zod.object({
@@ -128,6 +132,23 @@ export const ListProductsResponseItem = zod.object({
   "category": zod.string(),
   "subcategoryId": zod.number().multipleOf(listProductsResponseSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
+  "guideYear": zod.string().optional(),
+  "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
+  "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(listProductsResponseSaleLinesItemSortOrderMultipleOf)
+})).optional(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
   "details": zod.object({
@@ -177,7 +198,7 @@ export const ListProductsResponseItem = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(listProductsResponseDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(listProductsResponseDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(listProductsResponseDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(listProductsResponseDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(listProductsResponseDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(listProductsResponseDetailsPbrDetailsMax),
@@ -207,7 +228,20 @@ export const ListProductsResponseItem = zod.object({
   "seoDescription": zod.string().max(listProductsResponseDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(listProductsResponseDetailsSortOrderMin).multipleOf(listProductsResponseDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(listProductsResponseDetailsRelatedProductsItemMax))
+  "relatedProducts": zod.array(zod.string().max(listProductsResponseDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(listProductsResponseDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -284,7 +318,7 @@ export const createProductBodyDetailsCompanionSpeciesItemMax = 120;
 
 export const createProductBodyDetailsDiseasePestResistanceMax = 3000;
 
-export const createProductBodyDetailsPersistenceLongevityMax = 180;
+export const createProductBodyDetailsStandLifeNotesMax = 3000;
 
 export const createProductBodyDetailsGrazingManagementNotesMax = 3000;
 
@@ -328,6 +362,8 @@ export const createProductBodyDetailsSortOrderMin = 0;
 export const createProductBodyDetailsSortOrderMultipleOf = 1;
 
 export const createProductBodyDetailsRelatedProductsItemMax = 180;
+
+export const createProductBodyDetailsHeadingOffsetDaysMultipleOf = 1;
 
 
 
@@ -388,7 +424,7 @@ export const CreateProductBody = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(createProductBodyDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(createProductBodyDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(createProductBodyDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(createProductBodyDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(createProductBodyDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(createProductBodyDetailsPbrDetailsMax),
@@ -418,11 +454,26 @@ export const CreateProductBody = zod.object({
   "seoDescription": zod.string().max(createProductBodyDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(createProductBodyDetailsSortOrderMin).multipleOf(createProductBodyDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(createProductBodyDetailsRelatedProductsItemMax))
+  "relatedProducts": zod.array(zod.string().max(createProductBodyDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(createProductBodyDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
 })
 })
 
 export const createProductResponseSubcategoryIdMultipleOf = 1;
+
+export const createProductResponseSaleLinesItemSortOrderMultipleOf = 1;
 
 export const createProductResponseDetailsStockCodeMax = 40;
 
@@ -472,7 +523,7 @@ export const createProductResponseDetailsCompanionSpeciesItemMax = 120;
 
 export const createProductResponseDetailsDiseasePestResistanceMax = 3000;
 
-export const createProductResponseDetailsPersistenceLongevityMax = 180;
+export const createProductResponseDetailsStandLifeNotesMax = 3000;
 
 export const createProductResponseDetailsGrazingManagementNotesMax = 3000;
 
@@ -517,6 +568,8 @@ export const createProductResponseDetailsSortOrderMultipleOf = 1;
 
 export const createProductResponseDetailsRelatedProductsItemMax = 180;
 
+export const createProductResponseDetailsHeadingOffsetDaysMultipleOf = 1;
+
 
 
 export const CreateProductResponse = zod.object({
@@ -530,6 +583,23 @@ export const CreateProductResponse = zod.object({
   "category": zod.string(),
   "subcategoryId": zod.number().multipleOf(createProductResponseSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
+  "guideYear": zod.string().optional(),
+  "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
+  "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(createProductResponseSaleLinesItemSortOrderMultipleOf)
+})).optional(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
   "details": zod.object({
@@ -579,7 +649,7 @@ export const CreateProductResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(createProductResponseDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(createProductResponseDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(createProductResponseDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(createProductResponseDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(createProductResponseDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(createProductResponseDetailsPbrDetailsMax),
@@ -609,7 +679,20 @@ export const CreateProductResponse = zod.object({
   "seoDescription": zod.string().max(createProductResponseDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(createProductResponseDetailsSortOrderMin).multipleOf(createProductResponseDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(createProductResponseDetailsRelatedProductsItemMax))
+  "relatedProducts": zod.array(zod.string().max(createProductResponseDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(createProductResponseDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -685,7 +768,7 @@ export const updateProductBodyDetailsCompanionSpeciesItemMax = 120;
 
 export const updateProductBodyDetailsDiseasePestResistanceMax = 3000;
 
-export const updateProductBodyDetailsPersistenceLongevityMax = 180;
+export const updateProductBodyDetailsStandLifeNotesMax = 3000;
 
 export const updateProductBodyDetailsGrazingManagementNotesMax = 3000;
 
@@ -729,6 +812,8 @@ export const updateProductBodyDetailsSortOrderMin = 0;
 export const updateProductBodyDetailsSortOrderMultipleOf = 1;
 
 export const updateProductBodyDetailsRelatedProductsItemMax = 180;
+
+export const updateProductBodyDetailsHeadingOffsetDaysMultipleOf = 1;
 
 
 
@@ -788,7 +873,7 @@ export const UpdateProductBody = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(updateProductBodyDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(updateProductBodyDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(updateProductBodyDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(updateProductBodyDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(updateProductBodyDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(updateProductBodyDetailsPbrDetailsMax),
@@ -818,11 +903,26 @@ export const UpdateProductBody = zod.object({
   "seoDescription": zod.string().max(updateProductBodyDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(updateProductBodyDetailsSortOrderMin).multipleOf(updateProductBodyDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(updateProductBodyDetailsRelatedProductsItemMax))
+  "relatedProducts": zod.array(zod.string().max(updateProductBodyDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(updateProductBodyDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
 }).optional()
 })
 
 export const updateProductResponseSubcategoryIdMultipleOf = 1;
+
+export const updateProductResponseSaleLinesItemSortOrderMultipleOf = 1;
 
 export const updateProductResponseDetailsStockCodeMax = 40;
 
@@ -872,7 +972,7 @@ export const updateProductResponseDetailsCompanionSpeciesItemMax = 120;
 
 export const updateProductResponseDetailsDiseasePestResistanceMax = 3000;
 
-export const updateProductResponseDetailsPersistenceLongevityMax = 180;
+export const updateProductResponseDetailsStandLifeNotesMax = 3000;
 
 export const updateProductResponseDetailsGrazingManagementNotesMax = 3000;
 
@@ -917,6 +1017,8 @@ export const updateProductResponseDetailsSortOrderMultipleOf = 1;
 
 export const updateProductResponseDetailsRelatedProductsItemMax = 180;
 
+export const updateProductResponseDetailsHeadingOffsetDaysMultipleOf = 1;
+
 
 
 export const UpdateProductResponse = zod.object({
@@ -930,6 +1032,23 @@ export const UpdateProductResponse = zod.object({
   "category": zod.string(),
   "subcategoryId": zod.number().multipleOf(updateProductResponseSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
+  "guideYear": zod.string().optional(),
+  "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
+  "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(updateProductResponseSaleLinesItemSortOrderMultipleOf)
+})).optional(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
   "details": zod.object({
@@ -979,7 +1098,7 @@ export const UpdateProductResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(updateProductResponseDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(updateProductResponseDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(updateProductResponseDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(updateProductResponseDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(updateProductResponseDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(updateProductResponseDetailsPbrDetailsMax),
@@ -1009,7 +1128,20 @@ export const UpdateProductResponse = zod.object({
   "seoDescription": zod.string().max(updateProductResponseDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(updateProductResponseDetailsSortOrderMin).multipleOf(updateProductResponseDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(updateProductResponseDetailsRelatedProductsItemMax))
+  "relatedProducts": zod.array(zod.string().max(updateProductResponseDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(updateProductResponseDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1030,6 +1162,8 @@ export const DeleteProductResponse = zod.void()
  * @summary Get product management dashboard summary
  */
 export const getAdminSummaryResponseRecentProductsItemSubcategoryIdMultipleOf = 1;
+
+export const getAdminSummaryResponseRecentProductsItemSaleLinesItemSortOrderMultipleOf = 1;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsStockCodeMax = 40;
 
@@ -1079,7 +1213,7 @@ export const getAdminSummaryResponseRecentProductsItemDetailsCompanionSpeciesIte
 
 export const getAdminSummaryResponseRecentProductsItemDetailsDiseasePestResistanceMax = 3000;
 
-export const getAdminSummaryResponseRecentProductsItemDetailsPersistenceLongevityMax = 180;
+export const getAdminSummaryResponseRecentProductsItemDetailsStandLifeNotesMax = 3000;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsGrazingManagementNotesMax = 3000;
 
@@ -1124,6 +1258,8 @@ export const getAdminSummaryResponseRecentProductsItemDetailsSortOrderMultipleOf
 
 export const getAdminSummaryResponseRecentProductsItemDetailsRelatedProductsItemMax = 180;
 
+export const getAdminSummaryResponseRecentProductsItemDetailsHeadingOffsetDaysMultipleOf = 1;
+
 
 
 export const GetAdminSummaryResponse = zod.object({
@@ -1145,6 +1281,23 @@ export const GetAdminSummaryResponse = zod.object({
   "category": zod.string(),
   "subcategoryId": zod.number().multipleOf(getAdminSummaryResponseRecentProductsItemSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
+  "guideYear": zod.string().optional(),
+  "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
+  "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(getAdminSummaryResponseRecentProductsItemSaleLinesItemSortOrderMultipleOf)
+})).optional(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
   "details": zod.object({
@@ -1194,7 +1347,7 @@ export const GetAdminSummaryResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsPbrDetailsMax),
@@ -1224,7 +1377,20 @@ export const GetAdminSummaryResponse = zod.object({
   "seoDescription": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsSortOrderMin).multipleOf(getAdminSummaryResponseRecentProductsItemDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsRelatedProductsItemMax))
+  "relatedProducts": zod.array(zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(getAdminSummaryResponseRecentProductsItemDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1236,6 +1402,8 @@ export const GetAdminSummaryResponse = zod.object({
  * @summary List catalogue products with lifecycle metadata
  */
 export const listAdminProductsResponseOneSubcategoryIdMultipleOf = 1;
+
+export const listAdminProductsResponseOneSaleLinesItemSortOrderMultipleOf = 1;
 
 export const listAdminProductsResponseOneDetailsStockCodeMax = 40;
 
@@ -1285,7 +1453,7 @@ export const listAdminProductsResponseOneDetailsCompanionSpeciesItemMax = 120;
 
 export const listAdminProductsResponseOneDetailsDiseasePestResistanceMax = 3000;
 
-export const listAdminProductsResponseOneDetailsPersistenceLongevityMax = 180;
+export const listAdminProductsResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const listAdminProductsResponseOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -1329,6 +1497,8 @@ export const listAdminProductsResponseOneDetailsSortOrderMin = 0;
 export const listAdminProductsResponseOneDetailsSortOrderMultipleOf = 1;
 
 export const listAdminProductsResponseOneDetailsRelatedProductsItemMax = 180;
+
+export const listAdminProductsResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
 
 export const listAdminProductsResponseTwoDraftOneOneNameMax = 160;
 
@@ -1392,7 +1562,7 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsCompanionSpeciesItemM
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 
-export const listAdminProductsResponseTwoDraftOneOneDetailsPersistenceLongevityMax = 180;
+export const listAdminProductsResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -1437,6 +1607,10 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsSortOrderMultipleOf =
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
+export const listAdminProductsResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const listAdminProductsResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
+
 
 
 export const ListAdminProductsResponseItem = zod.object({
@@ -1450,6 +1624,23 @@ export const ListAdminProductsResponseItem = zod.object({
   "category": zod.string(),
   "subcategoryId": zod.number().multipleOf(listAdminProductsResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
+  "guideYear": zod.string().optional(),
+  "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
+  "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(listAdminProductsResponseOneSaleLinesItemSortOrderMultipleOf)
+})).optional(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
   "details": zod.object({
@@ -1499,7 +1690,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(listAdminProductsResponseOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(listAdminProductsResponseOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(listAdminProductsResponseOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(listAdminProductsResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(listAdminProductsResponseOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(listAdminProductsResponseOneDetailsPbrDetailsMax),
@@ -1529,7 +1720,20 @@ export const ListAdminProductsResponseItem = zod.object({
   "seoDescription": zod.string().max(listAdminProductsResponseOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(listAdminProductsResponseOneDetailsSortOrderMin).multipleOf(listAdminProductsResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(listAdminProductsResponseOneDetailsRelatedProductsItemMax))
+  "relatedProducts": zod.array(zod.string().max(listAdminProductsResponseOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(listAdminProductsResponseOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1593,7 +1797,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsPbrDetailsMax),
@@ -1623,8 +1827,32 @@ export const ListAdminProductsResponseItem = zod.object({
   "seoDescription": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(listAdminProductsResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(listAdminProductsResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsRelatedProductsItemMax))
-})
+  "relatedProducts": zod.array(zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(listAdminProductsResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
+}),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(listAdminProductsResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
+})).optional()
 }).and(zod.object({
   "savedAt": zod.coerce.date()
 })),zod.null()])
@@ -1640,6 +1868,8 @@ export const GetAdminProductParams = zod.object({
 })
 
 export const getAdminProductResponseOneSubcategoryIdMultipleOf = 1;
+
+export const getAdminProductResponseOneSaleLinesItemSortOrderMultipleOf = 1;
 
 export const getAdminProductResponseOneDetailsStockCodeMax = 40;
 
@@ -1689,7 +1919,7 @@ export const getAdminProductResponseOneDetailsCompanionSpeciesItemMax = 120;
 
 export const getAdminProductResponseOneDetailsDiseasePestResistanceMax = 3000;
 
-export const getAdminProductResponseOneDetailsPersistenceLongevityMax = 180;
+export const getAdminProductResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const getAdminProductResponseOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -1733,6 +1963,8 @@ export const getAdminProductResponseOneDetailsSortOrderMin = 0;
 export const getAdminProductResponseOneDetailsSortOrderMultipleOf = 1;
 
 export const getAdminProductResponseOneDetailsRelatedProductsItemMax = 180;
+
+export const getAdminProductResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
 
 export const getAdminProductResponseTwoDraftOneOneNameMax = 160;
 
@@ -1796,7 +2028,7 @@ export const getAdminProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax
 
 export const getAdminProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 
-export const getAdminProductResponseTwoDraftOneOneDetailsPersistenceLongevityMax = 180;
+export const getAdminProductResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -1841,6 +2073,10 @@ export const getAdminProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1
 
 export const getAdminProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
+export const getAdminProductResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const getAdminProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
+
 
 
 export const GetAdminProductResponse = zod.object({
@@ -1854,6 +2090,23 @@ export const GetAdminProductResponse = zod.object({
   "category": zod.string(),
   "subcategoryId": zod.number().multipleOf(getAdminProductResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
+  "guideYear": zod.string().optional(),
+  "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
+  "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(getAdminProductResponseOneSaleLinesItemSortOrderMultipleOf)
+})).optional(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
   "details": zod.object({
@@ -1903,7 +2156,7 @@ export const GetAdminProductResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(getAdminProductResponseOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(getAdminProductResponseOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(getAdminProductResponseOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(getAdminProductResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(getAdminProductResponseOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(getAdminProductResponseOneDetailsPbrDetailsMax),
@@ -1933,7 +2186,20 @@ export const GetAdminProductResponse = zod.object({
   "seoDescription": zod.string().max(getAdminProductResponseOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(getAdminProductResponseOneDetailsSortOrderMin).multipleOf(getAdminProductResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(getAdminProductResponseOneDetailsRelatedProductsItemMax))
+  "relatedProducts": zod.array(zod.string().max(getAdminProductResponseOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(getAdminProductResponseOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1997,7 +2263,7 @@ export const GetAdminProductResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsPbrDetailsMax),
@@ -2027,8 +2293,32 @@ export const GetAdminProductResponse = zod.object({
   "seoDescription": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(getAdminProductResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(getAdminProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax))
-})
+  "relatedProducts": zod.array(zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(getAdminProductResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
+}),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(getAdminProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
+})).optional()
 }).and(zod.object({
   "savedAt": zod.coerce.date()
 })),zod.null()])
@@ -2104,7 +2394,7 @@ export const saveProductDraftRevisionBodyDetailsCompanionSpeciesItemMax = 120;
 
 export const saveProductDraftRevisionBodyDetailsDiseasePestResistanceMax = 3000;
 
-export const saveProductDraftRevisionBodyDetailsPersistenceLongevityMax = 180;
+export const saveProductDraftRevisionBodyDetailsStandLifeNotesMax = 3000;
 
 export const saveProductDraftRevisionBodyDetailsGrazingManagementNotesMax = 3000;
 
@@ -2148,6 +2438,10 @@ export const saveProductDraftRevisionBodyDetailsSortOrderMin = 0;
 export const saveProductDraftRevisionBodyDetailsSortOrderMultipleOf = 1;
 
 export const saveProductDraftRevisionBodyDetailsRelatedProductsItemMax = 180;
+
+export const saveProductDraftRevisionBodyDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const saveProductDraftRevisionBodySaleLinesItemSortOrderMultipleOf = 1;
 
 
 
@@ -2207,7 +2501,7 @@ export const SaveProductDraftRevisionBody = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(saveProductDraftRevisionBodyDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(saveProductDraftRevisionBodyDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(saveProductDraftRevisionBodyDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(saveProductDraftRevisionBodyDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(saveProductDraftRevisionBodyDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(saveProductDraftRevisionBodyDetailsPbrDetailsMax),
@@ -2237,11 +2531,37 @@ export const SaveProductDraftRevisionBody = zod.object({
   "seoDescription": zod.string().max(saveProductDraftRevisionBodyDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(saveProductDraftRevisionBodyDetailsSortOrderMin).multipleOf(saveProductDraftRevisionBodyDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(saveProductDraftRevisionBodyDetailsRelatedProductsItemMax))
-})
+  "relatedProducts": zod.array(zod.string().max(saveProductDraftRevisionBodyDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(saveProductDraftRevisionBodyDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
+}),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(saveProductDraftRevisionBodySaleLinesItemSortOrderMultipleOf)
+})).optional()
 })
 
 export const saveProductDraftRevisionResponseOneSubcategoryIdMultipleOf = 1;
+
+export const saveProductDraftRevisionResponseOneSaleLinesItemSortOrderMultipleOf = 1;
 
 export const saveProductDraftRevisionResponseOneDetailsStockCodeMax = 40;
 
@@ -2291,7 +2611,7 @@ export const saveProductDraftRevisionResponseOneDetailsCompanionSpeciesItemMax =
 
 export const saveProductDraftRevisionResponseOneDetailsDiseasePestResistanceMax = 3000;
 
-export const saveProductDraftRevisionResponseOneDetailsPersistenceLongevityMax = 180;
+export const saveProductDraftRevisionResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const saveProductDraftRevisionResponseOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -2335,6 +2655,8 @@ export const saveProductDraftRevisionResponseOneDetailsSortOrderMin = 0;
 export const saveProductDraftRevisionResponseOneDetailsSortOrderMultipleOf = 1;
 
 export const saveProductDraftRevisionResponseOneDetailsRelatedProductsItemMax = 180;
+
+export const saveProductDraftRevisionResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneNameMax = 160;
 
@@ -2398,7 +2720,7 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsCompanionSpeci
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 
-export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsPersistenceLongevityMax = 180;
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -2443,6 +2765,10 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSortOrderMulti
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
+
 
 
 export const SaveProductDraftRevisionResponse = zod.object({
@@ -2456,6 +2782,23 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "category": zod.string(),
   "subcategoryId": zod.number().multipleOf(saveProductDraftRevisionResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
+  "guideYear": zod.string().optional(),
+  "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
+  "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(saveProductDraftRevisionResponseOneSaleLinesItemSortOrderMultipleOf)
+})).optional(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
   "details": zod.object({
@@ -2505,7 +2848,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(saveProductDraftRevisionResponseOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(saveProductDraftRevisionResponseOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(saveProductDraftRevisionResponseOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(saveProductDraftRevisionResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(saveProductDraftRevisionResponseOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(saveProductDraftRevisionResponseOneDetailsPbrDetailsMax),
@@ -2535,7 +2878,20 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "seoDescription": zod.string().max(saveProductDraftRevisionResponseOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(saveProductDraftRevisionResponseOneDetailsSortOrderMin).multipleOf(saveProductDraftRevisionResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(saveProductDraftRevisionResponseOneDetailsRelatedProductsItemMax))
+  "relatedProducts": zod.array(zod.string().max(saveProductDraftRevisionResponseOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(saveProductDraftRevisionResponseOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -2599,7 +2955,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsPbrDetailsMax),
@@ -2629,8 +2985,32 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "seoDescription": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsRelatedProductsItemMax))
-})
+  "relatedProducts": zod.array(zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(saveProductDraftRevisionResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
+}),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(saveProductDraftRevisionResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
+})).optional()
 }).and(zod.object({
   "savedAt": zod.coerce.date()
 })),zod.null()])
@@ -2645,6 +3025,8 @@ export const PublishProductParams = zod.object({
 })
 
 export const publishProductResponseOneSubcategoryIdMultipleOf = 1;
+
+export const publishProductResponseOneSaleLinesItemSortOrderMultipleOf = 1;
 
 export const publishProductResponseOneDetailsStockCodeMax = 40;
 
@@ -2694,7 +3076,7 @@ export const publishProductResponseOneDetailsCompanionSpeciesItemMax = 120;
 
 export const publishProductResponseOneDetailsDiseasePestResistanceMax = 3000;
 
-export const publishProductResponseOneDetailsPersistenceLongevityMax = 180;
+export const publishProductResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const publishProductResponseOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -2738,6 +3120,8 @@ export const publishProductResponseOneDetailsSortOrderMin = 0;
 export const publishProductResponseOneDetailsSortOrderMultipleOf = 1;
 
 export const publishProductResponseOneDetailsRelatedProductsItemMax = 180;
+
+export const publishProductResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
 
 export const publishProductResponseTwoDraftOneOneNameMax = 160;
 
@@ -2801,7 +3185,7 @@ export const publishProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax 
 
 export const publishProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 
-export const publishProductResponseTwoDraftOneOneDetailsPersistenceLongevityMax = 180;
+export const publishProductResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const publishProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -2846,6 +3230,10 @@ export const publishProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
 
 export const publishProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
+export const publishProductResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const publishProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
+
 
 
 export const PublishProductResponse = zod.object({
@@ -2859,6 +3247,23 @@ export const PublishProductResponse = zod.object({
   "category": zod.string(),
   "subcategoryId": zod.number().multipleOf(publishProductResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
+  "guideYear": zod.string().optional(),
+  "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
+  "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(publishProductResponseOneSaleLinesItemSortOrderMultipleOf)
+})).optional(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
   "details": zod.object({
@@ -2908,7 +3313,7 @@ export const PublishProductResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(publishProductResponseOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(publishProductResponseOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(publishProductResponseOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(publishProductResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(publishProductResponseOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(publishProductResponseOneDetailsPbrDetailsMax),
@@ -2938,7 +3343,20 @@ export const PublishProductResponse = zod.object({
   "seoDescription": zod.string().max(publishProductResponseOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(publishProductResponseOneDetailsSortOrderMin).multipleOf(publishProductResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(publishProductResponseOneDetailsRelatedProductsItemMax))
+  "relatedProducts": zod.array(zod.string().max(publishProductResponseOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(publishProductResponseOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -3002,7 +3420,7 @@ export const PublishProductResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(publishProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(publishProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(publishProductResponseTwoDraftOneOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(publishProductResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(publishProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(publishProductResponseTwoDraftOneOneDetailsPbrDetailsMax),
@@ -3032,8 +3450,32 @@ export const PublishProductResponse = zod.object({
   "seoDescription": zod.string().max(publishProductResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(publishProductResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(publishProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(publishProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax))
-})
+  "relatedProducts": zod.array(zod.string().max(publishProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(publishProductResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
+}),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(publishProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
+})).optional()
 }).and(zod.object({
   "savedAt": zod.coerce.date()
 })),zod.null()])
@@ -3048,6 +3490,8 @@ export const ArchiveProductParams = zod.object({
 })
 
 export const archiveProductResponseOneSubcategoryIdMultipleOf = 1;
+
+export const archiveProductResponseOneSaleLinesItemSortOrderMultipleOf = 1;
 
 export const archiveProductResponseOneDetailsStockCodeMax = 40;
 
@@ -3097,7 +3541,7 @@ export const archiveProductResponseOneDetailsCompanionSpeciesItemMax = 120;
 
 export const archiveProductResponseOneDetailsDiseasePestResistanceMax = 3000;
 
-export const archiveProductResponseOneDetailsPersistenceLongevityMax = 180;
+export const archiveProductResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const archiveProductResponseOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -3141,6 +3585,8 @@ export const archiveProductResponseOneDetailsSortOrderMin = 0;
 export const archiveProductResponseOneDetailsSortOrderMultipleOf = 1;
 
 export const archiveProductResponseOneDetailsRelatedProductsItemMax = 180;
+
+export const archiveProductResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
 
 export const archiveProductResponseTwoDraftOneOneNameMax = 160;
 
@@ -3204,7 +3650,7 @@ export const archiveProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax 
 
 export const archiveProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 
-export const archiveProductResponseTwoDraftOneOneDetailsPersistenceLongevityMax = 180;
+export const archiveProductResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const archiveProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -3249,6 +3695,10 @@ export const archiveProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
 
 export const archiveProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
+export const archiveProductResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const archiveProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
+
 
 
 export const ArchiveProductResponse = zod.object({
@@ -3262,6 +3712,23 @@ export const ArchiveProductResponse = zod.object({
   "category": zod.string(),
   "subcategoryId": zod.number().multipleOf(archiveProductResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
+  "guideYear": zod.string().optional(),
+  "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
+  "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(archiveProductResponseOneSaleLinesItemSortOrderMultipleOf)
+})).optional(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
   "details": zod.object({
@@ -3311,7 +3778,7 @@ export const ArchiveProductResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(archiveProductResponseOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(archiveProductResponseOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(archiveProductResponseOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(archiveProductResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(archiveProductResponseOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(archiveProductResponseOneDetailsPbrDetailsMax),
@@ -3341,7 +3808,20 @@ export const ArchiveProductResponse = zod.object({
   "seoDescription": zod.string().max(archiveProductResponseOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(archiveProductResponseOneDetailsSortOrderMin).multipleOf(archiveProductResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(archiveProductResponseOneDetailsRelatedProductsItemMax))
+  "relatedProducts": zod.array(zod.string().max(archiveProductResponseOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(archiveProductResponseOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -3405,7 +3885,7 @@ export const ArchiveProductResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(archiveProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsPbrDetailsMax),
@@ -3435,8 +3915,32 @@ export const ArchiveProductResponse = zod.object({
   "seoDescription": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(archiveProductResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(archiveProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(archiveProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax))
-})
+  "relatedProducts": zod.array(zod.string().max(archiveProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(archiveProductResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
+}),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(archiveProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
+})).optional()
 }).and(zod.object({
   "savedAt": zod.coerce.date()
 })),zod.null()])
@@ -3451,6 +3955,8 @@ export const RestoreProductParams = zod.object({
 })
 
 export const restoreProductResponseOneSubcategoryIdMultipleOf = 1;
+
+export const restoreProductResponseOneSaleLinesItemSortOrderMultipleOf = 1;
 
 export const restoreProductResponseOneDetailsStockCodeMax = 40;
 
@@ -3500,7 +4006,7 @@ export const restoreProductResponseOneDetailsCompanionSpeciesItemMax = 120;
 
 export const restoreProductResponseOneDetailsDiseasePestResistanceMax = 3000;
 
-export const restoreProductResponseOneDetailsPersistenceLongevityMax = 180;
+export const restoreProductResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const restoreProductResponseOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -3544,6 +4050,8 @@ export const restoreProductResponseOneDetailsSortOrderMin = 0;
 export const restoreProductResponseOneDetailsSortOrderMultipleOf = 1;
 
 export const restoreProductResponseOneDetailsRelatedProductsItemMax = 180;
+
+export const restoreProductResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
 
 export const restoreProductResponseTwoDraftOneOneNameMax = 160;
 
@@ -3607,7 +4115,7 @@ export const restoreProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax 
 
 export const restoreProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 
-export const restoreProductResponseTwoDraftOneOneDetailsPersistenceLongevityMax = 180;
+export const restoreProductResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const restoreProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -3652,6 +4160,10 @@ export const restoreProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
 
 export const restoreProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
+export const restoreProductResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const restoreProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
+
 
 
 export const RestoreProductResponse = zod.object({
@@ -3665,6 +4177,23 @@ export const RestoreProductResponse = zod.object({
   "category": zod.string(),
   "subcategoryId": zod.number().multipleOf(restoreProductResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
+  "guideYear": zod.string().optional(),
+  "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
+  "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(restoreProductResponseOneSaleLinesItemSortOrderMultipleOf)
+})).optional(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
   "details": zod.object({
@@ -3714,7 +4243,7 @@ export const RestoreProductResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(restoreProductResponseOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(restoreProductResponseOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(restoreProductResponseOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(restoreProductResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(restoreProductResponseOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(restoreProductResponseOneDetailsPbrDetailsMax),
@@ -3744,7 +4273,20 @@ export const RestoreProductResponse = zod.object({
   "seoDescription": zod.string().max(restoreProductResponseOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(restoreProductResponseOneDetailsSortOrderMin).multipleOf(restoreProductResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(restoreProductResponseOneDetailsRelatedProductsItemMax))
+  "relatedProducts": zod.array(zod.string().max(restoreProductResponseOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(restoreProductResponseOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -3808,7 +4350,7 @@ export const RestoreProductResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(restoreProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsPbrDetailsMax),
@@ -3838,8 +4380,32 @@ export const RestoreProductResponse = zod.object({
   "seoDescription": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(restoreProductResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(restoreProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(restoreProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax))
-})
+  "relatedProducts": zod.array(zod.string().max(restoreProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(restoreProductResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
+}),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(restoreProductResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
+})).optional()
 }).and(zod.object({
   "savedAt": zod.coerce.date()
 })),zod.null()])
@@ -3854,6 +4420,8 @@ export const DiscardProductDraftParams = zod.object({
 })
 
 export const discardProductDraftResponseOneSubcategoryIdMultipleOf = 1;
+
+export const discardProductDraftResponseOneSaleLinesItemSortOrderMultipleOf = 1;
 
 export const discardProductDraftResponseOneDetailsStockCodeMax = 40;
 
@@ -3903,7 +4471,7 @@ export const discardProductDraftResponseOneDetailsCompanionSpeciesItemMax = 120;
 
 export const discardProductDraftResponseOneDetailsDiseasePestResistanceMax = 3000;
 
-export const discardProductDraftResponseOneDetailsPersistenceLongevityMax = 180;
+export const discardProductDraftResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const discardProductDraftResponseOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -3947,6 +4515,8 @@ export const discardProductDraftResponseOneDetailsSortOrderMin = 0;
 export const discardProductDraftResponseOneDetailsSortOrderMultipleOf = 1;
 
 export const discardProductDraftResponseOneDetailsRelatedProductsItemMax = 180;
+
+export const discardProductDraftResponseOneDetailsHeadingOffsetDaysMultipleOf = 1;
 
 export const discardProductDraftResponseTwoDraftOneOneNameMax = 160;
 
@@ -4010,7 +4580,7 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsCompanionSpeciesIte
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 
-export const discardProductDraftResponseTwoDraftOneOneDetailsPersistenceLongevityMax = 180;
+export const discardProductDraftResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
 
@@ -4055,6 +4625,10 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsSortOrderMultipleOf
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsRelatedProductsItemMax = 180;
 
+export const discardProductDraftResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const discardProductDraftResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf = 1;
+
 
 
 export const DiscardProductDraftResponse = zod.object({
@@ -4068,6 +4642,23 @@ export const DiscardProductDraftResponse = zod.object({
   "category": zod.string(),
   "subcategoryId": zod.number().multipleOf(discardProductDraftResponseOneSubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string(),
+  "guideYear": zod.string().optional(),
+  "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
+  "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
+  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(discardProductDraftResponseOneSaleLinesItemSortOrderMultipleOf)
+})).optional(),
   "publishStatus": zod.enum(['Published', 'Draft', 'Archived']),
   "publishedAt": zod.coerce.date().nullish(),
   "details": zod.object({
@@ -4117,7 +4708,7 @@ export const DiscardProductDraftResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(discardProductDraftResponseOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(discardProductDraftResponseOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(discardProductDraftResponseOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(discardProductDraftResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(discardProductDraftResponseOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(discardProductDraftResponseOneDetailsPbrDetailsMax),
@@ -4147,7 +4738,20 @@ export const DiscardProductDraftResponse = zod.object({
   "seoDescription": zod.string().max(discardProductDraftResponseOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(discardProductDraftResponseOneDetailsSortOrderMin).multipleOf(discardProductDraftResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(discardProductDraftResponseOneDetailsRelatedProductsItemMax))
+  "relatedProducts": zod.array(zod.string().max(discardProductDraftResponseOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(discardProductDraftResponseOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -4211,7 +4815,7 @@ export const DiscardProductDraftResponse = zod.object({
   "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
   "companionSpecies": zod.array(zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax)),
   "diseasePestResistance": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
-  "persistenceLongevity": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsPersistenceLongevityMax),
+  "standLifeNotes": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsPbrDetailsMax),
@@ -4241,8 +4845,32 @@ export const DiscardProductDraftResponse = zod.object({
   "seoDescription": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "sortOrder": zod.number().min(discardProductDraftResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(discardProductDraftResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
-  "relatedProducts": zod.array(zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsRelatedProductsItemMax))
-})
+  "relatedProducts": zod.array(zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(discardProductDraftResponseTwoDraftOneOneDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string()
+}),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.enum(['Good stock', 'Low stock', 'Very low', 'Unavailable']),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(discardProductDraftResponseTwoDraftOneOneSaleLinesItemSortOrderMultipleOf)
+})).optional()
 }).and(zod.object({
   "savedAt": zod.coerce.date()
 })),zod.null()])
@@ -4259,6 +4887,60 @@ export const ListAvailabilityResponseItem = zod.object({
   "status": zod.string()
 })
 export const ListAvailabilityResponse = zod.array(ListAvailabilityResponseItem)
+
+
+/**
+ * @summary List Legacy product names only
+ */
+export const ListLegacyCategoryNamesParams = zod.object({
+  "category": zod.coerce.string()
+})
+
+export const ListLegacyCategoryNamesResponse = zod.unknown()
+
+
+/**
+ * @summary Resolve a legacy SPA path
+ */
+export const LookupRedirectQueryParams = zod.object({
+  "fromPath": zod.coerce.string()
+})
+
+export const LookupRedirectResponse = zod.void()
+
+
+/**
+ * @summary Active product sitemap
+ */
+export const GetProductSitemapResponse = zod.unknown()
+
+
+/**
+ * @summary Validate an XLSX import
+ */
+export const DryRunProductImportBody = zod.object({
+  "workbookBase64": zod.string()
+})
+
+export const DryRunProductImportResponse = zod.unknown()
+
+
+/**
+ * @summary Commit a validated XLSX import
+ */
+export const CommitProductImportBody = zod.object({
+  "workbookBase64": zod.string()
+}).and(zod.object({
+  "token": zod.string()
+}))
+
+export const CommitProductImportResponse = zod.unknown()
+
+
+/**
+ * @summary Export product workbook
+ */
+export const ExportProductWorkbookResponse = zod.unknown()
 
 
 /**

@@ -5,8 +5,12 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ProductAvailabilityOverride } from './productAvailabilityOverride';
 import type { ProductDetails } from './productDetails';
+import type { ProductListingOverride } from './productListingOverride';
+import type { ProductListingState } from './productListingState';
 import type { ProductPublishStatus } from './productPublishStatus';
+import type { SaleLine } from './saleLine';
 
 export interface Product {
   id: number;
@@ -19,6 +23,17 @@ export interface Product {
   category: string;
   subcategoryId?: number | null;
   techSheet: string;
+  guideYear?: string;
+  /** Admin-only provenance */
+  descriptionSource?: string;
+  /** Admin-only legacy URL */
+  websiteUrlLegacy?: string;
+  /** @nullable */
+  availabilityOverride?: ProductAvailabilityOverride;
+  /** @nullable */
+  listingOverride?: ProductListingOverride;
+  listingState?: ProductListingState;
+  saleLines?: SaleLine[];
   publishStatus: ProductPublishStatus;
   publishedAt?: Date | null;
   details: ProductDetails;

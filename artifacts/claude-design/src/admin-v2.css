@@ -1,0 +1,33 @@
+.admin-v2-tabs { display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 1px solid #e0e4df; padding-bottom: 0; }
+.admin-v2-tab { padding: 12px 16px; border: 0; background: transparent; color: #7b827d; font-size: 14px; font-weight: 750; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: flex; align-items: center; gap: 8px; }
+.admin-v2-tab:hover { color: #174e37; }
+.admin-v2-tab.active { color: #174e37; border-bottom-color: #0c583c; }
+.admin-v2-tab-counts { font-size: 11px; background: #e9eeea; color: #0c583c; padding: 2px 6px; border-radius: 999px; }
+.admin-v2-tab-counts.complete { background: #e4f0e6; color: #128354; }
+
+.admin-v2-completeness { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #536059; background: #f3f5f2; padding: 6px 12px; border-radius: 999px; }
+.admin-v2-completeness-bar { width: 60px; height: 6px; background: #dde1dc; border-radius: 999px; overflow: hidden; display: flex; }
+.admin-v2-completeness-fill { height: 100%; background: #0c583c; }
+
+.admin-sale-line-row { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(130px, 1.2fr) minmax(100px, 1fr) minmax(70px, 0.8fr) minmax(80px, 0.8fr) minmax(130px, 1.2fr) minmax(120px, 1.2fr) 60px 34px; gap: 10px; align-items: center; padding: 12px; background: #f3f5f2; border-radius: 12px; margin-bottom: 8px; }
+.admin-sale-line-header { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(130px, 1.2fr) minmax(100px, 1fr) minmax(70px, 0.8fr) minmax(80px, 0.8fr) minmax(130px, 1.2fr) minmax(120px, 1.2fr) 60px 34px; gap: 10px; padding: 0 12px 8px; font-size: 11px; font-weight: 750; color: #7b827d; }
+.admin-sale-line-row input, .admin-sale-line-row select { width: 100%; border: 1px solid #c8cec9; border-radius: 6px; padding: 8px 10px; font-size: 13px; }
+.admin-sale-line-row .radio-group { display: flex; align-items: center; justify-content: center; }
+
+.admin-import-panel { background: #fff; border: 1px solid #e0e4df; border-radius: 14px; padding: 24px; margin-bottom: 28px; }
+.admin-import-panel h2 { font-size: 18px; color: #174e37; margin-bottom: 16px; }
+.admin-import-report { background: #f5f7f4; border-radius: 12px; padding: 16px; margin-bottom: 16px; font-size: 13px; max-height: 300px; overflow-y: auto; }
+.admin-import-report ul { margin: 0; padding-left: 20px; color: #536059; }
+.admin-import-report li { margin-bottom: 4px; }
+.admin-import-actions { display: flex; gap: 12px; }
+
+.admin-derived-info { font-size: 13px; color: #536059; margin-top: 4px; display: block; }
+.admin-listing-badge { display: inline-flex; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+.admin-listing-badge.active { background: #e4f0e6; color: #0c583c; }
+.admin-listing-badge.legacy { background: #f3f5f2; color: #536059; }
+
+.admin-category-confirm { position: fixed; inset: 0; background: rgba(23, 78, 55, 0.4); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.admin-category-confirm-dialog { background: #fff; padding: 32px; border-radius: 16px; max-width: 440px; box-shadow: 0 12px 40px rgba(0,0,0,0.1); }
+.admin-category-confirm-dialog h3 { color: #174e37; font-size: 20px; margin-bottom: 12px; }
+.admin-category-confirm-dialog p { color: #536059; line-height: 1.5; margin-bottom: 24px; }
+.admin-category-confirm-actions { display: flex; gap: 12px; justify-content: flex-end; }

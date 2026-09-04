@@ -30,11 +30,14 @@ import type {
   EnquiryCreated,
   EnquiryInput,
   HealthStatus,
+  LookupRedirectParams,
   Product,
   ProductCreateInput,
   ProductDraftInput,
   ProductUpdate,
-  PublicCatalogueCategory
+  PublicCatalogueCategory,
+  WorkbookCommit,
+  WorkbookUpload
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1085,6 +1088,463 @@ export function useListAvailability<TData = Awaited<ReturnType<typeof listAvaila
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListAvailabilityQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListLegacyCategoryNamesUrl = (category: string,) => {
+
+
+
+
+  return `/api/products/category/${category}/legacy`
+}
+
+/**
+ * @summary List Legacy product names only
+ */
+export const listLegacyCategoryNames = async (category: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getListLegacyCategoryNamesUrl(category),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListLegacyCategoryNamesQueryKey = (category: string,) => {
+    return [
+    `/api/products/category/${category}/legacy`
+    ] as const;
+    }
+
+
+export const getListLegacyCategoryNamesQueryOptions = <TData = Awaited<ReturnType<typeof listLegacyCategoryNames>>, TError = ErrorType<unknown>>(category: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLegacyCategoryNames>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListLegacyCategoryNamesQueryKey(category);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listLegacyCategoryNames>>> = ({ signal }) => listLegacyCategoryNames(category, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: category !== null && category !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listLegacyCategoryNames>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListLegacyCategoryNamesQueryResult = NonNullable<Awaited<ReturnType<typeof listLegacyCategoryNames>>>
+export type ListLegacyCategoryNamesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List Legacy product names only
+ */
+
+export function useListLegacyCategoryNames<TData = Awaited<ReturnType<typeof listLegacyCategoryNames>>, TError = ErrorType<unknown>>(
+ category: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLegacyCategoryNames>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListLegacyCategoryNamesQueryOptions(category,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getLookupRedirectUrl = (params: LookupRedirectParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/redirects/lookup?${stringifiedParams}` : `/api/redirects/lookup`
+}
+
+/**
+ * @summary Resolve a legacy SPA path
+ */
+export const lookupRedirect = async (params: LookupRedirectParams, options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
+
+  return customFetch<unknown>(getLookupRedirectUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getLookupRedirectQueryKey = (params?: LookupRedirectParams,) => {
+    return [
+    `/api/redirects/lookup`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getLookupRedirectQueryOptions = <TData = Awaited<ReturnType<typeof lookupRedirect>>, TError = ErrorType<void>>(params: LookupRedirectParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof lookupRedirect>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getLookupRedirectQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof lookupRedirect>>> = ({ signal }) => lookupRedirect(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof lookupRedirect>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type LookupRedirectQueryResult = NonNullable<Awaited<ReturnType<typeof lookupRedirect>>>
+export type LookupRedirectQueryError = ErrorType<void>
+
+
+/**
+ * @summary Resolve a legacy SPA path
+ */
+
+export function useLookupRedirect<TData = Awaited<ReturnType<typeof lookupRedirect>>, TError = ErrorType<void>>(
+ params: LookupRedirectParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof lookupRedirect>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getLookupRedirectQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetProductSitemapUrl = () => {
+
+
+
+
+  return `/api/sitemap-products`
+}
+
+/**
+ * @summary Active product sitemap
+ */
+export const getProductSitemap = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getGetProductSitemapUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProductSitemapQueryKey = () => {
+    return [
+    `/api/sitemap-products`
+    ] as const;
+    }
+
+
+export const getGetProductSitemapQueryOptions = <TData = Awaited<ReturnType<typeof getProductSitemap>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProductSitemap>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProductSitemapQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProductSitemap>>> = ({ signal }) => getProductSitemap({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProductSitemap>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProductSitemapQueryResult = NonNullable<Awaited<ReturnType<typeof getProductSitemap>>>
+export type GetProductSitemapQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Active product sitemap
+ */
+
+export function useGetProductSitemap<TData = Awaited<ReturnType<typeof getProductSitemap>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProductSitemap>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProductSitemapQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDryRunProductImportUrl = () => {
+
+
+
+
+  return `/api/admin/import/dry-run`
+}
+
+/**
+ * @summary Validate an XLSX import
+ */
+export const dryRunProductImport = async (workbookUpload: WorkbookUpload, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDryRunProductImportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(workbookUpload)
+  }
+);}
+
+
+
+
+
+export const getDryRunProductImportMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dryRunProductImport>>, TError,{data: BodyType<WorkbookUpload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof dryRunProductImport>>, TError,{data: BodyType<WorkbookUpload>}, TContext> => {
+
+const mutationKey = ['dryRunProductImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof dryRunProductImport>>, {data: BodyType<WorkbookUpload>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  dryRunProductImport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DryRunProductImportMutationResult = NonNullable<Awaited<ReturnType<typeof dryRunProductImport>>>
+    export type DryRunProductImportMutationBody = BodyType<WorkbookUpload>
+    export type DryRunProductImportMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Validate an XLSX import
+ */
+export const useDryRunProductImport = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dryRunProductImport>>, TError,{data: BodyType<WorkbookUpload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof dryRunProductImport>>,
+        TError,
+        {data: BodyType<WorkbookUpload>},
+        TContext
+      > => {
+      return useMutation(getDryRunProductImportMutationOptions(options));
+    }
+
+export const getCommitProductImportUrl = () => {
+
+
+
+
+  return `/api/admin/import/commit`
+}
+
+/**
+ * @summary Commit a validated XLSX import
+ */
+export const commitProductImport = async (workbookCommit: WorkbookCommit, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getCommitProductImportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(workbookCommit)
+  }
+);}
+
+
+
+
+
+export const getCommitProductImportMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof commitProductImport>>, TError,{data: BodyType<WorkbookCommit>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof commitProductImport>>, TError,{data: BodyType<WorkbookCommit>}, TContext> => {
+
+const mutationKey = ['commitProductImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof commitProductImport>>, {data: BodyType<WorkbookCommit>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  commitProductImport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CommitProductImportMutationResult = NonNullable<Awaited<ReturnType<typeof commitProductImport>>>
+    export type CommitProductImportMutationBody = BodyType<WorkbookCommit>
+    export type CommitProductImportMutationError = ErrorType<void>
+
+    /**
+ * @summary Commit a validated XLSX import
+ */
+export const useCommitProductImport = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof commitProductImport>>, TError,{data: BodyType<WorkbookCommit>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof commitProductImport>>,
+        TError,
+        {data: BodyType<WorkbookCommit>},
+        TContext
+      > => {
+      return useMutation(getCommitProductImportMutationOptions(options));
+    }
+
+export const getExportProductWorkbookUrl = () => {
+
+
+
+
+  return `/api/admin/import/export`
+}
+
+/**
+ * @summary Export product workbook
+ */
+export const exportProductWorkbook = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getExportProductWorkbookUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getExportProductWorkbookQueryKey = () => {
+    return [
+    `/api/admin/import/export`
+    ] as const;
+    }
+
+
+export const getExportProductWorkbookQueryOptions = <TData = Awaited<ReturnType<typeof exportProductWorkbook>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportProductWorkbook>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportProductWorkbookQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportProductWorkbook>>> = ({ signal }) => exportProductWorkbook({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportProductWorkbook>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ExportProductWorkbookQueryResult = NonNullable<Awaited<ReturnType<typeof exportProductWorkbook>>>
+export type ExportProductWorkbookQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Export product workbook
+ */
+
+export function useExportProductWorkbook<TData = Awaited<ReturnType<typeof exportProductWorkbook>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportProductWorkbook>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getExportProductWorkbookQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

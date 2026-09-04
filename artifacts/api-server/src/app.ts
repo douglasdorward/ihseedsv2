@@ -26,8 +26,10 @@ app.use(
   }),
 );
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Catalogue workbooks are posted as base64 JSON for a validation-first import.
+// Keep this bounded, but above the size of the maintained product workbook.
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.use("/api", router);
 

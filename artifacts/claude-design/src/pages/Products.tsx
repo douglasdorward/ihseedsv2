@@ -2,13 +2,15 @@ import React, { useState } from "react";
 import { Link } from "../router";
 import { Icon } from "../components/ui";
 import { useListCategories } from "@workspace/api-client-react";
+import { useProducts } from "../hooks/useApi";
 
 export default function Products() {
   const [filter, setFilter] = useState("All products");
   const { data: categories = [], isLoading, error, refetch } = useListCategories();
+  const { products } = useProducts();
 
   const activeRootCategories = categories
-    .filter(c => c.parentId === null && c.active && c.productCount > 0)
+    .filter(c => c.parentId === null && c.active && products.filter(p => p.category === c.name).length > 0)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
   const visibleCategories = filter === "All products"
@@ -73,7 +75,7 @@ export default function Products() {
                   <img src={c.image} alt={c.name} style={{ display: "block", width: "100%", height: 240, objectFit: "cover" }} />
                   <div style={{ position: "absolute", inset: "40% 0 0 0", background: "linear-gradient(to bottom, rgba(29,40,28,0) 0%, rgba(29,40,28,0.55) 100%)", pointerEvents: "none" }}></div>
                   <div style={{ position: "absolute", bottom: 12, left: 16, right: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                     <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FFFFFF" }}>{c.productCount} {c.productCount === 1 ? "line" : "lines"}</span>
+                     <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FFFFFF" }}>{products.filter(p => p.category === c.name).length} {products.filter(p => p.category === c.name).length === 1 ? "line" : "lines"}</span>
                     <div className="icon-button" style={{ width: 40, height: 40, background: "var(--yellow)", border: "none" }}><Icon name="arrow-right" size={18} /></div>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 import { catalogueCategoriesTable } from "./categories";
 
@@ -37,7 +37,9 @@ export type ProductDetails = {
   livestock: Array<"Beef" | "Dairy" | "Sheep" | "Equine" | "Goat" | "Chicken" | "Alpaca" | "Weaners" | "Lamb finishing">;
   companionSpecies: string[];
   diseasePestResistance: string;
-  persistenceLongevity: string;
+  /** @deprecated read-only compatibility alias for records written before v2. */
+  persistenceLongevity?: string;
+  standLifeNotes: string;
   grazingManagementNotes: string;
   pbrProtected: boolean;
   pbrDetails: string;
@@ -57,6 +59,25 @@ export type ProductDetails = {
   sortOrder: number | null;
   featured: boolean;
   relatedProducts: string[];
+  headingOffsetDays: number | null;
+  argtResistant: boolean;
+  endophyte: "" | "Nil" | "Low" | "MaxP" | "Standard";
+  growthSeason: "" | "Summer-active" | "Winter-active / Mediterranean" | "Year-round" | "Warm-season";
+  hardSeedLevel: "" | "Soft" | "Low" | "Moderate" | "High" | "Very high";
+  oestrogenLevel: "" | "None" | "Trace" | "Low" | "High";
+  bloatRisk: "" | "Low" | "Moderate" | "High";
+  growingSeason: "" | "Summer" | "Winter" | "Either";
+  weeksToFirstGrazing: string;
+  prussicAcidRisk: "" | "None" | "Low" | "Standard – manage";
+  regrowth: "" | "Single cut" | "Multi-cut / regrazes";
+  productForm: "" | "Powder" | "Liquid" | "Peat" | "Granule";
+  applicationRate: string;
+};
+export type SaleLine = {
+  stockCode: string; seedForm: "" | "Bare / de-hulled" | "Podded" | "Coated" | "Coated + Gaucho" | "BioNPK-S coated" | "Goldstrike coated" | "Scarified" | "Lime coated";
+  seedGrade: "" | "Certified" | "Tested" | "Certified & Tested" | "VNS";
+  packKg: number | null; packUnit: string; availability: "Good stock" | "Low stock" | "Very low" | "Unavailable";
+  priceDisplay: string; isDefault: boolean; sortOrder: number;
 };
 
 export type ProductLifecycleStatus = "Published" | "Draft" | "Archived";
@@ -69,7 +90,13 @@ export type ProductEditablePayload = {
   category: string;
   subcategoryId: number | null;
   techSheet: string;
+  guideYear: string;
+  descriptionSource: string;
+  websiteUrlLegacy: string;
+  availabilityOverride: "Good stock" | "Low stock" | "Very low" | "Unavailable" | null;
+  listingOverride: "Force active" | "Force legacy" | null;
   details: ProductDetails;
+  saleLines: SaleLine[];
 };
 
 const emptyProductDetails: ProductDetails = {
@@ -107,7 +134,7 @@ const emptyProductDetails: ProductDetails = {
   livestock: [],
   companionSpecies: [],
   diseasePestResistance: "",
-  persistenceLongevity: "",
+  standLifeNotes: "",
   grazingManagementNotes: "",
   pbrProtected: false,
   pbrDetails: "",
@@ -127,6 +154,9 @@ const emptyProductDetails: ProductDetails = {
   sortOrder: null,
   featured: false,
   relatedProducts: [],
+  headingOffsetDays: null, argtResistant: false, endophyte: "", growthSeason: "", hardSeedLevel: "",
+  oestrogenLevel: "", bloatRisk: "", growingSeason: "", weeksToFirstGrazing: "", prussicAcidRisk: "",
+  regrowth: "", productForm: "", applicationRate: "",
 };
 
 type LegacyProductDetails = Omit<Partial<ProductDetails>, "tolerance" | "components"> & {
@@ -179,6 +209,7 @@ export function normalizeProductDetails(value: unknown, packSize = ""): ProductD
   return {
     ...emptyProductDetails,
     ...current,
+    standLifeNotes: current.standLifeNotes ?? current.persistenceLongevity ?? "",
     recordType: current.recordType ?? legacyKind ?? "Mix",
     alsoKnownAs: Array.isArray(current.alsoKnownAs) ? current.alsoKnownAs : [],
     packSizes: Array.isArray(current.packSizes) && current.packSizes.length
@@ -218,12 +249,48 @@ export const productsTable = pgTable("ih_products", {
   category: text("category").notNull().default("Other"),
   subcategoryId: integer("subcategory_id").references(() => catalogueCategoriesTable.id, { onDelete: "restrict" }),
   techSheet: text("tech_sheet").notNull().default(""),
+  guideYear: text("guide_year").notNull().default(""),
+  descriptionSource: text("description_source").notNull().default(""),
+  websiteUrlLegacy: text("website_url_legacy").notNull().default(""),
+  availabilityOverride: text("availability_override"),
+  listingOverride: text("listing_override"),
   publishStatus: text("publish_status").notNull().default("Published"),
   publishedAt: timestamp("published_at", { withTimezone: true }),
   details: jsonb("details").$type<ProductDetails>().notNull().default(emptyProductDetails),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const saleLinesTable = pgTable("ih_sale_lines", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  productId: integer("product_id").notNull().references(() => productsTable.id, { onDelete: "cascade" }),
+  stockCode: text("stock_code").notNull(),
+  seedForm: text("seed_form").notNull().default(""),
+  seedGrade: text("seed_grade").notNull().default(""),
+  packKg: numeric("pack_kg", { precision: 8, scale: 2 }),
+  packUnit: text("pack_unit").notNull().default("kg"),
+  availability: text("availability").notNull().default("Unavailable"),
+  priceDisplay: text("price_display").notNull().default("Contact for pricing"),
+  isDefault: boolean("is_default").notNull().default(false),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [uniqueIndex("ih_sale_lines_stock_code_unique").on(table.stockCode)]);
+
+export const redirectsTable = pgTable("ih_redirects", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  fromPath: text("from_path").notNull().unique(),
+  toPath: text("to_path").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const productOptionsTable = pgTable("ih_product_options", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  listName: text("list_name").notNull(),
+  value: text("value").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+}, (table) => [uniqueIndex("ih_product_options_list_value_unique").on(table.listName, table.value)]);
 
 export const productDraftsTable = pgTable("ih_product_drafts", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -268,7 +335,7 @@ const productDetailsObjectSchema = z.object({
   livestock: z.array(z.enum(["Beef", "Dairy", "Sheep", "Equine", "Goat", "Chicken", "Alpaca", "Weaners", "Lamb finishing"])),
   companionSpecies: z.array(z.string().max(120)),
   diseasePestResistance: z.string().max(3000),
-  persistenceLongevity: z.string().max(180),
+  standLifeNotes: z.string().max(3000),
   grazingManagementNotes: z.string().max(3000),
   pbrProtected: z.boolean(),
   pbrDetails: z.string().max(300),
@@ -288,6 +355,19 @@ const productDetailsObjectSchema = z.object({
   sortOrder: z.number().int().min(0).nullable(),
   featured: z.boolean(),
   relatedProducts: z.array(z.string().max(180)),
+  headingOffsetDays: z.number().int().min(-365).max(365).nullable(),
+  argtResistant: z.boolean(),
+  endophyte: z.enum(["", "Nil", "Low", "MaxP", "Standard"]),
+  growthSeason: z.enum(["", "Summer-active", "Winter-active / Mediterranean", "Year-round", "Warm-season"]),
+  hardSeedLevel: z.enum(["", "Soft", "Low", "Moderate", "High", "Very high"]),
+  oestrogenLevel: z.enum(["", "None", "Trace", "Low", "High"]),
+  bloatRisk: z.enum(["", "Low", "Moderate", "High"]),
+  growingSeason: z.enum(["", "Summer", "Winter", "Either"]),
+  weeksToFirstGrazing: z.string().max(80),
+  prussicAcidRisk: z.enum(["", "None", "Low", "Standard – manage"]),
+  regrowth: z.enum(["", "Single cut", "Multi-cut / regrazes"]),
+  productForm: z.enum(["", "Powder", "Liquid", "Peat", "Granule"]),
+  applicationRate: z.string().max(240),
 });
 const productDetailsSchema = productDetailsObjectSchema.default(emptyProductDetails);
 
@@ -301,6 +381,11 @@ export const insertProductSchema = z.object({
   category: z.string().trim().max(120),
   subcategoryId: z.number().int().positive().nullable().default(null),
   techSheet: z.string().trim().max(240),
+  guideYear: z.string().trim().max(12).default(""),
+  descriptionSource: z.string().trim().max(240).default(""),
+  websiteUrlLegacy: z.string().trim().max(500).default(""),
+  availabilityOverride: z.enum(["Good stock", "Low stock", "Very low", "Unavailable"]).nullable().default(null),
+  listingOverride: z.enum(["Force active", "Force legacy"]).nullable().default(null),
   publishStatus: z.enum(["Published", "Draft", "Archived"]),
   details: productDetailsSchema,
 });
@@ -311,7 +396,19 @@ export const updateProductSchema = insertProductSchema
     subcategoryId: z.number().int().positive().nullable().optional(),
     details: productDetailsObjectSchema.optional(),
   });
-export const productDraftSchema = insertProductSchema.omit({ slug: true, publishStatus: true });
+export const saleLineSchema = z.object({
+  stockCode: z.string().trim().min(1).max(80),
+  seedForm: z.enum(["", "Bare / de-hulled", "Podded", "Coated", "Coated + Gaucho", "BioNPK-S coated", "Goldstrike coated", "Scarified", "Lime coated"]),
+  seedGrade: z.enum(["", "Certified", "Tested", "Certified & Tested", "VNS"]),
+  packKg: z.number().min(0).nullable(),
+  packUnit: z.string().trim().min(1).max(20).default("kg"),
+  availability: z.enum(["Good stock", "Low stock", "Very low", "Unavailable"]),
+  priceDisplay: z.string().trim().max(120).default("Contact for pricing"),
+  isDefault: z.boolean(),
+  sortOrder: z.number().int().min(0),
+});
+export const productDraftSchema = insertProductSchema.omit({ slug: true, publishStatus: true })
+  .extend({ saleLines: z.array(saleLineSchema).default([]) });
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type UpdateProduct = z.infer<typeof updateProductSchema>;
 export type Product = typeof productsTable.$inferSelect;

@@ -1,3 +1,4 @@
+@import "./public-v2.css";
 @import url("https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800;900&display=swap");
 
 :root { --green:#0C583C; --yellow:#F9B617; --black-green:#1D281C; --sage:#EFF1EE; --line:#EDEDEB; --muted:#75766E; --cream:#FEFBF2; --font:"Raleway",Tahoma,sans-serif; }

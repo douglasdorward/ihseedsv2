@@ -7,6 +7,7 @@
  */
 import type { ProductDetails } from './productDetails';
 import type { ProductDraftInputStatus } from './productDraftInputStatus';
+import type { SaleLine } from './saleLine';
 
 export interface ProductDraftInput {
   /**
@@ -36,4 +37,5 @@ export interface ProductDraftInput {
   /** @maxLength 240 */
   techSheet: string;
   details: ProductDetails;
+  saleLines?: SaleLine[];
 }
