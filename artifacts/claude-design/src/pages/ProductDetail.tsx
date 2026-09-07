@@ -155,7 +155,7 @@ export default function ProductDetail() {
     if (d.growingSeason) quickFacts.push({ label: "Growing season", value: d.growingSeason, icon: "sun" });
     if (d.weeksToFirstGrazing) quickFacts.push({ label: "Weeks to first grazing", value: d.weeksToFirstGrazing, icon: "clock" });
     if (d.prussicAcidRisk) quickFacts.push({ label: "Prussic acid risk", value: d.prussicAcidRisk, icon: "shield" });
-    if (d.regrowth) quickFacts.push({ label: "Regrowth", value: d.regrowth, icon: "refresh-cw" });
+    if (d.regrowth) quickFacts.push({ label: "Regrowth", value: d.regrowth, icon: "sprout" });
   }
   if (product.category === "Biologicals") {
     if (d.productForm) quickFacts.push({ label: "Product form", value: d.productForm, icon: "package" });
