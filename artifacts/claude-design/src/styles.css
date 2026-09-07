@@ -452,6 +452,7 @@ h1 strong { display:block; font-weight:800; }
   .region-chips button { flex:0 0 auto; }
   .product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }.product-image { min-height:180px; }.product-details { padding:14px; }.product-details h3 { font-size:16px; }.product-details p { font-size:12px; }.product-image .status-pill { left:8px; bottom:8px; padding:6px 8px; font-size:10px; }
   .about-section { padding:64px 20px; }.feature-panel { grid-template-columns:1fr; }.feature-image { min-height:240px; }.feature-copy { padding:34px 26px; }.feature-copy p { font-size:15px; }
+  .feature-heading-break { display:none; }
   .availability-table { padding:4px 18px; }.availability-row { grid-template-columns:1fr auto; gap:8px 14px; padding:17px 0; }.availability-row strong { font-size:16px; }.availability-row span:not(.status-pill) { grid-column:1; font-size:13px; }.availability-row .status-pill { grid-column:2; grid-row:1 / span 2; }
   .article-grid { grid-template-columns:1fr; gap:20px; }.article-image { min-height:190px; }.article-copy h3 { font-size:20px; }
   .guide-section { padding:0 20px 64px; }.guide-banner { min-height:420px; padding:30px 24px; align-items:flex-end; }.guide-banner h2 { font-size:35px; }

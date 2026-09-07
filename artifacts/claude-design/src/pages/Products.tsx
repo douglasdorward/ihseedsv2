@@ -99,7 +99,7 @@ export default function Products() {
         <div className="page-wide" style={{ maxWidth: 1440, margin: "0 auto", padding: "32px 40px 96px" }}>
           <div className="feature-panel" style={{ minHeight: 480 }}>
             <div className="feature-copy">
-              <h2 style={{ fontSize: 48 }}>Tested before it<br/><strong>ships</strong></h2>
+              <h2 style={{ fontSize: 48 }}>Tested before it <br className="feature-heading-break"/><strong>ships</strong></h2>
               <p>Every line is true to type seed from credible growers, germination tested and blended to order. If you are unsure which species suits your rainfall zone, soil type and grazing plan, talk to us before you order — that advice is part of the seed.</p>
               <Link href="/resources" className="button button-outline" style={{ color: "#fff", borderColor: "#fff" }}>Download the Tech Sheet</Link>
             </div>
