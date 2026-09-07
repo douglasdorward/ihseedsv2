@@ -53,7 +53,7 @@ export type ProductDetails = {
   distributionNote: string;
   description: string;
   notes: string;
-  components: { productLink: string; speciesName: string; inclusionRate: number | null; unit: string; note: string }[];
+  components: { productLink: string; speciesName: string; inclusionRate: number | null; unit: string; description: string; note: string }[];
   formulationYear: string;
   photos: { slot: string; file: string; rating: string; src: string }[];
   inCurrentPrintedGuide: boolean;
@@ -206,11 +206,16 @@ export function normalizeProductDetails(value: unknown, packSize = ""): ProductD
       : [item])
     : [];
   const components = Array.isArray(raw.components)
-    ? raw.components.map((item) => "speciesName" in item ? item : {
+    ? raw.components.map((item) => "speciesName" in item ? {
+      ...item,
+      description: item.description ?? "",
+      note: item.note ?? "",
+    } : {
       productLink: "",
       speciesName: item.name ?? "",
       inclusionRate: null,
       unit: "%",
+      description: "",
       note: item.note ?? "",
     })
     : [];
@@ -360,7 +365,7 @@ const productDetailsObjectSchema = z.object({
   distributionNote: z.string(),
   description: z.string().max(200000),
   notes: z.string().max(2000),
-  components: z.array(z.object({ productLink: z.string().max(180), speciesName: z.string().max(120), inclusionRate: z.number().nullable(), unit: z.string().max(20), note: z.string().max(4000) })),
+  components: z.array(z.object({ productLink: z.string().max(180), speciesName: z.string().max(120), inclusionRate: z.number().nullable(), unit: z.string().max(20), description: z.string().max(10000), note: z.string().max(4000) })),
   formulationYear: z.string().max(20),
   photos: z.array(z.object({ slot: z.string().max(40), file: z.string().max(240), rating: z.string().max(80), src: z.string().max(500) })),
   inCurrentPrintedGuide: z.boolean(),

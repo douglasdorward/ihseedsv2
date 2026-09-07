@@ -855,8 +855,9 @@ components:
         speciesName: { type: string, maxLength: 120 }
         inclusionRate: { type: number, minimum: 0, nullable: true }
         unit: { type: string, maxLength: 20 }
+        description: { type: string, maxLength: 10000 }
         note: { type: string, maxLength: 4000 }
-      required: [productLink, speciesName, inclusionRate, unit, note]
+      required: [productLink, speciesName, inclusionRate, unit, description, note]
     ProductPhoto:
       type: object
       properties:

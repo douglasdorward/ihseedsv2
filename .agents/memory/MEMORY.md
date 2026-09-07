@@ -5,3 +5,4 @@
 - [Catalogue taxonomy draft integrity](catalogue-taxonomy-drafts.md) — taxonomy lifecycle rules must account for assignments stored inside pending product snapshots.
 - [Workbook and editor parity](workbook-editor-parity.md) — an accepted import is incomplete until every imported record also passes the admin editor schema unchanged.
 - [Legacy published workbook round-trip](workbook-legacy-published-roundtrip.md) — unchanged live records predating new required fields must round-trip without weakening new publish rules.
+- [Mix component descriptions](mix-component-descriptions.md) — public Mix copy must come from each workbook component row, never the linked product Blurb.

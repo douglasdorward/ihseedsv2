@@ -603,6 +603,9 @@ test("source and exported workbooks satisfy the round-trip parser contract", asy
   assert.ok(String(describedProduct.tagline).trim());
   assert.ok(String(describedProduct.blurb).trim());
   assert.ok(String(describedProduct.key_attributes).split("|").some((attribute) => attribute.trim()));
+  const sourceComponents = xlsx.utils.sheet_to_json(sourceBook.Sheets["5 Mix components"], { defval: "", raw: false });
+  assert.equal(Object.keys(sourceComponents[0]).includes("component_description"), true);
+  assert.equal(sourceComponents.filter((row) => String(row.component_description).trim()).length, 121);
   const sourceReport = assertStatus(await request("POST", "/admin/import/dry-run", {
     workbookBase64: source.toString("base64"),
   }), 200);
@@ -650,6 +653,12 @@ test("source and exported workbooks satisfy the round-trip parser contract", asy
      "tagline", "blurb", "key_attributes", "description",
    ]);
    assert.equal(productHeaders.at(-1), "distribution_note");
+    const exportedComponents = xlsx.utils.sheet_to_json(book.Sheets["5 Mix components"], {
+      header: 1,
+      defval: "",
+      raw: false,
+    });
+    assert.equal(exportedComponents[0].includes("component_description"), true);
 
   const exportReport = assertStatus(await request("POST", "/admin/import/dry-run", {
     workbookBase64: exported.toString("base64"),

@@ -380,7 +380,7 @@ export async function commitWorkbook(content: Buffer, token: string) {
         d[key] = isNull(row[column]) ? (NUMBER_KEYS.has(key) ? null : BOOLEAN_KEYS.has(key) ? false : "") : NUMBER_KEYS.has(key) ? num(row[column]) : BOOLEAN_KEYS.has(key) ? yn(row[column]) : cell(row[column]);
       }
     });
-    for (const slug of new Set(rows["5 Mix components"].map((r) => cell(r.mix_slug)).filter(Boolean))) await updateDetails(slug, (d) => { d.components = rows["5 Mix components"].filter((r) => cell(r.mix_slug) === slug).map((r) => ({ productLink: cell(r.component_slug), speciesName: cell(r.component_name), inclusionRate: num(r.inclusion_rate), unit: cell(r.rate_unit) || "%", note: cell(r.note) })); });
+    for (const slug of new Set(rows["5 Mix components"].map((r) => cell(r.mix_slug)).filter(Boolean))) await updateDetails(slug, (d) => { d.components = rows["5 Mix components"].filter((r) => cell(r.mix_slug) === slug).map((r) => ({ productLink: cell(r.component_slug), speciesName: cell(r.component_name), inclusionRate: num(r.inclusion_rate), unit: cell(r.rate_unit) || "%", description: cell(r.component_description), note: cell(r.note) })); });
     for (const slug of new Set(rows["6 Companions"].map((r) => cell(r.slug)).filter(Boolean))) await updateDetails(slug, (d) => { d.companionSpecies = rows["6 Companions"].filter((r) => cell(r.slug) === slug).map((r) => cell(r.companion_slug) || cell(r.companion_text)).filter(Boolean); });
     for (const row of rows["7 Website SEO"]) {
       const slug = cell(row.product_slug) || cell(row.website_slug);
@@ -466,7 +466,7 @@ export async function exportWorkbook() {
     return [column, typeof value === "string" ? listed(column, value) : typeof value === "boolean" ? (value ? "Y" : "N") : value];
   })) })));
   append("4 Sale lines", lines.map((x) => ({ slug: products.find((p) => p.id === x.productId)?.slug ?? "", stock_code: x.stockCode, seed_form: x.seedForm, seed_grade: x.seedGrade, pack_kg: x.packKg, pack_unit: x.packUnit, availability: x.availability, price_display: x.priceDisplay, is_default: x.isDefault ? "Y" : "N", sort_order: x.sortOrder })));
-  append("5 Mix components", products.flatMap((p) => d(p).components.map((x) => ({ mix_slug: p.slug, component_slug: x.productLink, component_name: x.speciesName, inclusion_rate: x.inclusionRate, rate_unit: x.unit, note: x.note }))));
+  append("5 Mix components", products.flatMap((p) => d(p).components.map((x) => ({ mix_slug: p.slug, component_slug: x.productLink, component_name: x.speciesName, inclusion_rate: x.inclusionRate, rate_unit: x.unit, component_description: x.description, note: x.note }))));
   const productSlugs = new Set(products.map((product) => product.slug));
   append("6 Companions", products.flatMap((p) => d(p).companionSpecies.map((x) => ({
     slug: p.slug, companion_slug: productSlugs.has(x) ? x : "", companion_text: productSlugs.has(x) ? "" : x,

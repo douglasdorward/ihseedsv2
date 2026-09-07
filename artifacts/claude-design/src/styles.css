@@ -293,7 +293,8 @@ h1 strong { display:block; font-weight:800; }
 .admin-component-row { display:grid; grid-template-columns:24px minmax(130px,.8fr) minmax(180px,1.2fr) 34px; align-items:center; gap:10px; border-radius:12px; padding:11px 13px; background:#f3f5f2; }
 .admin-component-row input { border-radius:999px; }
 .admin-component-row > button { width:34px; height:34px; display:grid; place-items:center; border:0; border-radius:50%; background:#fff; color:#778078; font-size:21px; }
-.admin-component-row-expanded { grid-template-columns:24px minmax(110px,.9fr) minmax(110px,.9fr) 72px 60px minmax(140px,1.2fr) 34px; }
+.admin-component-row-expanded { grid-template-columns:24px minmax(110px,.9fr) minmax(110px,.9fr) 72px 60px minmax(200px,1.5fr) minmax(120px,.8fr) 34px; }
+.admin-component-row-expanded textarea { min-height:72px; resize:vertical; }
 .admin-grip { color:#9ba29d; font-weight:800; letter-spacing:-3px; }
 .admin-availability-card { display:flex; flex-direction:column; gap:17px; border:0; border-radius:18px; padding:25px; background:#173e2d; color:#fff; }
 .admin-availability-card h2 { color:#fff; font-size:20px; }
@@ -386,8 +387,8 @@ h1 strong { display:block; font-weight:800; }
   .admin-component-row input:nth-of-type(2) { grid-column:2; }
   .admin-component-row > button { grid-column:3; grid-row:1 / span 2; }
   .admin-component-row-expanded { grid-template-columns:20px minmax(0,1fr) 34px; }
-  .admin-component-row-expanded input { grid-column:2; }
-  .admin-component-row-expanded > button { grid-column:3; grid-row:1 / span 5; }
+  .admin-component-row-expanded input,.admin-component-row-expanded textarea { grid-column:2; }
+  .admin-component-row-expanded > button { grid-column:3; grid-row:1 / span 6; }
   .admin-repeat-row-pack,.admin-repeat-row-rate { grid-template-columns:1fr 1fr 34px; }
   .admin-repeat-row-pack > button,.admin-repeat-row-rate > button { grid-column:3; grid-row:1 / span 2; }
   .admin-toggle-grid { grid-template-columns:1fr; }

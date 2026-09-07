@@ -40,6 +40,8 @@ export const listProductsResponseDetailsComponentsItemInclusionRateMin = 0;
 
 export const listProductsResponseDetailsComponentsItemUnitMax = 20;
 
+export const listProductsResponseDetailsComponentsItemDescriptionMax = 10000;
+
 export const listProductsResponseDetailsComponentsItemNoteMax = 4000;
 
 export const listProductsResponseDetailsPhotosItemSlotMax = 40;
@@ -133,6 +135,7 @@ export const ListProductsResponseItem = zod.object({
   "speciesName": zod.string().max(listProductsResponseDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(listProductsResponseDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(listProductsResponseDetailsComponentsItemUnitMax),
+  "description": zod.string().max(listProductsResponseDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(listProductsResponseDetailsComponentsItemNoteMax)
 })),
   "relatedProducts": zod.array(zod.string()),
@@ -244,6 +247,8 @@ export const createProductBodyDetailsComponentsItemInclusionRateMin = 0;
 
 export const createProductBodyDetailsComponentsItemUnitMax = 20;
 
+export const createProductBodyDetailsComponentsItemDescriptionMax = 10000;
+
 export const createProductBodyDetailsComponentsItemNoteMax = 4000;
 
 export const createProductBodyDetailsFormulationYearMax = 20;
@@ -347,6 +352,7 @@ export const CreateProductBody = zod.object({
   "speciesName": zod.string().max(createProductBodyDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(createProductBodyDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(createProductBodyDetailsComponentsItemUnitMax),
+  "description": zod.string().max(createProductBodyDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(createProductBodyDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(createProductBodyDetailsFormulationYearMax),
@@ -453,6 +459,8 @@ export const createProductResponseDetailsComponentsItemSpeciesNameMax = 120;
 export const createProductResponseDetailsComponentsItemInclusionRateMin = 0;
 
 export const createProductResponseDetailsComponentsItemUnitMax = 20;
+
+export const createProductResponseDetailsComponentsItemDescriptionMax = 10000;
 
 export const createProductResponseDetailsComponentsItemNoteMax = 4000;
 
@@ -577,6 +585,7 @@ export const CreateProductResponse = zod.object({
   "speciesName": zod.string().max(createProductResponseDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(createProductResponseDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(createProductResponseDetailsComponentsItemUnitMax),
+  "description": zod.string().max(createProductResponseDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(createProductResponseDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(createProductResponseDetailsFormulationYearMax),
@@ -710,6 +719,8 @@ export const updateProductBodyDetailsComponentsItemInclusionRateMin = 0;
 
 export const updateProductBodyDetailsComponentsItemUnitMax = 20;
 
+export const updateProductBodyDetailsComponentsItemDescriptionMax = 10000;
+
 export const updateProductBodyDetailsComponentsItemNoteMax = 4000;
 
 export const updateProductBodyDetailsFormulationYearMax = 20;
@@ -817,6 +828,7 @@ export const UpdateProductBody = zod.object({
   "speciesName": zod.string().max(updateProductBodyDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(updateProductBodyDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(updateProductBodyDetailsComponentsItemUnitMax),
+  "description": zod.string().max(updateProductBodyDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(updateProductBodyDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(updateProductBodyDetailsFormulationYearMax),
@@ -923,6 +935,8 @@ export const updateProductResponseDetailsComponentsItemSpeciesNameMax = 120;
 export const updateProductResponseDetailsComponentsItemInclusionRateMin = 0;
 
 export const updateProductResponseDetailsComponentsItemUnitMax = 20;
+
+export const updateProductResponseDetailsComponentsItemDescriptionMax = 10000;
 
 export const updateProductResponseDetailsComponentsItemNoteMax = 4000;
 
@@ -1047,6 +1061,7 @@ export const UpdateProductResponse = zod.object({
   "speciesName": zod.string().max(updateProductResponseDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(updateProductResponseDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(updateProductResponseDetailsComponentsItemUnitMax),
+  "description": zod.string().max(updateProductResponseDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(updateProductResponseDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(updateProductResponseDetailsFormulationYearMax),
@@ -1169,6 +1184,8 @@ export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemSpeci
 export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemInclusionRateMin = 0;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemUnitMax = 20;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemDescriptionMax = 10000;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemNoteMax = 4000;
 
@@ -1301,6 +1318,7 @@ export const GetAdminSummaryResponse = zod.object({
   "speciesName": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsComponentsItemUnitMax),
+  "description": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsFormulationYearMax),
@@ -1414,6 +1432,8 @@ export const listAdminProductsResponseOneDetailsComponentsItemSpeciesNameMax = 1
 export const listAdminProductsResponseOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const listAdminProductsResponseOneDetailsComponentsItemUnitMax = 20;
+
+export const listAdminProductsResponseOneDetailsComponentsItemDescriptionMax = 10000;
 
 export const listAdminProductsResponseOneDetailsComponentsItemNoteMax = 4000;
 
@@ -1531,6 +1551,8 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemSpecies
 export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
+
+export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
@@ -1657,6 +1679,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "speciesName": zod.string().max(listAdminProductsResponseOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(listAdminProductsResponseOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(listAdminProductsResponseOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(listAdminProductsResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(listAdminProductsResponseOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(listAdminProductsResponseOneDetailsFormulationYearMax),
@@ -1772,6 +1795,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "speciesName": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsFormulationYearMax),
@@ -1902,6 +1926,8 @@ export const getAdminProductResponseOneDetailsComponentsItemInclusionRateMin = 0
 
 export const getAdminProductResponseOneDetailsComponentsItemUnitMax = 20;
 
+export const getAdminProductResponseOneDetailsComponentsItemDescriptionMax = 10000;
+
 export const getAdminProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
 export const getAdminProductResponseOneDetailsFormulationYearMax = 20;
@@ -2018,6 +2044,8 @@ export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemSpeciesNa
 export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
+
+export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
@@ -2144,6 +2172,7 @@ export const GetAdminProductResponse = zod.object({
   "speciesName": zod.string().max(getAdminProductResponseOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(getAdminProductResponseOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(getAdminProductResponseOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(getAdminProductResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(getAdminProductResponseOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(getAdminProductResponseOneDetailsFormulationYearMax),
@@ -2259,6 +2288,7 @@ export const GetAdminProductResponse = zod.object({
   "speciesName": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(getAdminProductResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsFormulationYearMax),
@@ -2404,6 +2434,8 @@ export const saveProductDraftRevisionBodyDetailsComponentsItemInclusionRateMin =
 
 export const saveProductDraftRevisionBodyDetailsComponentsItemUnitMax = 20;
 
+export const saveProductDraftRevisionBodyDetailsComponentsItemDescriptionMax = 10000;
+
 export const saveProductDraftRevisionBodyDetailsComponentsItemNoteMax = 4000;
 
 export const saveProductDraftRevisionBodyDetailsFormulationYearMax = 20;
@@ -2513,6 +2545,7 @@ export const SaveProductDraftRevisionBody = zod.object({
   "speciesName": zod.string().max(saveProductDraftRevisionBodyDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(saveProductDraftRevisionBodyDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(saveProductDraftRevisionBodyDetailsComponentsItemUnitMax),
+  "description": zod.string().max(saveProductDraftRevisionBodyDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(saveProductDraftRevisionBodyDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(saveProductDraftRevisionBodyDetailsFormulationYearMax),
@@ -2631,6 +2664,8 @@ export const saveProductDraftRevisionResponseOneDetailsComponentsItemInclusionRa
 
 export const saveProductDraftRevisionResponseOneDetailsComponentsItemUnitMax = 20;
 
+export const saveProductDraftRevisionResponseOneDetailsComponentsItemDescriptionMax = 10000;
+
 export const saveProductDraftRevisionResponseOneDetailsComponentsItemNoteMax = 4000;
 
 export const saveProductDraftRevisionResponseOneDetailsFormulationYearMax = 20;
@@ -2747,6 +2782,8 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItem
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
@@ -2873,6 +2910,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "speciesName": zod.string().max(saveProductDraftRevisionResponseOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(saveProductDraftRevisionResponseOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(saveProductDraftRevisionResponseOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(saveProductDraftRevisionResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(saveProductDraftRevisionResponseOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(saveProductDraftRevisionResponseOneDetailsFormulationYearMax),
@@ -2988,6 +3026,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "speciesName": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsFormulationYearMax),
@@ -3117,6 +3156,8 @@ export const publishProductResponseOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const publishProductResponseOneDetailsComponentsItemUnitMax = 20;
 
+export const publishProductResponseOneDetailsComponentsItemDescriptionMax = 10000;
+
 export const publishProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
 export const publishProductResponseOneDetailsFormulationYearMax = 20;
@@ -3233,6 +3274,8 @@ export const publishProductResponseTwoDraftOneOneDetailsComponentsItemSpeciesNam
 export const publishProductResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const publishProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
+
+export const publishProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
 
 export const publishProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
@@ -3359,6 +3402,7 @@ export const PublishProductResponse = zod.object({
   "speciesName": zod.string().max(publishProductResponseOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(publishProductResponseOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(publishProductResponseOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(publishProductResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(publishProductResponseOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(publishProductResponseOneDetailsFormulationYearMax),
@@ -3474,6 +3518,7 @@ export const PublishProductResponse = zod.object({
   "speciesName": zod.string().max(publishProductResponseTwoDraftOneOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(publishProductResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(publishProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(publishProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(publishProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(publishProductResponseTwoDraftOneOneDetailsFormulationYearMax),
@@ -3603,6 +3648,8 @@ export const archiveProductResponseOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const archiveProductResponseOneDetailsComponentsItemUnitMax = 20;
 
+export const archiveProductResponseOneDetailsComponentsItemDescriptionMax = 10000;
+
 export const archiveProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
 export const archiveProductResponseOneDetailsFormulationYearMax = 20;
@@ -3719,6 +3766,8 @@ export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemSpeciesNam
 export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
+
+export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
 
 export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
@@ -3845,6 +3894,7 @@ export const ArchiveProductResponse = zod.object({
   "speciesName": zod.string().max(archiveProductResponseOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(archiveProductResponseOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(archiveProductResponseOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(archiveProductResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(archiveProductResponseOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(archiveProductResponseOneDetailsFormulationYearMax),
@@ -3960,6 +4010,7 @@ export const ArchiveProductResponse = zod.object({
   "speciesName": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(archiveProductResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsFormulationYearMax),
@@ -4089,6 +4140,8 @@ export const restoreProductResponseOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const restoreProductResponseOneDetailsComponentsItemUnitMax = 20;
 
+export const restoreProductResponseOneDetailsComponentsItemDescriptionMax = 10000;
+
 export const restoreProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
 export const restoreProductResponseOneDetailsFormulationYearMax = 20;
@@ -4205,6 +4258,8 @@ export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemSpeciesNam
 export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
+
+export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
 
 export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
@@ -4331,6 +4386,7 @@ export const RestoreProductResponse = zod.object({
   "speciesName": zod.string().max(restoreProductResponseOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(restoreProductResponseOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(restoreProductResponseOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(restoreProductResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(restoreProductResponseOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(restoreProductResponseOneDetailsFormulationYearMax),
@@ -4446,6 +4502,7 @@ export const RestoreProductResponse = zod.object({
   "speciesName": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(restoreProductResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsFormulationYearMax),
@@ -4575,6 +4632,8 @@ export const discardProductDraftResponseOneDetailsComponentsItemInclusionRateMin
 
 export const discardProductDraftResponseOneDetailsComponentsItemUnitMax = 20;
 
+export const discardProductDraftResponseOneDetailsComponentsItemDescriptionMax = 10000;
+
 export const discardProductDraftResponseOneDetailsComponentsItemNoteMax = 4000;
 
 export const discardProductDraftResponseOneDetailsFormulationYearMax = 20;
@@ -4691,6 +4750,8 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemSpeci
 export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
+
+export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
@@ -4817,6 +4878,7 @@ export const DiscardProductDraftResponse = zod.object({
   "speciesName": zod.string().max(discardProductDraftResponseOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(discardProductDraftResponseOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(discardProductDraftResponseOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(discardProductDraftResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(discardProductDraftResponseOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(discardProductDraftResponseOneDetailsFormulationYearMax),
@@ -4932,6 +4994,7 @@ export const DiscardProductDraftResponse = zod.object({
   "speciesName": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemSpeciesNameMax),
   "inclusionRate": zod.number().min(discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemInclusionRateMin).nullable(),
   "unit": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemUnitMax),
+  "description": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
   "formulationYear": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsFormulationYearMax),

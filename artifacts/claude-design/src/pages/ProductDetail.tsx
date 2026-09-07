@@ -236,7 +236,7 @@ export default function ProductDetail() {
                       <tbody>
                         {d.components.map((component, i) => {
                           const componentProduct = products.find((item) => item.slug === component.productLink);
-                          const componentDescription = componentProduct?.details.blurb?.trim();
+                          const componentDescription = (component.description ?? "").trim();
                           return (
                           <tr key={i} style={{ borderBottom: "1px solid var(--line)" }}>
                             <td className="mix-component-cell">

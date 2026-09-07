@@ -677,11 +677,16 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     const legacyRainfall = Number.parseFloat(raw.rainfall ?? "");
     const legacySoil = raw.soil ?? [];
     const tolerance = (raw.tolerance ?? []).map((value: any) => typeof value === "string" ? { name: value, mild: false } : value);
-    const components = (raw.components ?? []).map((value: any) => "speciesName" in value ? value : {
+    const components = (raw.components ?? []).map((value: any) => "speciesName" in value ? {
+      ...value,
+      description: value.description ?? "",
+      note: value.note ?? "",
+    } : {
       productLink: "",
       speciesName: value.name ?? "",
       inclusionRate: null,
       unit: "%",
+      description: "",
       note: value.note ?? "",
     });
     return {
@@ -1114,9 +1119,9 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                        <label>Flowering window <input type="text" value={currentForm.details.floweringWindow} onChange={(e) => setDetail("floweringWindow", e.target.value)} placeholder="e.g. Aug-Nov"/></label>
                        <label>Formulation year <input type="text" value={currentForm.details.formulationYear} onChange={(e) => setDetail("formulationYear", e.target.value)}/></label>
                        <div className="admin-repeat-group wide">
-                         <div className="admin-section-heading"><div><h3>Mix components</h3></div>{viewMode !== "live" && !isArchived && <button className="admin-button outline small" type="button" onClick={() => setDetail("components", [...form.details.components, { productLink: "", speciesName: "", inclusionRate: null, unit: "%", note: "" }])}><Icon name="plus" size={16}/>Add component</button>}</div>
+                          <div className="admin-section-heading"><div><h3>Mix components</h3></div>{viewMode !== "live" && !isArchived && <button className="admin-button outline small" type="button" onClick={() => setDetail("components", [...form.details.components, { productLink: "", speciesName: "", inclusionRate: null, unit: "%", description: "", note: "" }])}><Icon name="plus" size={16}/>Add component</button>}</div>
                          <div className="admin-component-list">
-                           {currentForm.details.components.map((component: any, index: number) => <div className="admin-component-row admin-component-row-expanded" key={index}><span className="admin-grip">⋮</span><input value={component.speciesName} onChange={(event) => updateComponent(index, { speciesName: event.target.value })} placeholder="Species name"/><input value={component.productLink} onChange={(event) => updateComponent(index, { productLink: event.target.value })} placeholder="Product slug (optional)"/><input type="number" min="0" step="0.01" value={component.inclusionRate ?? ""} onChange={(event) => updateComponent(index, { inclusionRate: event.target.value === "" ? null : Number(event.target.value) })} placeholder="Rate"/><input value={component.unit} onChange={(event) => updateComponent(index, { unit: event.target.value })} placeholder="%"/><input value={component.note} onChange={(event) => updateComponent(index, { note: event.target.value })} placeholder="Note"/>{viewMode !== "live" && !isArchived && <button type="button" onClick={() => removeComponent(index)} aria-label="Remove component">×</button>}</div>)}
+                            {currentForm.details.components.map((component: any, index: number) => <div className="admin-component-row admin-component-row-expanded" key={index}><span className="admin-grip">⋮</span><input value={component.speciesName} onChange={(event) => updateComponent(index, { speciesName: event.target.value })} placeholder="Species name"/><input value={component.productLink} onChange={(event) => updateComponent(index, { productLink: event.target.value })} placeholder="Product slug (optional)"/><input type="number" min="0" step="0.01" value={component.inclusionRate ?? ""} onChange={(event) => updateComponent(index, { inclusionRate: event.target.value === "" ? null : Number(event.target.value) })} placeholder="Rate"/><input value={component.unit} onChange={(event) => updateComponent(index, { unit: event.target.value })} placeholder="%"/><textarea value={component.description ?? ""} onChange={(event) => updateComponent(index, { description: event.target.value })} placeholder="Component description"/><input value={component.note} onChange={(event) => updateComponent(index, { note: event.target.value })} placeholder="Internal note"/>{viewMode !== "live" && !isArchived && <button type="button" onClick={() => removeComponent(index)} aria-label="Remove component">×</button>}</div>)}
                          </div>
                        </div>
                      </>
