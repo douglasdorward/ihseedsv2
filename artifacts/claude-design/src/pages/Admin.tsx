@@ -237,7 +237,7 @@ function TabCompleteness({ form, tab }: { form: any, tab: number }) {
   const fields = getTabFields(tab, form);
   if (fields.length === 0) return null;
   const filled = fields.filter(f => getFieldHasValue(form, f)).length;
-  return <span className={`admin-v2-tab-counts ${filled === fields.length ? 'complete' : ''}`}>{filled} / {fields.length}</span>;
+  return <span className={`admin-v2-section-count ${filled === fields.length ? 'complete' : ''}`}>{filled} / {fields.length}</span>;
 }
 
 function getDerivedAvailability(product: any) {
@@ -1021,12 +1021,24 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
       </div>
 
       <div className="admin-editor admin-claude-editor" style={{maxWidth: 1040, display: "block"}}>
+         {category && (
+           <div className="admin-v2-section-summary" aria-label="Section completion">
+             <span className="admin-v2-section-summary-title">Section completion</span>
+             <div className="admin-v2-section-summary-items">
+               <span className="admin-v2-section-summary-item">Basics <TabCompleteness form={currentForm} tab={1} /></span>
+               <span className="admin-v2-section-summary-item">Agronomy &amp; fit <TabCompleteness form={currentForm} tab={2} /></span>
+               <span className="admin-v2-section-summary-item">Category-specific <TabCompleteness form={currentForm} tab={3} /></span>
+               <span className="admin-v2-section-summary-item">Selling <TabCompleteness form={currentForm} tab={4} /></span>
+               <span className="admin-v2-section-summary-item">Content &amp; publishing <TabCompleteness form={currentForm} tab={5} /></span>
+             </div>
+           </div>
+         )}
         <div className="admin-v2-tabs">
-          <button type="button" className={`admin-v2-tab ${activeTab === 1 ? 'active' : ''}`} onClick={() => setActiveTab(1)}>Basics <TabCompleteness form={currentForm} tab={1} /></button>
-          <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 2 ? 'active' : ''}`} onClick={() => setActiveTab(2)}>Agronomy &amp; fit <TabCompleteness form={currentForm} tab={2} /></button>
-          <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 3 ? 'active' : ''}`} onClick={() => setActiveTab(3)}>Category-specific <TabCompleteness form={currentForm} tab={3} /></button>
-          <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 4 ? 'active' : ''}`} onClick={() => setActiveTab(4)}>Selling <TabCompleteness form={currentForm} tab={4} /></button>
-          <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 5 ? 'active' : ''}`} onClick={() => setActiveTab(5)}>Content &amp; publishing <TabCompleteness form={currentForm} tab={5} /></button>
+           <button type="button" className={`admin-v2-tab ${activeTab === 1 ? 'active' : ''}`} onClick={() => setActiveTab(1)}>Basics</button>
+           <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 2 ? 'active' : ''}`} onClick={() => setActiveTab(2)}>Agronomy &amp; fit</button>
+           <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 3 ? 'active' : ''}`} onClick={() => setActiveTab(3)}>Category-specific</button>
+           <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 4 ? 'active' : ''}`} onClick={() => setActiveTab(4)}>Selling</button>
+           <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 5 ? 'active' : ''}`} onClick={() => setActiveTab(5)}>Content &amp; publishing</button>
         </div>
 
         <form id="admin-product-form" onSubmit={submit}>
