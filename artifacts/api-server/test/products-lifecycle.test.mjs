@@ -115,6 +115,8 @@ async function createProduct(label, overrides = {}) {
       keyAttributes: ["Lifecycle tested"],
       distributionNote: "Distributed for lifecycle tests.",
       description: "Lifecycle test product description.",
+      seoTitle: "Lifecycle test SEO title",
+      seoDescription: "Lifecycle test SEO description.",
     },
   })), 200);
 }
@@ -232,6 +234,8 @@ test("drafts require only identity fields while publishing requires public catal
   assert.match(publishResult.data.error, /Blurb/);
   assert.match(publishResult.data.error, /Key attributes/);
   assert.match(publishResult.data.error, /Product description/);
+  assert.match(publishResult.data.error, /SEO title/);
+  assert.match(publishResult.data.error, /SEO description/);
 });
 
 test("inactive taxonomy cannot be newly assigned but an existing assignment remains publishable", async () => {
@@ -388,6 +392,8 @@ test("a later published category choice for a seed product is not reverted", asy
         keyAttributes: ["Regression tested"],
         distributionNote: "",
         description: "Migration regression test product description.",
+        seoTitle: "Migration regression SEO title",
+        seoDescription: "Migration regression SEO description.",
       },
     })), 200);
     assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
@@ -612,7 +618,7 @@ test("catalogue lifecycle transition matrix protects public content", async () =
   assertStatus(await request("GET", "/admin/products/999999999"), 404);
 });
 
-test("source and exported workbooks satisfy the round-trip parser contract", async () => {
+test("source workbook reports publish gaps while exported legacy records round-trip safely", async () => {
   const source = await readFile(new URL("../../../attached_assets/0_IH_Seeds_-_Product_Data_Workbook_(pre-filled)_-_description_1788757020628.xlsx", import.meta.url));
   const sourceBook = xlsx.read(source);
   const sourceProducts = xlsx.utils.sheet_to_json(sourceBook.Sheets["1 Products"], { defval: "", raw: false });
@@ -636,7 +642,9 @@ test("source and exported workbooks satisfy the round-trip parser contract", asy
     workbookBase64: source.toString("base64"),
   }), 200);
   assert.equal(sourceReport.issues.some((issue) => issue.column === "status" &&
-    /Published products require|Invalid lifecycle status/.test(issue.problem)), false);
+    /Published products require:.*SEO (title|description)/.test(issue.problem)), true);
+  assert.equal(sourceReport.issues.some((issue) => issue.column === "status" &&
+    /Invalid lifecycle status/.test(issue.problem)), false);
   assert.deepEqual(Object.fromEntries(Object.entries(sourceReport.sheets).slice(0, 7).map(([name, report]) => [name, report.rows])), {
     "1 Products": 150,
     "2 Sowing rates": 242,
@@ -716,6 +724,13 @@ test("published workbook rows enforce content fields and retain products absent 
   const makeWorkbook = (row) => {
     const book = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([row]), "1 Products");
+    if (row.status === "Published") {
+      xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{
+        product_slug: row.slug,
+        seo_title: "Workbook SEO title",
+        meta_description: "Workbook SEO description.",
+      }]), "7 Website SEO");
+    }
     xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ category: other.name, record_type: "Mix" }]), "Lists");
     return xlsx.write(book, { type: "buffer", bookType: "xlsx" });
   };

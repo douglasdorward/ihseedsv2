@@ -111,7 +111,14 @@ function publishContentErrors(payload: { name: string; slug: string; category: s
     !payload.details.blurb.trim() && "Blurb",
     !payload.details.keyAttributes.some((attribute) => attribute.trim()) && "Key attributes",
     !payload.details.description.trim() && "Product description",
+    !payload.details.seoTitle.trim() && "SEO title",
+    !payload.details.seoDescription.trim() && "SEO description",
   ].filter(Boolean) as string[];
+}
+function applySeoRow(details: ReturnType<typeof normalizeProductDetails>, row: Row | undefined) {
+  if (!row) return;
+  details.seoTitle = cell(row.seo_title) || cell(row.menu_label);
+  details.seoDescription = cell(row.meta_description);
 }
 function requiredPublishContentFingerprint(payload: { name: string; slug: string; category: string; details: ReturnType<typeof normalizeProductDetails> }) {
   const { details } = payload;
@@ -124,6 +131,8 @@ function requiredPublishContentFingerprint(payload: { name: string; slug: string
     blurb: details.blurb,
     keyAttributes: details.keyAttributes,
     description: details.description,
+    seoTitle: details.seoTitle,
+    seoDescription: details.seoDescription,
   });
 }
 function equivalentRoot(left: string, right: string) {
@@ -170,6 +179,8 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
         } else if (lifecycle === "Published") {
           const details = normalizeProductDetails({});
           applyProductRow(details as unknown as Record<string, unknown>, row);
+          applySeoRow(details, rows["7 Website SEO"].find((seoRow) =>
+            (cell(seoRow.product_slug) || cell(seoRow.website_slug)) === cell(row.slug)));
           const missing = publishContentErrors({
             name: cell(row.product_name), slug: cell(row.slug), category: cell(row.category), details,
           });
@@ -308,6 +319,8 @@ export async function commitWorkbook(content: Buffer, token: string) {
       const [existing] = await tx.select().from(productsTable).where(eq(productsTable.slug, slug));
       const details = normalizeProductDetails(existing?.details ?? {}, existing?.packSize ?? "") as unknown as Record<string, unknown>;
       applyProductRow(details, row);
+      applySeoRow(details as ReturnType<typeof normalizeProductDetails>, rows["7 Website SEO"].find((seoRow) =>
+        (cell(seoRow.product_slug) || cell(seoRow.website_slug)) === slug));
       const categoryName = cell(row.category);
       details.maturityMeasure = categoryName === "Ryegrasses" || categoryName === "Fescues & Other Grasses" ? "Heading date"
         : categoryName === "Clovers" || categoryName === "Serradellas & Medics" ? "Days to flowering (Perth)"
@@ -384,7 +397,11 @@ export async function commitWorkbook(content: Buffer, token: string) {
     for (const slug of new Set(rows["6 Companions"].map((r) => cell(r.slug)).filter(Boolean))) await updateDetails(slug, (d) => { d.companionSpecies = rows["6 Companions"].filter((r) => cell(r.slug) === slug).map((r) => cell(r.companion_slug) || cell(r.companion_text)).filter(Boolean); });
     for (const row of rows["7 Website SEO"]) {
       const slug = cell(row.product_slug) || cell(row.website_slug);
-      await updateDetails(slug, (d) => { if (cell(row.meta_description)) d.seoDescription = cell(row.meta_description); if (cell(row.menu_label)) d.seoTitle = cell(row.menu_label); });
+      await updateDetails(slug, (d) => {
+        const seoTitle = cell(row.seo_title) || cell(row.menu_label);
+        if (cell(row.meta_description)) d.seoDescription = cell(row.meta_description);
+        if (seoTitle) d.seoTitle = seoTitle;
+      });
       const redirect = redirectFromNote(row); if (redirect) await tx.insert(redirectsTable).values({ fromPath: redirect.from, toPath: redirect.to }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath: redirect.to, updatedAt: new Date() } });
     }
     for (const redirect of [{ from: "/product/souwest-pasture-mix", to: "/product/souwest-pasture-mix-2" }, { from: "/product/icon-lucerne", to: "/products/lucerne#catalogue" }]) await tx.insert(redirectsTable).values({ fromPath: redirect.from, toPath: redirect.to }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath: redirect.to, updatedAt: new Date() } });

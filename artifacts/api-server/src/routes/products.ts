@@ -155,6 +155,8 @@ function getPublishValidationErrors(product: Product, payload: ProductEditablePa
     !payload.details.blurb.trim() && "Blurb",
     !payload.details.keyAttributes.some((attribute) => attribute.trim()) && "Key attributes",
     !payload.details.description.trim() && "Product description",
+    !payload.details.seoTitle.trim() && "SEO title",
+    !payload.details.seoDescription.trim() && "SEO description",
     payload.saleLines.length > 0 && payload.saleLines.filter((line) => line.isDefault).length !== 1 && "Exactly one default sale line",
     new Set(payload.saleLines.map((line) => line.stockCode)).size !== payload.saleLines.length && "Unique sale line stock codes",
   ].filter(Boolean) as string[];

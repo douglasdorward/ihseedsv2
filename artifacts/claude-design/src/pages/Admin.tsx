@@ -1322,8 +1322,8 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
               <section className="admin-panel admin-form-card">
                 <h2>SEO</h2>
                 <div className="admin-form-grid">
-                  <label className="wide">SEO title <span className="admin-field-hint">The page title shown in search results and browser tabs.</span><input value={currentForm.details.seoTitle} onChange={(e) => setDetail("seoTitle", e.target.value)} /></label>
-                  <label className="wide">SEO description <span className="admin-field-hint">A concise summary that may appear beneath the page title in search results.</span><textarea value={currentForm.details.seoDescription} onChange={(e) => setDetail("seoDescription", e.target.value)} rows={4} /></label>
+                  <label className="wide">SEO title <span className="required">*</span><span className="admin-field-hint">Required before publishing. The page title shown in search results and browser tabs.</span><input value={currentForm.details.seoTitle} onChange={(e) => setDetail("seoTitle", e.target.value)} /></label>
+                  <label className="wide">SEO description <span className="required">*</span><span className="admin-field-hint">Required before publishing. A concise summary that may appear beneath the page title in search results.</span><textarea value={currentForm.details.seoDescription} onChange={(e) => setDetail("seoDescription", e.target.value)} rows={4} /></label>
                 </div>
               </section>
             )}
