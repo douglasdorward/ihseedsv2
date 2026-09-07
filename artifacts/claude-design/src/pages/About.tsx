@@ -8,7 +8,7 @@ export default function About() {
   const values = [
     { icon: "map-pin", title: "Regional expertise", body: "Local conditions, understood and applied. Sixty years of sowing across every WA rainfall zone." },
     { icon: "sprout", title: "Proven performance", body: "Varieties and mixes proven over generations across Australia, with trial data behind them." },
-    { icon: "handshake", title: "Partnership", body: "Confidence before the order. Support after it — through your local rural reseller." }
+    { icon: "users", title: "Partnership", body: "Confidence before the order. Support after it — through your local rural reseller." }
   ];
 
   return (

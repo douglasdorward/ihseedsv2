@@ -7,6 +7,7 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
   if (name === "close") return <svg {...common}><path d="m6 6 12 12M18 6 6 18" /></svg>;
   if (name === "search") return <svg {...common}><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>;
   if (name === "user") return <svg {...common}><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.9-3.2 3.2-4.8 7-4.8s6.1 1.6 7 4.8" /></svg>;
+  if (name === "users") return <svg {...common}><circle cx="8" cy="8" r="3" /><circle cx="17" cy="9" r="2.5" /><path d="M2.5 20c.7-3.4 2.6-5 5.7-5s5 1.6 5.7 5" /><path d="M13.5 15.5c1-.7 2.1-1 3.5-1 2.5 0 4 1.4 4.5 4.5" /></svg>;
   if (name === "phone") return <svg {...common}><path d="M5 4.8c0-1 1.1-1.7 2-1.3l2.4 1.1c.6.3.9 1 .7 1.6l-.8 2.3a2 2 0 0 0 .4 2l1.8 1.8a2 2 0 0 0 2 .4l2.3-.8c.6-.2 1.3.1 1.6.7l1.1 2.4c.4.9-.3 2-1.3 2C10 17 7 14 5 4.8Z" /></svg>;
   if (name === "mail") return <svg {...common}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></svg>;
   if (name === "clock") return <svg {...common}><circle cx="12" cy="12" r="8.5" /><path d="M12 7v5l3 2" /></svg>;
@@ -33,7 +34,6 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
   if (name === "sun") return <svg {...common}><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>;
   if (name === "refresh-cw") return <svg {...common}><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 8a7 7 0 0 1 11.7-2.6L20 8M4 16l2.2 2.6A7 7 0 0 0 17.9 16"/></svg>;
   if (name === "package") return <svg {...common}><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.5 7.8 7.5 4.3 7.5-4.3M12 12v9M8 5.3l8 4.5"/></svg>;
-  if (name === "handshake") return <svg {...common}><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06 0 6.04 6.04 0 0 1 0 8.27l-2.9 2.9a2.12 2.12 0 0 1-3.11 0l-2.61-2.61"/></svg>;
   if (name === "file-text") return <svg {...common}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>;
   if (name === "plus") return <svg {...common}><path d="M12 5v14M5 12h14"/></svg>;
   return <svg {...common}><path d="M12 20V11m0 0c-3.4 0-5.5-1.8-5.5-5.5C10.3 5.5 12 7.4 12 11Zm0 0c3.4 0 5.5-1.8 5.5-5.5C13.7 5.5 12 7.4 12 11Z" /></svg>;
