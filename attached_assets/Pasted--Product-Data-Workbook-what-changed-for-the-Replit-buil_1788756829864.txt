@@ -1,0 +1,76 @@
+# Product Data Workbook — what changed, for the Replit build
+
+**File:** `IH Seeds - Product Data Workbook (pre-filled) - descriptions cleaned.xlsx`
+**Sheet affected:** `1 Products` only. Sheets 2–7, `Lists` and all validation dropdowns are untouched.
+**Columns:** 62 → 65. **Rows:** still 150.
+
+---
+
+## 1. Field changes on `1 Products`
+
+| Change | Field | Col | Type | Notes |
+|---|---|---|---|---|
+| RENAME | `summary` → `tagline` | N | text, ≤60 chars | Same column, new name. Lowercase to match every other header. |
+| ADD | `blurb` | O | long text | Short intro paragraph, 122–592 chars. |
+| ADD | `key_attributes` | P | **pipe-delimited**, 5–6 items | `Fast establishing diploid Italian ryegrass\|Strong autumn and winter yields\|…` Split on `\|` and render as bullets. Same convention as `end_use` etc. |
+| ADD | `distribution_note` | BM | text | Only 2 of 150 filled. Channel/exclusivity statement, e.g. "Exclusive to Irwin Hunter Seeds". Public-facing. |
+
+All three new fields are filled for all 150 products (`distribution_note` intentionally blank except where it applies).
+
+---
+
+## 2. The content model changed
+
+The product page now has four distinct copy layers instead of one. Each says something different — none repeats another:
+
+1. **`tagline`** — one line under the H1. Fragment style, no full stop, ≤60 chars.
+2. **`blurb`** — short intro paragraph.
+3. **`key_attributes`** — 5–6 bullets.
+4. **`description`** — long-form body, 3–5 paragraphs, 148–244 words. **Plain paragraphs, no headings** (per brief §4.2 "paragraphs preserved"). Preserve line breaks.
+
+**All 150 descriptions were rewritten.** They no longer contain:
+
+- rainfall, pH, sowing rate, sowing depth, soil range, end use or livestock — these render in the quick-facts bar above
+- grazing management, disease/pest, or stand-life content — these moved to their own columns (below) and render as the three accordions beneath the description
+- breeder or supplier company names (see §4)
+
+`description_source` values are now all `Rewritten from …` and remain **admin-only, not published**.
+
+---
+
+## 3. Content migrated into the three accordion columns
+
+Content that was sitting inside `description` was moved into the fields that feed the accordions. 172 cells written:
+
+| Field | Col | Filled before | Filled now |
+|---|---|---|---|
+| `grazing_management_notes` | AH | 93 | **117** |
+| `disease_pest_resistance` | AF | 85 | **91** |
+| `stand_life_notes` | AG | 75 | **91** |
+
+No behaviour change needed — these already map to the three collapsible sections in §4.2. They simply have more in them.
+
+---
+
+## 4. Two fields are now admin-only — do not render
+
+`bred_by_origin` (K) and `supplier_name` (AM) must **never** appear on a public page. They name breeders and suppliers of on-sold lines, which would point customers at IH Seeds' own suppliers.
+
+The build brief and the backend fields doc have both been updated to say this (brief §1.1, §4.2, and the import mapping table).
+
+Related editorial rule now applied throughout the copy: a description may say **why** a variety was bred, never **who** bred it — unless the breeder is a research body (a state department of agriculture, SARDI, QDPI, CLIMA), which is fine to name.
+
+---
+
+## 5. Import notes
+
+- `tagline` replaces `summary` in the importer's field mapping. The SEO fallback in §4.4 (meta description falls back to summary) should now read `blurb`, which is better suited to it than the ≤60-char tagline.
+- `key_attributes` splits on `|` with no spaces around the delimiter.
+- `description` contains `\n` line breaks that must survive import — paragraphs are meaningful.
+- `blurb`, `key_attributes` and `distribution_note` are new fields to add to the products table and to the **Content & publishing** tab of the admin form (§2.1 item 5).
+
+---
+
+## Known item
+
+The `Review` sheet grew from 406 to 434 rows. Those 28 rows flag products whose description was cleared at an earlier stage of this work. **They are now stale** — all 28 have descriptions again — and should be deleted before the sheet is used as a work list.
