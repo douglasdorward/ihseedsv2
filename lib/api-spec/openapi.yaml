@@ -554,8 +554,13 @@ components:
       properties:
         recordType: { type: string }
         botanicalName: { type: string }
-        bredByOrigin: { type: string }
         distributedBy: { type: string }
+        tagline: { type: string, maxLength: 60 }
+        blurb: { type: string }
+        keyAttributes:
+          type: array
+          items: { type: string }
+        distributionNote: { type: string }
         persistencyType: { type: string }
         ploidy: { type: string }
         flowerColour: { type: string }
@@ -595,7 +600,6 @@ components:
         pbrProtected: { type: boolean }
         pbrDetails: { type: string }
         certification: { type: array, items: { type: string } }
-        summary: { type: string }
         description: { type: string }
         components:
           type: array
@@ -608,7 +612,7 @@ components:
         featured: { type: boolean }
         seoTitle: { type: string }
         seoDescription: { type: string }
-      required: [recordType, botanicalName, bredByOrigin, distributedBy, persistencyType, ploidy, flowerColour, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, tolerance, endUse, livestock, maturityMeasure, maturityDays, headingDate, headingOffsetDays, winterActivity, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, certification, summary, description, components, relatedProducts, formulationYear, photos, featured, seoTitle, seoDescription]
+      required: [recordType, botanicalName, distributedBy, tagline, blurb, keyAttributes, distributionNote, persistencyType, ploidy, flowerColour, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, tolerance, endUse, livestock, maturityMeasure, maturityDays, headingDate, headingOffsetDays, winterActivity, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, certification, description, components, relatedProducts, formulationYear, photos, featured, seoTitle, seoDescription]
     ProductDraftInput:
       type: object
       properties:
@@ -771,7 +775,12 @@ components:
           items: { type: string, enum: ["ASF Code of Practice", "Certified Quality Assured Seed", "Certified seed", "Licensed production"] }
         isThirdPartyProduct: { type: boolean }
         supplierName: { type: string, maxLength: 180 }
-        summary: { type: string, maxLength: 500 }
+        tagline: { type: string, maxLength: 60 }
+        blurb: { type: string }
+        keyAttributes:
+          type: array
+          items: { type: string }
+        distributionNote: { type: string }
         description: { type: string, maxLength: 200000 }
         notes: { type: string, maxLength: 2000 }
         components:
@@ -804,7 +813,7 @@ components:
         regrowth: { type: string }
         productForm: { type: string, maxLength: 120 }
         applicationRate: { type: string }
-      required: [stockCode, guideSection, recordType, botanicalName, alsoKnownAs, packSizes, treatment, persistencyType, ploidy, flowerColour, bredByOrigin, australianBred, distributedBy, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, sowingDepthMinCm, sowingDepthMaxCm, tolerance, maturityMeasure, maturityDays, headingDate, floweringWindow, winterActivity, inoculantGroup, seedTreatment, ecocertApproved, endUse, livestock, companionSpecies, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, licenceRestriction, certification, isThirdPartyProduct, supplierName, summary, description, notes, components, formulationYear, photos, inCurrentPrintedGuide, seoTitle, seoDescription, sortOrder, featured, relatedProducts, headingOffsetDays, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate]
+      required: [stockCode, guideSection, recordType, botanicalName, alsoKnownAs, packSizes, treatment, persistencyType, ploidy, flowerColour, bredByOrigin, australianBred, distributedBy, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, sowingDepthMinCm, sowingDepthMaxCm, tolerance, maturityMeasure, maturityDays, headingDate, floweringWindow, winterActivity, inoculantGroup, seedTreatment, ecocertApproved, endUse, livestock, companionSpecies, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, licenceRestriction, certification, isThirdPartyProduct, supplierName, tagline, blurb, keyAttributes, distributionNote, description, notes, components, formulationYear, photos, inCurrentPrintedGuide, seoTitle, seoDescription, sortOrder, featured, relatedProducts, headingOffsetDays, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate]
     SaleLine:
       type: object
       properties:

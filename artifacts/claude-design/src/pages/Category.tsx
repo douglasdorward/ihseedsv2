@@ -138,7 +138,7 @@ export default function Category() {
                 {visibleProducts.map((p, index) => {
                   const subCat = childCategories.find(c => c.id === p.subcategoryId)?.name;
                   const chips = getFactChips(p, subCat);
-                   const tagline = p.details.summary?.trim();
+                   const tagline = p.details.tagline?.trim();
                   return (
                     <Link key={p.id} href={productPath(p)} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 16 }}>
                       <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", minHeight: 220, background: "#C5CCC5", position: "relative" }}>

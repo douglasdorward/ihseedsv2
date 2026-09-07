@@ -18,7 +18,8 @@ export type WorkbookReport = {
 const PRODUCT_DETAILS: Record<string, string> = {
   guide_section: "guideSection", record_type: "recordType", botanical_name: "botanicalName",
   persistency_type: "persistencyType", bred_by_origin: "bredByOrigin", distributed_by: "distributedBy",
-  summary: "summary", description: "description", internal_notes: "notes", rainfall_min_mm: "rainfallMinMm",
+  tagline: "tagline", blurb: "blurb", distribution_note: "distributionNote", description: "description",
+  internal_notes: "notes", rainfall_min_mm: "rainfallMinMm",
   soil_ph_min: "soilPhMin", soil_ph_scale: "soilPhScale", soil_range_lightest: "soilRangeLightest",
   soil_range_heaviest: "soilRangeHeaviest", sowing_depth_min_cm: "sowingDepthMinCm",
   sowing_depth_max_cm: "sowingDepthMaxCm", inoculant_group: "inoculantGroup",
@@ -41,13 +42,14 @@ const NUMBER_KEYS = new Set(["rainfallMinMm", "soilPhMin", "sowingDepthMinCm", "
 const BOOLEAN_KEYS = new Set(["australianBred", "ecocertApproved", "pbrProtected", "isThirdPartyProduct", "featured", "inCurrentPrintedGuide", "argtResistant"]);
 const ARRAY_KEYS: Record<string, string> = {
   also_known_as: "alsoKnownAs", end_use: "endUse", livestock: "livestock", certification: "certification",
-  related_products: "relatedProducts", seed_treatment: "seedTreatment",
+  related_products: "relatedProducts", seed_treatment: "seedTreatment", key_attributes: "keyAttributes",
 };
 const BOOL_COLUMNS: Record<string, string> = {
   australian_bred: "australianBred", ecocert_approved: "ecocertApproved", pbr_protected: "pbrProtected",
   is_third_party_product: "isThirdPartyProduct", featured: "featured", in_current_printed_guide: "inCurrentPrintedGuide",
   argt_resistant: "argtResistant",
 };
+const LIFECYCLE_STATUSES = new Set(["Published", "Draft", "Archived"]);
 const OPTION_ALIASES: Record<string, string> = {
   soil_ph_scale: "soil_ph_scale", context: "rate_context", unit: "rate_unit", rate_unit: "rate_unit",
   soil_range_lightest: "soil_code", soil_range_heaviest: "soil_code",
@@ -98,6 +100,32 @@ function taxonomySlug(value: string) {
   return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
     .replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "catalogue";
 }
+function publishContentErrors(payload: { name: string; slug: string; category: string; details: ReturnType<typeof normalizeProductDetails> }) {
+  return [
+    !payload.name.trim() && "Product name",
+    !payload.slug.trim() && "Slug",
+    !payload.category.trim() && "Category",
+    !["Mix", "Variety", "Commodity / generic"].includes(payload.details.recordType) && "Record type",
+    !payload.details.tagline.trim() && "Tagline",
+    payload.details.tagline.trim().length > 60 && "Tagline (maximum 60 characters)",
+    !payload.details.blurb.trim() && "Blurb",
+    !payload.details.keyAttributes.some((attribute) => attribute.trim()) && "Key attributes",
+    !payload.details.description.trim() && "Product description",
+  ].filter(Boolean) as string[];
+}
+function requiredPublishContentFingerprint(payload: { name: string; slug: string; category: string; details: ReturnType<typeof normalizeProductDetails> }) {
+  const { details } = payload;
+  return JSON.stringify({
+    name: payload.name,
+    slug: payload.slug,
+    category: payload.category,
+    recordType: details.recordType,
+    tagline: details.tagline,
+    blurb: details.blurb,
+    keyAttributes: details.keyAttributes,
+    description: details.description,
+  });
+}
 function equivalentRoot(left: string, right: string) {
   const aliases = [
     ["specialtymixes", "mixes"], ["ryegrass", "ryegrasses"],
@@ -135,6 +163,22 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
     let skipped = 0; const reasons: string[] = [];
     rows[name].forEach((row, i) => {
       const rowNo = i + 2, slugKey = name === "5 Mix components" ? "mix_slug" : ["2 Sowing rates", "3 Category specifics", "6 Companions"].includes(name) ? "slug" : "";
+      if (name === "1 Products") {
+        const lifecycle = cell(row.status);
+        if (lifecycle && !LIFECYCLE_STATUSES.has(lifecycle)) {
+          issues.push({ sheet: name, row: rowNo, column: "status", problem: `Invalid lifecycle status "${lifecycle}"` });
+        } else if (lifecycle === "Published") {
+          const details = normalizeProductDetails({});
+          applyProductRow(details as unknown as Record<string, unknown>, row);
+          const missing = publishContentErrors({
+            name: cell(row.product_name), slug: cell(row.slug), category: cell(row.category), details,
+          });
+          if (missing.length) issues.push({
+            sheet: name, row: rowNo, column: "status",
+            problem: `Published products require: ${missing.join(", ")}`,
+          });
+        }
+      }
       if (name === "4 Sale lines" && !cell(row.slug)) { skipped++; reasons.push(`row ${rowNo}: blank slug (not in catalogue)`); }
       if (slugKey && cell(row[slugKey]) && !productSlugs.has(cell(row[slugKey]))) issues.push({ sheet: name, row: rowNo, column: slugKey, problem: "Unresolved product slug" });
       if (name === "4 Sale lines") { const code = cell(row.stock_code); if (code && stocks.has(code)) issues.push({ sheet: name, row: rowNo, column: "stock_code", problem: "Duplicate stock code" }); if (code) stocks.add(code); }
@@ -165,7 +209,12 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
 }
 
 function applyProductRow(details: Record<string, unknown>, row: Row) {
-  for (const [column, key] of Object.entries(PRODUCT_DETAILS)) if (cell(row[column]) || isNull(row[column])) details[key] = isNull(row[column]) ? (NUMBER_KEYS.has(key) ? null : "") : NUMBER_KEYS.has(key) ? num(row[column]) : typedValue(column, cell(row[column]));
+  for (const [column, key] of Object.entries(PRODUCT_DETAILS)) if (cell(row[column]) || isNull(row[column])) {
+    // XLSX delivers embedded line breaks intact; do not trim editorial
+    // description content while mapping it into the canonical JSON payload.
+    const text = key === "description" ? String(row[column] ?? "") : cell(row[column]);
+    details[key] = isNull(row[column]) ? (NUMBER_KEYS.has(key) ? null : "") : NUMBER_KEYS.has(key) ? num(row[column]) : typedValue(column, text);
+  }
   for (const [column, key] of Object.entries(ARRAY_KEYS)) if (cell(row[column]) || isNull(row[column])) details[key] = isNull(row[column]) ? [] : pipe(row[column]);
   for (const [column, key] of Object.entries(BOOL_COLUMNS)) if (yn(row[column]) !== undefined || isNull(row[column])) details[key] = isNull(row[column]) ? false : yn(row[column]);
   if (cell(row.tolerance) || isNull(row.tolerance)) details.tolerance = isNull(row.tolerance) ? [] : pipe(row.tolerance).flatMap((v) => {
@@ -264,7 +313,9 @@ export async function commitWorkbook(content: Buffer, token: string) {
         : categoryName === "Clovers" || categoryName === "Serradellas & Medics" ? "Days to flowering (Perth)"
           : categoryName === "Lucerne" ? "Winter activity rating"
             : categoryName === "Mixes" ? "Time of flowering" : "";
-      const lifecycle = cell(row.status) || existing?.publishStatus || "Draft";
+      const requestedLifecycle = cell(row.status);
+      const lifecycle = requestedLifecycle || existing?.publishStatus || "Draft";
+      if (!LIFECYCLE_STATUSES.has(lifecycle)) throw new Error(`INVALID_LIFECYCLE_STATUS:${slug}`);
       const taxonomy = resolveSubcategory(cell(row.category), cell(row.sub_category));
       const subcategoryId = taxonomy.id ?? existing?.subcategoryId ?? null;
       if (cell(row.sub_category) && !taxonomy.id) throw new Error(`UNRESOLVED_TAXONOMY:${slug}`);
@@ -284,8 +335,28 @@ export async function commitWorkbook(content: Buffer, token: string) {
         availabilityOverride: isNull(row.availability_override) ? null
           : (cell(row.availability_override) as typeof existing.availabilityOverride) || existing?.availabilityOverride || null,
         publishStatus: lifecycle, publishedAt: lifecycle === "Published" ? existing?.publishedAt ?? new Date() : null,
-        details: details as ReturnType<typeof normalizeProductDetails>, updatedAt: new Date(),
+        details: normalizeProductDetails(details, existing?.packSize ?? ""), updatedAt: new Date(),
       };
+      if (lifecycle === "Published") {
+        const missing = publishContentErrors({ name: payload.name, slug, category: payload.category, details: payload.details });
+        const existingPayload = existing && {
+          name: existing.name,
+          slug: existing.slug,
+          category: existing.category,
+          details: normalizeProductDetails(existing.details, existing.packSize),
+        };
+        const requiredContentChanged = !existingPayload ||
+          requiredPublishContentFingerprint(existingPayload) !== requiredPublishContentFingerprint({
+            name: payload.name, slug, category: payload.category, details: payload.details,
+          });
+        // Legacy Published records may be exported with a blank lifecycle as a
+        // lossless preservation marker. They can round-trip unchanged, but an
+        // editor cannot use that marker to make invalid public content live.
+        if (missing.length && (requestedLifecycle === "Published" ||
+          existing?.publishStatus !== "Published" || requiredContentChanged)) {
+          throw new Error(`PUBLISH_VALIDATION:${slug}:${missing.join(", ")}`);
+        }
+      }
       if (existing) await tx.update(productsTable).set(payload).where(eq(productsTable.id, existing.id));
       else await tx.insert(productsTable).values({ ...payload, slug });
       const [imported] = await tx.select().from(productsTable).where(eq(productsTable.slug, slug));
@@ -359,8 +430,9 @@ export async function exportWorkbook() {
       guide_year: p.guideYear, guide_section: details.guideSection, record_type: listed("record_type", details.recordType),
       botanical_name: details.botanicalName, also_known_as: details.alsoKnownAs.join("|"),
       persistency_type: listed("persistency_type", details.persistencyType), bred_by_origin: details.bredByOrigin,
-      australian_bred: details.australianBred ? "Y" : "N", distributed_by: details.distributedBy,
-      summary: details.summary, description: details.description, description_source: p.descriptionSource,
+       australian_bred: details.australianBred ? "Y" : "N", distributed_by: details.distributedBy,
+       tagline: details.tagline, blurb: details.blurb, key_attributes: details.keyAttributes.join("|"),
+       description: details.description, description_source: p.descriptionSource,
       internal_notes: details.notes, rainfall_min_mm: details.rainfallMinMm, soil_ph_min: details.soilPhMin,
       soil_ph_scale: listed("soil_ph_scale", details.soilPhScale),
       soil_range_lightest: listed("soil_range_lightest", details.soilRangeLightest),
@@ -379,7 +451,11 @@ export async function exportWorkbook() {
       in_current_printed_guide: details.inCurrentPrintedGuide ? "Y" : "N", featured: details.featured ? "Y" : "N",
       related_products: details.relatedProducts.join("|"), sort_order: details.sortOrder,
       listing_override: p.listingOverride ?? "", availability_override: p.availabilityOverride ?? "",
-      status: p.publishStatus, tech_sheet_pdf_path: p.techSheet, website_url: p.websiteUrlLegacy,
+       status: p.publishStatus === "Published" && publishContentErrors({
+         name: p.name, slug: p.slug, category: p.category, details,
+       }).length ? "" : p.publishStatus,
+       tech_sheet_pdf_path: p.techSheet, website_url: p.websiteUrlLegacy,
+       distribution_note: details.distributionNote,
     };
   }));
   append("2 Sowing rates", products.flatMap((p) => d(p).sowingRates.map((r) => ({

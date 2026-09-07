@@ -8,6 +8,9 @@
 .admin-v2-completeness { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #536059; background: #f3f5f2; padding: 6px 12px; border-radius: 999px; }
 .admin-v2-completeness-bar { width: 60px; height: 6px; background: #dde1dc; border-radius: 999px; overflow: hidden; display: flex; }
 .admin-v2-completeness-fill { height: 100%; background: #0c583c; }
+.admin-field-hint { display: block; margin-top: 4px; color: #536059; font-size: 12px; font-weight: 400; line-height: 1.4; }
+.admin-character-count { display: block; margin-top: 4px; color: #536059; font-size: 12px; text-align: right; }
+.admin-empty-inline { margin: 8px 0 0; color: #536059; font-size: 13px; }
 
 .admin-sale-line-row { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(130px, 1.2fr) minmax(100px, 1fr) minmax(70px, 0.8fr) minmax(80px, 0.8fr) minmax(130px, 1.2fr) minmax(120px, 1.2fr) 60px 34px; gap: 10px; align-items: center; padding: 12px; background: #f3f5f2; border-radius: 12px; margin-bottom: 8px; }
 .admin-sale-line-header { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(130px, 1.2fr) minmax(100px, 1fr) minmax(70px, 0.8fr) minmax(80px, 0.8fr) minmax(130px, 1.2fr) minmax(120px, 1.2fr) 60px 34px; gap: 10px; padding: 0 12px 8px; font-size: 11px; font-weight: 750; color: #7b827d; }

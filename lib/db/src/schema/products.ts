@@ -47,7 +47,10 @@ export type ProductDetails = {
   certification: Array<"ASF Code of Practice" | "Certified Quality Assured Seed" | "Certified seed" | "Licensed production">;
   isThirdPartyProduct: boolean;
   supplierName: string;
-  summary: string;
+  tagline: string;
+  blurb: string;
+  keyAttributes: string[];
+  distributionNote: string;
   description: string;
   notes: string;
   components: { productLink: string; speciesName: string; inclusionRate: number | null; unit: string; note: string }[];
@@ -142,7 +145,10 @@ const emptyProductDetails: ProductDetails = {
   certification: [],
   isThirdPartyProduct: false,
   supplierName: "",
-  summary: "",
+  tagline: "",
+  blurb: "",
+  keyAttributes: [],
+  distributionNote: "",
   description: "",
   notes: "",
   components: [],
@@ -160,6 +166,8 @@ const emptyProductDetails: ProductDetails = {
 };
 
 type LegacyProductDetails = Omit<Partial<ProductDetails>, "tolerance" | "components"> & {
+  /** @deprecated renamed to tagline in v3. */
+  summary?: string;
   kind?: "Mix" | "Variety";
   rate?: string;
   rainfall?: string;
@@ -179,6 +187,7 @@ export function normalizeProductDetails(value: unknown, packSize = ""): ProductD
     flowering: legacyFlowering,
     inoculant: legacyInoculant,
     soil: legacySoilValue,
+    summary: legacySummary,
     ...current
   } = raw;
   const legacyRateValues = (legacyRate ?? "").match(/\d+(?:\.\d+)?/g)?.map(Number) ?? [];
@@ -209,6 +218,7 @@ export function normalizeProductDetails(value: unknown, packSize = ""): ProductD
   return {
     ...emptyProductDetails,
     ...current,
+    tagline: current.tagline ?? legacySummary ?? "",
     standLifeNotes: current.standLifeNotes ?? current.persistenceLongevity ?? "",
     recordType: current.recordType ?? legacyKind ?? "Mix",
     alsoKnownAs: Array.isArray(current.alsoKnownAs) ? current.alsoKnownAs : [],
@@ -231,6 +241,7 @@ export function normalizeProductDetails(value: unknown, packSize = ""): ProductD
     endUse: Array.isArray(current.endUse) ? current.endUse : [],
     livestock: Array.isArray(current.livestock) ? current.livestock : [],
     companionSpecies: Array.isArray(current.companionSpecies) ? current.companionSpecies : [],
+    keyAttributes: Array.isArray(current.keyAttributes) ? current.keyAttributes : [],
     certification: Array.isArray(current.certification) ? current.certification : [],
     components,
     photos: Array.isArray(current.photos) ? current.photos : [],
@@ -343,7 +354,10 @@ const productDetailsObjectSchema = z.object({
   certification: z.array(z.enum(["ASF Code of Practice", "Certified Quality Assured Seed", "Certified seed", "Licensed production"])),
   isThirdPartyProduct: z.boolean(),
   supplierName: z.string().max(180),
-  summary: z.string().max(500),
+  tagline: z.string().max(60),
+  blurb: z.string(),
+  keyAttributes: z.array(z.string()),
+  distributionNote: z.string(),
   description: z.string().max(200000),
   notes: z.string().max(2000),
   components: z.array(z.object({ productLink: z.string().max(180), speciesName: z.string().max(120), inclusionRate: z.number().nullable(), unit: z.string().max(20), note: z.string().max(4000) })),

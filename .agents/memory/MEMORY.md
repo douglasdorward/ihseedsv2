@@ -4,3 +4,4 @@
 - [Catalogue data backfills](catalogue-data-backfills.md) — corrective backfills must be persisted one-time migrations, never request-time reconciliation.
 - [Catalogue taxonomy draft integrity](catalogue-taxonomy-drafts.md) — taxonomy lifecycle rules must account for assignments stored inside pending product snapshots.
 - [Workbook and editor parity](workbook-editor-parity.md) — an accepted import is incomplete until every imported record also passes the admin editor schema unchanged.
+- [Legacy published workbook round-trip](workbook-legacy-published-roundtrip.md) — unchanged live records predating new required fields must round-trip without weakening new publish rules.

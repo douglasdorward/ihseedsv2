@@ -64,6 +64,88 @@
   -webkit-line-clamp: 2;
 }
 
+.product-hero-tagline {
+  margin: 0;
+  max-width: 42ch;
+  color: #fff;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.product-blurb {
+  max-width: 56ch;
+  margin: 0;
+  color: var(--green);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.product-key-attributes {
+  padding: 28px 30px;
+  border: 1px solid #c5ccc5;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f4f7f2, #fff);
+}
+.product-key-attributes h2 {
+  margin: 0 0 16px;
+  color: var(--green);
+  font-size: 24px;
+}
+.product-key-attributes ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.product-key-attributes li {
+  display: flex;
+  gap: 10px;
+  color: var(--black-green);
+  font-weight: 600;
+  line-height: 1.45;
+}
+.product-key-attributes li::before {
+  flex: 0 0 auto;
+  width: 1.25em;
+  height: 1.25em;
+  margin-top: .1em;
+  border-radius: 50%;
+  background: var(--yellow);
+  color: var(--green);
+  content: "✓";
+  font-size: .8em;
+  font-weight: 800;
+  line-height: 1.25em;
+  text-align: center;
+}
+.product-distribution-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px 22px;
+  border-left: 4px solid var(--yellow);
+  border-radius: 0 12px 12px 0;
+  background: var(--green);
+  color: #fff;
+}
+.product-distribution-note svg { flex: 0 0 auto; color: var(--yellow); }
+.product-distribution-note p { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.55; }
+
+.product-detail-grid {
+  width: 100%;
+}
+.product-detail-grid > * {
+  min-width: 0;
+}
+.product-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 .legacy-grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -135,4 +217,7 @@
   .feature-panel .feature-image {
     min-height: 240px;
   }
+  .product-key-attributes { padding: 22px; }
+  .product-key-attributes ul { grid-template-columns: 1fr; }
+  .product-blurb { font-size: 19px; }
 }

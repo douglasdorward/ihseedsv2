@@ -24,6 +24,8 @@ export const listProductsResponseSubcategoryIdMultipleOf = 1;
 
 export const listProductsResponseSaleLinesItemSortOrderMultipleOf = 1;
 
+export const listProductsResponseDetailsTaglineMax = 60;
+
 export const listProductsResponseDetailsSowingRatesItemMinMin = 0;
 
 export const listProductsResponseDetailsSowingRatesItemMaxMin = 0;
@@ -77,8 +79,11 @@ export const ListProductsResponseItem = zod.object({
   "details": zod.object({
   "recordType": zod.string(),
   "botanicalName": zod.string(),
-  "bredByOrigin": zod.string(),
   "distributedBy": zod.string(),
+  "tagline": zod.string().max(listProductsResponseDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "persistencyType": zod.string(),
   "ploidy": zod.string(),
   "flowerColour": zod.string(),
@@ -122,7 +127,6 @@ export const ListProductsResponseItem = zod.object({
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string(),
   "certification": zod.array(zod.string()),
-  "summary": zod.string(),
   "description": zod.string(),
   "components": zod.array(zod.object({
   "productLink": zod.string().max(listProductsResponseDetailsComponentsItemProductLinkMax),
@@ -226,7 +230,7 @@ export const createProductBodyDetailsLicenceRestrictionMax = 1000;
 
 export const createProductBodyDetailsSupplierNameMax = 180;
 
-export const createProductBodyDetailsSummaryMax = 500;
+export const createProductBodyDetailsTaglineMax = 60;
 
 export const createProductBodyDetailsDescriptionMax = 200000;
 
@@ -332,7 +336,10 @@ export const CreateProductBody = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(createProductBodyDetailsSupplierNameMax),
-  "summary": zod.string().max(createProductBodyDetailsSummaryMax),
+  "tagline": zod.string().max(createProductBodyDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(createProductBodyDetailsDescriptionMax),
   "notes": zod.string().max(createProductBodyDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -433,7 +440,7 @@ export const createProductResponseDetailsLicenceRestrictionMax = 1000;
 
 export const createProductResponseDetailsSupplierNameMax = 180;
 
-export const createProductResponseDetailsSummaryMax = 500;
+export const createProductResponseDetailsTaglineMax = 60;
 
 export const createProductResponseDetailsDescriptionMax = 200000;
 
@@ -559,7 +566,10 @@ export const CreateProductResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(createProductResponseDetailsSupplierNameMax),
-  "summary": zod.string().max(createProductResponseDetailsSummaryMax),
+  "tagline": zod.string().max(createProductResponseDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(createProductResponseDetailsDescriptionMax),
   "notes": zod.string().max(createProductResponseDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -686,7 +696,7 @@ export const updateProductBodyDetailsLicenceRestrictionMax = 1000;
 
 export const updateProductBodyDetailsSupplierNameMax = 180;
 
-export const updateProductBodyDetailsSummaryMax = 500;
+export const updateProductBodyDetailsTaglineMax = 60;
 
 export const updateProductBodyDetailsDescriptionMax = 200000;
 
@@ -796,7 +806,10 @@ export const UpdateProductBody = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(updateProductBodyDetailsSupplierNameMax),
-  "summary": zod.string().max(updateProductBodyDetailsSummaryMax),
+  "tagline": zod.string().max(updateProductBodyDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(updateProductBodyDetailsDescriptionMax),
   "notes": zod.string().max(updateProductBodyDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -897,7 +910,7 @@ export const updateProductResponseDetailsLicenceRestrictionMax = 1000;
 
 export const updateProductResponseDetailsSupplierNameMax = 180;
 
-export const updateProductResponseDetailsSummaryMax = 500;
+export const updateProductResponseDetailsTaglineMax = 60;
 
 export const updateProductResponseDetailsDescriptionMax = 200000;
 
@@ -1023,7 +1036,10 @@ export const UpdateProductResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(updateProductResponseDetailsSupplierNameMax),
-  "summary": zod.string().max(updateProductResponseDetailsSummaryMax),
+  "tagline": zod.string().max(updateProductResponseDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(updateProductResponseDetailsDescriptionMax),
   "notes": zod.string().max(updateProductResponseDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -1140,7 +1156,7 @@ export const getAdminSummaryResponseRecentProductsItemDetailsLicenceRestrictionM
 
 export const getAdminSummaryResponseRecentProductsItemDetailsSupplierNameMax = 180;
 
-export const getAdminSummaryResponseRecentProductsItemDetailsSummaryMax = 500;
+export const getAdminSummaryResponseRecentProductsItemDetailsTaglineMax = 60;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsDescriptionMax = 200000;
 
@@ -1274,7 +1290,10 @@ export const GetAdminSummaryResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSupplierNameMax),
-  "summary": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSummaryMax),
+  "tagline": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsDescriptionMax),
   "notes": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -1382,7 +1401,7 @@ export const listAdminProductsResponseOneDetailsLicenceRestrictionMax = 1000;
 
 export const listAdminProductsResponseOneDetailsSupplierNameMax = 180;
 
-export const listAdminProductsResponseOneDetailsSummaryMax = 500;
+export const listAdminProductsResponseOneDetailsTaglineMax = 60;
 
 export const listAdminProductsResponseOneDetailsDescriptionMax = 200000;
 
@@ -1499,7 +1518,7 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsLicenceRestrictionMax
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsSupplierNameMax = 180;
 
-export const listAdminProductsResponseTwoDraftOneOneDetailsSummaryMax = 500;
+export const listAdminProductsResponseTwoDraftOneOneDetailsTaglineMax = 60;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
@@ -1627,7 +1646,10 @@ export const ListAdminProductsResponseItem = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(listAdminProductsResponseOneDetailsSupplierNameMax),
-  "summary": zod.string().max(listAdminProductsResponseOneDetailsSummaryMax),
+  "tagline": zod.string().max(listAdminProductsResponseOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(listAdminProductsResponseOneDetailsDescriptionMax),
   "notes": zod.string().max(listAdminProductsResponseOneDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -1739,7 +1761,10 @@ export const ListAdminProductsResponseItem = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsSupplierNameMax),
-  "summary": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsSummaryMax),
+  "tagline": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsDescriptionMax),
   "notes": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -1863,7 +1888,7 @@ export const getAdminProductResponseOneDetailsLicenceRestrictionMax = 1000;
 
 export const getAdminProductResponseOneDetailsSupplierNameMax = 180;
 
-export const getAdminProductResponseOneDetailsSummaryMax = 500;
+export const getAdminProductResponseOneDetailsTaglineMax = 60;
 
 export const getAdminProductResponseOneDetailsDescriptionMax = 200000;
 
@@ -1980,7 +2005,7 @@ export const getAdminProductResponseTwoDraftOneOneDetailsLicenceRestrictionMax =
 
 export const getAdminProductResponseTwoDraftOneOneDetailsSupplierNameMax = 180;
 
-export const getAdminProductResponseTwoDraftOneOneDetailsSummaryMax = 500;
+export const getAdminProductResponseTwoDraftOneOneDetailsTaglineMax = 60;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
@@ -2108,7 +2133,10 @@ export const GetAdminProductResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(getAdminProductResponseOneDetailsSupplierNameMax),
-  "summary": zod.string().max(getAdminProductResponseOneDetailsSummaryMax),
+  "tagline": zod.string().max(getAdminProductResponseOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(getAdminProductResponseOneDetailsDescriptionMax),
   "notes": zod.string().max(getAdminProductResponseOneDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -2220,7 +2248,10 @@ export const GetAdminProductResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsSupplierNameMax),
-  "summary": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsSummaryMax),
+  "tagline": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsDescriptionMax),
   "notes": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -2359,7 +2390,7 @@ export const saveProductDraftRevisionBodyDetailsLicenceRestrictionMax = 1000;
 
 export const saveProductDraftRevisionBodyDetailsSupplierNameMax = 180;
 
-export const saveProductDraftRevisionBodyDetailsSummaryMax = 500;
+export const saveProductDraftRevisionBodyDetailsTaglineMax = 60;
 
 export const saveProductDraftRevisionBodyDetailsDescriptionMax = 200000;
 
@@ -2471,7 +2502,10 @@ export const SaveProductDraftRevisionBody = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(saveProductDraftRevisionBodyDetailsSupplierNameMax),
-  "summary": zod.string().max(saveProductDraftRevisionBodyDetailsSummaryMax),
+  "tagline": zod.string().max(saveProductDraftRevisionBodyDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(saveProductDraftRevisionBodyDetailsDescriptionMax),
   "notes": zod.string().max(saveProductDraftRevisionBodyDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -2583,7 +2617,7 @@ export const saveProductDraftRevisionResponseOneDetailsLicenceRestrictionMax = 1
 
 export const saveProductDraftRevisionResponseOneDetailsSupplierNameMax = 180;
 
-export const saveProductDraftRevisionResponseOneDetailsSummaryMax = 500;
+export const saveProductDraftRevisionResponseOneDetailsTaglineMax = 60;
 
 export const saveProductDraftRevisionResponseOneDetailsDescriptionMax = 200000;
 
@@ -2700,7 +2734,7 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsLicenceRestric
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSupplierNameMax = 180;
 
-export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSummaryMax = 500;
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsTaglineMax = 60;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
@@ -2828,7 +2862,10 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(saveProductDraftRevisionResponseOneDetailsSupplierNameMax),
-  "summary": zod.string().max(saveProductDraftRevisionResponseOneDetailsSummaryMax),
+  "tagline": zod.string().max(saveProductDraftRevisionResponseOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(saveProductDraftRevisionResponseOneDetailsDescriptionMax),
   "notes": zod.string().max(saveProductDraftRevisionResponseOneDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -2940,7 +2977,10 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSupplierNameMax),
-  "summary": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSummaryMax),
+  "tagline": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsDescriptionMax),
   "notes": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -3063,7 +3103,7 @@ export const publishProductResponseOneDetailsLicenceRestrictionMax = 1000;
 
 export const publishProductResponseOneDetailsSupplierNameMax = 180;
 
-export const publishProductResponseOneDetailsSummaryMax = 500;
+export const publishProductResponseOneDetailsTaglineMax = 60;
 
 export const publishProductResponseOneDetailsDescriptionMax = 200000;
 
@@ -3180,7 +3220,7 @@ export const publishProductResponseTwoDraftOneOneDetailsLicenceRestrictionMax = 
 
 export const publishProductResponseTwoDraftOneOneDetailsSupplierNameMax = 180;
 
-export const publishProductResponseTwoDraftOneOneDetailsSummaryMax = 500;
+export const publishProductResponseTwoDraftOneOneDetailsTaglineMax = 60;
 
 export const publishProductResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
@@ -3308,7 +3348,10 @@ export const PublishProductResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(publishProductResponseOneDetailsSupplierNameMax),
-  "summary": zod.string().max(publishProductResponseOneDetailsSummaryMax),
+  "tagline": zod.string().max(publishProductResponseOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(publishProductResponseOneDetailsDescriptionMax),
   "notes": zod.string().max(publishProductResponseOneDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -3420,7 +3463,10 @@ export const PublishProductResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(publishProductResponseTwoDraftOneOneDetailsSupplierNameMax),
-  "summary": zod.string().max(publishProductResponseTwoDraftOneOneDetailsSummaryMax),
+  "tagline": zod.string().max(publishProductResponseTwoDraftOneOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(publishProductResponseTwoDraftOneOneDetailsDescriptionMax),
   "notes": zod.string().max(publishProductResponseTwoDraftOneOneDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -3543,7 +3589,7 @@ export const archiveProductResponseOneDetailsLicenceRestrictionMax = 1000;
 
 export const archiveProductResponseOneDetailsSupplierNameMax = 180;
 
-export const archiveProductResponseOneDetailsSummaryMax = 500;
+export const archiveProductResponseOneDetailsTaglineMax = 60;
 
 export const archiveProductResponseOneDetailsDescriptionMax = 200000;
 
@@ -3660,7 +3706,7 @@ export const archiveProductResponseTwoDraftOneOneDetailsLicenceRestrictionMax = 
 
 export const archiveProductResponseTwoDraftOneOneDetailsSupplierNameMax = 180;
 
-export const archiveProductResponseTwoDraftOneOneDetailsSummaryMax = 500;
+export const archiveProductResponseTwoDraftOneOneDetailsTaglineMax = 60;
 
 export const archiveProductResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
@@ -3788,7 +3834,10 @@ export const ArchiveProductResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(archiveProductResponseOneDetailsSupplierNameMax),
-  "summary": zod.string().max(archiveProductResponseOneDetailsSummaryMax),
+  "tagline": zod.string().max(archiveProductResponseOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(archiveProductResponseOneDetailsDescriptionMax),
   "notes": zod.string().max(archiveProductResponseOneDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -3900,7 +3949,10 @@ export const ArchiveProductResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsSupplierNameMax),
-  "summary": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsSummaryMax),
+  "tagline": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsDescriptionMax),
   "notes": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -4023,7 +4075,7 @@ export const restoreProductResponseOneDetailsLicenceRestrictionMax = 1000;
 
 export const restoreProductResponseOneDetailsSupplierNameMax = 180;
 
-export const restoreProductResponseOneDetailsSummaryMax = 500;
+export const restoreProductResponseOneDetailsTaglineMax = 60;
 
 export const restoreProductResponseOneDetailsDescriptionMax = 200000;
 
@@ -4140,7 +4192,7 @@ export const restoreProductResponseTwoDraftOneOneDetailsLicenceRestrictionMax = 
 
 export const restoreProductResponseTwoDraftOneOneDetailsSupplierNameMax = 180;
 
-export const restoreProductResponseTwoDraftOneOneDetailsSummaryMax = 500;
+export const restoreProductResponseTwoDraftOneOneDetailsTaglineMax = 60;
 
 export const restoreProductResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
@@ -4268,7 +4320,10 @@ export const RestoreProductResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(restoreProductResponseOneDetailsSupplierNameMax),
-  "summary": zod.string().max(restoreProductResponseOneDetailsSummaryMax),
+  "tagline": zod.string().max(restoreProductResponseOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(restoreProductResponseOneDetailsDescriptionMax),
   "notes": zod.string().max(restoreProductResponseOneDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -4380,7 +4435,10 @@ export const RestoreProductResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsSupplierNameMax),
-  "summary": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsSummaryMax),
+  "tagline": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsDescriptionMax),
   "notes": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -4503,7 +4561,7 @@ export const discardProductDraftResponseOneDetailsLicenceRestrictionMax = 1000;
 
 export const discardProductDraftResponseOneDetailsSupplierNameMax = 180;
 
-export const discardProductDraftResponseOneDetailsSummaryMax = 500;
+export const discardProductDraftResponseOneDetailsTaglineMax = 60;
 
 export const discardProductDraftResponseOneDetailsDescriptionMax = 200000;
 
@@ -4620,7 +4678,7 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsLicenceRestrictionM
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsSupplierNameMax = 180;
 
-export const discardProductDraftResponseTwoDraftOneOneDetailsSummaryMax = 500;
+export const discardProductDraftResponseTwoDraftOneOneDetailsTaglineMax = 60;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsDescriptionMax = 200000;
 
@@ -4748,7 +4806,10 @@ export const DiscardProductDraftResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(discardProductDraftResponseOneDetailsSupplierNameMax),
-  "summary": zod.string().max(discardProductDraftResponseOneDetailsSummaryMax),
+  "tagline": zod.string().max(discardProductDraftResponseOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(discardProductDraftResponseOneDetailsDescriptionMax),
   "notes": zod.string().max(discardProductDraftResponseOneDetailsNotesMax),
   "components": zod.array(zod.object({
@@ -4860,7 +4921,10 @@ export const DiscardProductDraftResponse = zod.object({
   "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
   "isThirdPartyProduct": zod.boolean(),
   "supplierName": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsSupplierNameMax),
-  "summary": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsSummaryMax),
+  "tagline": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
   "description": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsDescriptionMax),
   "notes": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsNotesMax),
   "components": zod.array(zod.object({

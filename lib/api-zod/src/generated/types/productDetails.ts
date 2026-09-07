@@ -95,8 +95,11 @@ export interface ProductDetails {
   isThirdPartyProduct: boolean;
   /** @maxLength 180 */
   supplierName: string;
-  /** @maxLength 500 */
-  summary: string;
+  /** @maxLength 60 */
+  tagline: string;
+  blurb: string;
+  keyAttributes: string[];
+  distributionNote: string;
   /** @maxLength 200000 */
   description: string;
   /** @maxLength 2000 */

@@ -69,7 +69,7 @@ export default function Resources() {
                   <span style={{ color: "var(--green)", display: "flex" }}><Icon name="file-text" size={22} /></span>
                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <div style={{ fontSize: 16, fontWeight: 700, color: "var(--green)" }}>{product.name}</div>
-                    <div style={{ fontSize: 13, color: "var(--muted)" }}>{product.note}</div>
+                    <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.45 }}>{product.details.tagline}</div>
                   </div>
                   <div style={{ fontSize: 14, color: "var(--black-green)" }}>{product.packSize}</div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>2026 range</div>

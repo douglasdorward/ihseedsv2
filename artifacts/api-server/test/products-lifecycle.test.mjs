@@ -109,7 +109,10 @@ async function createProduct(label, overrides = {}) {
   return assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
     details: {
       ...product.details,
-      summary: "Lifecycle test summary",
+      tagline: "Lifecycle test tagline",
+      blurb: "Lifecycle test blurb",
+      keyAttributes: ["Lifecycle tested"],
+      distributionNote: "Distributed for lifecycle tests.",
       description: "Lifecycle test product description.",
     },
   })), 200);
@@ -132,7 +135,7 @@ function includesProduct(products, id) {
 }
 
 test("imported workbook lifecycle baseline remains exactly 77 Published and 73 Draft", async (t) => {
-  const source = await readFile(new URL("../../../attached_assets/IH_Seeds_-_Product_Data_Workbook_(pre-filled)_1788496018969.xlsx", import.meta.url));
+  const source = await readFile(new URL("../../../attached_assets/0_IH_Seeds_-_Product_Data_Workbook_(pre-filled)_-_description_1788757020628.xlsx", import.meta.url));
   const workbook = xlsx.read(source);
   const workbookSlugs = xlsx.utils.sheet_to_json(workbook.Sheets["1 Products"], { defval: "", raw: false })
     .map((row) => String(row.slug ?? "")).filter(Boolean);
@@ -199,7 +202,9 @@ test("drafts only require a product name but publishing requires public catalogu
   const publishResult = await request("POST", `/admin/products/${product.id}/publish`);
   assertStatus(publishResult, 400);
   assert.match(publishResult.data.error, /Category/);
-  assert.match(publishResult.data.error, /Summary/);
+  assert.match(publishResult.data.error, /Tagline/);
+  assert.match(publishResult.data.error, /Blurb/);
+  assert.match(publishResult.data.error, /Key attributes/);
   assert.match(publishResult.data.error, /Product description/);
 });
 
@@ -352,7 +357,10 @@ test("a later published category choice for a seed product is not reverted", asy
       details: {
         ...product.details,
         recordType: "Variety",
-        summary: "Migration regression test summary",
+        tagline: "Migration regression tagline",
+        blurb: "Migration regression blurb",
+        keyAttributes: ["Regression tested"],
+        distributionNote: "",
         description: "Migration regression test product description.",
       },
     })), 200);
@@ -508,7 +516,13 @@ test("catalogue lifecycle transition matrix protects public content", async () =
   for (const adminOnly of ["descriptionSource", "websiteUrlLegacy", "availabilityOverride", "listingOverride", "publishStatus", "publishedAt", "createdAt", "updatedAt"]) {
     assert.equal(adminOnly in publicProduct, false, `Public product exposed ${adminOnly}`);
   }
-  assert.equal("notes" in publicProduct.details, false, "Public product exposed internal notes");
+   assert.equal("notes" in publicProduct.details, false, "Public product exposed internal notes");
+   assert.equal("bredByOrigin" in publicProduct.details, false, "Public product exposed breeder provenance");
+   assert.equal("supplierName" in publicProduct.details, false, "Public product exposed supplier identity");
+   assert.equal(publicProduct.details.tagline, "Lifecycle test tagline");
+   assert.equal(publicProduct.details.blurb, "Lifecycle test blurb");
+   assert.deepEqual(publicProduct.details.keyAttributes, ["Lifecycle tested"]);
+   assert.equal(publicProduct.details.distributionNote, "Distributed for lifecycle tests.");
   assert.equal(includesProduct(await availability(), product.id), true);
 
   const revisionName = `Lifecycle revision ${testRunId}`;
@@ -573,16 +587,33 @@ test("catalogue lifecycle transition matrix protects public content", async () =
 });
 
 test("source and exported workbooks satisfy the round-trip parser contract", async () => {
-  const source = await readFile(new URL("../../../attached_assets/IH_Seeds_-_Product_Data_Workbook_(pre-filled)_1788496018969.xlsx", import.meta.url));
+  const source = await readFile(new URL("../../../attached_assets/0_IH_Seeds_-_Product_Data_Workbook_(pre-filled)_-_description_1788757020628.xlsx", import.meta.url));
+  const sourceBook = xlsx.read(source);
+  const sourceProducts = xlsx.utils.sheet_to_json(sourceBook.Sheets["1 Products"], { defval: "", raw: false });
+  const sourceHeaders = Object.keys(sourceProducts[0]);
+  assert.equal(sourceHeaders.length, 65);
+  assert.deepEqual(sourceHeaders.slice(sourceHeaders.indexOf("tagline"), sourceHeaders.indexOf("description") + 1), [
+    "tagline", "blurb", "key_attributes", "description",
+  ]);
+  assert.equal(sourceHeaders.at(-1), "distribution_note");
+  assert.equal(new Set(sourceProducts.map((row) => row.slug)).size, sourceProducts.length);
+  assert.equal(sourceProducts.every((row) => ["Published", "Draft", "Archived"].includes(row.status)), true);
+  const describedProduct = sourceProducts.find((row) => String(row.description).includes("\n"));
+  assert.ok(describedProduct, "Expected revised source workbook to contain a multiline product description");
+  assert.ok(String(describedProduct.tagline).trim());
+  assert.ok(String(describedProduct.blurb).trim());
+  assert.ok(String(describedProduct.key_attributes).split("|").some((attribute) => attribute.trim()));
   const sourceReport = assertStatus(await request("POST", "/admin/import/dry-run", {
     workbookBase64: source.toString("base64"),
   }), 200);
+  assert.equal(sourceReport.issues.some((issue) => issue.column === "status" &&
+    /Published products require|Invalid lifecycle status/.test(issue.problem)), false);
   assert.deepEqual(Object.fromEntries(Object.entries(sourceReport.sheets).slice(0, 7).map(([name, report]) => [name, report.rows])), {
     "1 Products": 150,
     "2 Sowing rates": 242,
     "3 Category specifics": 150,
     "4 Sale lines": 112,
-    "5 Mix components": 118,
+    "5 Mix components": 125,
     "6 Companions": 229,
     "7 Website SEO": 79,
   });
@@ -593,7 +624,7 @@ test("source and exported workbooks satisfy the round-trip parser contract", asy
     "2 Sowing rates": { accepted: 242, skipped: 0 },
     "3 Category specifics": { accepted: 150, skipped: 0 },
     "4 Sale lines": { accepted: 102, skipped: 10 },
-    "5 Mix components": { accepted: 118, skipped: 0 },
+    "5 Mix components": { accepted: 125, skipped: 0 },
     "6 Companions": { accepted: 229, skipped: 0 },
     "7 Website SEO": { accepted: 79, skipped: 0 },
   });
@@ -608,12 +639,120 @@ test("source and exported workbooks satisfy the round-trip parser contract", asy
   ]);
   const listsIndex = book.SheetNames.indexOf("Lists");
   assert.equal(book.Workbook?.Sheets?.[listsIndex]?.Hidden, 1);
+   const exportedProducts = xlsx.utils.sheet_to_json(book.Sheets["1 Products"], {
+     header: 1,
+     defval: "",
+     raw: false,
+   });
+   const productHeaders = exportedProducts[0];
+   assert.equal(productHeaders.includes("summary"), false);
+   assert.deepEqual(productHeaders.slice(productHeaders.indexOf("tagline"), productHeaders.indexOf("description") + 1), [
+     "tagline", "blurb", "key_attributes", "description",
+   ]);
+   assert.equal(productHeaders.at(-1), "distribution_note");
 
   const exportReport = assertStatus(await request("POST", "/admin/import/dry-run", {
     workbookBase64: exported.toString("base64"),
   }), 200);
   assert.deepEqual(exportReport.issues, []);
   assert.equal(exportReport.sheets["1 Products"].rows > 0, true);
+});
+
+test("published workbook rows enforce content fields and retain products absent from an upsert", async () => {
+  const categories = assertStatus(await request("GET", "/categories"), 200);
+  const other = categories.find((category) => category.slug === "other");
+  assert.ok(other, "Expected the seeded Other category");
+  const imported = await createProduct("workbook-upsert", { category: other.name, subcategoryId: other.id });
+  const absent = await createProduct("workbook-absent", { category: other.name, subcategoryId: other.id });
+  const sourceDescription = "First editorial paragraph.\n\nSecond editorial paragraph.";
+  const productRow = {
+    slug: imported.slug,
+    product_name: imported.name,
+    category: other.name,
+    sub_category: "",
+    record_type: "Mix",
+    tagline: "Workbook published tagline",
+    blurb: "Workbook published blurb",
+    key_attributes: "First attribute| Second attribute ",
+    description: sourceDescription,
+    status: "Published",
+    distribution_note: "Workbook distribution note",
+  };
+  const makeWorkbook = (row) => {
+    const book = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([row]), "1 Products");
+    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ category: other.name, record_type: "Mix" }]), "Lists");
+    return xlsx.write(book, { type: "buffer", bookType: "xlsx" });
+  };
+  const malformed = { ...productRow, key_attributes: " | ", status: "Published" };
+  const invalidStatus = { ...productRow, status: "Live" };
+  for (const row of [malformed, invalidStatus]) {
+    const report = assertStatus(await request("POST", "/admin/import/dry-run", {
+      workbookBase64: makeWorkbook(row).toString("base64"),
+    }), 200);
+    assert.equal(report.issues.some((issue) => issue.column === "status"), true);
+  }
+
+  const workbook = makeWorkbook(productRow);
+  const report = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: workbook.toString("base64"),
+  }), 200);
+  assert.deepEqual(report.issues, []);
+  assertStatus(await request("POST", "/admin/import/commit", {
+    workbookBase64: workbook.toString("base64"),
+    token: report.token,
+  }), 200);
+
+  const published = (await publicProducts()).find((product) => product.id === imported.id);
+  assert.ok(published);
+  assert.equal(published.details.tagline, productRow.tagline);
+  assert.equal(published.details.blurb, productRow.blurb);
+  assert.deepEqual(published.details.keyAttributes, ["First attribute", "Second attribute"]);
+  assert.equal(published.details.distributionNote, productRow.distribution_note);
+  assert.equal(published.details.description, sourceDescription);
+  assert.equal("bredByOrigin" in published.details, false);
+  assert.equal("supplierName" in published.details, false);
+  assert.equal((await adminProduct(absent.id)).id, absent.id, "Absent workbook products must be retained");
+
+  const exported = Buffer.from(await (await fetch(`${baseUrl}/api/admin/import/export`)).arrayBuffer());
+  const exportedBook = xlsx.read(exported);
+  const exportedRow = xlsx.utils.sheet_to_json(exportedBook.Sheets["1 Products"], { defval: "", raw: false })
+    .find((row) => row.slug === imported.slug);
+  assert.ok(exportedRow);
+  assert.equal(exportedRow.description, sourceDescription);
+  assert.equal(exportedRow.tagline, productRow.tagline);
+  assert.equal(exportedRow.blurb, productRow.blurb);
+  assert.equal(exportedRow.key_attributes, "First attribute|Second attribute");
+  assert.equal(exportedRow.distribution_note, productRow.distribution_note);
+  const reimport = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: exported.toString("base64"),
+  }), 200);
+  assert.deepEqual(reimport.issues, []);
+
+  const legacy = await createProduct("workbook-legacy", { category: other.name, subcategoryId: other.id });
+  assertStatus(await request("POST", `/admin/products/${legacy.id}/publish`), 200);
+  // Simulate an old Published JSON payload that predates blurb. This record is
+  // test-owned, so the compatibility check never mutates catalogue fixtures.
+  sql(`UPDATE ih_products SET details = details - 'blurb' WHERE id = ${legacy.id}`);
+  const legacyExport = Buffer.from(await (await fetch(`${baseUrl}/api/admin/import/export`)).arrayBuffer());
+  const legacyRow = xlsx.utils.sheet_to_json(xlsx.read(legacyExport).Sheets["1 Products"], { defval: "", raw: false })
+    .find((row) => row.slug === legacy.slug);
+  assert.equal(legacyRow.status, "", "Invalid legacy Published content exports as preserve-status");
+
+  const preserveWorkbook = makeWorkbook({ slug: legacy.slug, status: "" });
+  const preserveReport = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: preserveWorkbook.toString("base64"),
+  }), 200);
+  assertStatus(await request("POST", "/admin/import/commit", {
+    workbookBase64: preserveWorkbook.toString("base64"), token: preserveReport.token,
+  }), 200);
+  const degradedWorkbook = makeWorkbook({ slug: legacy.slug, status: "", key_attributes: " | " });
+  const degradedReport = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: degradedWorkbook.toString("base64"),
+  }), 200);
+  assertStatus(await request("POST", "/admin/import/commit", {
+    workbookBase64: degradedWorkbook.toString("base64"), token: degradedReport.token,
+  }), 400);
 });
 
 test("taxonomy assignment is saved as a draft and only reaches public products on publish", async () => {

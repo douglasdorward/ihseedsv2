@@ -394,8 +394,11 @@ export interface ProductDetails {
   isThirdPartyProduct: boolean;
   /** @maxLength 180 */
   supplierName: string;
-  /** @maxLength 500 */
-  summary: string;
+  /** @maxLength 60 */
+  tagline: string;
+  blurb: string;
+  keyAttributes: string[];
+  distributionNote: string;
   /** @maxLength 200000 */
   description: string;
   /** @maxLength 2000 */
@@ -483,8 +486,12 @@ export const PublicProductListingState = {
 export interface PublicProductDetails {
   recordType: string;
   botanicalName: string;
-  bredByOrigin: string;
   distributedBy: string;
+  /** @maxLength 60 */
+  tagline: string;
+  blurb: string;
+  keyAttributes: string[];
+  distributionNote: string;
   persistencyType: string;
   ploidy: string;
   flowerColour: string;
@@ -525,7 +532,6 @@ export interface PublicProductDetails {
   pbrProtected: boolean;
   pbrDetails: string;
   certification: string[];
-  summary: string;
   description: string;
   components: ProductComponent[];
   relatedProducts: string[];

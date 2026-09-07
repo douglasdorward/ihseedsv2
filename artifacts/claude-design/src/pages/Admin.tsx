@@ -125,8 +125,11 @@ const blankProduct: ProductInput = {
     certification: [],
     isThirdPartyProduct: false,
     supplierName: "",
-    summary: "",
+    tagline: "",
+    blurb: "",
+    keyAttributes: [],
     description: "",
+    distributionNote: "",
     notes: "",
     components: [],
     formulationYear: "",
@@ -205,7 +208,7 @@ function getTabFields(tab: number, form: any) {
     return ["saleLines"];
   }
   if (tab === 5) {
-    return ["details.summary", "details.description"];
+    return ["details.tagline", "details.blurb", "details.keyAttributes", "details.description"];
   }
   return [];
 }
@@ -787,7 +790,9 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         !form.slug.trim() && "Slug",
         !form.category.trim() && "Category",
         !form.details.recordType && "Record type",
-        !form.details.summary.trim() && "Summary",
+        !form.details.tagline.trim() && "Tagline",
+        !form.details.blurb.trim() && "Blurb",
+        !(form.details.keyAttributes ?? []).some((attribute: string) => attribute.trim()) && "Key attributes",
         !form.details.description.trim() && "Product description",
       ].filter(Boolean) as string[];
       if (missing.length > 0) {
@@ -1196,8 +1201,15 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
               <section className="admin-panel admin-form-card">
                 <h2>Content &amp; publishing</h2>
                 <div className="admin-form-grid">
-                  <label className="wide">Summary<textarea value={currentForm.details.summary} onChange={(e) => setDetail("summary", e.target.value)} rows={2}/></label>
+                  <label className="wide">Tagline <span className="admin-field-hint">Short product promise shown on product cards and below the product name (60 characters max).</span><input maxLength={60} value={currentForm.details.tagline} onChange={(e) => setDetail("tagline", e.target.value)} /><span className="admin-character-count">{currentForm.details.tagline.length}/60</span></label>
+                  <label className="wide">Blurb <span className="admin-field-hint">A concise introduction shown at the top of the product page.</span><textarea value={currentForm.details.blurb} onChange={(e) => setDetail("blurb", e.target.value)} rows={3}/></label>
+                  <div className="admin-repeat-group wide">
+                    <div className="admin-section-heading"><div><h3>Key attributes</h3><p>Add the concise product strengths displayed as bullets on the public page.</p></div>{viewMode !== "live" && !isArchived && <button className="admin-button outline small" type="button" onClick={() => addStringItem("keyAttributes")}><Icon name="plus" size={16}/>Add attribute</button>}</div>
+                    {currentForm.details.keyAttributes.map((attribute: string, index: number) => <div className="admin-repeat-row" key={index}><input value={attribute} onChange={(event) => updateStringItem("keyAttributes", index, event.target.value)} placeholder="e.g. Strong winter growth"/>{viewMode !== "live" && !isArchived && <button type="button" onClick={() => removeStringItem("keyAttributes", index)} aria-label="Remove key attribute">×</button>}</div>)}
+                    {currentForm.details.keyAttributes.length === 0 && <p className="admin-empty-inline">No key attributes added yet.</p>}
+                  </div>
                   <label className="wide">Description<textarea value={currentForm.details.description} onChange={(e) => setDetail("description", e.target.value)} rows={6}/></label>
+                  <label className="wide">Distribution note <span className="admin-field-hint">Optional highlighted information about availability or distribution.</span><textarea value={currentForm.details.distributionNote} onChange={(e) => setDetail("distributionNote", e.target.value)} rows={2}/></label>
                   <label>Description source (Admin only)<input value={currentForm.descriptionSource} onChange={(e) => setField("descriptionSource", e.target.value)} /></label>
                   <label>Legacy website URL (Admin only)<input value={currentForm.websiteUrlLegacy} onChange={(e) => setField("websiteUrlLegacy", e.target.value)} /></label>
                   <label className="wide">Internal notes (Admin only)<textarea value={currentForm.details.notes} onChange={(e) => setDetail("notes", e.target.value)} rows={3}/></label>

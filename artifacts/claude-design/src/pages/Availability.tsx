@@ -26,7 +26,10 @@ export default function Availability() {
             ) : (
               products.map((product) => (
                 <div className="availability-row" key={product.id} data-testid={`row-availability-${product.id}`}>
-                  <strong>{product.name}</strong>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <strong>{product.name}</strong>
+                    <span style={{ fontSize: 13, lineHeight: 1.4 }}>{product.details.tagline}</span>
+                  </div>
                   <span>{product.note}</span>
                   <StatusPill status={product.status} />
                 </div>

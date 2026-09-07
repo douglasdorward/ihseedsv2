@@ -49,7 +49,8 @@ export default function Home() {
                   </div>
                   <div className="product-details">
                     <h3>{product.name}</h3>
-                    <p>{product.packSize}</p>
+                    <p className="product-card-tagline">{product.details.tagline}</p>
+                    <small>{product.packSize}</small>
                     <strong>{product.price}</strong>
                   </div>
                 </Link>

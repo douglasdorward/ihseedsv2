@@ -49,7 +49,7 @@ export default function ProductDetail() {
     if (product) {
       document.title = `${product.details?.seoTitle || product.name} | IH Seeds`;
       const desc = document.querySelector('meta[name="description"]');
-      if (desc) desc.setAttribute("content", product.details?.seoDescription || product.note || "");
+      if (desc) desc.setAttribute("content", product.details?.seoDescription || product.details?.blurb || product.note || "");
       
       const link = document.querySelector('link[rel="canonical"]');
       const canonicalUrl = `${window.location.origin}${productPath(product)}`;
@@ -161,7 +161,7 @@ export default function ProductDetail() {
     "@type": "Product",
     "name": product.name,
     "brand": { "@type": "Brand", "name": "IH Seeds" },
-    "description": d.seoDescription || product.note,
+    "description": d.seoDescription || d.blurb || product.note,
     ...(productPhoto ? { "image": productPhoto } : {}),
     "additionalProperty": quickFacts.map(q => ({
       "@type": "PropertyValue",
@@ -181,8 +181,8 @@ export default function ProductDetail() {
                <Link href="/products" style={{ color: "inherit", textDecoration: "none" }}>Products</Link> › <Link href={`/products/${categorySlug}`} style={{ color: "inherit", textDecoration: "none" }}>{product.category}</Link>
             </div>
              <h1 className="product-title" style={{ margin: 0, fontSize: 64, lineHeight: 1.05, letterSpacing: "-0.01em", fontWeight: 700, color: "#FFFFFF", maxWidth: "20ch" }}>{product.name}</h1>
-             {d.botanicalName && <div style={{ fontSize: 20, fontStyle: "italic", color: "#C5CCC5" }}>{d.botanicalName}</div>}
-             {(d.summary || product.note) && <p style={{ margin: 0, fontSize: 22, lineHeight: 1.6, color: "#FFFFFF", maxWidth: "52ch" }}>{d.summary || product.note}</p>}
+              {d.tagline && <p className="product-hero-tagline">{d.tagline}</p>}
+              {d.botanicalName && <div style={{ fontSize: 20, fontStyle: "italic", color: "#C5CCC5" }}>{d.botanicalName}</div>}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, paddingTop: 8, alignItems: "center" }}>
               <StatusPill status={product.status} />
               {product.techSheet && (
@@ -197,9 +197,9 @@ export default function ProductDetail() {
         <div className="product-detail-grid" style={{ maxWidth: 1180, margin: "0 auto", padding: "72px 40px 96px", display: "grid", gridTemplateColumns: "minmax(0,1fr) 380px", gap: 64, alignItems: "start" }}>
           
           <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
-            {d.summary && (
-              <p style={{ margin: 0, fontSize: 22, lineHeight: 1.5, fontWeight: 600, color: "var(--green)", maxWidth: "56ch" }}>
-                {d.summary}
+            {d.blurb && (
+              <p className="product-blurb">
+                {d.blurb}
               </p>
             )}
 
@@ -217,11 +217,29 @@ export default function ProductDetail() {
               </div>
             )}
 
+            {d.keyAttributes?.filter((attribute) => attribute.trim()).length > 0 && (
+              <section className="product-key-attributes" aria-labelledby="key-attributes-heading">
+                <h2 id="key-attributes-heading">Key attributes</h2>
+                <ul>
+                  {d.keyAttributes.filter((attribute) => attribute.trim()).map((attribute, index) => (
+                    <li key={`${attribute}-${index}`}>{attribute}</li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {d.distributionNote?.trim() && (
+              <aside className="product-distribution-note" aria-label="Distribution information">
+                <Icon name="info" size={22} />
+                <p>{d.distributionNote}</p>
+              </aside>
+            )}
+
             {d.recordType === "Mix" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <h4 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--green)" }}>Mix Components</h4>
                 {d.formulationYear && <div style={{ fontSize: 14, color: "var(--muted)" }}>Formulation {d.formulationYear}</div>}
-                <div style={{ border: "1px solid var(--line)", borderRadius: 16, overflow: "hidden" }}>
+                <div className="product-table-wrap" style={{ border: "1px solid var(--line)", borderRadius: 16 }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                     <thead>
                       <tr style={{ background: "var(--sage)", color: "var(--green)", fontSize: 14 }}>
@@ -270,9 +288,9 @@ export default function ProductDetail() {
             {d.description && (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)" }}>About this variety</h2>
-                {d.description.split("\n\n").map((p, i) => (
+                {d.description.split(/\n\s*\n/).filter((paragraph) => paragraph.trim()).map((p, i) => (
                   <p key={i} style={{ margin: 0, fontSize: 17, lineHeight: 1.7, color: "var(--black-green)", maxWidth: "64ch" }}>
-                    {p}
+                    {p.trim()}
                   </p>
                 ))}
               </div>
@@ -301,7 +319,7 @@ export default function ProductDetail() {
             
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)" }}>How it's sold</h2>
-              <div style={{ border: "1px solid var(--line)", borderRadius: 16, overflow: "hidden" }}>
+              <div className="product-table-wrap" style={{ border: "1px solid var(--line)", borderRadius: 16 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                   <thead>
                     <tr style={{ background: "var(--sage)", color: "var(--green)", fontSize: 14 }}>
@@ -357,14 +375,13 @@ export default function ProductDetail() {
                   <div style={{ width: 64, height: 64, borderRadius: 8, backgroundImage: `url(${imageOptions[i%imageOptions.length]})`, backgroundSize: "cover" }} />
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: "var(--green)" }}>{p.name}</div>
-                    <div style={{ fontSize: 13, color: "var(--muted)" }}>{p.packSize}</div>
+                     <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.4 }}>{p.details.tagline}</div>
                   </div>
                 </Link>
               ))}
             </div>}
 
             <div style={{ fontSize: 12, color: "#75766E", marginTop: 16 }}>
-              {d.bredByOrigin && <div style={{ marginBottom: 4 }}>Bred by: {d.bredByOrigin}</div>}
               {d.distributedBy && <div style={{ marginBottom: 4 }}>Distributed by: {d.distributedBy}</div>}
                {d.certification.length > 0 && <div style={{ marginBottom: 4 }}>Certification: {d.certification.join(", ")}</div>}
                {d.pbrProtected && <div style={{ marginBottom: 4 }}>PBR: {d.pbrDetails || "Protected"}</div>}

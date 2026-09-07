@@ -38,8 +38,9 @@ type PublicProduct = {
 function toPublicDetails(value: unknown, packSize: string) {
   const d = normalizeProductDetails(value, packSize);
   return {
-    recordType: d.recordType, botanicalName: d.botanicalName, bredByOrigin: d.bredByOrigin,
-    distributedBy: d.distributedBy, persistencyType: d.persistencyType, ploidy: d.ploidy,
+    recordType: d.recordType, botanicalName: d.botanicalName, distributedBy: d.distributedBy,
+    tagline: d.tagline, blurb: d.blurb, keyAttributes: d.keyAttributes, distributionNote: d.distributionNote,
+    persistencyType: d.persistencyType, ploidy: d.ploidy,
     flowerColour: d.flowerColour, sowingRates: d.sowingRates, rainfallMinMm: d.rainfallMinMm,
     soilPhMin: d.soilPhMin, soilPhScale: d.soilPhScale, soilRangeLightest: d.soilRangeLightest,
     soilRangeHeaviest: d.soilRangeHeaviest, tolerance: d.tolerance, endUse: d.endUse,
@@ -52,9 +53,9 @@ function toPublicDetails(value: unknown, packSize: string) {
     applicationRate: d.applicationRate, diseasePestResistance: d.diseasePestResistance,
     standLifeNotes: d.standLifeNotes, grazingManagementNotes: d.grazingManagementNotes,
     pbrProtected: d.pbrProtected, pbrDetails: d.pbrDetails, certification: d.certification,
-    summary: d.summary, description: d.description, components: d.components,
+    description: d.description, components: d.components,
     relatedProducts: d.relatedProducts, formulationYear: d.formulationYear, photos: d.photos,
-    featured: d.featured, seoTitle: d.seoTitle, seoDescription: d.seoDescription,
+    featured: d.featured, seoTitle: d.seoTitle, seoDescription: d.seoDescription || d.blurb,
   };
 }
 
@@ -150,7 +151,9 @@ function getPublishValidationErrors(product: Product, payload: ProductEditablePa
     !product.slug.trim() && "Slug",
     !payload.category.trim() && "Category",
     !payload.details.recordType && "Record type",
-    !payload.details.summary.trim() && "Summary",
+    !payload.details.tagline.trim() && "Tagline",
+    !payload.details.blurb.trim() && "Blurb",
+    !payload.details.keyAttributes.some((attribute) => attribute.trim()) && "Key attributes",
     !payload.details.description.trim() && "Product description",
     payload.saleLines.length > 0 && payload.saleLines.filter((line) => line.isDefault).length !== 1 && "Exactly one default sale line",
     new Set(payload.saleLines.map((line) => line.stockCode)).size !== payload.saleLines.length && "Unique sale line stock codes",
