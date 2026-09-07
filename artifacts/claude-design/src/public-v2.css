@@ -369,6 +369,142 @@
   min-width: 0;
 }
 
+.also-popular-section {
+  padding: 80px 40px 96px;
+  background: var(--sage);
+}
+
+.also-popular-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.also-popular-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.also-popular-header h2 {
+  margin: 0;
+  color: var(--green);
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.1;
+}
+
+.also-popular-category-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--green);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.also-popular-category-link:hover {
+  text-decoration: underline;
+}
+
+.also-popular-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.also-popular-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.also-popular-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(29, 40, 28, 0.12);
+}
+
+.also-popular-image {
+  position: relative;
+  min-height: 210px;
+  background-color: #c5ccc5;
+  background-position: center;
+  background-size: cover;
+}
+
+.also-popular-image .status-pill {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+}
+
+.also-popular-card-body {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px;
+}
+
+.also-popular-card-body h3 {
+  margin: 0;
+  color: var(--green);
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.also-popular-card-body p {
+  display: -webkit-box;
+  margin: 8px 0 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.also-popular-arrow {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--yellow);
+  color: var(--green);
+}
+
+@media (max-width: 800px) {
+  .also-popular-section {
+    padding: 64px 20px 72px;
+  }
+
+  .also-popular-header {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-bottom: 24px;
+  }
+
+  .also-popular-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .also-popular-image {
+    min-height: 200px;
+  }
+}
+
 .related-product-name {
   font-size: 16px;
   font-weight: 700;

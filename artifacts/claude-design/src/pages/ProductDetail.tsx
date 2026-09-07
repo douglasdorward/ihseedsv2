@@ -91,6 +91,14 @@ export default function ProductDetail() {
   const relatedProducts = (d?.relatedProducts ?? [])
     .map((relatedSlug) => products.find((item) => item.slug === relatedSlug))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const alsoPopularProducts = products
+    .filter((item) => item.id !== product.id && item.category === product.category)
+    .sort((a, b) =>
+      Number(b.details.featured) - Number(a.details.featured) ||
+      (a.details.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.details.sortOrder ?? Number.MAX_SAFE_INTEGER) ||
+      a.name.localeCompare(b.name),
+    )
+    .slice(0, 3);
 
   // Quick facts
   const quickFacts = [];
@@ -392,6 +400,46 @@ export default function ProductDetail() {
 
         </div>
       </section>
+
+      {alsoPopularProducts.length > 0 && (
+        <section className="also-popular-section" aria-labelledby="also-popular-heading">
+          <div className="also-popular-inner">
+            <div className="also-popular-header">
+              <h2 id="also-popular-heading">Also popular:</h2>
+              <Link href={`/products/${categorySlug}`} className="also-popular-category-link">
+                View all {product.category}
+                <Icon name="arrow-right" size={18} />
+              </Link>
+            </div>
+            <div className="also-popular-grid">
+              {alsoPopularProducts.map((item, index) => {
+                const image = item.details.photos.find((photo) => photo.src.trim())?.src || imageOptions[(index + 1) % imageOptions.length];
+                return (
+                  <Link key={item.id} href={productPath(item)} className="also-popular-card">
+                    <div
+                      className="also-popular-image"
+                      role="img"
+                      aria-label={item.name}
+                      style={{ backgroundImage: `url(${image})` }}
+                    >
+                      <StatusPill status={item.status} />
+                    </div>
+                    <div className="also-popular-card-body">
+                      <div>
+                        <h3>{item.name}</h3>
+                        {item.details.tagline?.trim() && <p>{item.details.tagline}</p>}
+                      </div>
+                      <span className="also-popular-arrow" aria-hidden="true">
+                        <Icon name="arrow-right" size={18} />
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 }
