@@ -231,25 +231,27 @@ export default function ProductDetail() {
                         <tr style={{ background: "var(--sage)", color: "var(--green)", fontSize: 14 }}>
                           <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Component</th>
                           {hasComponentRates && <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Rate</th>}
-                          <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Note</th>
                         </tr>
                       </thead>
                       <tbody>
                         {d.components.map((component, i) => {
                           const componentProduct = products.find((item) => item.slug === component.productLink);
+                          const componentDescription = componentProduct?.details.blurb?.trim();
                           return (
                           <tr key={i} style={{ borderBottom: "1px solid var(--line)" }}>
-                            <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--green)" }}>
-                              {componentProduct
-                                ? <Link href={productPath(componentProduct)} style={{ color: "inherit" }}>{component.speciesName}</Link>
-                                : component.speciesName}
+                            <td className="mix-component-cell">
+                              <div className="mix-component-name">
+                                {componentProduct
+                                  ? <Link href={productPath(componentProduct)}>{component.speciesName}</Link>
+                                  : component.speciesName}
+                              </div>
+                              {componentDescription && <div className="mix-component-description">{componentDescription}</div>}
                             </td>
                             {hasComponentRates && <td style={{ padding: "12px 16px" }}>
                               {component.inclusionRate !== null
                                 ? `${component.inclusionRate}${component.unit ? `${component.unit === "%" ? "" : " "}${component.unit}` : ""}`
                                 : "—"}
                             </td>}
-                            <td style={{ padding: "12px 16px" }}>{component.note || "—"}</td>
                           </tr>
                           );
                         })}
