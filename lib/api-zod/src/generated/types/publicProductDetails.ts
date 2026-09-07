@@ -16,7 +16,6 @@ import type { ProductTolerance } from './productTolerance';
 export interface PublicProductDetails {
   recordType: string;
   botanicalName: string;
-  distributedBy: string;
   /** @maxLength 60 */
   tagline: string;
   blurb: string;

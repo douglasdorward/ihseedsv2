@@ -387,7 +387,6 @@ export default function ProductDetail() {
               )}
 
               <div className="product-meta-section">
-                {d.distributedBy && <div>Distributed by: {d.distributedBy}</div>}
                 {d.certification.length > 0 && <div>Certification: {d.certification.join(", ")}</div>}
                 {d.pbrProtected && <div>PBR: {d.pbrDetails || "Protected"}</div>}
               </div>

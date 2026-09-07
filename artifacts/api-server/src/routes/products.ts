@@ -38,7 +38,7 @@ type PublicProduct = {
 function toPublicDetails(value: unknown, packSize: string) {
   const d = normalizeProductDetails(value, packSize);
   return {
-    recordType: d.recordType, botanicalName: d.botanicalName, distributedBy: d.distributedBy,
+    recordType: d.recordType, botanicalName: d.botanicalName,
     tagline: d.tagline, blurb: d.blurb, keyAttributes: d.keyAttributes, distributionNote: d.distributionNote,
     persistencyType: d.persistencyType, ploidy: d.ploidy,
     flowerColour: d.flowerColour, sowingRates: d.sowingRates, rainfallMinMm: d.rainfallMinMm,

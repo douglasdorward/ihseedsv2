@@ -81,7 +81,6 @@ export const ListProductsResponseItem = zod.object({
   "details": zod.object({
   "recordType": zod.string(),
   "botanicalName": zod.string(),
-  "distributedBy": zod.string(),
   "tagline": zod.string().max(listProductsResponseDetailsTaglineMax),
   "blurb": zod.string(),
   "keyAttributes": zod.array(zod.string()),

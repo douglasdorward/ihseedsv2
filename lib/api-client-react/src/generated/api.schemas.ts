@@ -488,7 +488,6 @@ export const PublicProductListingState = {
 export interface PublicProductDetails {
   recordType: string;
   botanicalName: string;
-  distributedBy: string;
   /** @maxLength 60 */
   tagline: string;
   blurb: string;

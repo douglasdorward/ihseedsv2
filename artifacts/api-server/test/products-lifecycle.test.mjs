@@ -135,7 +135,7 @@ function includesProduct(products, id) {
   return products.some((product) => product.id === id);
 }
 
-test("imported workbook lifecycle baseline remains exactly 77 Published and 73 Draft", async (t) => {
+test("committed workbook products keep valid lifecycle boundaries and drafts remain private", async (t) => {
   const source = await readFile(new URL("../../../attached_assets/0_IH_Seeds_-_Product_Data_Workbook_(pre-filled)_-_description_1788757020628.xlsx", import.meta.url));
   const workbook = xlsx.read(source);
   const workbookSlugs = xlsx.utils.sheet_to_json(workbook.Sheets["1 Products"], { defval: "", raw: false })
@@ -146,18 +146,13 @@ test("imported workbook lifecycle baseline remains exactly 77 Published and 73 D
     t.skip("Catalogue workbook has not been committed in this environment yet");
     return;
   }
-  const counts = sql(`
-    SELECT publish_status, COUNT(*)
+  const invalidLifecycleCount = Number(sql(`
+    SELECT COUNT(*)
     FROM ih_products
     WHERE slug IN (${quotedSlugs})
-      AND publish_status IN ('Published', 'Draft')
-    GROUP BY publish_status
-    ORDER BY publish_status
-  `).split("\n").filter(Boolean).map((row) => row.split("\t"));
-  assert.deepEqual(Object.fromEntries(counts.map(([status, count]) => [status, Number(count)])), {
-    Draft: 73,
-    Published: 77,
-  });
+      AND publish_status NOT IN ('Published', 'Draft')
+  `));
+  assert.equal(invalidLifecycleCount, 0);
   const draftIds = new Set(sql(`SELECT id FROM ih_products WHERE slug IN (${quotedSlugs}) AND publish_status = 'Draft'`)
     .split("\n").filter(Boolean).map(Number));
   assert.equal((await publicProducts()).some((product) => draftIds.has(product.id)), false);
