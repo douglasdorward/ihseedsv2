@@ -754,15 +754,9 @@ export interface ProductCreateInput {
      * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
      */
   slug: string;
-  /**
-     * @minLength 1
-     * @maxLength 80
-     */
+  /** @maxLength 80 */
   price: string;
-  /**
-     * @minLength 1
-     * @maxLength 80
-     */
+  /** @maxLength 80 */
   packSize: string;
   status: ProductCreateInputStatus;
   /** @maxLength 500 */

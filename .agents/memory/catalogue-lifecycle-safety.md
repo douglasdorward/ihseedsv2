@@ -7,6 +7,8 @@ Never use a complete static catalogue as a public API fallback once records can 
 
 All writes that depend on a product's lifecycle state must check that state while holding the same product-row lock used by publish, archive, restore, and draft operations.
 
-**Why:** A stale fallback can leak retired content during an outage, while an unlocked check followed by a write can race publication and modify the live row outside the draft workflow.
+Drafts require only Product name, Slug, Category, and Record type. Publishing additionally requires the complete public content set; do not move those publishing requirements into draft saves.
 
-**How to apply:** When changing public data loading or catalogue mutation routes, preserve these two invariants and include the published-then-edited and concurrent transition cases in verification.
+**Why:** A stale fallback can leak retired content during an outage, an unlocked check followed by a write can race publication, and over-validating drafts prevents administrators from saving incomplete work safely.
+
+**How to apply:** Preserve the public-data, locking, and draft-vs-publish validation boundaries across the admin UI, API routes, workbook imports, and lifecycle tests.

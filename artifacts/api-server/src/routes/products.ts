@@ -160,6 +160,20 @@ function getPublishValidationErrors(product: Product, payload: ProductEditablePa
   ].filter(Boolean) as string[];
 }
 
+function getDraftValidationErrors(payload: {
+  name?: unknown;
+  slug?: unknown;
+  category?: unknown;
+  details?: { recordType?: unknown };
+}) {
+  return [
+    (typeof payload.name !== "string" || !payload.name.trim()) && "Product name",
+    (typeof payload.slug !== "string" || !payload.slug.trim()) && "Slug",
+    (typeof payload.category !== "string" || !payload.category.trim()) && "Category",
+    !payload.details?.recordType && "Record type",
+  ].filter(Boolean) as string[];
+}
+
 async function ensureProducts() {
   const existing = await db.select().from(productsTable)
     .orderBy(desc(productsTable.updatedAt), desc(productsTable.id));
@@ -285,10 +299,15 @@ router.get("/sitemap-products", async (_req, res): Promise<void> => {
 });
 
 router.post("/products", async (req, res): Promise<void> => {
+  const missingDraftFields = getDraftValidationErrors(req.body);
+  if (missingDraftFields.length > 0) {
+    res.status(400).json({ error: `Complete these fields before saving a draft: ${missingDraftFields.join(", ")}.` });
+    return;
+  }
   const parsed = insertProductSchema.safeParse({
     ...req.body,
-    slug: typeof req.body.slug === "string" && req.body.slug.trim() ? req.body.slug : createSlug(String(req.body.name ?? "")),
     publishStatus: "Draft",
+    details: normalizeProductDetails(req.body.details, String(req.body.packSize ?? "")),
   });
   if (!parsed.success) {
     req.log.warn({ errors: parsed.error.flatten() }, "Invalid product create request");
@@ -355,6 +374,11 @@ router.post("/admin/products/:id/draft", async (req, res): Promise<void> => {
   }
   if (product.publishStatus === "Archived") {
     res.status(409).json({ error: "Archived products must be restored to Draft before editing." });
+    return;
+  }
+  const missingDraftFields = getDraftValidationErrors({ ...req.body, slug: product.slug });
+  if (missingDraftFields.length > 0) {
+    res.status(400).json({ error: `Complete these fields before saving a draft: ${missingDraftFields.join(", ")}.` });
     return;
   }
   const parsed = productDraftSchema.safeParse(req.body);

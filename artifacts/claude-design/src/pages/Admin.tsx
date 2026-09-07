@@ -85,7 +85,7 @@ const blankProduct: ProductInput = {
   details: {
     stockCode: "",
     guideSection: "",
-    recordType: "Variety",
+    recordType: "" as any,
     botanicalName: "",
     alsoKnownAs: [],
     packSizes: [],
@@ -790,6 +790,18 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
       return;
     }
 
+    const missingDraftFields = [
+      !form.name.trim() && "Product name",
+      !form.slug.trim() && "Slug",
+      !form.category.trim() && "Category",
+      !form.details.recordType && "Record type",
+    ].filter(Boolean) as string[];
+    if (missingDraftFields.length > 0) {
+      setError(`Complete these fields before saving a draft: ${missingDraftFields.join(", ")}.`);
+      setSaving(false);
+      return;
+    }
+
     if (action === "publish") {
       const missing = [
         !form.slug.trim() && "Slug",
@@ -1010,9 +1022,9 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                 <h2>Basics</h2>
                 <div className="admin-form-grid">
                    <label><span className="admin-label-title">Product name<span className="admin-required-star" aria-hidden="true">*</span></span><input required value={currentForm.name} onChange={(event) => setField("name", event.target.value)} placeholder="e.g. SouWest™ Pasture Mix"/></label>
-                   <label><span className="admin-label-title">Slug<span className="admin-required-star" aria-hidden="true">*</span></span><input disabled={!isNew} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={currentForm.slug} onChange={(event) => setField("slug", event.target.value.toLowerCase())} placeholder="souwest-pasture-mix"/></label>
+                   <label><span className="admin-label-title">Slug<span className="admin-required-star" aria-hidden="true">*</span></span><input required disabled={!isNew} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={currentForm.slug} onChange={(event) => setField("slug", event.target.value.toLowerCase())} placeholder="souwest-pasture-mix"/></label>
                    <label><span className="admin-label-title">Category<span className="admin-required-star" aria-hidden="true">*</span></span>
-                     <select value={selectedRoot?.id ?? ""} disabled={loadingTaxonomy || Boolean(taxonomyError)} onChange={handleCategoryChange}>
+                    <select required value={selectedRoot?.id ?? ""} disabled={loadingTaxonomy || Boolean(taxonomyError)} onChange={handleCategoryChange}>
                       <option value="">Select a category</option>
                        {rootOptions.map((category: any) => <option key={category.id} value={category.id}>{category.name}{!category.active ? " (Inactive)" : ""}</option>)}
                     </select>
@@ -1023,7 +1035,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                        {childOptions.map((category: any) => <option key={category.id} value={category.id}>{category.name}{!category.active ? " (Inactive)" : ""}</option>)}
                     </select>
                   </label>
-                  <div className="admin-choice-field wide"><span className="admin-label-title">Record type<span className="admin-required-star" aria-hidden="true">*</span></span><div>{(["Mix", "Variety", "Commodity / generic"] as RecordKind[]).map((kind) => <button key={kind} type="button" className={currentForm.details.recordType === kind ? "selected" : ""} onClick={() => setDetail("recordType", kind as any)}>{kind}</button>)}</div></div>
+                  <div className="admin-choice-field wide" role="group" aria-required="true" aria-label="Record type"><span className="admin-label-title">Record type<span className="admin-required-star" aria-hidden="true">*</span></span><div>{(["Mix", "Variety", "Commodity / generic"] as RecordKind[]).map((kind) => <button key={kind} type="button" className={currentForm.details.recordType === kind ? "selected" : ""} onClick={() => setDetail("recordType", kind as any)}>{kind}</button>)}</div></div>
                   {!isMix && <label>Botanical name<input value={currentForm.details.botanicalName} onChange={(event) => setDetail("botanicalName", event.target.value)} placeholder="e.g. Lolium multiflorum"/></label>}
                   <label>Persistency type<select value={currentForm.details.persistencyType} onChange={(event) => setDetail("persistencyType", event.target.value as any)}><option value="">Not set</option>{["Annual", "Biennial", "Perennial", "Hybrid perennial", "Short-term (1–2 years)"].map((value) => <option key={value}>{value}</option>)}</select></label>
                   {!isMix && <label>Bred by / origin<input value={currentForm.details.bredByOrigin} onChange={(event) => setDetail("bredByOrigin", event.target.value)} placeholder="e.g. Agricom (NZ)"/></label>}

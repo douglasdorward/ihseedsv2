@@ -104,6 +104,7 @@ async function createProduct(label, overrides = {}) {
     category: overrides.category ?? "Automated tests",
     subcategoryId: overrides.subcategoryId ?? null,
     techSheet: "",
+    details: { recordType: "Variety" },
   }), 201);
   createdProductIds.push(product.id);
   return assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
@@ -182,8 +183,8 @@ test("sitemap contains only canonical Active Published product paths", async () 
   assert.equal(locations.some((location) => location.startsWith("/products/")), false);
 });
 
-test("drafts only require a product name but publishing requires public catalogue fields", async () => {
-  const product = assertStatus(await request("POST", "/products", {
+test("drafts require only identity fields while publishing requires public catalogue fields", async () => {
+  const incompleteDraft = await request("POST", "/products", {
     name: `Incomplete lifecycle draft ${testRunId}`,
     slug: "",
     price: "",
@@ -192,16 +193,46 @@ test("drafts only require a product name but publishing requires public catalogu
     note: "",
     category: "",
     techSheet: "",
+  });
+  assertStatus(incompleteDraft, 400);
+  assert.match(incompleteDraft.data.error, /Slug/);
+  assert.match(incompleteDraft.data.error, /Category/);
+  assert.match(incompleteDraft.data.error, /Record type/);
+
+  const slug = `minimal-lifecycle-draft-${testRunId}`;
+  const product = assertStatus(await request("POST", "/products", {
+    name: `Minimal lifecycle draft ${testRunId}`,
+    slug,
+    price: "",
+    packSize: "",
+    status: "in-stock",
+    note: "",
+    category: "Automated tests",
+    techSheet: "",
+    details: {
+      recordType: "Variety",
+    },
   }), 201);
   createdProductIds.push(product.id);
 
   assert.equal(product.publishStatus, "Draft");
-  assert.ok(product.slug, "Expected a stable slug to be generated from the product name");
+  assert.equal(product.slug, slug);
   assert.equal(includesProduct(await publicProducts(), product.id), false);
+
+  const missingDraftCategory = await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+    category: "",
+  }));
+  assertStatus(missingDraftCategory, 400);
+  assert.match(missingDraftCategory.data.error, /Category/);
+
+  const missingDraftRecordType = await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+    details: { ...product.details, recordType: "" },
+  }));
+  assertStatus(missingDraftRecordType, 400);
+  assert.match(missingDraftRecordType.data.error, /Record type/);
 
   const publishResult = await request("POST", `/admin/products/${product.id}/publish`);
   assertStatus(publishResult, 400);
-  assert.match(publishResult.data.error, /Category/);
   assert.match(publishResult.data.error, /Tagline/);
   assert.match(publishResult.data.error, /Blurb/);
   assert.match(publishResult.data.error, /Key attributes/);

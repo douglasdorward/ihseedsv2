@@ -279,8 +279,8 @@ export const createProductBodyDetailsProductFormMax = 120;
 export const CreateProductBody = zod.object({
   "name": zod.string().min(1).max(createProductBodyNameMax),
   "slug": zod.string().min(1).max(createProductBodySlugMax).regex(createProductBodySlugRegExp),
-  "price": zod.string().min(1).max(createProductBodyPriceMax),
-  "packSize": zod.string().min(1).max(createProductBodyPackSizeMax),
+  "price": zod.string().max(createProductBodyPriceMax),
+  "packSize": zod.string().max(createProductBodyPackSizeMax),
   "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
   "note": zod.string().max(createProductBodyNoteMax),
   "category": zod.string().min(1).max(createProductBodyCategoryMax),
