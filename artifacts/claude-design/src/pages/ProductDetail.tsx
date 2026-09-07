@@ -114,45 +114,44 @@ export default function ProductDetail() {
     quickFacts.push({ label: "Livestock", value: d.livestock.join(", "), icon: "paw-print" });
   }
 
-  // Category specific details row
-  const catSpecs = [];
+  // Category-specific quick facts
   if (product.category === "Ryegrasses" || product.category === "Fescues & Other Grasses" || product.category === "Sub-Tropical Grasses") {
-    if (d.ploidy) catSpecs.push({ label: "Ploidy", value: d.ploidy });
+    if (d.ploidy) quickFacts.push({ label: "Ploidy", value: d.ploidy, icon: "layers" });
   }
   if (product.category === "Ryegrasses" || product.category === "Fescues & Other Grasses") {
-    if (d.headingDate) catSpecs.push({ label: "Heading date", value: d.headingDate });
-    if (d.endophyte) catSpecs.push({ label: "Endophyte", value: d.endophyte });
+    if (d.headingDate) quickFacts.push({ label: "Heading date", value: d.headingDate, icon: "calendar" });
+    if (d.endophyte) quickFacts.push({ label: "Endophyte", value: d.endophyte, icon: "sprout" });
   }
   if (product.category === "Ryegrasses") {
-    if (d.headingOffsetDays) catSpecs.push({ label: "Heading offset", value: `${d.headingOffsetDays} days vs Nui` });
-    if (d.argtResistant) catSpecs.push({ label: "ARGT resistance", value: "Resistant" });
+    if (d.headingOffsetDays) quickFacts.push({ label: "Heading offset", value: `${d.headingOffsetDays} days vs Nui`, icon: "clock" });
+    if (d.argtResistant) quickFacts.push({ label: "ARGT resistance", value: "Resistant", icon: "shield" });
   }
   if (product.category === "Clovers" || product.category === "Serradellas & Medics") {
-    if (d.maturityDays) catSpecs.push({ label: "Days to flowering", value: d.maturityDays });
-    if (d.hardSeedLevel) catSpecs.push({ label: "Hard seed level", value: d.hardSeedLevel });
-    if (d.flowerColour) catSpecs.push({ label: "Flower colour", value: d.flowerColour });
+    if (d.maturityDays) quickFacts.push({ label: "Days to flowering", value: d.maturityDays, icon: "calendar" });
+    if (d.hardSeedLevel) quickFacts.push({ label: "Hard seed level", value: d.hardSeedLevel, icon: "shield" });
+    if (d.flowerColour) quickFacts.push({ label: "Flower colour", value: d.flowerColour, icon: "flower" });
   }
   if (product.category === "Clovers") {
-    if (d.oestrogenLevel) catSpecs.push({ label: "Oestrogen level", value: d.oestrogenLevel });
+    if (d.oestrogenLevel) quickFacts.push({ label: "Oestrogen level", value: d.oestrogenLevel, icon: "activity" });
   }
   if (product.category === "Clovers" || product.category === "Serradellas & Medics") {
-    if (d.bloatRisk) catSpecs.push({ label: "Bloat risk", value: d.bloatRisk });
+    if (d.bloatRisk) quickFacts.push({ label: "Bloat risk", value: d.bloatRisk, icon: "shield" });
   }
   if (product.category === "Lucerne") {
-    if (d.winterActivity) catSpecs.push({ label: "Winter activity", value: d.winterActivity });
+    if (d.winterActivity) quickFacts.push({ label: "Winter activity", value: d.winterActivity, icon: "cloud-rain" });
   }
   if (product.category === "Fescues & Other Grasses" || product.category === "Sub-Tropical Grasses") {
-    if (d.growthSeason) catSpecs.push({ label: "Growth season", value: d.growthSeason });
+    if (d.growthSeason) quickFacts.push({ label: "Growth season", value: d.growthSeason, icon: "sun" });
   }
   if (product.category === "Forage & Grain Crops") {
-    if (d.growingSeason) catSpecs.push({ label: "Growing season", value: d.growingSeason });
-    if (d.weeksToFirstGrazing) catSpecs.push({ label: "Weeks to first grazing", value: d.weeksToFirstGrazing });
-    if (d.prussicAcidRisk) catSpecs.push({ label: "Prussic acid risk", value: d.prussicAcidRisk });
-    if (d.regrowth) catSpecs.push({ label: "Regrowth", value: d.regrowth });
+    if (d.growingSeason) quickFacts.push({ label: "Growing season", value: d.growingSeason, icon: "sun" });
+    if (d.weeksToFirstGrazing) quickFacts.push({ label: "Weeks to first grazing", value: d.weeksToFirstGrazing, icon: "clock" });
+    if (d.prussicAcidRisk) quickFacts.push({ label: "Prussic acid risk", value: d.prussicAcidRisk, icon: "shield" });
+    if (d.regrowth) quickFacts.push({ label: "Regrowth", value: d.regrowth, icon: "refresh-cw" });
   }
   if (product.category === "Biologicals") {
-    if (d.productForm) catSpecs.push({ label: "Product form", value: d.productForm });
-    if (d.applicationRate) catSpecs.push({ label: "Application rate", value: d.applicationRate });
+    if (d.productForm) quickFacts.push({ label: "Product form", value: d.productForm, icon: "package" });
+    if (d.applicationRate) quickFacts.push({ label: "Application rate", value: d.applicationRate, icon: "scale" });
   }
 
   // Schema markup
@@ -222,7 +221,7 @@ export default function ProductDetail() {
                 </aside>
               )}
 
-              {d.recordType === "Mix" ? (
+              {d.recordType === "Mix" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   <h4 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--green)" }}>Mix Components</h4>
                   {d.formulationYear && <div style={{ fontSize: 14, color: "var(--muted)" }}>Formulation {d.formulationYear}</div>}
@@ -258,19 +257,7 @@ export default function ProductDetail() {
                     </table>
                   </div>
                 </div>
-              ) : product.category !== "Herbs" && catSpecs.length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  <h4 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--green)" }}>{product.category} details</h4>
-                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap", background: "var(--sage)", padding: 24, borderRadius: 16 }}>
-                    {catSpecs.map((s, i) => (
-                      <div key={i} style={{ flex: "1 1 200px" }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", marginBottom: 4 }}>{s.label}</div>
-                        <div style={{ fontSize: 15, fontWeight: 600, color: "var(--black-green)" }}>{s.value}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
+              )}
 
               {d.description && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>

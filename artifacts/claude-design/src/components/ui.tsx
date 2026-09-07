@@ -27,6 +27,12 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
   if (name === "shield") return <svg {...common}><path d="M12 3 20 6v5c0 5.2-3.2 8.5-8 10-4.8-1.5-8-4.8-8-10V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg>;
   if (name === "target") return <svg {...common}><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/><path d="M18.5 5.5 21 3m-2.5.5H21V6"/></svg>;
   if (name === "paw-print") return <svg {...common}><ellipse cx="12" cy="16" rx="5" ry="4"/><circle cx="6.5" cy="9" r="2"/><circle cx="10.5" cy="6" r="2"/><circle cx="15.5" cy="6.5" r="2"/><circle cx="18" cy="10" r="2"/></svg>;
+  if (name === "calendar") return <svg {...common}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4m8-4v4M3 10h18"/><path d="M8 14h.01m4 0h.01m4 0h.01M8 18h.01m4 0h.01"/></svg>;
+  if (name === "flower") return <svg {...common}><circle cx="12" cy="12" r="2"/><path d="M12 10c-3-1-4.5-3-3.2-4.8C10.2 3.2 12 5 12 8m2 4c1-3 3-4.5 4.8-3.2C20.8 10.2 19 12 16 12m-4 2c3 1 4.5 3 3.2 4.8C13.8 20.8 12 19 12 16m-2-4c-1 3-3 4.5-4.8 3.2C3.2 13.8 5 12 8 12"/><path d="m9.2 9.2-1.8-1.8m7.4 1.8 1.8-1.8m-1.8 7.4 1.8 1.8m-7.4-1.8-1.8 1.8"/></svg>;
+  if (name === "activity") return <svg {...common}><path d="M3 12h4l2.5-7 5 14 2.5-7h4"/></svg>;
+  if (name === "sun") return <svg {...common}><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>;
+  if (name === "refresh-cw") return <svg {...common}><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 8a7 7 0 0 1 11.7-2.6L20 8M4 16l2.2 2.6A7 7 0 0 0 17.9 16"/></svg>;
+  if (name === "package") return <svg {...common}><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.5 7.8 7.5 4.3 7.5-4.3M12 12v9M8 5.3l8 4.5"/></svg>;
   if (name === "handshake") return <svg {...common}><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06 0 6.04 6.04 0 0 1 0 8.27l-2.9 2.9a2.12 2.12 0 0 1-3.11 0l-2.61-2.61"/></svg>;
   if (name === "file-text") return <svg {...common}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>;
   if (name === "plus") return <svg {...common}><path d="M12 5v14M5 12h14"/></svg>;
