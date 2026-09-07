@@ -54,8 +54,7 @@
 
 .product-card-tagline {
   display: -webkit-box;
-  min-height: 3em;
-  margin: 4px 0 0;
+  margin: 0;
   overflow: hidden;
   color: var(--black-green);
   font-size: 15px;

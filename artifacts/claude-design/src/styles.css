@@ -69,10 +69,11 @@ h1 strong { display:block; font-weight:800; }
 .status-in-stock { color:var(--green); background:#EFF1EE; }
 .status-low,.status-very-low { color:#8A5A05; background:#FCEED3; }
 .status-unavailable { color:var(--muted); background:#EDEDEB; }
-.product-details { padding:20px; }
-.product-details h3 { color:var(--green); font-size:19px; line-height:1.35; min-height:52px; }
+.product-details { display:flex; flex-direction:column; gap:8px; padding:20px; }
+.product-details h3 { margin:0; color:var(--green); font-size:19px; line-height:1.35; }
 .product-details p { color:var(--muted); margin:8px 0; font-size:14px; }
 .product-details strong { color:var(--black-green); font-size:14px; }
+.product-details small:empty,.product-details strong:empty { display:none; }
 .loading-state,.empty-state { background:#fff; padding:44px; color:var(--muted); border-radius:16px; text-align:center; }
 .about-section { padding:96px 40px; }
 .feature-panel { max-width:1360px; margin:auto; min-height:480px; display:grid; grid-template-columns:1fr 1fr; background:var(--green); border-radius:18px; overflow:hidden; }
@@ -449,7 +450,7 @@ h1 strong { display:block; font-weight:800; }
   .region-chips { flex-wrap:nowrap; overflow-x:auto; padding-bottom:28px; scrollbar-width:none; }
   .region-chips::-webkit-scrollbar { display:none; }
   .region-chips button { flex:0 0 auto; }
-  .product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }.product-image { min-height:180px; }.product-details { padding:14px; }.product-details h3 { font-size:16px; min-height:64px; }.product-details p { font-size:12px; }.product-image .status-pill { left:8px; bottom:8px; padding:6px 8px; font-size:10px; }
+  .product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }.product-image { min-height:180px; }.product-details { padding:14px; }.product-details h3 { font-size:16px; }.product-details p { font-size:12px; }.product-image .status-pill { left:8px; bottom:8px; padding:6px 8px; font-size:10px; }
   .about-section { padding:64px 20px; }.feature-panel { grid-template-columns:1fr; }.feature-image { min-height:240px; }.feature-copy { padding:34px 26px; }.feature-copy p { font-size:15px; }
   .availability-table { padding:4px 18px; }.availability-row { grid-template-columns:1fr auto; gap:8px 14px; padding:17px 0; }.availability-row strong { font-size:16px; }.availability-row span:not(.status-pill) { grid-column:1; font-size:13px; }.availability-row .status-pill { grid-column:2; grid-row:1 / span 2; }
   .article-grid { grid-template-columns:1fr; gap:20px; }.article-image { min-height:190px; }.article-copy h3 { font-size:20px; }
