@@ -194,17 +194,17 @@ export default function ProductDetail() {
       </div>
 
       <section style={{ background: "#FFFFFF" }}>
-        <div className="product-detail-grid" style={{ maxWidth: 1180, margin: "0 auto", padding: "72px 40px 96px", display: "grid", gridTemplateColumns: "minmax(0,1fr) 380px", gap: 64, alignItems: "start" }}>
+        <div className="product-detail-grid">
           
-          <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+          <div className="product-main-col">
             {d.blurb && (
-              <p className="product-blurb">
+              <p className="product-blurb mobile-order-1">
                 {d.blurb}
               </p>
             )}
 
             {d.keyAttributes?.filter((attribute) => attribute.trim()).length > 0 && (
-              <section className="product-key-attributes" aria-labelledby="key-attributes-heading">
+              <section className="product-key-attributes mobile-order-3" aria-labelledby="key-attributes-heading">
                 <h2 id="key-attributes-heading">Key attributes</h2>
                 <ul>
                   {d.keyAttributes.filter((attribute) => attribute.trim()).map((attribute, index) => (
@@ -214,180 +214,190 @@ export default function ProductDetail() {
               </section>
             )}
 
-            {d.distributionNote?.trim() && (
-              <aside className="product-distribution-note" aria-label="Distribution information">
-                <Icon name="info" size={22} />
-                <p>{d.distributionNote}</p>
-              </aside>
-            )}
+            <div className="product-main-rest mobile-order-4">
+              {d.distributionNote?.trim() && (
+                <aside className="product-distribution-note" aria-label="Distribution information">
+                  <Icon name="info" size={22} />
+                  <p>{d.distributionNote}</p>
+                </aside>
+              )}
 
-            {d.recordType === "Mix" ? (
+              {d.recordType === "Mix" ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <h4 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--green)" }}>Mix Components</h4>
+                  {d.formulationYear && <div style={{ fontSize: 14, color: "var(--muted)" }}>Formulation {d.formulationYear}</div>}
+                  <div className="product-table-wrap" style={{ border: "1px solid var(--line)", borderRadius: 16 }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+                      <thead>
+                        <tr style={{ background: "var(--sage)", color: "var(--green)", fontSize: 14 }}>
+                          <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Component</th>
+                          {hasComponentRates && <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Rate</th>}
+                          <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Note</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {d.components.map((component, i) => {
+                          const componentProduct = products.find((item) => item.slug === component.productLink);
+                          return (
+                          <tr key={i} style={{ borderBottom: "1px solid var(--line)" }}>
+                            <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--green)" }}>
+                              {componentProduct
+                                ? <Link href={productPath(componentProduct)} style={{ color: "inherit" }}>{component.speciesName}</Link>
+                                : component.speciesName}
+                            </td>
+                            {hasComponentRates && <td style={{ padding: "12px 16px" }}>
+                              {component.inclusionRate !== null
+                                ? `${component.inclusionRate}${component.unit ? `${component.unit === "%" ? "" : " "}${component.unit}` : ""}`
+                                : "—"}
+                            </td>}
+                            <td style={{ padding: "12px 16px" }}>{component.note || "—"}</td>
+                          </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : product.category !== "Herbs" && catSpecs.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <h4 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--green)" }}>{product.category} details</h4>
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap", background: "var(--sage)", padding: 24, borderRadius: 16 }}>
+                    {catSpecs.map((s, i) => (
+                      <div key={i} style={{ flex: "1 1 200px" }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", marginBottom: 4 }}>{s.label}</div>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: "var(--black-green)" }}>{s.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {d.description && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)" }}>About this variety</h2>
+                  {d.description.split(/\n\s*\n/).filter((paragraph) => paragraph.trim()).map((p, i) => (
+                    <p key={i} style={{ margin: 0, fontSize: 17, lineHeight: 1.7, color: "var(--black-green)", maxWidth: "64ch" }}>
+                      {p.trim()}
+                    </p>
+                  ))}
+                </div>
+              )}
+
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <h4 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--green)" }}>Mix Components</h4>
-                {d.formulationYear && <div style={{ fontSize: 14, color: "var(--muted)" }}>Formulation {d.formulationYear}</div>}
+                {d.grazingManagementNotes && (
+                  <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}>
+                    <summary style={{ fontSize: 20, fontWeight: 700, color: "var(--green)", cursor: "pointer", listStyle: "none" }}>Planting & grazing notes</summary>
+                    <p style={{ margin: "16px 0 0", fontSize: 16, lineHeight: 1.6, color: "var(--black-green)" }}>{d.grazingManagementNotes}</p>
+                  </details>
+                )}
+                {d.diseasePestResistance && (
+                  <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}>
+                    <summary style={{ fontSize: 20, fontWeight: 700, color: "var(--green)", cursor: "pointer", listStyle: "none" }}>Disease & pest resistance</summary>
+                    <p style={{ margin: "16px 0 0", fontSize: 16, lineHeight: 1.6, color: "var(--black-green)" }}>{d.diseasePestResistance}</p>
+                  </details>
+                )}
+                {d.standLifeNotes && (
+                  <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}>
+                    <summary style={{ fontSize: 20, fontWeight: 700, color: "var(--green)", cursor: "pointer", listStyle: "none" }}>Stand life</summary>
+                    <p style={{ margin: "16px 0 0", fontSize: 16, lineHeight: 1.6, color: "var(--black-green)" }}>{d.standLifeNotes}</p>
+                  </details>
+                )}
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)" }}>How it's sold</h2>
                 <div className="product-table-wrap" style={{ border: "1px solid var(--line)", borderRadius: 16 }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                     <thead>
                       <tr style={{ background: "var(--sage)", color: "var(--green)", fontSize: 14 }}>
-                        <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Component</th>
-                        {hasComponentRates && <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Rate</th>}
-                        <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Note</th>
+                        <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Form</th>
+                        <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Grade</th>
+                        <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Pack</th>
+                        <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Status</th>
+                        <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Price</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {d.components.map((component, i) => {
-                        const componentProduct = products.find((item) => item.slug === component.productLink);
-                        return (
+                      {product.saleLines?.map((line, i) => (
                         <tr key={i} style={{ borderBottom: "1px solid var(--line)" }}>
-                          <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--green)" }}>
-                            {componentProduct
-                              ? <Link href={productPath(componentProduct)} style={{ color: "inherit" }}>{component.speciesName}</Link>
-                              : component.speciesName}
+                          <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--green)" }}>{line.seedForm || "Bare"}</td>
+                          <td style={{ padding: "12px 16px" }}>{line.seedGrade || "—"}</td>
+                          <td style={{ padding: "12px 16px" }}>{line.packKg ? `${line.packKg} ${line.packUnit}` : "—"}</td>
+                          <td style={{ padding: "12px 16px" }}>
+                             {line.availability
+                               ? <StatusPill status={({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as any)[line.availability]} />
+                               : <span style={{ color: "var(--muted)", fontWeight: 600 }}>TBA</span>}
                           </td>
-                          {hasComponentRates && <td style={{ padding: "12px 16px" }}>
-                            {component.inclusionRate !== null
-                              ? `${component.inclusionRate}${component.unit ? `${component.unit === "%" ? "" : " "}${component.unit}` : ""}`
-                              : "—"}
-                          </td>}
-                          <td style={{ padding: "12px 16px" }}>{component.note || "—"}</td>
+                          <td style={{ padding: "12px 16px", color: "var(--muted)" }}>{line.priceDisplay}</td>
                         </tr>
-                        );
-                      })}
+                      ))}
+                      {(!product.saleLines || product.saleLines.length === 0) && (
+                        <tr>
+                           <td colSpan={5} style={{ padding: "12px 16px", color: "var(--muted)", textAlign: "center" }}>No active sale lines</td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
               </div>
-            ) : product.category !== "Herbs" && catSpecs.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <h4 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--green)" }}>{product.category} details</h4>
-                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", background: "var(--sage)", padding: 24, borderRadius: 16 }}>
-                  {catSpecs.map((s, i) => (
-                    <div key={i} style={{ flex: "1 1 200px" }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", marginBottom: 4 }}>{s.label}</div>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: "var(--black-green)" }}>{s.value}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {d.description && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)" }}>About this variety</h2>
-                {d.description.split(/\n\s*\n/).filter((paragraph) => paragraph.trim()).map((p, i) => (
-                  <p key={i} style={{ margin: 0, fontSize: 17, lineHeight: 1.7, color: "var(--black-green)", maxWidth: "64ch" }}>
-                    {p.trim()}
-                  </p>
-                ))}
-              </div>
-            )}
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {d.grazingManagementNotes && (
-                <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}>
-                  <summary style={{ fontSize: 20, fontWeight: 700, color: "var(--green)", cursor: "pointer", listStyle: "none" }}>Planting & grazing notes</summary>
-                  <p style={{ margin: "16px 0 0", fontSize: 16, lineHeight: 1.6, color: "var(--black-green)" }}>{d.grazingManagementNotes}</p>
-                </details>
-              )}
-              {d.diseasePestResistance && (
-                <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}>
-                  <summary style={{ fontSize: 20, fontWeight: 700, color: "var(--green)", cursor: "pointer", listStyle: "none" }}>Disease & pest resistance</summary>
-                  <p style={{ margin: "16px 0 0", fontSize: 16, lineHeight: 1.6, color: "var(--black-green)" }}>{d.diseasePestResistance}</p>
-                </details>
-              )}
-              {d.standLifeNotes && (
-                <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}>
-                  <summary style={{ fontSize: 20, fontWeight: 700, color: "var(--green)", cursor: "pointer", listStyle: "none" }}>Stand life</summary>
-                  <p style={{ margin: "16px 0 0", fontSize: 16, lineHeight: 1.6, color: "var(--black-green)" }}>{d.standLifeNotes}</p>
-                </details>
-              )}
-            </div>
-            
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)" }}>How it's sold</h2>
-              <div className="product-table-wrap" style={{ border: "1px solid var(--line)", borderRadius: 16 }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-                  <thead>
-                    <tr style={{ background: "var(--sage)", color: "var(--green)", fontSize: 14 }}>
-                      <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Form</th>
-                      <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Grade</th>
-                      <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Pack</th>
-                      <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Status</th>
-                      <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {product.saleLines?.map((line, i) => (
-                      <tr key={i} style={{ borderBottom: "1px solid var(--line)" }}>
-                        <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--green)" }}>{line.seedForm || "Bare"}</td>
-                        <td style={{ padding: "12px 16px" }}>{line.seedGrade || "—"}</td>
-                        <td style={{ padding: "12px 16px" }}>{line.packKg ? `${line.packKg} ${line.packUnit}` : "—"}</td>
-                        <td style={{ padding: "12px 16px" }}>
-                           {line.availability
-                             ? <StatusPill status={({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as any)[line.availability]} />
-                             : <span style={{ color: "var(--muted)", fontWeight: 600 }}>TBA</span>}
-                        </td>
-                        <td style={{ padding: "12px 16px", color: "var(--muted)" }}>{line.priceDisplay}</td>
-                      </tr>
-                    ))}
-                    {(!product.saleLines || product.saleLines.length === 0) && (
-                      <tr>
-                         <td colSpan={5} style={{ padding: "12px 16px", color: "var(--muted)", textAlign: "center" }}>No active sale lines</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
             </div>
           </div>
 
-          <div className="product-sidebar" style={{ display: "flex", flexDirection: "column", gap: 32, position: "sticky", top: 120 }}>
-            {quickFacts.length > 0 && (
-              <section aria-labelledby="quick-facts-heading" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <h2 id="quick-facts-heading" style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--green)" }}>Quick facts</h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: 16, background: "var(--sage)", padding: 24, borderRadius: 16 }}>
-                  {quickFacts.map((s, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                      <span style={{ color: "var(--green)", marginTop: 2 }}>{s.icon && <Icon name={s.icon as any} size={22} />}</span>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", marginBottom: 4 }}>{s.label}</div>
-                        <div style={{ fontSize: 15, fontWeight: 600, color: "var(--black-green)" }}>{s.value}</div>
+          <div className="product-sidebar-col">
+            <div className="product-sidebar-card mobile-order-2">
+              {quickFacts.length > 0 && (
+                <section className="quick-facts-section" aria-labelledby="quick-facts-heading">
+                  <h2 id="quick-facts-heading" className="sidebar-card-heading">Quick facts</h2>
+                  <div className="quick-facts-list">
+                    {quickFacts.map((s, i) => (
+                      <div key={i} className="quick-fact-item">
+                        <span className="quick-fact-icon">{s.icon && <Icon name={s.icon as any} size={22} />}</span>
+                        <div className="quick-fact-content">
+                          <div className="quick-fact-label">{s.label}</div>
+                          <div className="quick-fact-value">{s.value}</div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+                    ))}
+                  </div>
+                </section>
+              )}
 
-            <div style={{ background: "var(--sage)", borderRadius: 16, padding: 32, display: "flex", flexDirection: "column", gap: 24 }}>
-              <StatusPill status={product.status} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ fontSize: 32, fontWeight: 700, color: "var(--green)" }}>{product.saleLines?.[0]?.priceDisplay || "Contact for pricing"}</div>
-                <div style={{ fontSize: 15, color: "var(--muted)" }}>Available in {product.saleLines?.[0]?.packKg ? `${product.saleLines?.[0]?.packKg} ${product.saleLines?.[0]?.packUnit}` : product.packSize}</div>
-              </div>
-              <Link href="/contact" className="button button-primary" style={{ textAlign: "center" }}>Ask about an order</Link>
-              <div style={{ fontSize: 14, lineHeight: 1.5, color: "var(--muted)", textAlign: "center" }}>
-                We supply through rural resellers across Western Australia.
+              <div className="pricing-section">
+                <StatusPill status={product.status} />
+                <div className="pricing-details">
+                  <div className="pricing-amount">{product.saleLines?.[0]?.priceDisplay || "Contact for pricing"}</div>
+                  <div className="pricing-unit">Available in {product.saleLines?.[0]?.packKg ? `${product.saleLines?.[0]?.packKg} ${product.saleLines?.[0]?.packUnit}` : product.packSize}</div>
+                </div>
+                <Link href="/contact" className="button button-primary" style={{ textAlign: "center", width: "100%" }}>Ask about an order</Link>
+                <div className="pricing-disclaimer">
+                  We supply through rural resellers across Western Australia.
+                </div>
               </div>
             </div>
 
-            {relatedProducts.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "var(--green)" }}>Related products</h3>
-              {relatedProducts.map((p, i) => (
-                <Link key={p.id} href={productPath(p)} style={{ display: "flex", gap: 16, textDecoration: "none", alignItems: "center", padding: 12, borderRadius: 12, border: "1px solid var(--line)", background: "#fff" }}>
-                  <div style={{ width: 64, height: 64, borderRadius: 8, backgroundImage: `url(${imageOptions[i%imageOptions.length]})`, backgroundSize: "cover" }} />
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "var(--green)" }}>{p.name}</div>
-                     <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.4 }}>{p.details.tagline}</div>
+            <div className="product-sidebar-bottom mobile-order-5">
+              {relatedProducts.length > 0 && (
+                <div className="related-products-section">
+                  <h3 className="sidebar-bottom-heading">Related products</h3>
+                  <div className="related-products-list">
+                    {relatedProducts.map((p, i) => (
+                      <Link key={p.id} href={productPath(p)} className="related-product-card">
+                        <div className="related-product-image" style={{ backgroundImage: `url(${imageOptions[i%imageOptions.length]})` }} />
+                        <div className="related-product-info">
+                          <div className="related-product-name">{p.name}</div>
+                          <div className="related-product-tagline">{p.details.tagline}</div>
+                        </div>
+                      </Link>
+                    ))}
                   </div>
-                </Link>
-              ))}
-            </div>}
+                </div>
+              )}
 
-            <div style={{ fontSize: 12, color: "#75766E", marginTop: 16 }}>
-              {d.distributedBy && <div style={{ marginBottom: 4 }}>Distributed by: {d.distributedBy}</div>}
-               {d.certification.length > 0 && <div style={{ marginBottom: 4 }}>Certification: {d.certification.join(", ")}</div>}
-               {d.pbrProtected && <div style={{ marginBottom: 4 }}>PBR: {d.pbrDetails || "Protected"}</div>}
+              <div className="product-meta-section">
+                {d.distributedBy && <div>Distributed by: {d.distributedBy}</div>}
+                {d.certification.length > 0 && <div>Certification: {d.certification.join(", ")}</div>}
+                {d.pbrProtected && <div>PBR: {d.pbrDetails || "Protected"}</div>}
+              </div>
             </div>
           </div>
 
