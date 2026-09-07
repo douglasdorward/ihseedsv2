@@ -461,6 +461,10 @@ h1 strong { display:block; font-weight:800; }
 @media (max-width:520px) {
   .footer-columns { grid-template-columns:1fr; gap:28px; }
   .product-grid { grid-template-columns:1fr; }
+  .product-details { gap:10px; padding:18px; }
+  .product-details h3 { font-size:20px; line-height:1.35; }
+  .product-details p { font-size:15px; line-height:1.6; }
+  .product-image .status-pill { left:12px; bottom:12px; padding:7px 10px; font-size:12px; }
   .availability-heading h1 { font-size:46px !important; }
 }
 .admin-view-toggle { display:flex; align-items:center; gap:4px; background:#e9eeea; padding:4px; border-radius:8px; margin-right: 16px; }
