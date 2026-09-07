@@ -33,7 +33,7 @@ export default function Products() {
             </div>
           </div>
           <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)" }}>
-            <img src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=900&q=80" alt="Seed in a weathered hand" style={{ display: "block", width: "100%", height: 380, objectFit: "cover" }} />
+             <img className="products-hero-image" src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=900&q=80" alt="Seed in a weathered hand" style={{ display: "block", width: "100%", height: 380, objectFit: "cover" }} />
           </div>
         </div>
       </section>

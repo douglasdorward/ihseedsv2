@@ -418,6 +418,7 @@ h1 strong { display:block; font-weight:800; }
   .content-width { padding:64px 20px; }.section-heading { align-items:flex-start; gap:18px; flex-direction:column; }.section-heading h2,.feature-copy h2,.contact-intro h2 { font-size:42px; }.section-heading .button { align-self:flex-start; }
   .page-hero-grid { grid-template-columns:1fr !important; gap:32px !important; padding:56px 20px !important; }
   .page-hero-grid h1 { font-size:42px !important; }
+  .products-hero-image { height:240px !important; }
   .page-content { padding:56px 20px !important; }
   .page-wide { padding:40px 20px 64px !important; }
   .page-breadcrumb { padding:24px 20px 8px !important; }
@@ -466,6 +467,7 @@ h1 strong { display:block; font-weight:800; }
   .product-details h3 { font-size:20px; line-height:1.35; }
   .product-details p { font-size:15px; line-height:1.6; }
   .product-image .status-pill { left:12px; bottom:12px; padding:7px 10px; font-size:12px; }
+  .products-hero-image { height:200px !important; }
   .availability-heading h1 { font-size:46px !important; }
 }
 .admin-view-toggle { display:flex; align-items:center; gap:4px; background:#e9eeea; padding:4px; border-radius:8px; margin-right: 16px; }
