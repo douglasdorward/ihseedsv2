@@ -1088,7 +1088,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                   <label>Persistency type<select value={currentForm.details.persistencyType} onChange={(event) => setDetail("persistencyType", event.target.value as any)}><option value="">Not set</option>{["Annual", "Biennial", "Perennial", "Hybrid perennial", "Short-term (1–2 years)"].map((value) => <option key={value}>{value}</option>)}</select></label>
                   {!isMix && <label>Bred by / origin<input value={currentForm.details.bredByOrigin} onChange={(event) => setDetail("bredByOrigin", event.target.value)} placeholder="e.g. Agricom (NZ)"/></label>}
                   <label className="admin-check-row"><input type="checkbox" checked={currentForm.details.australianBred} onChange={(event) => setDetail("australianBred", event.target.checked)}/><span><strong>Australian bred</strong></span></label>
-                  <label>Distributed by<input value={currentForm.details.distributedBy} onChange={(event) => setDetail("distributedBy", event.target.value)} placeholder="IH Seeds"/></label>
+                  <label>Admin only<input value={currentForm.details.distributedBy ?? ""} onChange={(event) => setDetail("distributedBy", event.target.value)} placeholder="IH Seeds"/></label>
                 </div>
                 <div className="admin-repeat-group">
                   <div className="admin-section-heading"><div><h3>Also known as</h3></div>{viewMode !== "live" && !isArchived && <button className="admin-button outline small" type="button" onClick={() => addStringItem("alsoKnownAs")}><Icon name="plus" size={16}/>Add name</button>}</div>
