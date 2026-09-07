@@ -210,6 +210,9 @@ function getTabFields(tab: number, form: any) {
   if (tab === 5) {
     return ["details.tagline", "details.blurb", "details.keyAttributes", "details.description"];
   }
+  if (tab === 6) {
+    return ["details.seoTitle", "details.seoDescription"];
+  }
   return [];
 }
 
@@ -226,7 +229,7 @@ function getFieldHasValue(form: any, field: string) {
 function getOverallCompleteness(form: any) {
   if (!form || !form.category) return 0;
   let fields: string[] = [];
-  for (let i = 1; i <= 5; i++) fields = fields.concat(getTabFields(i, form));
+  for (let i = 1; i <= 6; i++) fields = fields.concat(getTabFields(i, form));
   if (fields.length === 0) return 100;
   const filled = fields.filter(f => getFieldHasValue(form, f)).length;
   return Math.round((filled / fields.length) * 100);
@@ -1039,6 +1042,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                <span className="admin-v2-section-summary-item">Category-specific <TabCompleteness form={currentForm} tab={3} /></span>
                <span className="admin-v2-section-summary-item">Selling <TabCompleteness form={currentForm} tab={4} /></span>
                <span className="admin-v2-section-summary-item">Content &amp; publishing <TabCompleteness form={currentForm} tab={5} /></span>
+               <span className="admin-v2-section-summary-item">SEO <TabCompleteness form={currentForm} tab={6} /></span>
              </div>
            </div>
          )}
@@ -1050,6 +1054,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
              <option value={3} disabled={!category}>Category-specific</option>
              <option value={4} disabled={!category}>Selling</option>
              <option value={5} disabled={!category}>Content &amp; publishing</option>
+             <option value={6} disabled={!category}>SEO</option>
            </select>
          </label>
         <div className="admin-v2-tabs">
@@ -1058,6 +1063,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
            <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 3 ? 'active' : ''}`} onClick={() => setActiveTab(3)}>Category-specific</button>
            <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 4 ? 'active' : ''}`} onClick={() => setActiveTab(4)}>Selling</button>
            <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 5 ? 'active' : ''}`} onClick={() => setActiveTab(5)}>Content &amp; publishing</button>
+           <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 6 ? 'active' : ''}`} onClick={() => setActiveTab(6)}>SEO</button>
         </div>
 
         <form id="admin-product-form" onSubmit={submit}>
@@ -1292,10 +1298,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                   
                   <label className="wide">Tech sheet URL<input value={currentForm.techSheet} onChange={(e) => setField("techSheet", e.target.value)} /></label>
                   
-                  <div className="admin-section-heading wide" style={{marginTop: 16}}><h3>SEO</h3></div>
-                  <label>SEO Title<input value={currentForm.details.seoTitle} onChange={(e) => setDetail("seoTitle", e.target.value)} /></label>
-                  <label>SEO Description<textarea value={currentForm.details.seoDescription} onChange={(e) => setDetail("seoDescription", e.target.value)} rows={2} /></label>
-                  
                   <div className="admin-repeat-group wide" style={{marginTop: 16}}>
                     <div className="admin-section-heading"><div><h3>Related products</h3></div>{viewMode !== "live" && !isArchived && <button className="admin-button outline small" type="button" onClick={() => addStringItem("relatedProducts")}><Icon name="plus" size={16}/>Add related</button>}</div>
                     {currentForm.details.relatedProducts.map((alias: string, index: number) => <div className="admin-repeat-row" key={index}><input value={alias} onChange={(event) => updateStringItem("relatedProducts", index, event.target.value)} placeholder="Product slug"/>{viewMode !== "live" && !isArchived && <button type="button" onClick={() => removeStringItem("relatedProducts", index)} aria-label="Remove item">×</button>}</div>)}
@@ -1313,6 +1315,16 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                     </div>
                   </div>
                 )}
+              </section>
+            )}
+
+            {activeTab === 6 && (
+              <section className="admin-panel admin-form-card">
+                <h2>SEO</h2>
+                <div className="admin-form-grid">
+                  <label className="wide">SEO title <span className="admin-field-hint">The page title shown in search results and browser tabs.</span><input value={currentForm.details.seoTitle} onChange={(e) => setDetail("seoTitle", e.target.value)} /></label>
+                  <label className="wide">SEO description <span className="admin-field-hint">A concise summary that may appear beneath the page title in search results.</span><textarea value={currentForm.details.seoDescription} onChange={(e) => setDetail("seoDescription", e.target.value)} rows={4} /></label>
+                </div>
               </section>
             )}
 
