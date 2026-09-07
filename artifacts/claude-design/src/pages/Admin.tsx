@@ -736,8 +736,14 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState(1);
+  const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
 
   const sourceDataStr = JSON.stringify(product?.draft ?? product);
+  const persistedFormStr = useMemo(
+    () => JSON.stringify(product ? toForm(product.draft ?? product) : blankProduct),
+    [sourceDataStr, isNew],
+  );
+  const isDirty = JSON.stringify(form) !== persistedFormStr;
   useEffect(() => {
     if (product) {
       setForm(toForm(product.draft ?? product));
@@ -838,7 +844,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         }
         await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey(), refetchType: "all" });
         await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
-        navigate(action === "back" ? "/admin/products?view=Draft" : `/admin/products/${newProd.id}`);
+        navigate(action === "save-and-back" ? "/admin/products?view=Draft" : `/admin/products/${newProd.id}`);
       } else {
         const { slug, publishStatus, ...draftPayload } = payload;
         await saveDraftMutation.mutateAsync({ id: productId!, data: draftPayload });
@@ -848,7 +854,9 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         await queryClient.invalidateQueries({ queryKey: getGetAdminProductQueryKey(productId!) });
         await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey(), refetchType: "all" });
         await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
-        if (action === "back") navigate("/admin/products?view=Draft");
+        if (action === "save-and-back") {
+          navigate(`/admin/products?view=${product?.lifecycleStatus === "Published" ? "Published" : "Draft"}`);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to save product.");
@@ -910,6 +918,15 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const isArchived = product?.lifecycleStatus === "Archived";
   const isLive = product?.lifecycleStatus === "Published";
   const hasDraft = product?.hasDraft;
+  const listingPath = `/admin/products?view=${isArchived ? "Archived" : isLive ? "Published" : "Draft"}`;
+  const showPublishedEditingActions = !isLive || Boolean(hasDraft) || isDirty;
+  const handleBack = () => {
+    if (isDirty) {
+      setShowUnsavedPrompt(true);
+      return;
+    }
+    navigate(listingPath);
+  };
   const selectedTaxonomy = currentForm.subcategoryId
     ? taxonomy.find((category: any) => category.id === currentForm.subcategoryId)
     : undefined;
@@ -972,7 +989,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   return (
     <>
       <header className="admin-page-header admin-editor-header">
-        <button className="admin-back-link" type="submit" form="admin-product-form" name="action" value="back" disabled={saving} title="Save draft and return to Products & mixes"><Icon name="arrow-left" size={16}/>Products &amp; mixes</button>
+        <button className="admin-back-link" type="button" onClick={handleBack} disabled={saving} title="Return to Products & mixes"><Icon name="arrow-left" size={16}/>Products &amp; mixes</button>
         <div className="admin-header-actions">
           {isLive && (
             <div className="admin-view-toggle">
@@ -984,7 +1001,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
 
           {isArchived ? (
             <button className="admin-button primary" type="button" onClick={restore} disabled={saving}>Restore to Draft</button>
-          ) : viewMode === "draft" ? (
+          ) : viewMode === "draft" && showPublishedEditingActions ? (
             <>
               <button className="admin-button outline" type="submit" form="admin-product-form" name="action" value="draft" disabled={saving}>{hasDraft ? "Update draft" : "Save draft"}</button>
               <button className="admin-button primary" type="submit" form="admin-product-form" name="action" value="publish" disabled={saving}>{saving ? "Saving…" : "Publish changes"}</button>
@@ -1272,6 +1289,39 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
           </fieldset>
         </form>
       </div>
+      {showUnsavedPrompt && (
+        <div className="admin-dialog-backdrop" role="presentation" onMouseDown={() => setShowUnsavedPrompt(false)}>
+          <section
+            className="admin-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="unsaved-product-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <h2 id="unsaved-product-title">Unsaved changes</h2>
+            <p>You have changed this product. Save a draft before returning to the product listing?</p>
+            <div className="admin-dialog-actions">
+              <button
+                className="admin-button primary"
+                type="submit"
+                form="admin-product-form"
+                name="action"
+                value="save-and-back"
+                onClick={() => setShowUnsavedPrompt(false)}
+                disabled={saving}
+              >
+                Save draft &amp; leave
+              </button>
+              <button className="admin-button outline admin-button-danger" type="button" onClick={() => navigate(listingPath)} disabled={saving}>
+                Leave without saving
+              </button>
+              <button className="admin-button ghost" type="button" onClick={() => setShowUnsavedPrompt(false)} disabled={saving}>
+                Keep editing
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </>
   );
 }
