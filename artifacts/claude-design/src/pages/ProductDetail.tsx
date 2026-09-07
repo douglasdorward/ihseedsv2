@@ -204,17 +204,20 @@ export default function ProductDetail() {
             )}
 
             {quickFacts.length > 0 && (
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap", background: "var(--sage)", padding: 24, borderRadius: 16 }}>
-                {quickFacts.map((s, i) => (
-                  <div key={i} style={{ flex: "1 1 200px", display: "flex", alignItems: "flex-start", gap: 12 }}>
-                    <span style={{ color: "var(--green)", marginTop: 2 }}>{s.icon && <Icon name={s.icon as any} size={22} />}</span>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", marginBottom: 4 }}>{s.label}</div>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: "var(--black-green)" }}>{s.value}</div>
+              <section aria-labelledby="quick-facts-heading" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <h2 id="quick-facts-heading" style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--green)" }}>Quick facts</h2>
+                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", background: "var(--sage)", padding: 24, borderRadius: 16 }}>
+                  {quickFacts.map((s, i) => (
+                    <div key={i} style={{ flex: "1 1 200px", display: "flex", alignItems: "flex-start", gap: 12 }}>
+                      <span style={{ color: "var(--green)", marginTop: 2 }}>{s.icon && <Icon name={s.icon as any} size={22} />}</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", marginBottom: 4 }}>{s.label}</div>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: "var(--black-green)" }}>{s.value}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </section>
             )}
 
             {d.keyAttributes?.filter((attribute) => attribute.trim()).length > 0 && (
