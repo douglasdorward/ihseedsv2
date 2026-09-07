@@ -736,6 +736,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState(1);
+  const [showSectionCompletion, setShowSectionCompletion] = useState(false);
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
 
   const sourceDataStr = JSON.stringify(product?.draft ?? product);
@@ -1013,16 +1014,24 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         <h1>{isNew ? "Add a product" : product?.name ?? "Product"}</h1>
         <div className="admin-editor-version" style={{display: 'flex', gap: 16, alignItems: 'center'}}>
           {isNew || !isLive ? "Draft changes — not public" : viewMode === "live" ? "Live on public site · read-only" : "Draft changes — not public"}
-          <div className="admin-v2-completeness" title={`${completeness}% complete`}>
+           <button
+             type="button"
+             className="admin-v2-completeness admin-v2-completeness-trigger"
+             title={`${completeness}% complete — show section details`}
+             aria-expanded={showSectionCompletion}
+             aria-controls="admin-section-completion"
+             onClick={() => setShowSectionCompletion((open) => !open)}
+           >
             <div className="admin-v2-completeness-bar"><div className="admin-v2-completeness-fill" style={{width: `${completeness}%`}}></div></div>
             {completeness}%
-          </div>
+             <span className={`admin-v2-completeness-chevron ${showSectionCompletion ? "open" : ""}`} aria-hidden="true" />
+           </button>
         </div>
       </div>
 
       <div className="admin-editor admin-claude-editor" style={{maxWidth: 1040, display: "block"}}>
-         {category && (
-           <div className="admin-v2-section-summary" aria-label="Section completion">
+         {category && showSectionCompletion && (
+           <div id="admin-section-completion" className="admin-v2-section-summary" aria-label="Section completion">
              <span className="admin-v2-section-summary-title">Section completion</span>
              <div className="admin-v2-section-summary-items">
                <span className="admin-v2-section-summary-item">Basics <TabCompleteness form={currentForm} tab={1} /></span>

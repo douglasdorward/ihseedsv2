@@ -10,6 +10,11 @@
 .admin-v2-tab.active { color: #174e37; border-bottom-color: #0c583c; }
 
 .admin-v2-completeness { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #536059; background: #f3f5f2; padding: 6px 12px; border-radius: 999px; }
+.admin-v2-completeness-trigger { border: 0; font-family: inherit; font-weight: inherit; cursor: pointer; transition: background-color .18s ease, box-shadow .18s ease; }
+.admin-v2-completeness-trigger:hover { background: #e9eeea; }
+.admin-v2-completeness-trigger:focus-visible { outline: 2px solid #0c583c; outline-offset: 2px; }
+.admin-v2-completeness-chevron { width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg) translateY(-1px); transition: transform .18s ease; }
+.admin-v2-completeness-chevron.open { transform: rotate(225deg) translate(-1px, -1px); }
 .admin-v2-completeness-bar { width: 60px; height: 6px; background: #dde1dc; border-radius: 999px; overflow: hidden; display: flex; }
 .admin-v2-completeness-fill { height: 100%; background: #0c583c; }
 .admin-field-hint { display: block; margin-top: 4px; color: #536059; font-size: 12px; font-weight: 400; line-height: 1.4; }
