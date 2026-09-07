@@ -308,29 +308,25 @@ export default function ProductDetail() {
                     <thead>
                       <tr style={{ background: "var(--sage)", color: "var(--green)", fontSize: 14 }}>
                         <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Form</th>
-                        <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Grade</th>
                         <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Pack</th>
                         <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Status</th>
-                        <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Price</th>
                       </tr>
                     </thead>
                     <tbody>
                       {product.saleLines?.map((line, i) => (
                         <tr key={i} style={{ borderBottom: "1px solid var(--line)" }}>
                           <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--green)" }}>{line.seedForm || "Bare"}</td>
-                          <td style={{ padding: "12px 16px" }}>{line.seedGrade || "—"}</td>
                           <td style={{ padding: "12px 16px" }}>{line.packKg ? `${line.packKg} ${line.packUnit}` : "—"}</td>
                           <td style={{ padding: "12px 16px" }}>
                              {line.availability
                                ? <StatusPill status={({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as any)[line.availability]} />
                                : <span style={{ color: "var(--muted)", fontWeight: 600 }}>TBA</span>}
                           </td>
-                          <td style={{ padding: "12px 16px", color: "var(--muted)" }}>{line.priceDisplay}</td>
                         </tr>
                       ))}
                       {(!product.saleLines || product.saleLines.length === 0) && (
                         <tr>
-                           <td colSpan={5} style={{ padding: "12px 16px", color: "var(--muted)", textAlign: "center" }}>No active sale lines</td>
+                           <td colSpan={3} style={{ padding: "12px 16px", color: "var(--muted)", textAlign: "center" }}>No active sale lines</td>
                         </tr>
                       )}
                     </tbody>
