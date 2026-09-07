@@ -1042,6 +1042,16 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
              </div>
            </div>
          )}
+         <label className="admin-v2-mobile-tab-picker">
+           <span>Editing section</span>
+           <select value={activeTab} onChange={(event) => setActiveTab(Number(event.target.value))}>
+             <option value={1}>Basics</option>
+             <option value={2} disabled={!category}>Agronomy &amp; fit</option>
+             <option value={3} disabled={!category}>Category-specific</option>
+             <option value={4} disabled={!category}>Selling</option>
+             <option value={5} disabled={!category}>Content &amp; publishing</option>
+           </select>
+         </label>
         <div className="admin-v2-tabs">
            <button type="button" className={`admin-v2-tab ${activeTab === 1 ? 'active' : ''}`} onClick={() => setActiveTab(1)}>Basics</button>
            <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 2 ? 'active' : ''}`} onClick={() => setActiveTab(2)}>Agronomy &amp; fit</button>
