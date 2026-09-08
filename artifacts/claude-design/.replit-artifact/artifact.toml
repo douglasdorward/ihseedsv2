@@ -1,6 +1,6 @@
 kind = "web"
 version = "1.0.0"
-title = "Claude design"
+title = "IH Seeds"
 previewPath = "/"
 id = "artifacts/claude-design"
 router = "path"
@@ -12,16 +12,18 @@ ensurePreviewReachable = "/"
 localPort = 24722
 
 [services.development]
-run = "pnpm --filter @workspace/claude-design run dev"
+run = "pnpm --dir ../.. run dev"
 
 [services.production]
-serve = "static"
-build = [ "pnpm", "--filter", "@workspace/claude-design", "run", "build" ]
-publicDir = "artifacts/claude-design/dist/public"
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+[services.production.build]
+args = [ "pnpm", "--dir", "../..", "run", "build:app" ]
+
+[services.production.run]
+args = [ "pnpm", "--dir", "../..", "run", "start" ]
+
+[services.production.health.startup]
+path = "/"
 
 [services.env]
 PORT = "24722"

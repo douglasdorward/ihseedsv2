@@ -7,3 +7,4 @@
 - [Legacy published workbook round-trip](workbook-legacy-published-roundtrip.md) — unchanged live records predating new required fields must round-trip without weakening new publish rules.
 - [Mix component descriptions](mix-component-descriptions.md) — public Mix copy must come from each workbook component row, never the linked product Blurb.
 - [SEO port admin delivery](seo-port-admin-delivery.md) — keep public pages in Next.js while Express serves the unchanged compiled Vite admin at /admin.
+- [Artifact command working directory](artifact-command-working-directory.md) — managed artifact commands start inside the artifact directory; workspace scripts need an explicit root directory.

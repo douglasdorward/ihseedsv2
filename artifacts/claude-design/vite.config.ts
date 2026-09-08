@@ -10,6 +10,7 @@ const port = Number(rawPort);
 export default defineConfig({
   base: process.env.BASE_PATH || '/',
   plugins: [react()],
+  resolve: { dedupe: ['react', 'react-dom', '@tanstack/react-query'] },
   root: import.meta.dirname,
   server: { port, strictPort: true, host: '0.0.0.0', allowedHosts: true },
   preview: { port, host: '0.0.0.0', allowedHosts: true },

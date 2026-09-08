@@ -4,7 +4,9 @@
   "license": "MIT",
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
+    "dev": "sh -c 'trap \"kill 0\" EXIT INT TERM; PORT=5001 pnpm --filter @workspace/api-server run dev & API_BASE=http://localhost:5001 pnpm --filter @workspace/web run dev'",
     "start": "sh -c 'trap \"kill 0\" EXIT INT TERM; PORT=5001 pnpm --filter @workspace/api-server run start & API_BASE=http://localhost:5001 pnpm --filter @workspace/web run start'",
+    "build:app": "node scripts/build-app.mjs",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"

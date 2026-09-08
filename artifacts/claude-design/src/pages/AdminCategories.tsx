@@ -15,8 +15,17 @@ import {
   getListAdminProductsQueryKey
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { slugify } from "../hooks/useApi";
 import { navigate } from "../router";
+
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/™/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
 
 function PageHeader({ eyebrow, title, action, onBack }: { eyebrow: string; title: React.ReactNode; action?: React.ReactNode, onBack?: () => void }) {
   return (
