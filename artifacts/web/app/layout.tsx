@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Western Australia's pasture seed specialists.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: any }) {
   return (
     <html lang="en">
       <body>

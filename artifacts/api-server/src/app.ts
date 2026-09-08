@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import { fileURLToPath } from "node:url";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
@@ -42,5 +43,19 @@ app.get("/product/:slug", async (req, res, next): Promise<void> => {
 });
 
 app.use("/api", router);
+
+// The admin remains the existing Vite application. Express only delivers its
+// compiled files so Next.js can reserve the public routes for server rendering.
+const adminDistDir = fileURLToPath(
+  new URL("../../claude-design/dist/public", import.meta.url),
+);
+const sendAdminIndex = (_req: express.Request, res: express.Response) =>
+  res.sendFile("index.html", { root: adminDistDir });
+app.get("/admin", sendAdminIndex);
+app.use(
+  "/admin",
+  express.static(adminDistDir),
+  sendAdminIndex,
+);
 
 export default app;
