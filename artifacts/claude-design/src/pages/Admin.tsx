@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Icon, StatusPill } from "../components/ui";
 import { navigate, useLocation } from "../router";
+import AdminCategories from "./AdminCategories";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListAdminProducts,
@@ -1389,12 +1390,14 @@ export default function Admin() {
   const [location] = useLocation();
   const route = location.split("?")[0];
   const isProducts = route === "/admin/products";
+  const isCategories = route === "/admin/products/categories";
   const isEditor = route.startsWith("/admin/products/") && route !== "/admin/products/categories";
 
   return (
     <AdminLayout mobileOpen={mobileOpen} setMobileOpen={setMobileOpen}>
       {route === "/admin" && <Dashboard />}
       {isProducts && <ProductTable />}
+      {isCategories && <AdminCategories />}
       {isEditor && (
         <ProductEditor
           isNew={route === "/admin/products/new"}
