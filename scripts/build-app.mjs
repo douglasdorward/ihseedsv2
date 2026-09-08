@@ -1,6 +1,15 @@
 import { spawn } from "node:child_process";
 
 const workspaceRoot = new URL("../", import.meta.url);
+const supportedArgs = new Set(["--skip-api-build"]);
+const args = process.argv.slice(2);
+const unsupportedArg = args.find((arg) => !supportedArgs.has(arg));
+
+if (unsupportedArg) {
+  throw new Error(`Unsupported argument: ${unsupportedArg}`);
+}
+
+const skipApiBuild = args.includes("--skip-api-build");
 
 function runPnpm(args, env = {}) {
   return new Promise((resolve, reject) => {
@@ -42,8 +51,10 @@ function stopProcessGroup(child) {
   }
 }
 
-await runPnpm(["run", "typecheck"]);
-await runPnpm(["--filter", "@workspace/api-server", "run", "build"]);
+if (!skipApiBuild) {
+  await runPnpm(["run", "typecheck"]);
+  await runPnpm(["--filter", "@workspace/api-server", "run", "build"]);
+}
 
 const apiProcess = spawn(
   "pnpm",

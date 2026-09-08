@@ -8,7 +8,7 @@
     "start": "API_BASE=http://localhost:8080 pnpm --filter @workspace/web run start",
     "build:app": "node scripts/build-app.mjs",
     "build:api": "pnpm run typecheck && pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/claude-design run build",
-    "build": "pnpm run build:api && pnpm run build:app",
+    "build": "pnpm run build:api && pnpm run build:app --skip-api-build",
     "test:routing": "node scripts/smoke-routed-product.mjs",
     "test:routing:process": "node scripts/check-single-catalogue-server.mjs",
     "typecheck:libs": "tsc --build",
