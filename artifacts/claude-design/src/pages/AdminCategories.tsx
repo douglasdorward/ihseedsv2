@@ -166,11 +166,15 @@ const CategoryForm = ({
               onChange={e => setForm(prev => ({ ...prev, slug: slugify(e.target.value) }))} 
               placeholder="e.g. ryegrass" 
             />
-            <small>Public URL: {isSubcategory && parent
-              ? sharesParentPage
-                ? `Shares /products/${parent.slug} because it is the only active subcategory`
-                : `/products/${parent.slug}/${form.slug || "subcategory-slug"}`
-              : `/products/${form.slug || "category-slug"}`}</small>
+            <small>Category landing page: {!form.active
+              ? "None while this category is inactive"
+              : isSubcategory && parent
+                ? !parent.active
+                  ? "None while the parent category is inactive"
+                  : sharesParentPage
+                    ? `/products/${parent.slug} (shared with its parent)`
+                    : `/products/${parent.slug}/${form.slug || "subcategory-slug"}`
+                : `/products/${form.slug || "category-slug"}`}</small>
           </label>
           {!isSubcategory && (
             <>
@@ -385,7 +389,7 @@ export default function AdminCategories() {
       <div className="admin-content">
         <div className="admin-notice">
           <Icon name="info" size={20}/>
-          <p>Root categories use /products/category-slug. Subcategories use /products/category-slug/subcategory-slug. A parent with one child shares the parent page instead of creating a duplicate subcategory page.</p>
+          <p>These settings organise catalogue browsing pages only. Root categories use /products/category-slug and subcategories use /products/category-slug/subcategory-slug. A parent with one active child shares the parent page. Individual products use /product/product-slug, managed on each product record.</p>
         </div>
         
         {error && <div className="admin-notice" style={{ background: "#fef3f2", color: "#b42318" }}>
@@ -415,7 +419,7 @@ export default function AdminCategories() {
                        <div className="admin-taxonomy-meta" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 16, fontWeight: 700, color: root.active ? "var(--green)" : "#7b827d" }}>{root.name}</span>
                         {!root.active && <span className="status-pill" style={{ background: "#edf0ed", color: "#7b827d" }}>Inactive</span>}
-                         <span style={{ fontSize: 12, color: "#7b827d", background: "#f5f7f4", padding: "2px 8px", borderRadius: 999 }}>/products/{root.slug}</span>
+                          <span style={{ fontSize: 12, color: "#7b827d", background: "#f5f7f4", padding: "2px 8px", borderRadius: 999 }}>{root.active ? `Category page: /products/${root.slug}` : "No category page while inactive"}</span>
                         {root.groupLabel && <span style={{ fontSize: 12, color: "#7b827d", border: "1px solid #edf0ed", padding: "2px 8px", borderRadius: 999 }}>{root.groupLabel}</span>}
                       </div>
                     </div>
@@ -450,7 +454,7 @@ export default function AdminCategories() {
                              <div className="admin-taxonomy-meta" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <span style={{ fontSize: 14, fontWeight: 600, color: child.active ? "var(--green)" : "#7b827d" }}>{child.name}</span>
                               {!child.active && <span className="status-pill" style={{ background: "#edf0ed", color: "#7b827d" }}>Inactive</span>}
-                               <span style={{ fontSize: 12, color: "#7b827d" }}>{!child.active ? "No public URL while inactive" : activeChildren.length === 1 ? `Shares /products/${root.slug}` : `/products/${root.slug}/${child.slug}`}</span>
+                                <span style={{ fontSize: 12, color: "#7b827d" }}>{!child.active || !root.active ? "No category page while inactive" : activeChildren.length === 1 ? `Uses parent page: /products/${root.slug}` : `Category page: /products/${root.slug}/${child.slug}`}</span>
                             </div>
                           </div>
                            <div className="admin-taxonomy-actions" style={{ display: "flex", alignItems: "center", gap: 8 }}>
