@@ -15,6 +15,21 @@ export interface PublishValidationError {
   issues: PublishValidationErrorIssuesItem[];
 }
 
+export interface ApiError {
+  error: string;
+}
+
+export type ProductReferenceValidationErrorIssuesItem = {
+  field: string;
+  label: string;
+  values: string[];
+};
+
+export interface ProductReferenceValidationError {
+  error: string;
+  issues: ProductReferenceValidationErrorIssuesItem[];
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -389,7 +404,7 @@ export interface ProductDetails {
   ecocertApproved: boolean;
   endUse: ProductDetailsEndUseItem[];
   livestock: ProductDetailsLivestockItem[];
-  /** @items.maxLength 120 */
+  /** @items.maxLength 180 */
   companionSpecies: string[];
   /** @maxLength 3000 */
   diseasePestResistance: string;

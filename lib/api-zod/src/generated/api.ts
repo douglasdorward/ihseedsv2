@@ -223,7 +223,7 @@ export const createProductBodyDetailsFloweringWindowMax = 80;
 export const createProductBodyDetailsWinterActivityMax = 10;
 export const createProductBodyDetailsWinterActivityMultipleOf = 1;
 
-export const createProductBodyDetailsCompanionSpeciesItemMax = 120;
+export const createProductBodyDetailsCompanionSpeciesItemMax = 180;
 
 export const createProductBodyDetailsDiseasePestResistanceMax = 3000;
 
@@ -449,7 +449,7 @@ export const createProductResponseDetailsFloweringWindowMax = 80;
 export const createProductResponseDetailsWinterActivityMax = 10;
 export const createProductResponseDetailsWinterActivityMultipleOf = 1;
 
-export const createProductResponseDetailsCompanionSpeciesItemMax = 120;
+export const createProductResponseDetailsCompanionSpeciesItemMax = 180;
 
 export const createProductResponseDetailsDiseasePestResistanceMax = 3000;
 
@@ -865,7 +865,7 @@ export const updateProductBodyDetailsFloweringWindowMax = 80;
 export const updateProductBodyDetailsWinterActivityMax = 10;
 export const updateProductBodyDetailsWinterActivityMultipleOf = 1;
 
-export const updateProductBodyDetailsCompanionSpeciesItemMax = 120;
+export const updateProductBodyDetailsCompanionSpeciesItemMax = 180;
 
 export const updateProductBodyDetailsDiseasePestResistanceMax = 3000;
 
@@ -1095,7 +1095,7 @@ export const updateProductResponseDetailsFloweringWindowMax = 80;
 export const updateProductResponseDetailsWinterActivityMax = 10;
 export const updateProductResponseDetailsWinterActivityMultipleOf = 1;
 
-export const updateProductResponseDetailsCompanionSpeciesItemMax = 120;
+export const updateProductResponseDetailsCompanionSpeciesItemMax = 180;
 
 export const updateProductResponseDetailsDiseasePestResistanceMax = 3000;
 
@@ -1357,7 +1357,7 @@ export const getAdminSummaryResponseRecentProductsItemDetailsFloweringWindowMax 
 export const getAdminSummaryResponseRecentProductsItemDetailsWinterActivityMax = 10;
 export const getAdminSummaryResponseRecentProductsItemDetailsWinterActivityMultipleOf = 1;
 
-export const getAdminSummaryResponseRecentProductsItemDetailsCompanionSpeciesItemMax = 120;
+export const getAdminSummaryResponseRecentProductsItemDetailsCompanionSpeciesItemMax = 180;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsDiseasePestResistanceMax = 3000;
 
@@ -1618,7 +1618,7 @@ export const listAdminProductsResponseOneDetailsFloweringWindowMax = 80;
 export const listAdminProductsResponseOneDetailsWinterActivityMax = 10;
 export const listAdminProductsResponseOneDetailsWinterActivityMultipleOf = 1;
 
-export const listAdminProductsResponseOneDetailsCompanionSpeciesItemMax = 120;
+export const listAdminProductsResponseOneDetailsCompanionSpeciesItemMax = 180;
 
 export const listAdminProductsResponseOneDetailsDiseasePestResistanceMax = 3000;
 
@@ -1745,7 +1745,7 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsFloweringWindowMax = 
 export const listAdminProductsResponseTwoDraftOneOneDetailsWinterActivityMax = 10;
 export const listAdminProductsResponseTwoDraftOneOneDetailsWinterActivityMultipleOf = 1;
 
-export const listAdminProductsResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 120;
+export const listAdminProductsResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 180;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 
@@ -2137,7 +2137,7 @@ export const getAdminProductResponseOneDetailsFloweringWindowMax = 80;
 export const getAdminProductResponseOneDetailsWinterActivityMax = 10;
 export const getAdminProductResponseOneDetailsWinterActivityMultipleOf = 1;
 
-export const getAdminProductResponseOneDetailsCompanionSpeciesItemMax = 120;
+export const getAdminProductResponseOneDetailsCompanionSpeciesItemMax = 180;
 
 export const getAdminProductResponseOneDetailsDiseasePestResistanceMax = 3000;
 
@@ -2264,7 +2264,7 @@ export const getAdminProductResponseTwoDraftOneOneDetailsFloweringWindowMax = 80
 export const getAdminProductResponseTwoDraftOneOneDetailsWinterActivityMax = 10;
 export const getAdminProductResponseTwoDraftOneOneDetailsWinterActivityMultipleOf = 1;
 
-export const getAdminProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 120;
+export const getAdminProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 180;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 
@@ -2671,7 +2671,7 @@ export const saveProductDraftRevisionBodyDetailsFloweringWindowMax = 80;
 export const saveProductDraftRevisionBodyDetailsWinterActivityMax = 10;
 export const saveProductDraftRevisionBodyDetailsWinterActivityMultipleOf = 1;
 
-export const saveProductDraftRevisionBodyDetailsCompanionSpeciesItemMax = 120;
+export const saveProductDraftRevisionBodyDetailsCompanionSpeciesItemMax = 180;
 
 export const saveProductDraftRevisionBodyDetailsDiseasePestResistanceMax = 3000;
 
@@ -2914,7 +2914,7 @@ export const saveProductDraftRevisionResponseOneDetailsFloweringWindowMax = 80;
 export const saveProductDraftRevisionResponseOneDetailsWinterActivityMax = 10;
 export const saveProductDraftRevisionResponseOneDetailsWinterActivityMultipleOf = 1;
 
-export const saveProductDraftRevisionResponseOneDetailsCompanionSpeciesItemMax = 120;
+export const saveProductDraftRevisionResponseOneDetailsCompanionSpeciesItemMax = 180;
 
 export const saveProductDraftRevisionResponseOneDetailsDiseasePestResistanceMax = 3000;
 
@@ -3041,7 +3041,7 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsFloweringWindo
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsWinterActivityMax = 10;
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsWinterActivityMultipleOf = 1;
 
-export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 120;
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 180;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 
@@ -3432,7 +3432,7 @@ export const publishProductResponseOneDetailsFloweringWindowMax = 80;
 export const publishProductResponseOneDetailsWinterActivityMax = 10;
 export const publishProductResponseOneDetailsWinterActivityMultipleOf = 1;
 
-export const publishProductResponseOneDetailsCompanionSpeciesItemMax = 120;
+export const publishProductResponseOneDetailsCompanionSpeciesItemMax = 180;
 
 export const publishProductResponseOneDetailsDiseasePestResistanceMax = 3000;
 
@@ -3559,7 +3559,7 @@ export const publishProductResponseTwoDraftOneOneDetailsFloweringWindowMax = 80;
 export const publishProductResponseTwoDraftOneOneDetailsWinterActivityMax = 10;
 export const publishProductResponseTwoDraftOneOneDetailsWinterActivityMultipleOf = 1;
 
-export const publishProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 120;
+export const publishProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 180;
 
 export const publishProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 
@@ -3950,7 +3950,7 @@ export const archiveProductResponseOneDetailsFloweringWindowMax = 80;
 export const archiveProductResponseOneDetailsWinterActivityMax = 10;
 export const archiveProductResponseOneDetailsWinterActivityMultipleOf = 1;
 
-export const archiveProductResponseOneDetailsCompanionSpeciesItemMax = 120;
+export const archiveProductResponseOneDetailsCompanionSpeciesItemMax = 180;
 
 export const archiveProductResponseOneDetailsDiseasePestResistanceMax = 3000;
 
@@ -4077,7 +4077,7 @@ export const archiveProductResponseTwoDraftOneOneDetailsFloweringWindowMax = 80;
 export const archiveProductResponseTwoDraftOneOneDetailsWinterActivityMax = 10;
 export const archiveProductResponseTwoDraftOneOneDetailsWinterActivityMultipleOf = 1;
 
-export const archiveProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 120;
+export const archiveProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 180;
 
 export const archiveProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 
@@ -4468,7 +4468,7 @@ export const restoreProductResponseOneDetailsFloweringWindowMax = 80;
 export const restoreProductResponseOneDetailsWinterActivityMax = 10;
 export const restoreProductResponseOneDetailsWinterActivityMultipleOf = 1;
 
-export const restoreProductResponseOneDetailsCompanionSpeciesItemMax = 120;
+export const restoreProductResponseOneDetailsCompanionSpeciesItemMax = 180;
 
 export const restoreProductResponseOneDetailsDiseasePestResistanceMax = 3000;
 
@@ -4595,7 +4595,7 @@ export const restoreProductResponseTwoDraftOneOneDetailsFloweringWindowMax = 80;
 export const restoreProductResponseTwoDraftOneOneDetailsWinterActivityMax = 10;
 export const restoreProductResponseTwoDraftOneOneDetailsWinterActivityMultipleOf = 1;
 
-export const restoreProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 120;
+export const restoreProductResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 180;
 
 export const restoreProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 
@@ -4986,7 +4986,7 @@ export const discardProductDraftResponseOneDetailsFloweringWindowMax = 80;
 export const discardProductDraftResponseOneDetailsWinterActivityMax = 10;
 export const discardProductDraftResponseOneDetailsWinterActivityMultipleOf = 1;
 
-export const discardProductDraftResponseOneDetailsCompanionSpeciesItemMax = 120;
+export const discardProductDraftResponseOneDetailsCompanionSpeciesItemMax = 180;
 
 export const discardProductDraftResponseOneDetailsDiseasePestResistanceMax = 3000;
 
@@ -5113,7 +5113,7 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsFloweringWindowMax 
 export const discardProductDraftResponseTwoDraftOneOneDetailsWinterActivityMax = 10;
 export const discardProductDraftResponseTwoDraftOneOneDetailsWinterActivityMultipleOf = 1;
 
-export const discardProductDraftResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 120;
+export const discardProductDraftResponseTwoDraftOneOneDetailsCompanionSpeciesItemMax = 180;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsDiseasePestResistanceMax = 3000;
 

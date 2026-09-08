@@ -9,6 +9,7 @@
 export * from './adminProduct';
 export * from './adminProductLifecycleStatus';
 export * from './adminSummary';
+export * from './apiError';
 export * from './availabilityRow';
 export * from './catalogueCategory';
 export * from './catalogueCategoryInput';
@@ -55,6 +56,8 @@ export * from './productListingState';
 export * from './productPackSize';
 export * from './productPhoto';
 export * from './productPublishStatus';
+export * from './productReferenceValidationError';
+export * from './productReferenceValidationErrorIssuesItem';
 export * from './productSowingRate';
 export * from './productSowingRateContext';
 export * from './productTolerance';

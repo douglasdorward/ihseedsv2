@@ -36,6 +36,15 @@
 .admin-field-hint { display: block; margin-top: 4px; color: #536059; font-size: 12px; font-weight: 400; line-height: 1.4; }
 .admin-character-count { display: block; margin-top: 4px; color: #536059; font-size: 12px; text-align: right; }
 .admin-empty-inline { margin: 8px 0 0; color: #536059; font-size: 13px; }
+.admin-product-selector { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
+.admin-product-selector input { flex: 1; min-width: 0; border: 1px solid #c8cec9; border-radius: 8px; padding: 10px 12px; font: inherit; }
+.admin-product-selections { display: grid; gap: 8px; margin-top: 10px; }
+.admin-product-selection { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #dce2dd; border-radius: 9px; padding: 10px 12px; background: #f7f9f6; }
+.admin-product-selection span { display: grid; gap: 2px; }
+.admin-product-selection small { color: #68736c; }
+.admin-product-selection > button { border: 0; background: transparent; color: #0c583c; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
+.admin-product-selection.invalid { border-color: #e9a6a0; background: #fff8f7; }
+.admin-product-selection.invalid strong, .admin-product-selection.invalid small { color: #9c372d; }
 
 @media (max-width: 760px) {
   .admin-v2-section-summary { align-items: flex-start; flex-direction: column; gap: 10px; }
@@ -46,6 +55,7 @@
   .admin-v2-mobile-tab-picker select { width: 100%; min-height: 46px; border: 1px solid #c8cec9; border-radius: 10px; background: #fff; color: #174e37; padding: 0 42px 0 14px; font-family: inherit; font-size: 15px; font-weight: 700; line-height: 1.2; text-transform: none; letter-spacing: 0; }
   .admin-v2-mobile-tab-picker:has(+ .admin-v2-mobile-errors) { margin-bottom: 8px; }
   .admin-v2-mobile-errors { display: block; margin-bottom: 20px; border-left: 3px solid #b42318; border-radius: 4px; padding: 9px 11px; background: #fff1f0; color: #8f2720; font-size: 12px; line-height: 1.45; }
+  .admin-product-selector { align-items: stretch; flex-direction: column; }
 }
 
 .admin-sale-line-row { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(130px, 1.2fr) minmax(100px, 1fr) minmax(70px, 0.8fr) minmax(80px, 0.8fr) minmax(130px, 1.2fr) minmax(120px, 1.2fr) 60px 34px; gap: 10px; align-items: center; padding: 12px; background: #f3f5f2; border-radius: 12px; margin-bottom: 8px; }

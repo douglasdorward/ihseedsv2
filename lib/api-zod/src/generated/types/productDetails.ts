@@ -78,7 +78,7 @@ export interface ProductDetails {
   ecocertApproved: boolean;
   endUse: ProductDetailsEndUseItem[];
   livestock: ProductDetailsLivestockItem[];
-  /** @items.maxLength 120 */
+  /** @items.maxLength 180 */
   companionSpecies: string[];
   /** @maxLength 3000 */
   diseasePestResistance: string;

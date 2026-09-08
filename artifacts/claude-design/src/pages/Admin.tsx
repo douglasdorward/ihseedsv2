@@ -789,6 +789,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const [activeTab, setActiveTab] = useState(1);
   const [showSectionCompletion, setShowSectionCompletion] = useState(false);
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
+  const [companionQuery, setCompanionQuery] = useState("");
 
   const sourceDataStr = JSON.stringify(product?.draft ?? product);
   const persistedFormStr = useMemo(
@@ -806,6 +807,16 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
 
   const liveForm = useMemo(() => product ? toForm(product) : blankProduct, [product]);
   const currentForm = viewMode === "live" ? liveForm : form;
+  const productOptions = useMemo(
+    () => products
+      .filter((candidate) => candidate.id !== productId && candidate.slug !== form.slug)
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    [products, productId, form.slug],
+  );
+  const productsBySlug = useMemo(
+    () => new Map(products.map((candidate) => [candidate.slug, candidate])),
+    [products],
+  );
   const publishIssues = publishAttempted ? getPublishIssues(form) : [];
   const issueFor = (key: PublishIssueKey) => publishIssues.find((issue) => issue.key === key);
   const tabsWithIssues = new Set(publishIssues.map((issue) => issue.tab));
@@ -835,6 +846,13 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const removeStringItem = (key: string, index: number) =>
     setDetail(key, form.details[key].filter((_: any, itemIndex: number) => itemIndex !== index));
   const addStringItem = (key: string) => setDetail(key, [...form.details[key], ""]);
+  const addCompanion = () => {
+    const candidate = productOptions.find((option) =>
+      option.slug === companionQuery || option.name.toLocaleLowerCase() === companionQuery.trim().toLocaleLowerCase());
+    if (!candidate || form.details.companionSpecies.includes(candidate.slug)) return;
+    setDetail("companionSpecies", [...form.details.companionSpecies, candidate.slug]);
+    setCompanionQuery("");
+  };
   
   const updateSaleLine = (index: number, patch: Partial<SaleLine>) => setField("saleLines", form.saleLines.map((item: any, itemIndex: number) => itemIndex === index ? { ...item, ...patch } : item));
   const removeSaleLine = (index: number) => setField("saleLines", form.saleLines.filter((_: any, itemIndex: number) => itemIndex !== index));
@@ -1189,8 +1207,34 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                     <div className="admin-choice-field"><span>End use</span><div>{["Grazing", "Hay", "Silage", "Cover crop", "Green manure", "Grain", "Stockfeed", "Permanent pasture", "Erosion control / stabilisation", "Break crop", "Biofumigant", "Turf"].map((value) => <button key={value} type="button" className={currentForm.details.endUse.includes(value as any) ? "selected" : ""} onClick={() => toggleList("endUse", value)}>{value}</button>)}</div></div>
                     <div className="admin-choice-field"><span>Livestock</span><div>{["Beef", "Dairy", "Sheep", "Equine", "Goat", "Chicken", "Alpaca", "Weaners", "Lamb finishing"].map((value) => <button key={value} type="button" className={currentForm.details.livestock.includes(value as any) ? "selected" : ""} onClick={() => toggleList("livestock", value)}>{value}</button>)}</div></div>
                     <div className="admin-repeat-group">
-                      <div className="admin-section-heading"><div><h3>Companion species</h3></div>{viewMode !== "live" && !isArchived && <button className="admin-button outline small" type="button" onClick={() => addStringItem("companionSpecies")}><Icon name="plus" size={16}/>Add companion</button>}</div>
-                      {currentForm.details.companionSpecies.map((alias: string, index: number) => <div className="admin-repeat-row" key={index}><input value={alias} onChange={(event) => updateStringItem("companionSpecies", index, event.target.value)} placeholder="e.g. Sub clover"/>{viewMode !== "live" && !isArchived && <button type="button" onClick={() => removeStringItem("companionSpecies", index)} aria-label="Remove item">×</button>}</div>)}
+                      <div className="admin-section-heading"><div><h3>Companion species</h3><p className="admin-field-hint">Choose catalogue products here. Put general companion advice in the agronomy notes field.</p></div></div>
+                      {viewMode !== "live" && !isArchived && (
+                        <div className="admin-product-selector">
+                          <input
+                            list="companion-product-options"
+                            value={companionQuery}
+                            onChange={(event) => setCompanionQuery(event.target.value)}
+                            onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addCompanion(); } }}
+                            placeholder="Search products by name"
+                            aria-label="Search catalogue products"
+                          />
+                          <datalist id="companion-product-options">
+                            {productOptions.filter((option) => !form.details.companionSpecies.includes(option.slug)).map((option) => <option key={option.id} value={option.name}>{option.slug}</option>)}
+                          </datalist>
+                          <button className="admin-button outline small" type="button" onClick={addCompanion} disabled={!productOptions.some((option) => option.slug === companionQuery || option.name.toLocaleLowerCase() === companionQuery.trim().toLocaleLowerCase())}><Icon name="plus" size={16}/>Add companion</button>
+                        </div>
+                      )}
+                      <div className="admin-product-selections">
+                        {currentForm.details.companionSpecies.map((slug: string, index: number) => {
+                          const selectedProduct = productsBySlug.get(slug);
+                          const invalid = !selectedProduct || selectedProduct.id === productId || selectedProduct.slug === currentForm.slug;
+                          return <div className={`admin-product-selection ${invalid ? "invalid" : ""}`} key={`${slug}-${index}`}>
+                            <span><strong>{selectedProduct?.name ?? "Invalid companion reference"}</strong><small>{invalid ? `“${slug}” does not resolve to another catalogue product.` : slug}</small></span>
+                            {viewMode !== "live" && !isArchived && <button type="button" onClick={() => removeStringItem("companionSpecies", index)} aria-label={`Remove ${selectedProduct?.name ?? slug}`}>Remove</button>}
+                          </div>;
+                        })}
+                        {currentForm.details.companionSpecies.length === 0 && <p className="admin-empty-inline">No companion products selected.</p>}
+                      </div>
                     </div>
                     {!hideInoculant && <label>Inoculant group<select value={currentForm.details.inoculantGroup} onChange={(event) => setDetail("inoculantGroup", event.target.value as any)}>{["None", "C", "G/S", "G", "S", "AL", "AM", "B", "BS", "E", "F/E", "I"].map((value) => <option key={value}>{value}</option>)}</select></label>}
                     {isMix && <label className="admin-check-row"><input type="checkbox" checked={currentForm.details.ecocertApproved} onChange={(event) => setDetail("ecocertApproved", event.target.checked)}/><span><strong>ECOCERT approved</strong></span></label>}

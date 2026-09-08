@@ -1135,3 +1135,67 @@ test("generic updates cannot race publish or archive into live content", async (
   assert.equal(includesProduct(await publicProducts(), archivePublished.id), false);
   assert.equal(includesProduct(await availability(), archivePublished.id), false);
 });
+
+test("companion products save by slug while self and unknown references identify the companion field", async () => {
+  const product = await createProduct("companion-owner");
+  const companion = await createProduct("companion-target");
+  const longSlug = `long-companion-${testRunId}-${"x".repeat(125)}`;
+  const longSlugCompanion = assertStatus(await request("POST", "/products", {
+    name: `Long slug companion ${testRunId}`,
+    slug: longSlug,
+    price: "",
+    packSize: "",
+    status: "in-stock",
+    note: "",
+    category: "Automated tests",
+    subcategoryId: null,
+    techSheet: "",
+    details: { recordType: "Variety" },
+  }), 201);
+  createdProductIds.push(longSlugCompanion.id);
+
+  const validDraft = assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+    details: { ...product.details, companionSpecies: [companion.slug] },
+  })), 200);
+  assert.deepEqual(validDraft.details.companionSpecies, [companion.slug]);
+  assert.equal(validDraft.draft, null);
+  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  assert.deepEqual(published.details.companionSpecies, [companion.slug]);
+
+  const longSlugDraft = assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(published, {
+    details: { ...published.details, companionSpecies: [longSlug] },
+  })), 200);
+  assert.deepEqual(longSlugDraft.draft.details.companionSpecies, [longSlug]);
+  assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+
+  for (const invalidSlug of [product.slug, `unknown-companion-${testRunId}`]) {
+    const result = await request("POST", `/admin/products/${product.id}/draft`, draftPayload(published, {
+      details: { ...published.details, companionSpecies: [invalidSlug] },
+    }));
+    assertStatus(result, 400);
+    assert.match(result.data.error, /Companion species/);
+    assert.deepEqual(result.data.issues, [{
+      field: "details.companionSpecies",
+      label: "Companion species",
+      values: [invalidSlug],
+    }]);
+  }
+
+  const selfCreateSlug = `self-companion-${testRunId}`;
+  const selfCreate = await request("POST", "/products", {
+    name: `Self companion ${testRunId}`, slug: selfCreateSlug, price: "", packSize: "",
+    status: "in-stock", note: "", category: "Automated tests", subcategoryId: null, techSheet: "",
+    details: { recordType: "Variety", companionSpecies: [selfCreateSlug] },
+  });
+  assertStatus(selfCreate, 400);
+  assert.equal(selfCreate.data.issues[0].field, "details.companionSpecies");
+
+  sql(`
+    UPDATE ih_products
+    SET details = jsonb_set(details, '{companionSpecies}', '["unknown-legacy-companion"]'::jsonb)
+    WHERE id = ${product.id}
+  `);
+  const legacyPublish = await request("POST", `/admin/products/${product.id}/publish`);
+  assertStatus(legacyPublish, 400);
+  assert.equal(legacyPublish.data.issues[0].field, "details.companionSpecies");
+});

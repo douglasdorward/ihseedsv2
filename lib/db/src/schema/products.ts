@@ -360,7 +360,7 @@ const productDetailsObjectSchema = z.object({
   ecocertApproved: z.boolean(),
   endUse: z.array(z.enum(["Grazing", "Hay", "Silage", "Cover crop", "Green manure", "Grain", "Stockfeed", "Permanent pasture", "Erosion control / stabilisation", "Break crop", "Biofumigant", "Turf"])),
   livestock: z.array(z.enum(["Beef", "Dairy", "Sheep", "Equine", "Goat", "Chicken", "Alpaca", "Weaners", "Lamb finishing"])),
-  companionSpecies: z.array(z.string().max(120)),
+  companionSpecies: z.array(z.string().max(180)),
   diseasePestResistance: z.string().max(3000),
   standLifeNotes: z.string().max(3000),
   grazingManagementNotes: z.string().max(3000),

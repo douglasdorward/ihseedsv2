@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Response } from "express";
 import { desc, eq, inArray } from "drizzle-orm";
 import {
   db,
@@ -217,17 +217,34 @@ async function ensureProducts() {
     .orderBy(desc(productsTable.updatedAt), desc(productsTable.id));
 }
 
-async function findMissingProductReferences(details: InsertProduct["details"]) {
-  const references = [...new Set([
-    ...details.components.map((component) => component.productLink),
-    ...details.companionSpecies,
-    ...details.relatedProducts,
-  ].filter(Boolean))];
+type ProductReferenceIssue = {
+  field: "details.companionSpecies" | "details.relatedProducts" | "details.components";
+  label: string;
+  values: string[];
+};
+
+async function findProductReferenceIssues(details: InsertProduct["details"], ownSlug?: string): Promise<ProductReferenceIssue[]> {
+  const referencesByField = [
+    { field: "details.companionSpecies", label: "Companion species", values: details.companionSpecies.filter(Boolean) },
+    { field: "details.relatedProducts", label: "Related products", values: details.relatedProducts.filter(Boolean) },
+    { field: "details.components", label: "Component links", values: details.components.map((component) => component.productLink).filter(Boolean) },
+  ] as const;
+  const references = [...new Set(referencesByField.flatMap((reference) => reference.values))];
   if (references.length === 0) return [];
   const existing = await db.select({ slug: productsTable.slug }).from(productsTable)
     .where(inArray(productsTable.slug, references));
   const known = new Set(existing.map((product) => product.slug));
-  return references.filter((slug) => !known.has(slug));
+  return referencesByField.flatMap(({ field, label, values }) => {
+    const invalid = [...new Set(values.filter((slug) => !known.has(slug) || (field === "details.companionSpecies" && slug === ownSlug)))];
+    return invalid.length ? [{ field, label, values: invalid }] : [];
+  });
+}
+
+function sendProductReferenceError(res: Response, issues: ProductReferenceIssue[]) {
+  res.status(400).json({
+    error: `${issues[0].label} contains invalid product references: ${issues[0].values.join(", ")}.`,
+    issues,
+  });
 }
 
 async function getAdminProduct(product: Product) {
@@ -345,9 +362,9 @@ router.post("/products", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Selected category does not exist or has an invalid parent." });
     return;
   }
-  const missingReferences = await findMissingProductReferences(taxonomyPayload.details);
-  if (missingReferences.length > 0) {
-    res.status(400).json({ error: `Unknown linked product: ${missingReferences.join(", ")}.` });
+  const referenceIssues = await findProductReferenceIssues(taxonomyPayload.details, parsed.data.slug);
+  if (referenceIssues.length > 0) {
+    sendProductReferenceError(res, referenceIssues);
     return;
   }
   try {
@@ -421,9 +438,9 @@ router.post("/admin/products/:id/draft", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Selected category does not exist or has an invalid parent." });
     return;
   }
-  const missingReferences = await findMissingProductReferences(taxonomyPayload.details);
-  if (missingReferences.length > 0) {
-    res.status(400).json({ error: `Unknown linked product: ${missingReferences.join(", ")}.` });
+  const referenceIssues = await findProductReferenceIssues(taxonomyPayload.details, product.slug);
+  if (referenceIssues.length > 0) {
+    sendProductReferenceError(res, referenceIssues);
     return;
   }
   const snapshot = normalizeEditable(taxonomyPayload);
@@ -499,6 +516,8 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       );
       if (!resolvedPayload) throw new Error("INVALID_CATEGORY");
       const normalizedPayload = resolvedPayload;
+      const referenceIssues = await findProductReferenceIssues(normalizedPayload.details, lockedProduct.slug);
+      if (referenceIssues.length > 0) throw new Error(`REFERENCE_VALIDATION:${JSON.stringify(referenceIssues)}`);
       const missingFields = getPublishValidationErrors(lockedProduct, normalizedPayload);
        if (missingFields.length > 0) throw new Error(`PUBLISH_VALIDATION:${JSON.stringify(missingFields)}`);
       const [published] = await tx.update(productsTable).set({
@@ -539,6 +558,11 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
         error: `Complete these fields before publishing: ${issues.map((issue) => issue.label).join(", ")}.`,
         issues,
       });
+      return;
+    }
+    if (error instanceof Error && error.message.startsWith("REFERENCE_VALIDATION:")) {
+      const issues = JSON.parse(error.message.slice("REFERENCE_VALIDATION:".length)) as ProductReferenceIssue[];
+      sendProductReferenceError(res, issues);
       return;
     }
     if (error instanceof Error && error.message.includes("duplicate key")) {
@@ -700,9 +724,9 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     return;
   }
   if (changes.details) {
-    const missingReferences = await findMissingProductReferences(changes.details);
-    if (missingReferences.length > 0) {
-      res.status(400).json({ error: `Unknown linked product: ${missingReferences.join(", ")}.` });
+    const referenceIssues = await findProductReferenceIssues(changes.details, currentProduct.slug);
+    if (referenceIssues.length > 0) {
+      sendProductReferenceError(res, referenceIssues);
       return;
     }
   }

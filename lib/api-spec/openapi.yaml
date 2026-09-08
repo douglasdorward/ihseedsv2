@@ -63,6 +63,12 @@ paths:
                 $ref: "#/components/schemas/Product"
         "400":
           description: Invalid product
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/ApiError"
+                  - $ref: "#/components/schemas/ProductReferenceValidationError"
         "409":
           description: Product name already exists
   /products/slug/{slug}:
@@ -195,6 +201,12 @@ paths:
                 $ref: "#/components/schemas/AdminProduct"
         "400":
           description: Invalid draft
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/ApiError"
+                  - $ref: "#/components/schemas/ProductReferenceValidationError"
         "404":
           description: Product not found
         "409":
@@ -222,7 +234,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PublishValidationError"
+                anyOf:
+                  - $ref: "#/components/schemas/PublishValidationError"
+                  - $ref: "#/components/schemas/ProductReferenceValidationError"
         "404":
           description: Product not found
         "409":
@@ -531,6 +545,27 @@ components:
                 type: string
               label:
                 type: string
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    ProductReferenceValidationError:
+      type: object
+      required: [error, issues]
+      properties:
+        error: { type: string }
+        issues:
+          type: array
+          items:
+            type: object
+            required: [field, label, values]
+            properties:
+              field: { type: string }
+              label: { type: string }
+              values:
+                type: array
+                items: { type: string }
     HealthStatus:
       type: object
       properties:
@@ -808,7 +843,7 @@ components:
           items: { type: string, enum: [Beef, Dairy, Sheep, Equine, Goat, Chicken, Alpaca, Weaners, "Lamb finishing"] }
         companionSpecies:
           type: array
-          items: { type: string, maxLength: 120 }
+          items: { type: string, maxLength: 180 }
         diseasePestResistance: { type: string, maxLength: 3000 }
         standLifeNotes: { type: string, maxLength: 3000 }
         grazingManagementNotes: { type: string, maxLength: 3000 }

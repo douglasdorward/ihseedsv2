@@ -22,6 +22,7 @@ import type {
 import type {
   AdminProduct,
   AdminSummary,
+  ApiError,
   AvailabilityRow,
   CatalogueCategory,
   CatalogueCategoryInput,
@@ -35,6 +36,7 @@ import type {
   Product,
   ProductCreateInput,
   ProductDraftInput,
+  ProductReferenceValidationError,
   ProductUpdate,
   PublicCatalogueCategory,
   PublicProduct,
@@ -253,7 +255,7 @@ export const createProduct = async (productCreateInput: ProductCreateInput, opti
 
 
 
-export const getCreateProductMutationOptions = <TError = ErrorType<void>,
+export const getCreateProductMutationOptions = <TError = ErrorType<ApiError | ProductReferenceValidationError | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{data: BodyType<ProductCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{data: BodyType<ProductCreateInput>}, TContext> => {
 
@@ -282,12 +284,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateProductMutationResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>
     export type CreateProductMutationBody = BodyType<ProductCreateInput>
-    export type CreateProductMutationError = ErrorType<void>
+    export type CreateProductMutationError = ErrorType<ApiError | ProductReferenceValidationError | void>
 
     /**
  * @summary Create a product
  */
-export const useCreateProduct = <TError = ErrorType<void>,
+export const useCreateProduct = <TError = ErrorType<ApiError | ProductReferenceValidationError | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{data: BodyType<ProductCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createProduct>>,
@@ -776,7 +778,7 @@ export const saveProductDraftRevision = async (id: number,
 
 
 
-export const getSaveProductDraftRevisionMutationOptions = <TError = ErrorType<void>,
+export const getSaveProductDraftRevisionMutationOptions = <TError = ErrorType<ApiError | ProductReferenceValidationError | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveProductDraftRevision>>, TError,{id: number;data: BodyType<ProductDraftInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof saveProductDraftRevision>>, TError,{id: number;data: BodyType<ProductDraftInput>}, TContext> => {
 
@@ -805,12 +807,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type SaveProductDraftRevisionMutationResult = NonNullable<Awaited<ReturnType<typeof saveProductDraftRevision>>>
     export type SaveProductDraftRevisionMutationBody = BodyType<ProductDraftInput>
-    export type SaveProductDraftRevisionMutationError = ErrorType<void>
+    export type SaveProductDraftRevisionMutationError = ErrorType<ApiError | ProductReferenceValidationError | void>
 
     /**
  * @summary Save a product draft revision
  */
-export const useSaveProductDraftRevision = <TError = ErrorType<void>,
+export const useSaveProductDraftRevision = <TError = ErrorType<ApiError | ProductReferenceValidationError | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveProductDraftRevision>>, TError,{id: number;data: BodyType<ProductDraftInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof saveProductDraftRevision>>,
@@ -847,7 +849,7 @@ export const publishProduct = async (id: number, options?: Parameters<typeof cus
 
 
 
-export const getPublishProductMutationOptions = <TError = ErrorType<PublishValidationError | void>,
+export const getPublishProductMutationOptions = <TError = ErrorType<PublishValidationError | ProductReferenceValidationError | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number}, TContext> => {
 
@@ -876,12 +878,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PublishProductMutationResult = NonNullable<Awaited<ReturnType<typeof publishProduct>>>
 
-    export type PublishProductMutationError = ErrorType<PublishValidationError | void>
+    export type PublishProductMutationError = ErrorType<PublishValidationError | ProductReferenceValidationError | void>
 
     /**
  * @summary Promote the current draft to the public catalogue
  */
-export const usePublishProduct = <TError = ErrorType<PublishValidationError | void>,
+export const usePublishProduct = <TError = ErrorType<PublishValidationError | ProductReferenceValidationError | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof publishProduct>>,
