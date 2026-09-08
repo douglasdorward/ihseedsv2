@@ -69,4 +69,9 @@ export interface PublicProductDetails {
   featured: boolean;
   seoTitle: string;
   seoDescription: string;
+  socialTitle: string;
+  socialDescription: string;
+  socialImage: string;
+  canonicalUrl: string;
+  robotsIndex: boolean;
 }

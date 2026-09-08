@@ -141,6 +141,11 @@ const blankProduct: ProductInput = {
     inCurrentPrintedGuide: false,
     seoTitle: "",
     seoDescription: "",
+    socialTitle: "",
+    socialDescription: "",
+    socialImage: "",
+    canonicalUrl: "",
+    robotsIndex: true,
     sortOrder: null,
     featured: false,
     relatedProducts: [],
@@ -1324,6 +1329,17 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                 <div className="admin-form-grid">
                   <label className="wide">SEO title <span className="required">*</span><span className="admin-field-hint">Required before publishing. The page title shown in search results and browser tabs.</span><input value={currentForm.details.seoTitle} onChange={(e) => setDetail("seoTitle", e.target.value)} /></label>
                   <label className="wide">SEO description <span className="required">*</span><span className="admin-field-hint">Required before publishing. A concise summary that may appear beneath the page title in search results.</span><textarea value={currentForm.details.seoDescription} onChange={(e) => setDetail("seoDescription", e.target.value)} rows={4} /></label>
+                  <label className="wide">Social sharing title<span className="admin-field-hint">Optional. Uses the SEO title when left blank.</span><input value={currentForm.details.socialTitle} onChange={(e) => setDetail("socialTitle", e.target.value)} /></label>
+                  <label className="wide">Social sharing description<span className="admin-field-hint">Optional. Uses the SEO description when left blank.</span><textarea value={currentForm.details.socialDescription} onChange={(e) => setDetail("socialDescription", e.target.value)} rows={4} /></label>
+                  <label className="wide">Social sharing image<span className="admin-field-hint">Choose a product photo or enter another image URL below.</span>
+                    <select value={currentForm.details.photos.some((photo: any) => photo.src && photo.src === currentForm.details.socialImage) ? currentForm.details.socialImage : ""} onChange={(e) => setDetail("socialImage", e.target.value)}>
+                      <option value="">Use the product hero image</option>
+                      {currentForm.details.photos.filter((photo: any) => photo.src).map((photo: any, index: number) => <option key={`${photo.slot}-${index}`} value={photo.src}>{photo.slot || `Photo ${index + 1}`}</option>)}
+                    </select>
+                    <input type="url" value={currentForm.details.socialImage} onChange={(e) => setDetail("socialImage", e.target.value)} placeholder="https://example.com/social-image.jpg" />
+                  </label>
+                  <label className="wide">Canonical URL override<span className="admin-field-hint">Optional. Leave blank to use the product's normal published URL.</span><input type="url" value={currentForm.details.canonicalUrl} onChange={(e) => setDetail("canonicalUrl", e.target.value)} placeholder="https://example.com/product/canonical-slug" /></label>
+                  <label className="admin-check-row wide"><input type="checkbox" checked={currentForm.details.robotsIndex} onChange={(e) => setDetail("robotsIndex", e.target.checked)}/><span><strong>Allow search engines to index this product</strong><small>Turn this off to publish the page with a noindex directive.</small></span></label>
                 </div>
               </section>
             )}

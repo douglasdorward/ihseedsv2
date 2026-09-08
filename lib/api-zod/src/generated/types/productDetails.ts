@@ -113,6 +113,15 @@ export interface ProductDetails {
   seoTitle: string;
   /** @maxLength 2000 */
   seoDescription: string;
+  /** @maxLength 180 */
+  socialTitle: string;
+  /** @maxLength 2000 */
+  socialDescription: string;
+  /** @maxLength 500 */
+  socialImage: string;
+  /** @maxLength 500 */
+  canonicalUrl: string;
+  robotsIndex: boolean;
   /** @minimum 0 */
   sortOrder: number | null;
   featured: boolean;

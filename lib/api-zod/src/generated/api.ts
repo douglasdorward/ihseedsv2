@@ -147,7 +147,12 @@ export const ListProductsResponseItem = zod.object({
 })),
   "featured": zod.boolean(),
   "seoTitle": zod.string(),
-  "seoDescription": zod.string()
+  "seoDescription": zod.string(),
+  "socialTitle": zod.string(),
+  "socialDescription": zod.string(),
+  "socialImage": zod.string(),
+  "canonicalUrl": zod.string(),
+  "robotsIndex": zod.boolean()
 }).describe('Public-facing agronomy, merchandising, and SEO fields only.')
 }).describe('Published, Active catalogue data. Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.')
 export const ListProductsResponse = zod.array(ListProductsResponseItem)
@@ -264,6 +269,14 @@ export const createProductBodyDetailsSeoTitleMax = 180;
 
 export const createProductBodyDetailsSeoDescriptionMax = 2000;
 
+export const createProductBodyDetailsSocialTitleMax = 180;
+
+export const createProductBodyDetailsSocialDescriptionMax = 2000;
+
+export const createProductBodyDetailsSocialImageMax = 500;
+
+export const createProductBodyDetailsCanonicalUrlMax = 500;
+
 export const createProductBodyDetailsSortOrderMin = 0;
 export const createProductBodyDetailsSortOrderMultipleOf = 1;
 
@@ -364,6 +377,11 @@ export const CreateProductBody = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(createProductBodyDetailsSeoTitleMax),
   "seoDescription": zod.string().max(createProductBodyDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(createProductBodyDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(createProductBodyDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(createProductBodyDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(createProductBodyDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(createProductBodyDetailsSortOrderMin).multipleOf(createProductBodyDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(createProductBodyDetailsRelatedProductsItemMax)),
@@ -476,6 +494,14 @@ export const createProductResponseDetailsPhotosItemSrcMax = 500;
 export const createProductResponseDetailsSeoTitleMax = 180;
 
 export const createProductResponseDetailsSeoDescriptionMax = 2000;
+
+export const createProductResponseDetailsSocialTitleMax = 180;
+
+export const createProductResponseDetailsSocialDescriptionMax = 2000;
+
+export const createProductResponseDetailsSocialImageMax = 500;
+
+export const createProductResponseDetailsCanonicalUrlMax = 500;
 
 export const createProductResponseDetailsSortOrderMin = 0;
 export const createProductResponseDetailsSortOrderMultipleOf = 1;
@@ -597,6 +623,11 @@ export const CreateProductResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(createProductResponseDetailsSeoTitleMax),
   "seoDescription": zod.string().max(createProductResponseDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(createProductResponseDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(createProductResponseDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(createProductResponseDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(createProductResponseDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(createProductResponseDetailsSortOrderMin).multipleOf(createProductResponseDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(createProductResponseDetailsRelatedProductsItemMax)),
@@ -736,6 +767,14 @@ export const updateProductBodyDetailsSeoTitleMax = 180;
 
 export const updateProductBodyDetailsSeoDescriptionMax = 2000;
 
+export const updateProductBodyDetailsSocialTitleMax = 180;
+
+export const updateProductBodyDetailsSocialDescriptionMax = 2000;
+
+export const updateProductBodyDetailsSocialImageMax = 500;
+
+export const updateProductBodyDetailsCanonicalUrlMax = 500;
+
 export const updateProductBodyDetailsSortOrderMin = 0;
 export const updateProductBodyDetailsSortOrderMultipleOf = 1;
 
@@ -840,6 +879,11 @@ export const UpdateProductBody = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(updateProductBodyDetailsSeoTitleMax),
   "seoDescription": zod.string().max(updateProductBodyDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(updateProductBodyDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(updateProductBodyDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(updateProductBodyDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(updateProductBodyDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(updateProductBodyDetailsSortOrderMin).multipleOf(updateProductBodyDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(updateProductBodyDetailsRelatedProductsItemMax)),
@@ -952,6 +996,14 @@ export const updateProductResponseDetailsPhotosItemSrcMax = 500;
 export const updateProductResponseDetailsSeoTitleMax = 180;
 
 export const updateProductResponseDetailsSeoDescriptionMax = 2000;
+
+export const updateProductResponseDetailsSocialTitleMax = 180;
+
+export const updateProductResponseDetailsSocialDescriptionMax = 2000;
+
+export const updateProductResponseDetailsSocialImageMax = 500;
+
+export const updateProductResponseDetailsCanonicalUrlMax = 500;
 
 export const updateProductResponseDetailsSortOrderMin = 0;
 export const updateProductResponseDetailsSortOrderMultipleOf = 1;
@@ -1073,6 +1125,11 @@ export const UpdateProductResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(updateProductResponseDetailsSeoTitleMax),
   "seoDescription": zod.string().max(updateProductResponseDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(updateProductResponseDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(updateProductResponseDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(updateProductResponseDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(updateProductResponseDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(updateProductResponseDetailsSortOrderMin).multipleOf(updateProductResponseDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(updateProductResponseDetailsRelatedProductsItemMax)),
@@ -1202,6 +1259,14 @@ export const getAdminSummaryResponseRecentProductsItemDetailsSeoTitleMax = 180;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsSeoDescriptionMax = 2000;
 
+export const getAdminSummaryResponseRecentProductsItemDetailsSocialTitleMax = 180;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsSocialDescriptionMax = 2000;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsSocialImageMax = 500;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsCanonicalUrlMax = 500;
+
 export const getAdminSummaryResponseRecentProductsItemDetailsSortOrderMin = 0;
 export const getAdminSummaryResponseRecentProductsItemDetailsSortOrderMultipleOf = 1;
 
@@ -1330,6 +1395,11 @@ export const GetAdminSummaryResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSeoTitleMax),
   "seoDescription": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(getAdminSummaryResponseRecentProductsItemDetailsSortOrderMin).multipleOf(getAdminSummaryResponseRecentProductsItemDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsRelatedProductsItemMax)),
@@ -1450,6 +1520,14 @@ export const listAdminProductsResponseOneDetailsSeoTitleMax = 180;
 
 export const listAdminProductsResponseOneDetailsSeoDescriptionMax = 2000;
 
+export const listAdminProductsResponseOneDetailsSocialTitleMax = 180;
+
+export const listAdminProductsResponseOneDetailsSocialDescriptionMax = 2000;
+
+export const listAdminProductsResponseOneDetailsSocialImageMax = 500;
+
+export const listAdminProductsResponseOneDetailsCanonicalUrlMax = 500;
+
 export const listAdminProductsResponseOneDetailsSortOrderMin = 0;
 export const listAdminProductsResponseOneDetailsSortOrderMultipleOf = 1;
 
@@ -1568,6 +1646,14 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 50
 export const listAdminProductsResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
+
+export const listAdminProductsResponseTwoDraftOneOneDetailsSocialTitleMax = 180;
+
+export const listAdminProductsResponseTwoDraftOneOneDetailsSocialDescriptionMax = 2000;
+
+export const listAdminProductsResponseTwoDraftOneOneDetailsSocialImageMax = 500;
+
+export const listAdminProductsResponseTwoDraftOneOneDetailsCanonicalUrlMax = 500;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const listAdminProductsResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -1691,6 +1777,11 @@ export const ListAdminProductsResponseItem = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(listAdminProductsResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(listAdminProductsResponseOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(listAdminProductsResponseOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(listAdminProductsResponseOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(listAdminProductsResponseOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(listAdminProductsResponseOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(listAdminProductsResponseOneDetailsSortOrderMin).multipleOf(listAdminProductsResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(listAdminProductsResponseOneDetailsRelatedProductsItemMax)),
@@ -1807,6 +1898,11 @@ export const ListAdminProductsResponseItem = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(listAdminProductsResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(listAdminProductsResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),
@@ -1943,6 +2039,14 @@ export const getAdminProductResponseOneDetailsSeoTitleMax = 180;
 
 export const getAdminProductResponseOneDetailsSeoDescriptionMax = 2000;
 
+export const getAdminProductResponseOneDetailsSocialTitleMax = 180;
+
+export const getAdminProductResponseOneDetailsSocialDescriptionMax = 2000;
+
+export const getAdminProductResponseOneDetailsSocialImageMax = 500;
+
+export const getAdminProductResponseOneDetailsCanonicalUrlMax = 500;
+
 export const getAdminProductResponseOneDetailsSortOrderMin = 0;
 export const getAdminProductResponseOneDetailsSortOrderMultipleOf = 1;
 
@@ -2061,6 +2165,14 @@ export const getAdminProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
 export const getAdminProductResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
+
+export const getAdminProductResponseTwoDraftOneOneDetailsSocialTitleMax = 180;
+
+export const getAdminProductResponseTwoDraftOneOneDetailsSocialDescriptionMax = 2000;
+
+export const getAdminProductResponseTwoDraftOneOneDetailsSocialImageMax = 500;
+
+export const getAdminProductResponseTwoDraftOneOneDetailsCanonicalUrlMax = 500;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const getAdminProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -2184,6 +2296,11 @@ export const GetAdminProductResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(getAdminProductResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(getAdminProductResponseOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(getAdminProductResponseOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(getAdminProductResponseOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(getAdminProductResponseOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(getAdminProductResponseOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(getAdminProductResponseOneDetailsSortOrderMin).multipleOf(getAdminProductResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(getAdminProductResponseOneDetailsRelatedProductsItemMax)),
@@ -2300,6 +2417,11 @@ export const GetAdminProductResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(getAdminProductResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(getAdminProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),
@@ -2451,6 +2573,14 @@ export const saveProductDraftRevisionBodyDetailsSeoTitleMax = 180;
 
 export const saveProductDraftRevisionBodyDetailsSeoDescriptionMax = 2000;
 
+export const saveProductDraftRevisionBodyDetailsSocialTitleMax = 180;
+
+export const saveProductDraftRevisionBodyDetailsSocialDescriptionMax = 2000;
+
+export const saveProductDraftRevisionBodyDetailsSocialImageMax = 500;
+
+export const saveProductDraftRevisionBodyDetailsCanonicalUrlMax = 500;
+
 export const saveProductDraftRevisionBodyDetailsSortOrderMin = 0;
 export const saveProductDraftRevisionBodyDetailsSortOrderMultipleOf = 1;
 
@@ -2557,6 +2687,11 @@ export const SaveProductDraftRevisionBody = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(saveProductDraftRevisionBodyDetailsSeoTitleMax),
   "seoDescription": zod.string().max(saveProductDraftRevisionBodyDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(saveProductDraftRevisionBodyDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(saveProductDraftRevisionBodyDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(saveProductDraftRevisionBodyDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(saveProductDraftRevisionBodyDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(saveProductDraftRevisionBodyDetailsSortOrderMin).multipleOf(saveProductDraftRevisionBodyDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(saveProductDraftRevisionBodyDetailsRelatedProductsItemMax)),
@@ -2681,6 +2816,14 @@ export const saveProductDraftRevisionResponseOneDetailsSeoTitleMax = 180;
 
 export const saveProductDraftRevisionResponseOneDetailsSeoDescriptionMax = 2000;
 
+export const saveProductDraftRevisionResponseOneDetailsSocialTitleMax = 180;
+
+export const saveProductDraftRevisionResponseOneDetailsSocialDescriptionMax = 2000;
+
+export const saveProductDraftRevisionResponseOneDetailsSocialImageMax = 500;
+
+export const saveProductDraftRevisionResponseOneDetailsCanonicalUrlMax = 500;
+
 export const saveProductDraftRevisionResponseOneDetailsSortOrderMin = 0;
 export const saveProductDraftRevisionResponseOneDetailsSortOrderMultipleOf = 1;
 
@@ -2799,6 +2942,14 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsPhotosItemSrcM
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSocialTitleMax = 180;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSocialDescriptionMax = 2000;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSocialImageMax = 500;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsCanonicalUrlMax = 500;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -2922,6 +3073,11 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(saveProductDraftRevisionResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(saveProductDraftRevisionResponseOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(saveProductDraftRevisionResponseOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(saveProductDraftRevisionResponseOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(saveProductDraftRevisionResponseOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(saveProductDraftRevisionResponseOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(saveProductDraftRevisionResponseOneDetailsSortOrderMin).multipleOf(saveProductDraftRevisionResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(saveProductDraftRevisionResponseOneDetailsRelatedProductsItemMax)),
@@ -3038,6 +3194,11 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),
@@ -3173,6 +3334,14 @@ export const publishProductResponseOneDetailsSeoTitleMax = 180;
 
 export const publishProductResponseOneDetailsSeoDescriptionMax = 2000;
 
+export const publishProductResponseOneDetailsSocialTitleMax = 180;
+
+export const publishProductResponseOneDetailsSocialDescriptionMax = 2000;
+
+export const publishProductResponseOneDetailsSocialImageMax = 500;
+
+export const publishProductResponseOneDetailsCanonicalUrlMax = 500;
+
 export const publishProductResponseOneDetailsSortOrderMin = 0;
 export const publishProductResponseOneDetailsSortOrderMultipleOf = 1;
 
@@ -3291,6 +3460,14 @@ export const publishProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
 export const publishProductResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
 export const publishProductResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
+
+export const publishProductResponseTwoDraftOneOneDetailsSocialTitleMax = 180;
+
+export const publishProductResponseTwoDraftOneOneDetailsSocialDescriptionMax = 2000;
+
+export const publishProductResponseTwoDraftOneOneDetailsSocialImageMax = 500;
+
+export const publishProductResponseTwoDraftOneOneDetailsCanonicalUrlMax = 500;
 
 export const publishProductResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const publishProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -3414,6 +3591,11 @@ export const PublishProductResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(publishProductResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(publishProductResponseOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(publishProductResponseOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(publishProductResponseOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(publishProductResponseOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(publishProductResponseOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(publishProductResponseOneDetailsSortOrderMin).multipleOf(publishProductResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(publishProductResponseOneDetailsRelatedProductsItemMax)),
@@ -3530,6 +3712,11 @@ export const PublishProductResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(publishProductResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(publishProductResponseTwoDraftOneOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(publishProductResponseTwoDraftOneOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(publishProductResponseTwoDraftOneOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(publishProductResponseTwoDraftOneOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(publishProductResponseTwoDraftOneOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(publishProductResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(publishProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(publishProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),
@@ -3665,6 +3852,14 @@ export const archiveProductResponseOneDetailsSeoTitleMax = 180;
 
 export const archiveProductResponseOneDetailsSeoDescriptionMax = 2000;
 
+export const archiveProductResponseOneDetailsSocialTitleMax = 180;
+
+export const archiveProductResponseOneDetailsSocialDescriptionMax = 2000;
+
+export const archiveProductResponseOneDetailsSocialImageMax = 500;
+
+export const archiveProductResponseOneDetailsCanonicalUrlMax = 500;
+
 export const archiveProductResponseOneDetailsSortOrderMin = 0;
 export const archiveProductResponseOneDetailsSortOrderMultipleOf = 1;
 
@@ -3783,6 +3978,14 @@ export const archiveProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
 export const archiveProductResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
 export const archiveProductResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
+
+export const archiveProductResponseTwoDraftOneOneDetailsSocialTitleMax = 180;
+
+export const archiveProductResponseTwoDraftOneOneDetailsSocialDescriptionMax = 2000;
+
+export const archiveProductResponseTwoDraftOneOneDetailsSocialImageMax = 500;
+
+export const archiveProductResponseTwoDraftOneOneDetailsCanonicalUrlMax = 500;
 
 export const archiveProductResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const archiveProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -3906,6 +4109,11 @@ export const ArchiveProductResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(archiveProductResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(archiveProductResponseOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(archiveProductResponseOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(archiveProductResponseOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(archiveProductResponseOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(archiveProductResponseOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(archiveProductResponseOneDetailsSortOrderMin).multipleOf(archiveProductResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(archiveProductResponseOneDetailsRelatedProductsItemMax)),
@@ -4022,6 +4230,11 @@ export const ArchiveProductResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(archiveProductResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(archiveProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(archiveProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),
@@ -4157,6 +4370,14 @@ export const restoreProductResponseOneDetailsSeoTitleMax = 180;
 
 export const restoreProductResponseOneDetailsSeoDescriptionMax = 2000;
 
+export const restoreProductResponseOneDetailsSocialTitleMax = 180;
+
+export const restoreProductResponseOneDetailsSocialDescriptionMax = 2000;
+
+export const restoreProductResponseOneDetailsSocialImageMax = 500;
+
+export const restoreProductResponseOneDetailsCanonicalUrlMax = 500;
+
 export const restoreProductResponseOneDetailsSortOrderMin = 0;
 export const restoreProductResponseOneDetailsSortOrderMultipleOf = 1;
 
@@ -4275,6 +4496,14 @@ export const restoreProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
 export const restoreProductResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
 export const restoreProductResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
+
+export const restoreProductResponseTwoDraftOneOneDetailsSocialTitleMax = 180;
+
+export const restoreProductResponseTwoDraftOneOneDetailsSocialDescriptionMax = 2000;
+
+export const restoreProductResponseTwoDraftOneOneDetailsSocialImageMax = 500;
+
+export const restoreProductResponseTwoDraftOneOneDetailsCanonicalUrlMax = 500;
 
 export const restoreProductResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const restoreProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -4398,6 +4627,11 @@ export const RestoreProductResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(restoreProductResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(restoreProductResponseOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(restoreProductResponseOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(restoreProductResponseOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(restoreProductResponseOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(restoreProductResponseOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(restoreProductResponseOneDetailsSortOrderMin).multipleOf(restoreProductResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(restoreProductResponseOneDetailsRelatedProductsItemMax)),
@@ -4514,6 +4748,11 @@ export const RestoreProductResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(restoreProductResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(restoreProductResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(restoreProductResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),
@@ -4649,6 +4888,14 @@ export const discardProductDraftResponseOneDetailsSeoTitleMax = 180;
 
 export const discardProductDraftResponseOneDetailsSeoDescriptionMax = 2000;
 
+export const discardProductDraftResponseOneDetailsSocialTitleMax = 180;
+
+export const discardProductDraftResponseOneDetailsSocialDescriptionMax = 2000;
+
+export const discardProductDraftResponseOneDetailsSocialImageMax = 500;
+
+export const discardProductDraftResponseOneDetailsCanonicalUrlMax = 500;
+
 export const discardProductDraftResponseOneDetailsSortOrderMin = 0;
 export const discardProductDraftResponseOneDetailsSortOrderMultipleOf = 1;
 
@@ -4767,6 +5014,14 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 
 export const discardProductDraftResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsSeoDescriptionMax = 2000;
+
+export const discardProductDraftResponseTwoDraftOneOneDetailsSocialTitleMax = 180;
+
+export const discardProductDraftResponseTwoDraftOneOneDetailsSocialDescriptionMax = 2000;
+
+export const discardProductDraftResponseTwoDraftOneOneDetailsSocialImageMax = 500;
+
+export const discardProductDraftResponseTwoDraftOneOneDetailsCanonicalUrlMax = 500;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsSortOrderMin = 0;
 export const discardProductDraftResponseTwoDraftOneOneDetailsSortOrderMultipleOf = 1;
@@ -4890,6 +5145,11 @@ export const DiscardProductDraftResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(discardProductDraftResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(discardProductDraftResponseOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(discardProductDraftResponseOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(discardProductDraftResponseOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(discardProductDraftResponseOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(discardProductDraftResponseOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(discardProductDraftResponseOneDetailsSortOrderMin).multipleOf(discardProductDraftResponseOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(discardProductDraftResponseOneDetailsRelatedProductsItemMax)),
@@ -5006,6 +5266,11 @@ export const DiscardProductDraftResponse = zod.object({
   "inCurrentPrintedGuide": zod.boolean(),
   "seoTitle": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
   "sortOrder": zod.number().min(discardProductDraftResponseTwoDraftOneOneDetailsSortOrderMin).multipleOf(discardProductDraftResponseTwoDraftOneOneDetailsSortOrderMultipleOf).nullable(),
   "featured": zod.boolean(),
   "relatedProducts": zod.array(zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsRelatedProductsItemMax)),

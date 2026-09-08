@@ -59,6 +59,11 @@ export type ProductDetails = {
   inCurrentPrintedGuide: boolean;
   seoTitle: string;
   seoDescription: string;
+  socialTitle: string;
+  socialDescription: string;
+  socialImage: string;
+  canonicalUrl: string;
+  robotsIndex: boolean;
   sortOrder: number | null;
   featured: boolean;
   relatedProducts: string[];
@@ -157,6 +162,11 @@ const emptyProductDetails: ProductDetails = {
   inCurrentPrintedGuide: false,
   seoTitle: "",
   seoDescription: "",
+  socialTitle: "",
+  socialDescription: "",
+  socialImage: "",
+  canonicalUrl: "",
+  robotsIndex: true,
   sortOrder: null,
   featured: false,
   relatedProducts: [],
@@ -250,6 +260,7 @@ export function normalizeProductDetails(value: unknown, packSize = ""): ProductD
     certification: Array.isArray(current.certification) ? current.certification : [],
     components,
     photos: Array.isArray(current.photos) ? current.photos : [],
+    robotsIndex: current.robotsIndex ?? true,
     relatedProducts: Array.isArray(current.relatedProducts) ? current.relatedProducts : [],
   };
 }
@@ -371,6 +382,11 @@ const productDetailsObjectSchema = z.object({
   inCurrentPrintedGuide: z.boolean(),
   seoTitle: z.string().max(180),
   seoDescription: z.string().max(2000),
+  socialTitle: z.string().max(180),
+  socialDescription: z.string().max(2000),
+  socialImage: z.string().max(500),
+  canonicalUrl: z.string().max(500),
+  robotsIndex: z.boolean(),
   sortOrder: z.number().int().min(0).nullable(),
   featured: z.boolean(),
   relatedProducts: z.array(z.string().max(180)),

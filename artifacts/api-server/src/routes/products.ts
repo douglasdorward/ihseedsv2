@@ -56,6 +56,8 @@ function toPublicDetails(value: unknown, packSize: string) {
     description: d.description, components: d.components,
     relatedProducts: d.relatedProducts, formulationYear: d.formulationYear, photos: d.photos,
     featured: d.featured, seoTitle: d.seoTitle, seoDescription: d.seoDescription || d.blurb,
+    socialTitle: d.socialTitle, socialDescription: d.socialDescription,
+    socialImage: d.socialImage, canonicalUrl: d.canonicalUrl, robotsIndex: d.robotsIndex,
   };
 }
 
