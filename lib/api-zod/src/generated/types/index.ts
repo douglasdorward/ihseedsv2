@@ -68,6 +68,8 @@ export * from './publicProduct';
 export * from './publicProductDetails';
 export * from './publicProductListingState';
 export * from './publicProductStatus';
+export * from './publishValidationError';
+export * from './publishValidationErrorIssuesItem';
 export * from './redirectLookup';
 export * from './saleLine';
 export * from './saleLineAvailability';

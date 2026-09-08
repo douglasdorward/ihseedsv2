@@ -159,21 +159,26 @@ async function applyTaxonomyCategory<T extends { category: string; subcategoryId
   return { ...payload, category: taxonomy.category };
 }
 
-function getPublishValidationErrors(product: Product, payload: ProductEditablePayload) {
+type PublishValidationIssue = {
+  field: string;
+  label: string;
+};
+
+function getPublishValidationErrors(product: Product, payload: ProductEditablePayload): PublishValidationIssue[] {
   return [
-    !payload.name.trim() && "Product name",
-    !product.slug.trim() && "Slug",
-    !payload.category.trim() && "Category",
-    !payload.details.recordType && "Record type",
-    !payload.details.tagline.trim() && "Tagline",
-    !payload.details.blurb.trim() && "Blurb",
-    !payload.details.keyAttributes.some((attribute) => attribute.trim()) && "Key attributes",
-    !payload.details.description.trim() && "Product description",
-    !payload.details.seoTitle.trim() && "SEO title",
-    !payload.details.seoDescription.trim() && "SEO description",
-    payload.saleLines.length > 0 && payload.saleLines.filter((line) => line.isDefault).length !== 1 && "Exactly one default sale line",
-    new Set(payload.saleLines.map((line) => line.stockCode)).size !== payload.saleLines.length && "Unique sale line stock codes",
-  ].filter(Boolean) as string[];
+    !payload.name.trim() && { field: "name", label: "Product name" },
+    !product.slug.trim() && { field: "slug", label: "Slug" },
+    !payload.category.trim() && { field: "category", label: "Category" },
+    !payload.details.recordType && { field: "details.recordType", label: "Record type" },
+    !payload.details.tagline.trim() && { field: "details.tagline", label: "Tagline" },
+    !payload.details.blurb.trim() && { field: "details.blurb", label: "Blurb" },
+    !payload.details.keyAttributes.some((attribute) => attribute.trim()) && { field: "details.keyAttributes", label: "Key attributes" },
+    !payload.details.description.trim() && { field: "details.description", label: "Product description" },
+    !payload.details.seoTitle.trim() && { field: "details.seoTitle", label: "SEO title" },
+    !payload.details.seoDescription.trim() && { field: "details.seoDescription", label: "SEO description" },
+    payload.saleLines.length > 0 && payload.saleLines.filter((line) => line.isDefault).length !== 1 && { field: "saleLines.default", label: "Exactly one default sale line" },
+    new Set(payload.saleLines.map((line) => line.stockCode)).size !== payload.saleLines.length && { field: "saleLines.stockCodes", label: "Unique sale line stock codes" },
+  ].filter(Boolean) as PublishValidationIssue[];
 }
 
 function getDraftValidationErrors(payload: {
@@ -495,7 +500,7 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       if (!resolvedPayload) throw new Error("INVALID_CATEGORY");
       const normalizedPayload = resolvedPayload;
       const missingFields = getPublishValidationErrors(lockedProduct, normalizedPayload);
-      if (missingFields.length > 0) throw new Error(`PUBLISH_VALIDATION:${missingFields.join(", ")}`);
+       if (missingFields.length > 0) throw new Error(`PUBLISH_VALIDATION:${JSON.stringify(missingFields)}`);
       const [published] = await tx.update(productsTable).set({
         ...normalizedPayload,
         publishStatus: "Published",
@@ -529,7 +534,11 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       return;
     }
     if (error instanceof Error && error.message.startsWith("PUBLISH_VALIDATION:")) {
-      res.status(400).json({ error: `Complete these fields before publishing: ${error.message.slice("PUBLISH_VALIDATION:".length)}.` });
+      const issues = JSON.parse(error.message.slice("PUBLISH_VALIDATION:".length)) as PublishValidationIssue[];
+      res.status(400).json({
+        error: `Complete these fields before publishing: ${issues.map((issue) => issue.label).join(", ")}.`,
+        issues,
+      });
       return;
     }
     if (error instanceof Error && error.message.includes("duplicate key")) {

@@ -5,6 +5,16 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type PublishValidationErrorIssuesItem = {
+  field: string;
+  label: string;
+};
+
+export interface PublishValidationError {
+  error: string;
+  issues: PublishValidationErrorIssuesItem[];
+}
+
 export interface HealthStatus {
   status: string;
 }

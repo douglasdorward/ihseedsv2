@@ -217,6 +217,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminProduct"
+        "400":
+          description: Product is missing fields required for publication
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishValidationError"
         "404":
           description: Product not found
         "409":
@@ -509,6 +515,22 @@ paths:
           description: Invalid enquiry
 components:
   schemas:
+    PublishValidationError:
+      type: object
+      required: [error, issues]
+      properties:
+        error:
+          type: string
+        issues:
+          type: array
+          items:
+            type: object
+            required: [field, label]
+            properties:
+              field:
+                type: string
+              label:
+                type: string
     HealthStatus:
       type: object
       properties:

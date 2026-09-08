@@ -267,6 +267,17 @@ test("drafts require only identity fields while publishing requires public catal
   assert.match(publishResult.data.error, /Product description/);
   assert.match(publishResult.data.error, /SEO title/);
   assert.match(publishResult.data.error, /SEO description/);
+  assert.deepEqual(
+    publishResult.data.issues.map((issue) => issue.field),
+    [
+      "details.tagline",
+      "details.blurb",
+      "details.keyAttributes",
+      "details.description",
+      "details.seoTitle",
+      "details.seoDescription",
+    ],
+  );
 });
 
 test("inactive taxonomy cannot be newly assigned but an existing assignment remains publishable", async () => {

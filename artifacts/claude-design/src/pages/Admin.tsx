@@ -46,6 +46,26 @@ import "../admin-v2.css";
 
 type ProductStatus = "in-stock" | "low" | "very-low" | "unavailable";
 type RecordKind = "Mix" | "Variety" | "Commodity / generic";
+type PublishIssueKey =
+  | "name"
+  | "slug"
+  | "category"
+  | "details.recordType"
+  | "details.tagline"
+  | "details.blurb"
+  | "details.keyAttributes"
+  | "details.description"
+  | "details.seoTitle"
+  | "details.seoDescription"
+  | "saleLines.default"
+  | "saleLines.stockCodes";
+
+type PublishIssue = {
+  key: PublishIssueKey;
+  label: string;
+  tab: number;
+  message: string;
+};
 
 const OPTS = {
   ploidy: ["", "Diploid", "Tetraploid", "Hexaploid", "Mixed (blend)"],
@@ -175,6 +195,27 @@ const statusOptions: { value: ProductStatus; label: string }[] = [
 
 const formatDate = (value: string | null | undefined) =>
   value ? new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "Never";
+
+function getPublishIssues(form: any): PublishIssue[] {
+  const saleLines = form.saleLines ?? [];
+  return [
+    !form.name?.trim() && { key: "name", label: "Product name", tab: 1, message: "Enter a product name." },
+    !form.slug?.trim() && { key: "slug", label: "Slug", tab: 1, message: "Enter a URL slug." },
+    !form.category?.trim() && { key: "category", label: "Category", tab: 1, message: "Choose a category." },
+    !form.details?.recordType && { key: "details.recordType", label: "Record type", tab: 1, message: "Choose a record type." },
+    !form.details?.tagline?.trim() && { key: "details.tagline", label: "Tagline", tab: 5, message: "Enter a tagline before publishing." },
+    !form.details?.blurb?.trim() && { key: "details.blurb", label: "Blurb", tab: 5, message: "Enter a blurb before publishing." },
+    !(form.details?.keyAttributes ?? []).some((attribute: string) => attribute.trim()) && { key: "details.keyAttributes", label: "Key attributes", tab: 5, message: "Add at least one key attribute." },
+    !form.details?.description?.trim() && { key: "details.description", label: "Product description", tab: 5, message: "Enter a product description." },
+    !form.details?.seoTitle?.trim() && { key: "details.seoTitle", label: "SEO title", tab: 6, message: "Enter an SEO title before publishing." },
+    !form.details?.seoDescription?.trim() && { key: "details.seoDescription", label: "SEO description", tab: 6, message: "Enter an SEO description before publishing." },
+    saleLines.length > 0 && saleLines.filter((line: any) => line.isDefault).length !== 1 && { key: "saleLines.default", label: "Exactly one default sale line", tab: 4, message: "Choose exactly one default sale line." },
+    new Set(saleLines.map((line: any) => line.stockCode)).size !== saleLines.length && { key: "saleLines.stockCodes", label: "Unique sale line stock codes", tab: 4, message: "Each sale line must use a unique stock code." },
+  ].filter(Boolean) as PublishIssue[];
+}
+
+const stripHttpErrorPrefix = (message: string) =>
+  message.replace(/^HTTP \d+(?: [^:]+)?:\s*/i, "");
 
 function getTabFields(tab: number, form: any) {
   const c = form.category;
@@ -744,6 +785,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const [viewMode, setViewMode] = useState<"draft" | "live">("draft");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [publishAttempted, setPublishAttempted] = useState(false);
   const [activeTab, setActiveTab] = useState(1);
   const [showSectionCompletion, setShowSectionCompletion] = useState(false);
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
@@ -764,6 +806,21 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
 
   const liveForm = useMemo(() => product ? toForm(product) : blankProduct, [product]);
   const currentForm = viewMode === "live" ? liveForm : form;
+  const publishIssues = publishAttempted ? getPublishIssues(form) : [];
+  const issueFor = (key: PublishIssueKey) => publishIssues.find((issue) => issue.key === key);
+  const tabsWithIssues = new Set(publishIssues.map((issue) => issue.tab));
+  const issueSectionNames = [...tabsWithIssues].sort().map((tab) => (
+    ({ 1: "Basics", 4: "Selling", 5: "Content & publishing", 6: "SEO" } as Record<number, string>)[tab]
+  )).filter(Boolean);
+  useEffect(() => {
+    if (!publishAttempted || !error.startsWith("Complete these fields before publishing:")) return;
+    if (publishIssues.length === 0) {
+      setError("");
+      return;
+    }
+    const currentMessage = `Complete these fields before publishing: ${publishIssues.map((issue) => issue.label).join(", ")}.`;
+    if (error !== currentMessage) setError(currentMessage);
+  }, [publishAttempted, publishIssues.length, error]);
 
   const setField = (key: string, value: any) => setForm((current: any) => ({ ...current, [key]: value }));
   const setDetail = (key: string, value: any) => setForm((current: any) => ({ ...current, details: { ...current.details, [key]: value } }));
@@ -819,17 +876,11 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     }
 
     if (action === "publish") {
-      const missing = [
-        !form.slug.trim() && "Slug",
-        !form.category.trim() && "Category",
-        !form.details.recordType && "Record type",
-        !form.details.tagline.trim() && "Tagline",
-        !form.details.blurb.trim() && "Blurb",
-        !(form.details.keyAttributes ?? []).some((attribute: string) => attribute.trim()) && "Key attributes",
-        !form.details.description.trim() && "Product description",
-      ].filter(Boolean) as string[];
-      if (missing.length > 0) {
-        setError(`Complete these fields before publishing: ${missing.join(", ")}.`);
+      setPublishAttempted(true);
+      const issues = getPublishIssues(form);
+      if (issues.length > 0) {
+        setError(`Complete these fields before publishing: ${issues.map((issue) => issue.label).join(", ")}.`);
+        setActiveTab(issues[0].tab);
         setSaving(false);
         return;
       }
@@ -869,7 +920,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to save product.");
+      setError(err instanceof Error ? stripHttpErrorPrefix(err.message) : "Unable to save product.");
     } finally {
       setSaving(false);
     }
@@ -1063,16 +1114,21 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
              <option value={6} disabled={!category}>SEO</option>
            </select>
          </label>
+          {publishIssues.length > 0 && (
+            <div className="admin-v2-mobile-errors" role="status">
+              <strong>Needs attention:</strong> {issueSectionNames.join(", ")}
+            </div>
+          )}
         <div className="admin-v2-tabs">
-           <button type="button" className={`admin-v2-tab ${activeTab === 1 ? 'active' : ''}`} onClick={() => setActiveTab(1)}>Basics</button>
+            <button type="button" className={`admin-v2-tab ${activeTab === 1 ? 'active' : ''}`} onClick={() => setActiveTab(1)} aria-label={`Basics${tabsWithIssues.has(1) ? ", needs attention" : ""}`}>Basics{tabsWithIssues.has(1) && <span className="admin-tab-error-dot" aria-hidden="true" />}</button>
            <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 2 ? 'active' : ''}`} onClick={() => setActiveTab(2)}>Agronomy &amp; fit</button>
            <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 3 ? 'active' : ''}`} onClick={() => setActiveTab(3)}>Category-specific</button>
-           <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 4 ? 'active' : ''}`} onClick={() => setActiveTab(4)}>Selling</button>
-           <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 5 ? 'active' : ''}`} onClick={() => setActiveTab(5)}>Content &amp; publishing</button>
-           <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 6 ? 'active' : ''}`} onClick={() => setActiveTab(6)}>SEO</button>
+            <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 4 ? 'active' : ''}`} onClick={() => setActiveTab(4)} aria-label={`Selling${tabsWithIssues.has(4) ? ", needs attention" : ""}`}>Selling{tabsWithIssues.has(4) && <span className="admin-tab-error-dot" aria-hidden="true" />}</button>
+            <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 5 ? 'active' : ''}`} onClick={() => setActiveTab(5)} aria-label={`Content and publishing${tabsWithIssues.has(5) ? ", needs attention" : ""}`}>Content &amp; publishing{tabsWithIssues.has(5) && <span className="admin-tab-error-dot" aria-hidden="true" />}</button>
+            <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 6 ? 'active' : ''}`} onClick={() => setActiveTab(6)} aria-label={`SEO${tabsWithIssues.has(6) ? ", needs attention" : ""}`}>SEO{tabsWithIssues.has(6) && <span className="admin-tab-error-dot" aria-hidden="true" />}</button>
         </div>
 
-        <form id="admin-product-form" onSubmit={submit}>
+         <form id="admin-product-form" onSubmit={submit} noValidate>
           <datalist id="admin-product-slugs">{products.filter((item) => item.id !== product?.id).map((item) => <option key={item.id} value={item.slug}>{item.name}</option>)}</datalist>
           <fieldset className="admin-editor-main" disabled={viewMode === "live" || isArchived}>
             {error && <div className="admin-notice" style={{color: "red"}}><p>{error}</p></div>}
@@ -1081,13 +1137,14 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
               <section className="admin-panel admin-form-card">
                 <h2>Basics</h2>
                 <div className="admin-form-grid">
-                   <label><span className="admin-label-title">Product name<span className="admin-required-star" aria-hidden="true">*</span></span><input required value={currentForm.name} onChange={(event) => setField("name", event.target.value)} placeholder="e.g. SouWest™ Pasture Mix"/></label>
-                   <label><span className="admin-label-title">Slug<span className="admin-required-star" aria-hidden="true">*</span></span><input required disabled={!isNew} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={currentForm.slug} onChange={(event) => setField("slug", event.target.value.toLowerCase())} placeholder="souwest-pasture-mix"/></label>
-                   <label><span className="admin-label-title">Category<span className="admin-required-star" aria-hidden="true">*</span></span>
-                    <select required value={selectedRoot?.id ?? ""} disabled={loadingTaxonomy || Boolean(taxonomyError)} onChange={handleCategoryChange}>
+                   <label className={issueFor("name") ? "admin-field-invalid" : ""}><span className="admin-label-title">Product name<span className="admin-required-star" aria-hidden="true">*</span></span><input required aria-invalid={Boolean(issueFor("name"))} value={currentForm.name} onChange={(event) => setField("name", event.target.value)} placeholder="e.g. SouWest™ Pasture Mix"/>{issueFor("name") && <span className="admin-inline-field-error">{issueFor("name")!.message}</span>}</label>
+                   <label className={issueFor("slug") ? "admin-field-invalid" : ""}><span className="admin-label-title">Slug<span className="admin-required-star" aria-hidden="true">*</span></span><input required aria-invalid={Boolean(issueFor("slug"))} disabled={!isNew} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={currentForm.slug} onChange={(event) => setField("slug", event.target.value.toLowerCase())} placeholder="souwest-pasture-mix"/>{issueFor("slug") && <span className="admin-inline-field-error">{issueFor("slug")!.message}</span>}</label>
+                   <label className={issueFor("category") ? "admin-field-invalid" : ""}><span className="admin-label-title">Category<span className="admin-required-star" aria-hidden="true">*</span></span>
+                    <select required aria-invalid={Boolean(issueFor("category"))} value={selectedRoot?.id ?? ""} disabled={loadingTaxonomy || Boolean(taxonomyError)} onChange={handleCategoryChange}>
                       <option value="">Select a category</option>
                        {rootOptions.map((category: any) => <option key={category.id} value={category.id}>{category.name}{!category.active ? " (Inactive)" : ""}</option>)}
                     </select>
+                    {issueFor("category") && <span className="admin-inline-field-error">{issueFor("category")!.message}</span>}
                   </label>
                   <label><span className="admin-label-title">Subcategory</span>
                      <select value={selectedTaxonomy && selectedTaxonomy.parentId === selectedRoot?.id ? selectedTaxonomy.id : ""} onChange={(event) => setField("subcategoryId", event.target.value ? Number(event.target.value) : selectedRoot?.id ?? null)} disabled={!selectedRoot || loadingTaxonomy || Boolean(taxonomyError)}>
@@ -1095,7 +1152,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                        {childOptions.map((category: any) => <option key={category.id} value={category.id}>{category.name}{!category.active ? " (Inactive)" : ""}</option>)}
                     </select>
                   </label>
-                  <div className="admin-choice-field wide" role="group" aria-required="true" aria-label="Record type"><span className="admin-label-title">Record type<span className="admin-required-star" aria-hidden="true">*</span></span><div>{(["Mix", "Variety", "Commodity / generic"] as RecordKind[]).map((kind) => <button key={kind} type="button" className={currentForm.details.recordType === kind ? "selected" : ""} onClick={() => setDetail("recordType", kind as any)}>{kind}</button>)}</div></div>
+                  <div className={`admin-choice-field wide ${issueFor("details.recordType") ? "admin-field-invalid" : ""}`} role="group" aria-required="true" aria-invalid={Boolean(issueFor("details.recordType"))} aria-label="Record type"><span className="admin-label-title">Record type<span className="admin-required-star" aria-hidden="true">*</span></span><div>{(["Mix", "Variety", "Commodity / generic"] as RecordKind[]).map((kind) => <button key={kind} type="button" className={currentForm.details.recordType === kind ? "selected" : ""} onClick={() => setDetail("recordType", kind as any)}>{kind}</button>)}</div>{issueFor("details.recordType") && <span className="admin-inline-field-error">{issueFor("details.recordType")!.message}</span>}</div>
                   {!isMix && <label>Botanical name<input value={currentForm.details.botanicalName} onChange={(event) => setDetail("botanicalName", event.target.value)} placeholder="e.g. Lolium multiflorum"/></label>}
                   <label>Persistency type<select value={currentForm.details.persistencyType} onChange={(event) => setDetail("persistencyType", event.target.value as any)}><option value="">Not set</option>{["Annual", "Biennial", "Perennial", "Hybrid perennial", "Short-term (1–2 years)"].map((value) => <option key={value}>{value}</option>)}</select></label>
                   {!isMix && <label>Bred by / origin<input value={currentForm.details.bredByOrigin} onChange={(event) => setDetail("bredByOrigin", event.target.value)} placeholder="e.g. Agricom (NZ)"/></label>}
@@ -1211,7 +1268,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
             {activeTab === 4 && (
               <section className="admin-panel admin-form-card">
                 <h2>Selling</h2>
-                <div className="admin-repeat-group wide">
+                <div className={`admin-repeat-group wide ${issueFor("saleLines.default") || issueFor("saleLines.stockCodes") ? "admin-field-invalid admin-group-invalid" : ""}`}>
                   <div className="admin-section-heading"><div><h3>Sale lines</h3><p>One row per warehouse stock code.</p></div>{viewMode !== "live" && !isArchived && <button className="admin-button outline small" type="button" onClick={addSaleLine}><Icon name="plus" size={16}/>Add line</button>}</div>
                   <div className="admin-sale-line-header">
                      <span>Stock code</span>
@@ -1241,6 +1298,8 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                     </div>
                   ))}
                   {currentForm.saleLines?.length === 0 && <p style={{color:'#7b827d'}}>No sale lines added.</p>}
+                  {issueFor("saleLines.default") && <span className="admin-inline-field-error">{issueFor("saleLines.default")!.message}</span>}
+                  {issueFor("saleLines.stockCodes") && <span className="admin-inline-field-error">{issueFor("saleLines.stockCodes")!.message}</span>}
                 </div>
                 
                 <div className="admin-form-grid">
@@ -1277,14 +1336,15 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
               <section className="admin-panel admin-form-card">
                 <h2>Content &amp; publishing</h2>
                 <div className="admin-form-grid">
-                  <label className="wide">Tagline <span className="admin-field-hint">Short product promise shown on product cards and below the product name (60 characters max).</span><input maxLength={60} value={currentForm.details.tagline} onChange={(e) => setDetail("tagline", e.target.value)} /><span className="admin-character-count">{currentForm.details.tagline.length}/60</span></label>
-                  <label className="wide">Blurb <span className="admin-field-hint">A concise introduction shown at the top of the product page.</span><textarea value={currentForm.details.blurb} onChange={(e) => setDetail("blurb", e.target.value)} rows={3}/></label>
-                  <div className="admin-repeat-group wide">
+                  <label className={`wide ${issueFor("details.tagline") ? "admin-field-invalid" : ""}`}>Tagline <span className="admin-field-hint">Short product promise shown on product cards and below the product name (60 characters max).</span><input aria-invalid={Boolean(issueFor("details.tagline"))} maxLength={60} value={currentForm.details.tagline} onChange={(e) => setDetail("tagline", e.target.value)} />{issueFor("details.tagline") && <span className="admin-inline-field-error">{issueFor("details.tagline")!.message}</span>}<span className="admin-character-count">{currentForm.details.tagline.length}/60</span></label>
+                  <label className={`wide ${issueFor("details.blurb") ? "admin-field-invalid" : ""}`}>Blurb <span className="admin-field-hint">A concise introduction shown at the top of the product page.</span><textarea aria-invalid={Boolean(issueFor("details.blurb"))} value={currentForm.details.blurb} onChange={(e) => setDetail("blurb", e.target.value)} rows={3}/>{issueFor("details.blurb") && <span className="admin-inline-field-error">{issueFor("details.blurb")!.message}</span>}</label>
+                  <div className={`admin-repeat-group wide ${issueFor("details.keyAttributes") ? "admin-field-invalid admin-group-invalid" : ""}`}>
                     <div className="admin-section-heading"><div><h3>Key attributes</h3><p>Add the concise product strengths displayed as bullets on the public page.</p></div>{viewMode !== "live" && !isArchived && <button className="admin-button outline small" type="button" onClick={() => addStringItem("keyAttributes")}><Icon name="plus" size={16}/>Add attribute</button>}</div>
                     {currentForm.details.keyAttributes.map((attribute: string, index: number) => <div className="admin-repeat-row" key={index}><input value={attribute} onChange={(event) => updateStringItem("keyAttributes", index, event.target.value)} placeholder="e.g. Strong winter growth"/>{viewMode !== "live" && !isArchived && <button type="button" onClick={() => removeStringItem("keyAttributes", index)} aria-label="Remove key attribute">×</button>}</div>)}
                     {currentForm.details.keyAttributes.length === 0 && <p className="admin-empty-inline">No key attributes added yet.</p>}
+                    {issueFor("details.keyAttributes") && <span className="admin-inline-field-error">{issueFor("details.keyAttributes")!.message}</span>}
                   </div>
-                  <label className="wide">Description<textarea value={currentForm.details.description} onChange={(e) => setDetail("description", e.target.value)} rows={6}/></label>
+                  <label className={`wide ${issueFor("details.description") ? "admin-field-invalid" : ""}`}>Description<textarea aria-invalid={Boolean(issueFor("details.description"))} value={currentForm.details.description} onChange={(e) => setDetail("description", e.target.value)} rows={6}/>{issueFor("details.description") && <span className="admin-inline-field-error">{issueFor("details.description")!.message}</span>}</label>
                   <label className="wide">Distribution note <span className="admin-field-hint">Optional highlighted information about availability or distribution.</span><textarea value={currentForm.details.distributionNote} onChange={(e) => setDetail("distributionNote", e.target.value)} rows={2}/></label>
                   <label>Description source (Admin only)<input value={currentForm.descriptionSource} onChange={(e) => setField("descriptionSource", e.target.value)} /></label>
                   <label>Legacy website URL (Admin only)<input value={currentForm.websiteUrlLegacy} onChange={(e) => setField("websiteUrlLegacy", e.target.value)} /></label>
@@ -1328,8 +1388,8 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
               <section className="admin-panel admin-form-card">
                 <h2>SEO</h2>
                 <div className="admin-form-grid">
-                  <label className="wide">SEO title <span className="required">*</span><span className="admin-field-hint">Required before publishing. The page title shown in search results and browser tabs.</span><input value={currentForm.details.seoTitle} onChange={(e) => setDetail("seoTitle", e.target.value)} /></label>
-                  <label className="wide">SEO description <span className="required">*</span><span className="admin-field-hint">Required before publishing. A concise summary that may appear beneath the page title in search results.</span><textarea value={currentForm.details.seoDescription} onChange={(e) => setDetail("seoDescription", e.target.value)} rows={4} /></label>
+                  <label className={`wide ${issueFor("details.seoTitle") ? "admin-field-invalid" : ""}`}>SEO title <span className="required">*</span><span className="admin-field-hint">Required before publishing. The page title shown in search results and browser tabs.</span><input aria-invalid={Boolean(issueFor("details.seoTitle"))} value={currentForm.details.seoTitle} onChange={(e) => setDetail("seoTitle", e.target.value)} />{issueFor("details.seoTitle") && <span className="admin-inline-field-error">{issueFor("details.seoTitle")!.message}</span>}</label>
+                  <label className={`wide ${issueFor("details.seoDescription") ? "admin-field-invalid" : ""}`}>SEO description <span className="required">*</span><span className="admin-field-hint">Required before publishing. A concise summary that may appear beneath the page title in search results.</span><textarea aria-invalid={Boolean(issueFor("details.seoDescription"))} value={currentForm.details.seoDescription} onChange={(e) => setDetail("seoDescription", e.target.value)} rows={4} />{issueFor("details.seoDescription") && <span className="admin-inline-field-error">{issueFor("details.seoDescription")!.message}</span>}</label>
                   <label className="wide">Social sharing title<span className="admin-field-hint">Optional. Uses the SEO title when left blank.</span><input value={currentForm.details.socialTitle} onChange={(e) => setDetail("socialTitle", e.target.value)} /></label>
                   <label className="wide">Social sharing description<span className="admin-field-hint">Optional. Uses the SEO description when left blank.</span><textarea value={currentForm.details.socialDescription} onChange={(e) => setDetail("socialDescription", e.target.value)} rows={4} /></label>
                   <label className="wide">Social sharing image<span className="admin-field-hint">Choose a product photo or enter another image URL below.</span>

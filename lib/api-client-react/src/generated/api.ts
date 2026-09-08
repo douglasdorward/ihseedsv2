@@ -38,6 +38,7 @@ import type {
   ProductUpdate,
   PublicCatalogueCategory,
   PublicProduct,
+  PublishValidationError,
   RedirectLookup,
   WorkbookCommit,
   WorkbookReport,
@@ -846,7 +847,7 @@ export const publishProduct = async (id: number, options?: Parameters<typeof cus
 
 
 
-export const getPublishProductMutationOptions = <TError = ErrorType<void>,
+export const getPublishProductMutationOptions = <TError = ErrorType<PublishValidationError | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number}, TContext> => {
 
@@ -875,12 +876,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PublishProductMutationResult = NonNullable<Awaited<ReturnType<typeof publishProduct>>>
 
-    export type PublishProductMutationError = ErrorType<void>
+    export type PublishProductMutationError = ErrorType<PublishValidationError | void>
 
     /**
  * @summary Promote the current draft to the public catalogue
  */
-export const usePublishProduct = <TError = ErrorType<void>,
+export const usePublishProduct = <TError = ErrorType<PublishValidationError | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof publishProduct>>,
