@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
+import { publicSiteUrl } from "../lib/site-url";
 import "./styles.css";
 
 export const metadata: Metadata = {
+  metadataBase: publicSiteUrl,
   title: "IH Seeds",
   description: "Western Australia's pasture seed specialists.",
 };

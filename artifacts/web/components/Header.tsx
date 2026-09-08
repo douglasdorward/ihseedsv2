@@ -12,7 +12,7 @@ export function Header() {
 
   const isActive = (path: string) => {
     if (path === "/products") {
-      return location === "/products" || location.startsWith("/products/") || location.startsWith("/category/");
+      return location === "/products" || location.startsWith("/products/");
     }
     return location === path || location.startsWith(`${path}/`);
   };
