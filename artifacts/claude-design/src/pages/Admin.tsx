@@ -863,6 +863,17 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
       return;
     }
 
+    if (action === "publish") {
+      setPublishAttempted(true);
+      const issues = getPublishIssues(form);
+      if (issues.length > 0) {
+        setError(`Complete these fields before publishing: ${issues.map((issue) => issue.label).join(", ")}.`);
+        setActiveTab(issues[0].tab);
+        setSaving(false);
+        return;
+      }
+    }
+
     const missingDraftFields = [
       !form.name.trim() && "Product name",
       !form.slug.trim() && "Slug",
@@ -873,17 +884,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
       setError(`Complete these fields before saving a draft: ${missingDraftFields.join(", ")}.`);
       setSaving(false);
       return;
-    }
-
-    if (action === "publish") {
-      setPublishAttempted(true);
-      const issues = getPublishIssues(form);
-      if (issues.length > 0) {
-        setError(`Complete these fields before publishing: ${issues.map((issue) => issue.label).join(", ")}.`);
-        setActiveTab(issues[0].tab);
-        setSaving(false);
-        return;
-      }
     }
 
     if (action === "publish" && !window.confirm("Publish these changes? This will replace the currently live version.")) {
