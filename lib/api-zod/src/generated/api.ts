@@ -5451,6 +5451,9 @@ export const ListCategoriesResponseItem = zod.object({
   "name": zod.string(),
   "groupLabel": zod.string(),
   "lead": zod.string(),
+  "pageHeading": zod.string(),
+  "seoTitle": zod.string(),
+  "seoDescription": zod.string(),
   "rainfall": zod.string(),
   "image": zod.string(),
   "sortOrder": zod.number().multipleOf(listCategoriesResponseOneSortOrderMultipleOf),
@@ -5481,6 +5484,9 @@ export const ListAdminCategoriesResponseItem = zod.object({
   "name": zod.string(),
   "groupLabel": zod.string(),
   "lead": zod.string(),
+  "pageHeading": zod.string(),
+  "seoTitle": zod.string(),
+  "seoDescription": zod.string(),
   "rainfall": zod.string(),
   "image": zod.string(),
   "sortOrder": zod.number().multipleOf(listAdminCategoriesResponseSortOrderMultipleOf),
@@ -5506,6 +5512,12 @@ export const createCategoryBodyGroupLabelMax = 80;
 
 export const createCategoryBodyLeadMax = 1000;
 
+export const createCategoryBodyPageHeadingMax = 180;
+
+export const createCategoryBodySeoTitleMax = 180;
+
+export const createCategoryBodySeoDescriptionMax = 2000;
+
 export const createCategoryBodyRainfallMax = 120;
 
 export const createCategoryBodyImageMax = 500;
@@ -5521,6 +5533,9 @@ export const CreateCategoryBody = zod.object({
   "name": zod.string().min(1).max(createCategoryBodyNameMax),
   "groupLabel": zod.string().min(1).max(createCategoryBodyGroupLabelMax),
   "lead": zod.string().max(createCategoryBodyLeadMax),
+  "pageHeading": zod.string().max(createCategoryBodyPageHeadingMax),
+  "seoTitle": zod.string().max(createCategoryBodySeoTitleMax),
+  "seoDescription": zod.string().max(createCategoryBodySeoDescriptionMax),
   "rainfall": zod.string().max(createCategoryBodyRainfallMax),
   "image": zod.string().max(createCategoryBodyImageMax),
   "sortOrder": zod.number().min(createCategoryBodySortOrderMin).multipleOf(createCategoryBodySortOrderMultipleOf),
@@ -5542,6 +5557,9 @@ export const CreateCategoryResponse = zod.object({
   "name": zod.string(),
   "groupLabel": zod.string(),
   "lead": zod.string(),
+  "pageHeading": zod.string(),
+  "seoTitle": zod.string(),
+  "seoDescription": zod.string(),
   "rainfall": zod.string(),
   "image": zod.string(),
   "sortOrder": zod.number().multipleOf(createCategoryResponseSortOrderMultipleOf),
@@ -5584,6 +5602,9 @@ export const ReorderCategoriesResponseItem = zod.object({
   "name": zod.string(),
   "groupLabel": zod.string(),
   "lead": zod.string(),
+  "pageHeading": zod.string(),
+  "seoTitle": zod.string(),
+  "seoDescription": zod.string(),
   "rainfall": zod.string(),
   "image": zod.string(),
   "sortOrder": zod.number().multipleOf(reorderCategoriesResponseSortOrderMultipleOf),
@@ -5603,11 +5624,21 @@ export const UpdateCategoryParams = zod.object({
 
 export const updateCategoryBodyParentIdMultipleOf = 1;
 
+export const updateCategoryBodySlugMax = 120;
+
+
+export const updateCategoryBodySlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
 export const updateCategoryBodyNameMax = 120;
 
 export const updateCategoryBodyGroupLabelMax = 80;
 
 export const updateCategoryBodyLeadMax = 1000;
+
+export const updateCategoryBodyPageHeadingMax = 180;
+
+export const updateCategoryBodySeoTitleMax = 180;
+
+export const updateCategoryBodySeoDescriptionMax = 2000;
 
 export const updateCategoryBodyRainfallMax = 120;
 
@@ -5620,9 +5651,13 @@ export const updateCategoryBodySortOrderMultipleOf = 1;
 
 export const UpdateCategoryBody = zod.object({
   "parentId": zod.number().multipleOf(updateCategoryBodyParentIdMultipleOf).nullish(),
+  "slug": zod.string().min(1).max(updateCategoryBodySlugMax).regex(updateCategoryBodySlugRegExp).optional(),
   "name": zod.string().min(1).max(updateCategoryBodyNameMax).optional(),
   "groupLabel": zod.string().min(1).max(updateCategoryBodyGroupLabelMax).optional(),
   "lead": zod.string().max(updateCategoryBodyLeadMax).optional(),
+  "pageHeading": zod.string().max(updateCategoryBodyPageHeadingMax).optional(),
+  "seoTitle": zod.string().max(updateCategoryBodySeoTitleMax).optional(),
+  "seoDescription": zod.string().max(updateCategoryBodySeoDescriptionMax).optional(),
   "rainfall": zod.string().max(updateCategoryBodyRainfallMax).optional(),
   "image": zod.string().max(updateCategoryBodyImageMax).optional(),
   "sortOrder": zod.number().min(updateCategoryBodySortOrderMin).multipleOf(updateCategoryBodySortOrderMultipleOf).optional(),
@@ -5644,6 +5679,9 @@ export const UpdateCategoryResponse = zod.object({
   "name": zod.string(),
   "groupLabel": zod.string(),
   "lead": zod.string(),
+  "pageHeading": zod.string(),
+  "seoTitle": zod.string(),
+  "seoDescription": zod.string(),
   "rainfall": zod.string(),
   "image": zod.string(),
   "sortOrder": zod.number().multipleOf(updateCategoryResponseSortOrderMultipleOf),

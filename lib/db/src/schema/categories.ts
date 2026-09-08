@@ -8,6 +8,9 @@ export const catalogueCategoriesTable = pgTable("ih_catalogue_categories", {
   name: text("name").notNull(),
   groupLabel: text("group_label").notNull(),
   lead: text("lead").notNull().default(""),
+  pageHeading: text("page_heading").notNull().default(""),
+  seoTitle: text("seo_title").notNull().default(""),
+  seoDescription: text("seo_description").notNull().default(""),
   rainfall: text("rainfall").notNull().default(""),
   image: text("image").notNull().default(""),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -22,15 +25,21 @@ const categoryFieldsSchema = z.object({
   name: z.string().trim().min(1).max(120),
   groupLabel: z.string().trim().min(1).max(80),
   lead: z.string().trim().max(1000),
+  pageHeading: z.string().trim().max(180),
+  seoTitle: z.string().trim().max(180),
+  seoDescription: z.string().trim().max(2000),
   rainfall: z.string().trim().max(120),
   image: z.string().trim().max(500),
   sortOrder: z.number().int().min(0),
   active: z.boolean(),
 });
 
-export const insertCatalogueCategorySchema = categoryFieldsSchema;
-// Slugs are public identifiers and intentionally remain stable after creation.
-export const updateCatalogueCategorySchema = categoryFieldsSchema.omit({ slug: true }).partial();
+export const insertCatalogueCategorySchema = categoryFieldsSchema.extend({
+  pageHeading: categoryFieldsSchema.shape.pageHeading.default(""),
+  seoTitle: categoryFieldsSchema.shape.seoTitle.default(""),
+  seoDescription: categoryFieldsSchema.shape.seoDescription.default(""),
+});
+export const updateCatalogueCategorySchema = categoryFieldsSchema.partial();
 export const reorderCatalogueCategoriesSchema = z.object({
   items: z.array(z.object({
     id: z.number().int().positive(),

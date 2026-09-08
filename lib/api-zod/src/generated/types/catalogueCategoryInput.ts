@@ -26,6 +26,12 @@ export interface CatalogueCategoryInput {
   groupLabel: string;
   /** @maxLength 1000 */
   lead: string;
+  /** @maxLength 180 */
+  pageHeading: string;
+  /** @maxLength 180 */
+  seoTitle: string;
+  /** @maxLength 2000 */
+  seoDescription: string;
   /** @maxLength 120 */
   rainfall: string;
   /** @maxLength 500 */

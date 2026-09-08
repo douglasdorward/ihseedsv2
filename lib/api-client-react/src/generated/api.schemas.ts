@@ -884,6 +884,9 @@ export interface CatalogueCategory {
   name: string;
   groupLabel: string;
   lead: string;
+  pageHeading: string;
+  seoTitle: string;
+  seoDescription: string;
   rainfall: string;
   image: string;
   sortOrder: number;
@@ -917,6 +920,12 @@ export interface CatalogueCategoryInput {
   groupLabel: string;
   /** @maxLength 1000 */
   lead: string;
+  /** @maxLength 180 */
+  pageHeading: string;
+  /** @maxLength 180 */
+  seoTitle: string;
+  /** @maxLength 2000 */
+  seoDescription: string;
   /** @maxLength 120 */
   rainfall: string;
   /** @maxLength 500 */
@@ -931,6 +940,12 @@ export interface CatalogueCategoryUpdate {
   /**
      * @minLength 1
      * @maxLength 120
+     * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+     */
+  slug?: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
      */
   name?: string;
   /**
@@ -940,6 +955,12 @@ export interface CatalogueCategoryUpdate {
   groupLabel?: string;
   /** @maxLength 1000 */
   lead?: string;
+  /** @maxLength 180 */
+  pageHeading?: string;
+  /** @maxLength 180 */
+  seoTitle?: string;
+  /** @maxLength 2000 */
+  seoDescription?: string;
   /** @maxLength 120 */
   rainfall?: string;
   /** @maxLength 500 */

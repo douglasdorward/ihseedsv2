@@ -907,13 +907,16 @@ components:
         name: { type: string }
         groupLabel: { type: string }
         lead: { type: string }
+        pageHeading: { type: string }
+        seoTitle: { type: string }
+        seoDescription: { type: string }
         rainfall: { type: string }
         image: { type: string }
         sortOrder: { type: number, multipleOf: 1 }
         active: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-      required: [id, parentId, slug, name, groupLabel, lead, rainfall, image, sortOrder, active, createdAt, updatedAt]
+      required: [id, parentId, slug, name, groupLabel, lead, pageHeading, seoTitle, seoDescription, rainfall, image, sortOrder, active, createdAt, updatedAt]
     PublicCatalogueCategory:
       allOf:
         - $ref: "#/components/schemas/CatalogueCategory"
@@ -929,18 +932,25 @@ components:
         name: { type: string, minLength: 1, maxLength: 120 }
         groupLabel: { type: string, minLength: 1, maxLength: 80 }
         lead: { type: string, maxLength: 1000 }
+        pageHeading: { type: string, maxLength: 180 }
+        seoTitle: { type: string, maxLength: 180 }
+        seoDescription: { type: string, maxLength: 2000 }
         rainfall: { type: string, maxLength: 120 }
         image: { type: string, maxLength: 500 }
         sortOrder: { type: number, minimum: 0, multipleOf: 1 }
         active: { type: boolean }
-      required: [parentId, slug, name, groupLabel, lead, rainfall, image, sortOrder, active]
+      required: [parentId, slug, name, groupLabel, lead, pageHeading, seoTitle, seoDescription, rainfall, image, sortOrder, active]
     CatalogueCategoryUpdate:
       type: object
       properties:
         parentId: { type: number, multipleOf: 1, nullable: true }
+        slug: { type: string, minLength: 1, maxLength: 120, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
         name: { type: string, minLength: 1, maxLength: 120 }
         groupLabel: { type: string, minLength: 1, maxLength: 80 }
         lead: { type: string, maxLength: 1000 }
+        pageHeading: { type: string, maxLength: 180 }
+        seoTitle: { type: string, maxLength: 180 }
+        seoDescription: { type: string, maxLength: 2000 }
         rainfall: { type: string, maxLength: 120 }
         image: { type: string, maxLength: 500 }
         sortOrder: { type: number, minimum: 0, multipleOf: 1 }

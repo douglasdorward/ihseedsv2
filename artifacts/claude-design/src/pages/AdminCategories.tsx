@@ -40,11 +40,13 @@ const defaultImages = [
 const CategoryForm = ({ 
   initialData, 
   parent,
+  sharesParentPage = false,
   onSave, 
   onCancel 
 }: { 
   initialData?: CatalogueCategory; 
   parent?: CatalogueCategory;
+  sharesParentPage?: boolean;
   onSave: (data: CatalogueCategoryInput | CatalogueCategoryUpdate) => Promise<void>; 
   onCancel: () => void;
 }) => {
@@ -53,6 +55,9 @@ const CategoryForm = ({
     slug: initialData?.slug || "",
     groupLabel: initialData?.groupLabel || parent?.groupLabel || parent?.name || "",
     lead: initialData?.lead || "",
+    pageHeading: initialData?.pageHeading || "",
+    seoTitle: initialData?.seoTitle || "",
+    seoDescription: initialData?.seoDescription || "",
     rainfall: initialData?.rainfall || "",
     image: initialData?.image || parent?.image || defaultImages[0],
     active: initialData?.active ?? true,
@@ -77,7 +82,7 @@ const CategoryForm = ({
       return;
     }
     
-    if (!isEditing && !form.slug?.trim()) {
+    if (!form.slug?.trim()) {
       setError("Slug is required");
       setSaving(false);
       return;
@@ -92,8 +97,12 @@ const CategoryForm = ({
       if (isEditing) {
         await onSave({
           name: form.name,
+          slug: form.slug,
           groupLabel: form.groupLabel,
           lead: form.lead,
+          pageHeading: form.pageHeading,
+          seoTitle: form.seoTitle,
+          seoDescription: form.seoDescription,
           rainfall: form.rainfall,
           image: form.image,
           active: form.active,
@@ -104,6 +113,9 @@ const CategoryForm = ({
           slug: form.slug,
           groupLabel: form.groupLabel,
           lead: form.lead,
+          pageHeading: form.pageHeading,
+          seoTitle: form.seoTitle,
+          seoDescription: form.seoDescription,
           rainfall: form.rainfall,
           image: form.image,
           active: form.active,
@@ -139,15 +151,17 @@ const CategoryForm = ({
             />
           </label>
           <label>
-            Slug {!isEditing && <span className="admin-required-star">*</span>}
+            Slug <span className="admin-required-star">*</span>
             <input 
               value={form.slug} 
               onChange={e => setForm(prev => ({ ...prev, slug: slugify(e.target.value) }))} 
               placeholder="e.g. ryegrass" 
-              disabled={isEditing}
-              style={{ background: isEditing ? "#e9eeea" : undefined }}
             />
-            {isEditing && <small>Slug cannot be changed once created to prevent broken links.</small>}
+            <small>Public URL: {isSubcategory && parent
+              ? sharesParentPage
+                ? `Shares /products/${parent.slug} because it is the only active subcategory`
+                : `/products/${parent.slug}/${form.slug || "subcategory-slug"}`
+              : `/products/${form.slug || "category-slug"}`}</small>
           </label>
           {!isSubcategory && (
             <>
@@ -195,6 +209,46 @@ const CategoryForm = ({
               </label>
             </>
           )}
+          {isSubcategory && (
+            <label className="wide">
+              Lead description
+              <textarea
+                value={form.lead}
+                onChange={e => setForm(prev => ({ ...prev, lead: e.target.value }))}
+                placeholder={parent?.lead || "Short description for this subcategory..."}
+                rows={3}
+              />
+              <small>Used as the meta description fallback when the SEO description is blank.</small>
+            </label>
+          )}
+          <label className="wide">
+            Page heading
+            <input
+              value={form.pageHeading}
+              onChange={e => setForm(prev => ({ ...prev, pageHeading: e.target.value }))}
+              placeholder={`${form.name || "Category"} Seed`}
+            />
+            <small>Optional full search heading. If blank, the public page uses “{form.name || "Category"} Seed”.</small>
+          </label>
+          <label className="wide">
+            SEO title
+            <input
+              value={form.seoTitle}
+              onChange={e => setForm(prev => ({ ...prev, seoTitle: e.target.value }))}
+              placeholder={`${form.name || "Category"} Seed | IH Seeds`}
+            />
+            <small>If blank, the public page uses “{form.name || "Category"} Seed | IH Seeds”.</small>
+          </label>
+          <label className="wide">
+            Meta description
+            <textarea
+              value={form.seoDescription}
+              onChange={e => setForm(prev => ({ ...prev, seoDescription: e.target.value }))}
+              placeholder={form.lead || parent?.lead || "Category lead copy is used when this is blank."}
+              rows={3}
+            />
+            <small>If blank, the public page uses the category lead copy.</small>
+          </label>
           <label className="wide admin-check-row">
             <input 
               type="checkbox" 
@@ -322,7 +376,7 @@ export default function AdminCategories() {
       <div className="admin-content">
         <div className="admin-notice">
           <Icon name="info" size={20}/>
-          <p>Root categories group products publicly. Subcategories act as filters within a root category. Categories can be deactivated to hide them.</p>
+          <p>Root categories use /products/category-slug. Subcategories use /products/category-slug/subcategory-slug. A parent with one child shares the parent page instead of creating a duplicate subcategory page.</p>
         </div>
         
         {error && <div className="admin-notice" style={{ background: "#fef3f2", color: "#b42318" }}>
@@ -339,6 +393,7 @@ export default function AdminCategories() {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {rootCategories.map(root => {
             const children = getChildren(root.id);
+            const activeChildren = children.filter(child => child.active);
             return (
               <div key={root.id} style={{ border: "1px solid #e0e4df", borderRadius: 12, background: "#fff", overflow: "hidden" }}>
                  <div className="admin-taxonomy-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", background: root.active ? "#fff" : "#fafafa", borderBottom: children.length > 0 || addingChildTo === root.id ? "1px solid #edf0ed" : "none" }}>
@@ -351,7 +406,7 @@ export default function AdminCategories() {
                        <div className="admin-taxonomy-meta" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 16, fontWeight: 700, color: root.active ? "var(--green)" : "#7b827d" }}>{root.name}</span>
                         {!root.active && <span className="status-pill" style={{ background: "#edf0ed", color: "#7b827d" }}>Inactive</span>}
-                        <span style={{ fontSize: 12, color: "#7b827d", background: "#f5f7f4", padding: "2px 8px", borderRadius: 999 }}>/{root.slug}</span>
+                         <span style={{ fontSize: 12, color: "#7b827d", background: "#f5f7f4", padding: "2px 8px", borderRadius: 999 }}>/products/{root.slug}</span>
                         {root.groupLabel && <span style={{ fontSize: 12, color: "#7b827d", border: "1px solid #edf0ed", padding: "2px 8px", borderRadius: 999 }}>{root.groupLabel}</span>}
                       </div>
                     </div>
@@ -386,7 +441,7 @@ export default function AdminCategories() {
                              <div className="admin-taxonomy-meta" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <span style={{ fontSize: 14, fontWeight: 600, color: child.active ? "var(--green)" : "#7b827d" }}>{child.name}</span>
                               {!child.active && <span className="status-pill" style={{ background: "#edf0ed", color: "#7b827d" }}>Inactive</span>}
-                              <span style={{ fontSize: 12, color: "#7b827d" }}>/{child.slug}</span>
+                               <span style={{ fontSize: 12, color: "#7b827d" }}>{!child.active ? "No public URL while inactive" : activeChildren.length === 1 ? `Shares /products/${root.slug}` : `/products/${root.slug}/${child.slug}`}</span>
                             </div>
                           </div>
                            <div className="admin-taxonomy-actions" style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -399,6 +454,7 @@ export default function AdminCategories() {
                             <CategoryForm 
                               initialData={child}
                                parent={root}
+                              sharesParentPage={child.active && activeChildren.length === 1}
                               onSave={(data) => handleUpdate(child.id, data as CatalogueCategoryUpdate)}
                               onCancel={() => setEditingId(null)}
                             />

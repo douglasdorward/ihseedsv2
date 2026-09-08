@@ -424,6 +424,9 @@ test("category administration enforces nesting, activation, and deletion protect
     name,
     groupLabel: "Automated tests",
     lead: "Category API test",
+    pageHeading: "",
+    seoTitle: "",
+    seoDescription: "",
     rainfall: "Any",
     image: "",
     sortOrder: 999,
@@ -438,6 +441,23 @@ test("category administration enforces nesting, activation, and deletion protect
       categoryInput(`${suffix}-grandchild`, `Category grandchild ${testRunId}`, child.id)), 400);
     assertStatus(await request("POST", "/admin/categories",
       categoryInput(parent.slug, `Duplicate slug ${testRunId}`)), 409);
+    const updatedSlug = `${suffix}-parent-updated`;
+    const updated = assertStatus(await request("PATCH", `/admin/categories/${parent.id}`, {
+      slug: updatedSlug,
+      pageHeading: "Automated Category Seed",
+      seoTitle: "Automated Category Seed | IH Seeds",
+      seoDescription: "Editable category SEO description.",
+    }), 200);
+    assert.equal(updated.slug, updatedSlug);
+    assert.equal(updated.pageHeading, "Automated Category Seed");
+    assert.equal(updated.seoTitle, "Automated Category Seed | IH Seeds");
+    assert.equal(updated.seoDescription, "Editable category SEO description.");
+    const unrelatedUpdate = assertStatus(await request("PATCH", `/admin/categories/${parent.id}`, { active: false }), 200);
+    assert.equal(unrelatedUpdate.pageHeading, "Automated Category Seed");
+    assert.equal(unrelatedUpdate.seoTitle, "Automated Category Seed | IH Seeds");
+    assert.equal(unrelatedUpdate.seoDescription, "Editable category SEO description.");
+    assertStatus(await request("PATCH", `/admin/categories/${parent.id}`, { active: true }), 200);
+    assertStatus(await request("PATCH", `/admin/categories/${child.id}`, { slug: updatedSlug }), 409);
 
     const product = await createProduct("category-draft-reference");
     const publishedProduct = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);

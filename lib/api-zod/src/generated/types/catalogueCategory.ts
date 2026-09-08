@@ -13,6 +13,9 @@ export interface CatalogueCategory {
   name: string;
   groupLabel: string;
   lead: string;
+  pageHeading: string;
+  seoTitle: string;
+  seoDescription: string;
   rainfall: string;
   image: string;
   sortOrder: number;
