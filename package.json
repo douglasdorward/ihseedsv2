@@ -10,6 +10,7 @@
     "build:api": "pnpm run typecheck && pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/claude-design run build",
     "build": "pnpm run build:api && pnpm run build:app",
     "test:routing": "node scripts/smoke-routed-product.mjs",
+    "test:routing:process": "node scripts/check-single-catalogue-server.mjs",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
