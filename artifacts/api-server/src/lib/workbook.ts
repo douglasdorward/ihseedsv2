@@ -247,7 +247,8 @@ function redirectFromNote(row: Row) {
       from = cell(row.product_url).replace(/\/+$/, "");
     }
   }
-  const target = note.match(/(\/(?:product|products)\/[^\s,.)]+)/i)?.[1];
+  const parsedTarget = note.match(/(\/(?:product|products)\/[^\s,.)]+)/i)?.[1];
+  const target = parsedTarget?.replace(/^\/products\/ryegrasses(?=\/|#|$)/, "/products/ryegrass");
   return from && target ? { from, to: target } : null;
 }
 
@@ -319,8 +320,9 @@ export async function commitWorkbook(content: Buffer, token: string) {
       const [existing] = await tx.select().from(productsTable).where(eq(productsTable.slug, slug));
       const details = normalizeProductDetails(existing?.details ?? {}, existing?.packSize ?? "") as unknown as Record<string, unknown>;
       applyProductRow(details, row);
-      applySeoRow(details as ReturnType<typeof normalizeProductDetails>, rows["7 Website SEO"].find((seoRow) =>
-        (cell(seoRow.product_slug) || cell(seoRow.website_slug)) === slug));
+      const seoRow = rows["7 Website SEO"].find((candidate) =>
+        (cell(candidate.product_slug) || cell(candidate.website_slug)) === slug);
+      applySeoRow(details as ReturnType<typeof normalizeProductDetails>, seoRow);
       const categoryName = cell(row.category);
       details.maturityMeasure = categoryName === "Ryegrasses" || categoryName === "Fescues & Other Grasses" ? "Heading date"
         : categoryName === "Clovers" || categoryName === "Serradellas & Medics" ? "Days to flowering (Perth)"
@@ -339,7 +341,8 @@ export async function commitWorkbook(content: Buffer, token: string) {
         techSheet: isNull(row.tech_sheet_pdf_path) ? "" : cell(row.tech_sheet_pdf_path) || existing?.techSheet || "",
         guideYear: isNull(row.guide_year) ? "" : cell(row.guide_year) || existing?.guideYear || "",
         descriptionSource: isNull(row.description_source) ? "" : cell(row.description_source) || existing?.descriptionSource || "",
-        websiteUrlLegacy: isNull(row.website_url) ? "" : cell(row.website_url) || existing?.websiteUrlLegacy || "",
+        websiteUrlLegacy: isNull(row.website_url) ? ""
+          : cell(row.website_url) || cell(seoRow?.product_url) || existing?.websiteUrlLegacy || "",
         // A workbook Legacy row without a sale line must not be interpreted as
         // an old pre-v2 product by public listing code.  An explicit user
         // override still wins when it is supplied by the workbook.

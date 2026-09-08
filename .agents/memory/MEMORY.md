@@ -8,3 +8,4 @@
 - [Mix component descriptions](mix-component-descriptions.md) — public Mix copy must come from each workbook component row, never the linked product Blurb.
 - [SEO port admin delivery](seo-port-admin-delivery.md) — keep public pages in Next.js while Express serves the unchanged compiled Vite admin at /admin.
 - [Artifact command working directory](artifact-command-working-directory.md) — managed artifact commands start inside the artifact directory; workspace scripts need an explicit root directory.
+- [Legacy product URLs](legacy-product-urls.md) — keep one canonical old-site URL on each product; preserve additional historical aliases in the redirect map.

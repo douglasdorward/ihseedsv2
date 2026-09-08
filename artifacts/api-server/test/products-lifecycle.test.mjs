@@ -161,13 +161,44 @@ test("committed workbook products keep valid lifecycle boundaries and drafts rem
 });
 
 test("redirect lookup returns JSON while the legacy public route emits the HTTP redirect", async () => {
-  const lookup = assertStatus(await request("GET", "/redirects/lookup?fromPath=%2Fproduct%2Fsouwest-pasture-mix"), 200);
-  assert.deepEqual(lookup, { toPath: "/product/souwest-pasture-mix-2" });
+  const expectedRedirects = new Map([
+    ["/product/souwest-pasture-mix", "/product/souwest-pasture-mix-2"],
+    ["/product/avalon-persistent-perennial-ryegrass", "/products/ryegrass#catalogue"],
+    ["/product/hard-seeded-persian-clover", "/products/clovers#catalogue"],
+    ["/product/soft-seeded-persian-clover", "/products/clovers#catalogue"],
+    ["/product/icon-lucerne", "/products/lucerne#catalogue"],
+    ["/product/anywhere-tall-fescue", "/products/fescues-other-grasses#catalogue"],
+    ["/product/nemnuke-biofumigant", "/products/forage-grain-crops#catalogue"],
+    ["/product/parafield-peas", "/products/forage-grain-crops#catalogue"],
+  ]);
+  for (const [fromPath, toPath] of expectedRedirects) {
+    const lookup = assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 200);
+    assert.deepEqual(lookup, { toPath });
+  }
   assertStatus(await request("GET", "/redirects/lookup?fromPath=%2Fproduct%2Fnot-registered"), 404);
 
   const redirect = await fetch(`${baseUrl}/product/souwest-pasture-mix`, { redirect: "manual" });
   assert.equal(redirect.status, 301);
   assert.equal(redirect.headers.get("location"), "/product/souwest-pasture-mix-2");
+
+  assert.equal(Number(sql(`
+    SELECT COUNT(*)
+    FROM ih_products
+    WHERE (slug, website_url_legacy) IN (
+      ('souwest-pasture-mix-2', 'https://irwinhunter.com.au/product/souwest-pasture-mix-2/'),
+      ('avalon-persistent-perennial-ryegrass', 'https://irwinhunter.com.au/product/avalon-persistent-perennial-ryegrass/'),
+      ('hard-seeded-persian-clover', 'https://irwinhunter.com.au/product/hard-seeded-persian-clover/'),
+      ('icon-lucerne', 'https://irwinhunter.com.au/product/icon-lucerne/'),
+      ('anywhere-tall-fescue', 'https://irwinhunter.com.au/product/anywhere-tall-fescue/'),
+      ('nemnuke-biofumigant', 'https://irwinhunter.com.au/product/nemnuke-biofumigant/'),
+      ('parafield-peas', 'https://irwinhunter.com.au/product/parafield-peas/')
+    )
+  `)), 7);
+  assert.ok(Number(sql(`
+    SELECT COUNT(*)
+    FROM ih_products
+    WHERE website_url_legacy LIKE 'https://irwinhunter.com.au/product/%'
+  `)) >= 77);
 });
 
 test("sitemap contains only canonical Active Published product paths", async () => {
@@ -728,6 +759,7 @@ test("published workbook rows enforce content fields and retain products absent 
   const imported = await createProduct("workbook-upsert", { category: other.name, subcategoryId: other.id });
   const absent = await createProduct("workbook-absent", { category: other.name, subcategoryId: other.id });
   const sourceDescription = "First editorial paragraph.\n\nSecond editorial paragraph.";
+  const legacyWebsiteUrl = `https://irwinhunter.com.au/product/${imported.slug}/`;
   const productRow = {
     slug: imported.slug,
     product_name: imported.name,
@@ -747,6 +779,7 @@ test("published workbook rows enforce content fields and retain products absent 
     if (row.status === "Published") {
       xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{
         product_slug: row.slug,
+        product_url: legacyWebsiteUrl,
         seo_title: "Workbook SEO title",
         meta_description: "Workbook SEO description.",
       }]), "7 Website SEO");
@@ -782,6 +815,7 @@ test("published workbook rows enforce content fields and retain products absent 
   assert.equal(published.details.description, sourceDescription);
   assert.equal("bredByOrigin" in published.details, false);
   assert.equal("supplierName" in published.details, false);
+  assert.equal((await adminProduct(imported.id)).websiteUrlLegacy, legacyWebsiteUrl);
   assert.equal((await adminProduct(absent.id)).id, absent.id, "Absent workbook products must be retained");
 
   const exported = Buffer.from(await (await fetch(`${baseUrl}/api/admin/import/export`)).arrayBuffer());
