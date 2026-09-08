@@ -44,7 +44,6 @@ function stopProcessGroup(child) {
 
 await runPnpm(["run", "typecheck"]);
 await runPnpm(["--filter", "@workspace/api-server", "run", "build"]);
-await runPnpm(["--filter", "@workspace/claude-design", "run", "build"]);
 
 const apiProcess = spawn(
   "pnpm",
