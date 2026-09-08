@@ -7,4 +7,4 @@ Each product keeps one canonical old-site product URL in its admin-only legacy U
 
 **Why:** The Website SEO workbook can contain multiple historical rows resolving to one product. The admin product field is singular, while redirects must preserve every old path for SEO migration.
 
-**How to apply:** Import the canonical old URL from the workbook row matching the current product slug. Retain duplicate or alternate website slugs as separate permanent redirect records.
+**How to apply:** Import the canonical old URL from the workbook row matching the current product slug. Retain duplicate or alternate website slugs as separate permanent redirect records. On the Next.js public service, resolve these records before page rendering with an explicit 301 response; Next's `permanentRedirect()` emits 308 instead.
