@@ -753,8 +753,8 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
       guideYear: item.guideYear || "",
       descriptionSource: item.descriptionSource || "",
       websiteUrlLegacy: item.websiteUrlLegacy || "",
-      availabilityOverride: item.availabilityOverride || "",
-      listingOverride: item.listingOverride || "",
+      availabilityOverride: item.availabilityOverride ?? null,
+      listingOverride: item.listingOverride ?? null,
       saleLines: item.saleLines || [],
       details: {
         ...blankProduct.details,
@@ -1306,13 +1306,13 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                    <div style={{gridColumn: "1/-1"}}>
                      <div style={{display:'flex', gap: 24}}>
                        <label style={{flex: 1}}>Listing state override
-                         <select value={currentForm.listingOverride} onChange={(e) => setField("listingOverride", e.target.value)}>
+                         <select value={currentForm.listingOverride ?? ""} onChange={(e) => setField("listingOverride", e.target.value || null)}>
                             {OPTS.listingOverride.map(o => <option key={o} value={o}>{o || "Use derived"}</option>)}
                          </select>
                          <span className="admin-derived-info">Currently evaluates to: <strong>{getListingState(currentForm)}</strong></span>
                        </label>
                        <label style={{flex: 1}}>Availability override
-                         <select value={currentForm.availabilityOverride} onChange={(e) => setField("availabilityOverride", e.target.value)}>
+                         <select value={currentForm.availabilityOverride ?? ""} onChange={(e) => setField("availabilityOverride", e.target.value || null)}>
                             {OPTS.availabilityOverride.map(o => <option key={o} value={o}>{o || "Use derived"}</option>)}
                          </select>
                          <span className="admin-derived-info">Currently evaluates to: <strong>{getDerivedAvailability(currentForm)}</strong></span>
