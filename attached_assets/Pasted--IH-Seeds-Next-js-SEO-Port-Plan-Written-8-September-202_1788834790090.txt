@@ -1,0 +1,466 @@
+# IH Seeds — Next.js SEO Port Plan
+
+**Written:** 8 September 2026
+**Goal:** Serve the existing public website as server-rendered HTML so search engines and AI crawlers can read it, with the design pixel-identical and the backend untouched.
+**Constraint:** Do not re-code, re-design or re-test the backend, the admin, or the design.
+
+---
+
+## 0. What is and is not changing
+
+**Changing — one thing only:** how the public HTML is produced. Today the browser downloads an empty `<div id="root">` and JavaScript builds the page afterwards. After this port, the server sends the finished HTML.
+
+**Not changing:**
+
+| Layer | Status |
+|---|---|
+| PostgreSQL schema (`lib/db`) | Untouched |
+| Express API (`artifacts/api-server`) | Untouched |
+| Workbook importer, dry-run/token/commit | Untouched |
+| Lifecycle (Published/Draft/Archived), draft snapshots, row locking | Untouched |
+| Admin editor (`Admin.tsx`, 1,390 lines) | Untouched — stays a Vite SPA |
+| Redirects table and `/api/redirects/lookup` | Untouched — consumed, not modified |
+| `public-v2.css`, `styles.css`, all design tokens | **Copied byte-for-byte** |
+
+**Why the design survives:** the design is not in the React components, it is in the CSS. Components emit class names; `public-v2.css` does all the looking. Copy the stylesheets unchanged and reproduce the same DOM and class names, and the result is pixel-identical by construction — not by careful eyeballing.
+
+---
+
+## 1. Target architecture
+
+One Replit autoscale deployment, two processes:
+
+```
+Replit autoscale deployment  (single start command)
+│
+├── Next.js          listening on $PORT        ← public front door
+│     /                        Home
+│     /products                Directory
+│     /products/[category]     Category            (11)
+│     /products/[category]/[subcategory]           (45)   ← NEW
+│     /product/[slug]          Product detail      (150)
+│     /about /contact /guide /resources /availability
+│     /sitemap.xml  /robots.txt
+│     middleware.ts            301 redirect lookup
+│
+│     rewrites:  /api/*   →  http://localhost:5001/api/*
+│                /admin/* →  http://localhost:5001/admin/*
+│
+└── Express          listening on :5001        ← unchanged backend
+      /api/*                   existing API
+      /admin/*                 serves the existing Vite admin build
+```
+
+### Two rules that this architecture exists to protect
+
+1. **Next fetches from the public API over HTTP. It must never query `lib/db` directly.**
+   The Express API builds a public field whitelist as a deliberate safety boundary. Querying Drizzle directly from a server component bypasses that whitelist and would risk leaking breeder names, supplier identity, internal notes, price-list calculations and draft data into server-rendered HTML — where crawlers would index it permanently. The HTTP hop is localhost and costs nothing meaningful.
+
+2. **The admin keeps running exactly as it does today**, served by Express from the existing Vite build. Set `BASE_PATH=/admin` when building it — `vite.config.ts` already reads that env var (`base: process.env.BASE_PATH || '/'`), so no code change is needed.
+
+---
+
+## 2. Rules for every Replit prompt
+
+Paste this block at the top of **every** prompt in this plan. It is the main cost control — without it the agent will "helpfully" refactor your design and you will pay to put it back.
+
+```
+HARD RULES — do not deviate:
+1. Do NOT modify anything in artifacts/api-server, lib/db, or lib/api-spec.
+2. Do NOT modify any .css file. Copy stylesheets across byte-for-byte.
+   Do not reformat, clean up, minify, or "improve" any CSS.
+3. Do NOT change any JSX markup, element, class name, or nesting order when
+   porting a component. Copy it verbatim. Inline style={{}} objects are copied
+   exactly as written.
+4. Do NOT rename anything, restructure folders, or refactor "while you're in there".
+5. The ONLY permitted changes when porting a component are:
+   (a) the Link import, (b) where data comes from, (c) which half is a
+   client component, (d) adding metadata/JSON-LD.
+6. Do NOT install extra libraries. No UI kit, no CSS framework, no icon library.
+7. If a task seems to require breaking a rule above, STOP and explain instead.
+```
+
+---
+
+## 3. Rendering strategy — and why not build-time prerendering
+
+**Use on-demand rendering with cached fetches. Do not use `generateStaticParams` initially.**
+
+The obvious approach is prerendering all ~206 dynamic pages (150 products + 11 categories + 45 sub-categories) at build time. Avoid that here for two reasons:
+
+- Replit's build resources are constrained, and Next.js building 200+ pages is a documented out-of-memory risk. A build that OOMs is an expensive, confusing failure to debug.
+- Prerendered pages go stale the moment someone publishes a product, so you would then have to wire a rebuild trigger into the admin's Publish action — extra plumbing, extra cost.
+
+Instead: each page renders on first request and the result is cached. Set the revalidate window on the fetch:
+
+```ts
+const res = await fetch(`${API_BASE}/api/products`, {
+  next: { revalidate: 300 }   // 5 minutes
+});
+```
+
+Crawlers receive complete HTML — which is the entire point — the server does almost no repeat work, and published changes appear within five minutes with no rebuild. If you later want build-time prerendering, add `generateStaticParams` as an optimisation once everything else is proven.
+
+**Set `API_BASE` from an env var** (e.g. `http://localhost:5001`). The generated API client hard-codes relative `/api/...` paths, which do not resolve inside a Node server component — this is the one piece of plumbing that genuinely must change.
+
+---
+
+## 4. Stages
+
+Each stage has a prompt and an acceptance test. **Do not start a stage until the previous stage's test passes.** That discipline is what keeps this affordable — drift caught in stage 2 costs minutes; drift found in stage 8 costs days.
+
+---
+
+### Stage 0 — Baseline (do this before writing any code)
+
+Nothing here is optional, and none of it involves Next.js.
+
+1. **Set up Google Search Console** for `irwinhunter.com.au` and verify ownership. Export the top pages and top queries reports. Without this you cannot tell a migration problem from normal seasonality, and you are guessing at which redirects matter.
+2. **Set up Bing Webmaster Tools** (it also feeds ChatGPT search).
+3. **Capture the current design.** Screenshot every route of the *current Replit site* at 375px, 768px and 1440px. These are the reference images the port is checked against.
+4. **Tag the repo** so you can get back: `git tag pre-nextjs-port`.
+
+**Acceptance:** GSC verified with data exporting; a folder of reference screenshots for all 11 routes at 3 widths.
+
+---
+
+### Stage 1 — Scaffold and prove the plumbing
+
+This stage renders one trivial page. Resist doing more — you are testing the architecture, not building the site.
+
+```
+[HARD RULES BLOCK]
+
+Add a new Next.js 15 app (App Router, TypeScript) at artifacts/web in this pnpm
+workspace. Do not modify artifacts/api-server, artifacts/claude-design, or lib/*.
+
+1. artifacts/web runs on $PORT. Express moves to port 5001 via env var only —
+   no code change to Express beyond reading a PORT env var if it does not already.
+2. In next.config.js add rewrites:
+     /api/:path*   -> http://localhost:5001/api/:path*
+     /admin/:path* -> http://localhost:5001/admin/:path*
+3. Copy artifacts/claude-design/src/styles.css, public-v2.css and any font imports
+   into artifacts/web unchanged, imported once from the root layout.
+4. Port components/layout.tsx into app/layout.tsx: same Header, Footer and
+   SiteShell markup and class names, verbatim. Header becomes a client component
+   (mobile menu state + usePathname for the active nav item). Footer is a server
+   component. DELETE the window.scrollTo(0,0) effect — Next does this natively.
+5. Port pages/Guide.tsx to app/guide/page.tsx as a server component. Markup verbatim.
+   Swap the custom Link import for next/link. Add a static metadata export.
+6. Update the root start command to run BOTH processes (Express on 5001,
+   Next on $PORT) from a single command.
+
+Report what you changed and confirm no file outside artifacts/web and the root
+start config was modified.
+```
+
+**Acceptance:**
+- `curl -s localhost:$PORT/guide | grep "<h1"` returns the real heading
+- `curl -s localhost:$PORT/api/healthz` still returns the API response
+- `/admin` still loads the existing admin unchanged
+- Screenshot diff of `/guide` against the Stage 0 reference: **zero pixel difference**
+
+If the two-process start command fights you, solve it here. Do not proceed with it half-working.
+
+---
+
+### Stage 2 — The three remaining trivial pages
+
+`About` (~78 lines), `Availability` (~50), `Products` (~130).
+
+```
+[HARD RULES BLOCK]
+
+Port these to artifacts/web as server components, markup verbatim:
+- pages/About.tsx        -> app/about/page.tsx
+- pages/Availability.tsx -> app/availability/page.tsx
+- pages/Products.tsx     -> app/products/page.tsx
+
+Data: replace the react-query hooks (useProducts / useListCategories) with
+server-side fetch to ${API_BASE}/api/... using { next: { revalidate: 300 } }.
+Products.tsx has one useState for the filter chip row — extract ONLY the chip
+row plus the grid into a small client component; the hero and the closing
+feature panel stay server-rendered.
+
+Each page gets a static `metadata` export with a real title and description.
+These pages have NO metadata today, so this is new — but nothing visible changes.
+```
+
+**Acceptance:** three screenshot diffs at zero difference; each page's own `<title>` present in `curl` output.
+
+---
+
+### Stage 3 — The three moderate pages
+
+`Home` (~90), `Resources` (~125), `Contact` (~185).
+
+```
+[HARD RULES BLOCK]
+
+Port to artifacts/web, markup verbatim:
+- pages/Home.tsx      -> app/page.tsx
+- pages/Resources.tsx -> app/resources/page.tsx
+- pages/Contact.tsx   -> app/contact/page.tsx
+
+Pattern: server component fetches the data and renders the static shell; a small
+client component holds only the interactive part.
+- Home: best-sellers grid needs product data — fetch server-side.
+- Resources: the tab state and category chips are client; the tech-sheet table
+  data is fetched server-side and passed in as a prop.
+- Contact: the whole form is a client component. Keep the existing raw
+  POST /api/enquiries call exactly as it is. Do NOT convert it to a server action.
+  The hard-coded 9-reseller list and its region filter stay exactly as written.
+
+Add a metadata export to each.
+```
+
+**Acceptance:** three zero-difference diffs. Submit the contact form and confirm the enquiry still lands.
+
+---
+
+### Stage 4 — Category and the 45 sub-category pages
+
+```
+[HARD RULES BLOCK]
+
+Port pages/Category.tsx to artifacts/web as TWO routes sharing one component:
+- app/products/[category]/page.tsx
+- app/products/[category]/[subcategory]/page.tsx
+
+Markup verbatim. The sub-category route renders the identical page with that
+sub-category's chip pre-selected and the product list filtered to it.
+
+- Server component: resolve the category, fetch products and the legacy list
+  (GET /api/products/category/{name}/legacy) server-side. Replace the current
+  swallowed .catch(() => {}) with real error handling.
+- Client component: only activeGroup (chip filter) and viewMode (grid/table).
+- A category or sub-category that does not resolve calls notFound(), not a
+  client-side redirect.
+- Unify the two competing slug helpers: Category.tsx has a local
+  slugifyCategory() and useApi.ts has slugify(). Keep ONE, in a shared module.
+- generateMetadata() per route, reading seo_title / meta_description from the
+  category record, falling back to "{Category} Seed | IH Seeds" and the lead copy.
+- Add BreadcrumbList and ItemList JSON-LD, server-rendered.
+- Self-referencing canonical on every route. The sub-category route canonicalises
+  to ITSELF, not to the parent.
+
+Also keep /category/[slug] working as an alias route that 301s to
+/products/[slug], since the old app served both.
+```
+
+**Acceptance:**
+- Zero-difference diff on all 11 category pages
+- `curl` on a sub-category URL shows its own title and the filtered product list in raw HTML
+- All 45 sub-category URLs return 200; an invalid one returns 404, not a blank page
+
+---
+
+### Stage 5 — Product detail (the hard one)
+
+This is the only genuinely fiddly file. All of the site's existing SEO lives here, and all of it is currently imperative and client-side:
+
+```js
+document.title = `${product.details?.seoTitle || product.name} | IH Seeds`;
+document.querySelector('meta[name="description"]').setAttribute("content", ...);
+// canonical <link> created and appended to document.head
+<script type="application/ld+json" dangerouslySetInnerHTML={...} />
+```
+
+The JSON-LD's `additionalProperty` array is derived from `quickFacts` — a ~65-line block with roughly 15 category-conditional branches (Ryegrasses, Fescues, Clovers, Serradellas & Medics, Lucerne, Sub-Tropical, Forage & Grain, Biologicals). That block also renders the visible sidebar. **Extracting it is the crux of this stage.**
+
+```
+[HARD RULES BLOCK]
+
+Port pages/ProductDetail.tsx to app/product/[slug]/page.tsx. Markup verbatim.
+
+STEP 1 — Extract, do not rewrite. Move the quickFacts derivation block out of
+the component into lib/quickFacts.ts as a PURE function:
+    getQuickFacts(product): { label: string, value: string }[]
+Change none of its logic or branch order. Both the page body and the metadata
+generator will call it. Verify the visible Quick facts card is byte-identical
+before continuing.
+
+STEP 2 — Data. Fetch this ONE product server-side. Today the page fetches all
+150 products and .find()s one; do not carry that across. If no by-slug endpoint
+exists, fetch the list server-side and find it there — but do not fetch it in
+the browser.
+
+STEP 3 — 404 and redirects. The current client-side flow (fetch
+/api/redirects/lookup then navigate()) becomes: server-side lookup, then a real
+redirect or notFound() before anything renders. Delete the redirectLookup
+useState and its effect entirely.
+
+STEP 4 — Metadata. Replace the document.title / meta / canonical mutations with
+generateMetadata(), including alternates.canonical and openGraph. Delete the
+useEffect.
+
+STEP 5 — JSON-LD. Keep the same Product JSON-LD, built from getQuickFacts(), but
+rendered by the server component so it is in the raw HTML. Add:
+  - offers with availability derived from the default sale line
+    (InStock / OutOfStock). Do NOT invent a price.
+  - sku from the default sale line's stock code
+  - BreadcrumbList
+Google's product snippet requires name plus ONE of review / aggregateRating /
+offers, so offers-with-availability and no price is valid and correct here —
+IH Seeds sells through resellers, so merchant listings do not apply.
+
+The <details> accordions stay native HTML. There should be almost no client
+JavaScript left on this page.
+```
+
+**Acceptance:**
+- Zero-difference diff on at least 8 product pages spanning different categories (a ryegrass, a clover, a serradella, a lucerne, a Mix, a forage crop, a biological, a herb) — the category branches in `quickFacts` are the risk
+- `curl` shows the product's own title, meta description, canonical and JSON-LD in raw HTML
+- The JSON-LD validates in Google's Rich Results Test
+- An old redirected URL returns a real 301 to the right target
+
+---
+
+### Stage 6 — Sitemap, robots, redirects, canonicals
+
+```
+[HARD RULES BLOCK]
+
+1. app/sitemap.ts — generated from the API, containing ONLY Published + Active
+   products, active categories, all 45 sub-categories, and the static pages.
+   Use lastmod from each record's updated_at. Revalidate hourly.
+   It must be served as XML at /sitemap.xml with no JavaScript involved.
+2. app/robots.ts — allow the public site, disallow /admin and /api,
+   reference the sitemap URL.
+3. middleware.ts — on every request, check the path against the redirects table
+   (GET /api/redirects/lookup) and issue a genuine 301 when matched. Cache the
+   redirect table in module scope with a 60-second TTL; it is a small table and
+   must not be queried per request.
+4. Confirm every route emits a self-referencing canonical.
+5. noindex on /admin.
+```
+
+**Acceptance:** `curl /sitemap.xml` returns valid XML with the expected count of Published + Active products; `curl /robots.txt` correct; an old URL returns `HTTP/1.1 301` with the right `Location`.
+
+---
+
+### Stage 7 — Verification harness
+
+Do not skip this and do not verify by eye.
+
+```
+Add a Playwright script at scripts/visual-diff.mjs that, for every public route,
+screenshots the old Vite app and the new Next app at 375 / 768 / 1440 px and
+writes a per-route pixel-difference percentage plus a diff image. Fail on any
+route above 0.1% difference.
+```
+
+Run it against the full route list: all 11 static routes, all 11 categories, a sample of 10 sub-categories, and 20 products spread across every category.
+
+**Also verify, in raw HTML via `curl`:** unique title, unique meta description, canonical, JSON-LD, and the actual body copy on every route type.
+
+**Known pixel risk — fonts.** Next optimises Google Fonts by default, which can shift text rendering. Keep the plain `@import url(...Raleway...)` in your CSS for now. If you want `next/font` later, do it after the diff is proven clean, and re-run the diff.
+
+---
+
+### Stage 8 — Workbook SEO fill (run in parallel, from Stage 0)
+
+This is independent of the code and can start immediately. It is also where most of your actual ranking outcome is decided.
+
+Rework `7 Website SEO` in *IH Seeds - Product Data Workbook (pre-filled) - descriptions cleaned.xlsx*:
+
+1. **Re-scope from 79 rows to 150 — one row per product.** Today 73 products have no SEO row, and under the compulsory-SEO publish rule they can never go live. This is the single biggest content blocker.
+2. **Add a `seo_title` column** (the sheet has none — the importer currently falls back to `menu_label`, which is nav labels averaging 16 characters). Formula: `{Cultivar} {Type} Seed | IH Seeds`, 50–60 chars. "Abundant" ranks for nothing; "Abundant Tetraploid Annual Ryegrass Seed | IH Seeds" ranks for something.
+3. **Rewrite all 79 meta descriptions** to 140–155 chars. They are currently scraped body copy — median 182 chars, 51 of 79 over 160.
+4. **Add:** `image_alt`, `og_image`, `canonical_override`, `noindex`, `search_synonyms` (the Fran2o / Biserrulu / Misson misspellings), plus `seo_status`, `title_chars`, `desc_chars` for QA.
+5. **New sheet `8 Category SEO`** — 11 root + 45 sub-categories = 56 rows, same metadata columns.
+6. **New sheet `9 Redirects`** — `old_path`, `new_path`, `status_code`, `reason`, `verified_date`. Exports currently do not include redirects, so the register lives nowhere.
+7. **Ask Replit for a deterministic SEO waterfall:** `7.seo_title` → `1 Products.seo_title` → `menu_label` → auto-generated. `1 Products` already has all 150 seo_titles and the importer ignores them; the waterfall unblocks those 73 products immediately.
+
+---
+
+### Stage 9 — Cutover
+
+**Pre-launch gate — every line must be true. No exceptions, no "we'll fix it after".**
+
+- [ ] Visual diff passes on every route at all three widths
+- [ ] `curl` shows unique title, description, canonical and body content on every route type
+- [ ] JSON-LD validates in the Rich Results Test
+- [ ] `/sitemap.xml` and `/robots.txt` correct
+- [ ] All 150 products carry SEO title and description
+- [ ] Redirect map complete and tested — all 79 old `/product/` URLs and all 44 old page URLs
+- [ ] `/admin` is behind a password and `noindex`
+- [ ] GSC baseline exported and dated
+- [ ] Contact form tested end to end
+- [ ] Rollback tested: you can put the old site back within 15 minutes
+
+**Redirect map — the 13 old category URLs:**
+
+| Old URL | Target |
+|---|---|
+| `/lucerne/` | `/products/lucerne` |
+| `/serradella/` | `/products/serradellas-medics` |
+| `/sub-tropical/` | `/products/sub-tropical-grasses` |
+| `/other-grasses/` | `/products/fescues-other-grasses` |
+| `/forage-crops/` | `/products/forage-grain-crops` |
+| `/perennial-herbs/` | `/products/herbs` |
+| `/pasture-mixes/` | `/products/mixes` |
+| `/subterranean-clovers/` | `/products/clovers/subterranean` |
+| `/aerial-seeded-clovers/` | `/products/clovers/aerial-seeded-annual` |
+| `/white-clovers/` | `/products/clovers/perennial` |
+| `/biennial-ryegrass/` | `/products/ryegrasses/italian-biennial` |
+| `/perennial-ryegrasses/` | `/products/ryegrasses/perennial-hybrid` |
+| `/annual-ryegrass/` | `/products/ryegrasses` — **check GSC first** |
+
+`/annual-ryegrass/` is likely the highest-traffic category URL on the old site and it spans two sub-categories (Annual tetraploid, Annual diploid). Let the GSC data decide whether it points at the parent Ryegrasses page or at the larger of the two sub-categories.
+
+**Also map, not just the category pages:** `/pasture-seed-guide/`, `/current-availability-of-our-seeds/`, `/rainfall-map/`, `/research-site/`, `/news/`, `/articles/`, `/publications/`, `/about-us/`, `/contact/`, `/products-and-services/`, `/terms-and-conditions/`, `/privacy/`. Never bulk-redirect anything to the homepage — Google treats that as a soft 404 and discards the equity.
+
+**Cutover sequence:**
+
+1. Deploy the new site on the Replit URL and leave it there for a week. Crawl it with Screaming Frog (free to 500 URLs) and fix everything it flags.
+2. Lower the DNS TTL to 300 seconds, 24 hours ahead.
+3. Switch DNS on a **Monday or Tuesday morning** — never a Friday. You want a full working week to react.
+4. Immediately after: submit the new sitemap in GSC, request indexing on the top 10 pages, and spot-check 20 old URLs return 301 to the right place.
+5. **Week 1:** check GSC Coverage daily for 404s and crawl errors. Some ranking movement is normal — do not panic-change anything in the first fortnight.
+6. **Weeks 2–8:** weekly 404 review, compare impressions and clicks against the Stage 0 baseline.
+7. Keep the WordPress site backed up and restorable for 90 days.
+
+---
+
+## Appendix A — Route and page inventory
+
+| Route | Component | ~Lines | Difficulty |
+|---|---|---:|---|
+| `/guide` | Guide.tsx | 46 | Trivial |
+| `/availability` | Availability.tsx | 50 | Trivial |
+| `/about` | About.tsx | 78 | Trivial |
+| `/products` | Products.tsx | 130 | Trivial |
+| `/` | Home.tsx | 90 | Moderate |
+| `/resources` | Resources.tsx | 125 | Moderate |
+| `/contact` | Contact.tsx | 185 | Moderate |
+| `/products/[category]` (+ `[subcategory]`) | Category.tsx | 250 | Moderate |
+| `/product/[slug]` | ProductDetail.tsx | 465 | **Hard** |
+| `/admin*` | Admin.tsx + AdminCategories.tsx | 1,785 | **Not ported** |
+
+Public total: ~770 lines across 9 files, plus ~250 lines of shell. The admin — 70% of all page code — does not move.
+
+## Appendix B — Known issues to fix in passing (free wins)
+
+- **Over-fetching.** Every page fetches the whole 150-product catalogue. ProductDetail `.find()`s one from it; Products.tsx pulls all of them purely to `.length` them per card, twice per card inside JSX. Server-side fetching makes this obvious to fix.
+- **`AdminCategories.tsx` is dead code** — ~395 lines, never imported. `/admin/products/categories` renders an empty shell today. Decide: wire it up or delete it.
+- **`styles.css` ships ~150 lines of `.admin-*` rules** to every public visitor. Split them out — it is invisible and makes the public bundle smaller.
+- **Two competing slugify implementations** (`Category.tsx` local vs `useApi.ts`). Unify during Stage 4.
+- **`/admin` has no authentication at all.** No login, session, token or 401 handling. Anyone with the URL can publish, archive, delete and export the full catalogue. Deferred by choice — but it is on the Stage 9 gate and must be closed before DNS switches. The minimum viable fix is one middleware check against a password in an env var, roughly 15 minutes, and it can be disabled in development.
+
+## Appendix C — Estimate
+
+| Stage | Effort |
+|---|---|
+| 0 Baseline | Half a day |
+| 1 Scaffold + plumbing | 1 day |
+| 2 Trivial pages | Half a day |
+| 3 Moderate pages | 1–2 days |
+| 4 Category + sub-categories | 1 day |
+| 5 Product detail | 1–2 days |
+| 6 Sitemap/robots/redirects | Half a day |
+| 7 Verification | 1 day |
+| 9 Cutover | Half a day + monitoring |
+| **Total** | **~7–9 focused working days** |
+
+Stage 8 (workbook) runs in parallel and is bounded by copywriting, not engineering.
