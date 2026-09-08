@@ -2,6 +2,8 @@ export type CatalogueProduct = {
   id: number;
   name: string;
   slug: string;
+  price: string;
+  packSize: string;
   status: string;
   note: string;
   category: string;
