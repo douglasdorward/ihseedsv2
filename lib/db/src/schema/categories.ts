@@ -1,10 +1,11 @@
-import { AnyPgColumn, boolean, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { AnyPgColumn, boolean, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 
 export const catalogueCategoriesTable = pgTable("ih_catalogue_categories", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   parentId: integer("parent_id").references((): AnyPgColumn => catalogueCategoriesTable.id, { onDelete: "restrict" }),
-  slug: text("slug").notNull().unique(),
+  slug: text("slug").notNull(),
   name: text("name").notNull(),
   groupLabel: text("group_label").notNull(),
   lead: text("lead").notNull().default(""),
@@ -17,7 +18,10 @@ export const catalogueCategoriesTable = pgTable("ih_catalogue_categories", {
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => [
+  uniqueIndex("ih_catalogue_categories_parent_slug_unique")
+    .on(sql`COALESCE(${table.parentId}, 0)`, table.slug),
+]);
 
 const categoryFieldsSchema = z.object({
   parentId: z.number().int().positive().nullable(),

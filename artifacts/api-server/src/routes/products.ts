@@ -93,6 +93,18 @@ async function liveSaleLines(productId: number): Promise<SaleLine[]> {
     .sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.sortOrder - b.sortOrder || a.id - b.id).map(toSaleLine);
 }
 
+function toPublicProduct(product: Product, productLines: SaleLine[]): PublicProduct {
+  const availability = product.availabilityOverride ?? productLines.find((line) => line.isDefault)?.availability
+    ?? productLines.find((line) => line.availability !== "Unavailable")?.availability ?? "Unavailable";
+  return {
+    id: product.id, name: product.name, slug: product.slug, price: product.price, packSize: product.packSize,
+    status: ({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as const)[availability] ?? "unavailable",
+    note: product.note, category: product.category, subcategoryId: product.subcategoryId, techSheet: product.techSheet,
+    guideYear: product.guideYear, listingState: "Active", saleLines: productLines,
+    details: toPublicDetails(product.details, product.packSize),
+  };
+}
+
 function isActiveListing(product: Product, productLines: SaleLine[]) {
   if (product.listingOverride === "Force active") return true;
   if (product.listingOverride === "Force legacy") return false;
@@ -248,18 +260,23 @@ router.get("/products", async (req, res): Promise<void> => {
   res.json(products.filter((product) => {
     if (product.publishStatus !== "Published") return false;
     return isActiveListing(product, linesByProduct.get(product.id) ?? []);
-  }).map((product): PublicProduct => {
-    const productLines = linesByProduct.get(product.id) ?? [];
-    const availability = product.availabilityOverride ?? productLines.find((line) => line.isDefault)?.availability
-      ?? productLines.find((line) => line.availability !== "Unavailable")?.availability ?? "Unavailable";
-    return {
-      id: product.id, name: product.name, slug: product.slug, price: product.price, packSize: product.packSize,
-      status: ({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as const)[availability] ?? "unavailable",
-      note: product.note, category: product.category, subcategoryId: product.subcategoryId, techSheet: product.techSheet,
-      guideYear: product.guideYear, listingState: "Active", saleLines: productLines,
-      details: toPublicDetails(product.details, product.packSize),
-    };
-  }));
+  }).map((product): PublicProduct => toPublicProduct(product, linesByProduct.get(product.id) ?? [])));
+});
+
+// A detail lookup must never disclose draft, archived, or legacy-only products.
+router.get("/products/slug/:slug", async (req, res): Promise<void> => {
+  const slug = String(req.params.slug);
+  const [product] = await db.select().from(productsTable).where(eq(productsTable.slug, slug));
+  if (!product || product.publishStatus !== "Published") {
+    res.status(404).json({ error: "Product not found." });
+    return;
+  }
+  const productLines = await liveSaleLines(product.id);
+  if (!isActiveListing(product, productLines)) {
+    res.status(404).json({ error: "Product not found." });
+    return;
+  }
+  res.json(toPublicProduct(product, productLines));
 });
 
 // Deliberately name-only: category pages can expose catalogue history without

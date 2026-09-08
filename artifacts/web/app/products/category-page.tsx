@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import {
   getCategories,
   getLegacyProducts,
   getProducts,
+  getRedirect,
   type CatalogueCategory,
   type CatalogueProduct,
 } from "../../lib/catalogue";
@@ -20,6 +21,19 @@ type ResolvedCategoryPage = {
   initialGroup: number | "All";
   path: string;
 };
+
+function categoryRoutePath(params: RouteParams) {
+  const segments = [params.category, params.subcategory].filter(
+    (segment): segment is string => Boolean(segment),
+  );
+  return `/products/${segments.map(encodeURIComponent).join("/")}`;
+}
+
+async function redirectUnresolvedCategory(params: RouteParams) {
+  const fromPath = categoryRoutePath(params);
+  const toPath = await getRedirect(fromPath);
+  if (toPath && toPath !== fromPath) permanentRedirect(toPath);
+}
 
 function activeChildren(categories: CatalogueCategory[], rootId: number) {
   return categories
@@ -96,7 +110,10 @@ function productsForRoot(
 export async function categoryMetadata(params: RouteParams): Promise<Metadata> {
   const categories = await getCategories();
   const page = resolveCategoryPage(categories, params);
-  if (!page) return {};
+  if (!page) {
+    await redirectUnresolvedCategory(params);
+    return {};
+  }
 
   return {
     title: page.selected.seoTitle.trim() || `${page.selected.name} Seed | IH Seeds`,
@@ -109,10 +126,14 @@ export async function categoryMetadata(params: RouteParams): Promise<Metadata> {
 }
 
 export async function CategoryPage({ params }: { params: RouteParams }) {
-  const [categories, products] = await Promise.all([getCategories(), getProducts()]);
+  const categories = await getCategories();
   const page = resolveCategoryPage(categories, params);
-  if (!page) notFound();
+  if (!page) {
+    await redirectUnresolvedCategory(params);
+    notFound();
+  }
 
+  const products = await getProducts();
   const legacy = await getLegacyProducts(page.root.name);
   const rootProducts = productsForRoot(products, page.root, page.children);
   const heading = headingFor(page);

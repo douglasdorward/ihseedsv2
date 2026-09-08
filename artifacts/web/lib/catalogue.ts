@@ -8,12 +8,24 @@ export type CatalogueProduct = {
   note: string;
   category: string;
   subcategoryId?: number | null;
+  techSheet?: string;
   saleLines?: Array<{
     sortOrder?: number;
+    stockCode?: string;
     seedForm?: string;
+    packKg?: number | null;
+    packUnit?: string;
+    availability?: "Good stock" | "Low stock" | "Very low" | "Unavailable";
+    priceDisplay?: string;
+    isDefault?: boolean;
   }>;
   details: {
+    recordType?: string;
+    botanicalName?: string;
     tagline: string;
+    blurb?: string;
+    keyAttributes?: string[];
+    distributionNote?: string;
     featured?: boolean;
     ploidy?: string;
     headingDate?: string;
@@ -42,6 +54,32 @@ export type CatalogueProduct = {
     soilPhMin?: number | null;
     soilPhScale?: string;
     tolerance?: Array<{ name: string; mild?: boolean }>;
+    endUse?: string[];
+    livestock?: string[];
+    headingOffsetDays?: number | null;
+    argtResistant?: boolean;
+    oestrogenLevel?: string;
+    bloatRisk?: string;
+    prussicAcidRisk?: string;
+    regrowth?: string;
+    diseasePestResistance?: string;
+    standLifeNotes?: string;
+    grazingManagementNotes?: string;
+    pbrProtected?: boolean;
+    pbrDetails?: string;
+    certification?: string[];
+    description?: string;
+    components?: Array<{ speciesName?: string; inclusionRate?: number | null; unit?: string; description?: string; note?: string; productLink?: string }>;
+    relatedProducts?: string[];
+    formulationYear?: string;
+    photos?: Array<{ src?: string; file?: string; slot?: string; rating?: string }>;
+    seoTitle?: string;
+    seoDescription?: string;
+    socialTitle?: string;
+    socialDescription?: string;
+    socialImage?: string;
+    canonicalUrl?: string;
+    robotsIndex?: boolean;
   };
 };
 
@@ -78,6 +116,29 @@ async function catalogueFetch<T>(path: string): Promise<T> {
 
 export function getProducts() {
   return catalogueFetch<CatalogueProduct[]>("/api/products");
+}
+
+export async function getProductBySlug(slug: string) {
+  const response = await fetch(apiUrl(`/api/products/slug/${encodeURIComponent(slug)}`), {
+    next: { revalidate: 300 },
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`Product request failed (${response.status}) for ${slug}`);
+  return response.json() as Promise<CatalogueProduct>;
+}
+
+export async function getRedirect(fromPath: string) {
+  const response = await fetch(apiUrl(`/api/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), {
+    next: { revalidate: 300 },
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`Redirect request failed (${response.status}) for ${fromPath}`);
+  const redirect: unknown = await response.json();
+  if (!redirect || typeof redirect !== "object" || !("toPath" in redirect) ||
+    typeof redirect.toPath !== "string" || !redirect.toPath.startsWith("/")) {
+    throw new Error("Redirect response is invalid.");
+  }
+  return redirect.toPath;
 }
 
 export function getCategories() {

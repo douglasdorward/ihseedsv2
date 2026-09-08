@@ -651,6 +651,150 @@ export const CreateProductResponse = zod.object({
 
 
 /**
+ * @summary Get one published active product by slug
+ */
+export const GetProductBySlugParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const getProductBySlugResponseSubcategoryIdMultipleOf = 1;
+
+export const getProductBySlugResponseSaleLinesItemSortOrderMultipleOf = 1;
+
+export const getProductBySlugResponseDetailsTaglineMax = 60;
+
+export const getProductBySlugResponseDetailsSowingRatesItemMinMin = 0;
+
+export const getProductBySlugResponseDetailsSowingRatesItemMaxMin = 0;
+
+export const getProductBySlugResponseDetailsSowingRatesItemUnitMax = 20;
+
+export const getProductBySlugResponseDetailsComponentsItemProductLinkMax = 180;
+
+export const getProductBySlugResponseDetailsComponentsItemSpeciesNameMax = 120;
+
+export const getProductBySlugResponseDetailsComponentsItemInclusionRateMin = 0;
+
+export const getProductBySlugResponseDetailsComponentsItemUnitMax = 20;
+
+export const getProductBySlugResponseDetailsComponentsItemDescriptionMax = 10000;
+
+export const getProductBySlugResponseDetailsComponentsItemNoteMax = 4000;
+
+export const getProductBySlugResponseDetailsPhotosItemSlotMax = 40;
+
+export const getProductBySlugResponseDetailsPhotosItemFileMax = 240;
+
+export const getProductBySlugResponseDetailsPhotosItemRatingMax = 80;
+
+export const getProductBySlugResponseDetailsPhotosItemSrcMax = 500;
+
+
+
+export const GetProductBySlugResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "price": zod.string(),
+  "packSize": zod.string(),
+  "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
+  "note": zod.string(),
+  "category": zod.string(),
+  "subcategoryId": zod.number().multipleOf(getProductBySlugResponseSubcategoryIdMultipleOf).nullable(),
+  "techSheet": zod.string(),
+  "guideYear": zod.string(),
+  "listingState": zod.enum(['Active']),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(getProductBySlugResponseSaleLinesItemSortOrderMultipleOf)
+})),
+  "details": zod.object({
+  "recordType": zod.string(),
+  "botanicalName": zod.string(),
+  "tagline": zod.string().max(getProductBySlugResponseDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
+  "persistencyType": zod.string(),
+  "ploidy": zod.string(),
+  "flowerColour": zod.string(),
+  "sowingRates": zod.array(zod.object({
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
+  "min": zod.number().min(getProductBySlugResponseDetailsSowingRatesItemMinMin).nullable(),
+  "max": zod.number().min(getProductBySlugResponseDetailsSowingRatesItemMaxMin).nullable(),
+  "unit": zod.string().max(getProductBySlugResponseDetailsSowingRatesItemUnitMax)
+})),
+  "rainfallMinMm": zod.number().nullable(),
+  "soilPhMin": zod.number().nullable(),
+  "soilPhScale": zod.string(),
+  "soilRangeLightest": zod.string(),
+  "soilRangeHeaviest": zod.string(),
+  "tolerance": zod.array(zod.object({
+  "name": zod.enum(['Low pH', 'Waterlogging', 'Salinity', 'Drought', 'Frost']),
+  "mild": zod.boolean()
+})),
+  "endUse": zod.array(zod.string()),
+  "livestock": zod.array(zod.string()),
+  "maturityMeasure": zod.string(),
+  "maturityDays": zod.number().nullable(),
+  "headingDate": zod.string(),
+  "headingOffsetDays": zod.number().nullable(),
+  "winterActivity": zod.number().nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string(),
+  "applicationRate": zod.string(),
+  "diseasePestResistance": zod.string(),
+  "standLifeNotes": zod.string(),
+  "grazingManagementNotes": zod.string(),
+  "pbrProtected": zod.boolean(),
+  "pbrDetails": zod.string(),
+  "certification": zod.array(zod.string()),
+  "description": zod.string(),
+  "components": zod.array(zod.object({
+  "productLink": zod.string().max(getProductBySlugResponseDetailsComponentsItemProductLinkMax),
+  "speciesName": zod.string().max(getProductBySlugResponseDetailsComponentsItemSpeciesNameMax),
+  "inclusionRate": zod.number().min(getProductBySlugResponseDetailsComponentsItemInclusionRateMin).nullable(),
+  "unit": zod.string().max(getProductBySlugResponseDetailsComponentsItemUnitMax),
+  "description": zod.string().max(getProductBySlugResponseDetailsComponentsItemDescriptionMax),
+  "note": zod.string().max(getProductBySlugResponseDetailsComponentsItemNoteMax)
+})),
+  "relatedProducts": zod.array(zod.string()),
+  "formulationYear": zod.string(),
+  "photos": zod.array(zod.object({
+  "slot": zod.string().max(getProductBySlugResponseDetailsPhotosItemSlotMax),
+  "file": zod.string().max(getProductBySlugResponseDetailsPhotosItemFileMax),
+  "rating": zod.string().max(getProductBySlugResponseDetailsPhotosItemRatingMax),
+  "src": zod.string().max(getProductBySlugResponseDetailsPhotosItemSrcMax)
+})),
+  "featured": zod.boolean(),
+  "seoTitle": zod.string(),
+  "seoDescription": zod.string(),
+  "socialTitle": zod.string(),
+  "socialDescription": zod.string(),
+  "socialImage": zod.string(),
+  "canonicalUrl": zod.string(),
+  "robotsIndex": zod.boolean()
+}).describe('Public-facing agronomy, merchandising, and SEO fields only.')
+}).describe('Published, Active catalogue data. Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.')
+
+
+/**
  * @summary Update a product
  */
 export const UpdateProductParams = zod.object({

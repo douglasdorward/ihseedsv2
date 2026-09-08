@@ -447,6 +447,99 @@ test("a later published category choice for a seed product is not reverted", asy
   }
 });
 
+test("taxonomy slug migration redirects inactive children safely and singleton active children to their parent", () => {
+  const rootSlug = `taxonomy-migration-${testRunId}`;
+  const activeOldSlug = `${rootSlug}-pasture`;
+  const inactiveOldSlug = `${rootSlug}-equine`;
+  const inactiveParentSlug = `${rootSlug}-inactive-parent`;
+  const inactiveParentChildOldSlug = `${inactiveParentSlug}-pasture`;
+  const collisionRootSlug = `${rootSlug}-collision`;
+  const collisionOldSlug = `${collisionRootSlug}-foo`;
+  const rootId = Number(sql(`
+    INSERT INTO ih_catalogue_categories (slug, name, group_label, active)
+    VALUES ('${rootSlug}', 'Migration root ${testRunId}', 'Automated tests', true)
+    RETURNING id
+  `).split("\n")[0]);
+  const activeId = Number(sql(`
+    INSERT INTO ih_catalogue_categories (parent_id, slug, name, group_label, active)
+    VALUES (${rootId}, '${activeOldSlug}', 'Pasture', 'Automated tests', true)
+    RETURNING id
+  `).split("\n")[0]);
+  const inactiveId = Number(sql(`
+    INSERT INTO ih_catalogue_categories (parent_id, slug, name, group_label, active)
+    VALUES (${rootId}, '${inactiveOldSlug}', 'Equine', 'Automated tests', false)
+    RETURNING id
+  `).split("\n")[0]);
+  const inactiveParentId = Number(sql(`
+    INSERT INTO ih_catalogue_categories (slug, name, group_label, active)
+    VALUES ('${inactiveParentSlug}', 'Inactive migration root ${testRunId}', 'Automated tests', false)
+    RETURNING id
+  `).split("\n")[0]);
+  const inactiveParentChildId = Number(sql(`
+    INSERT INTO ih_catalogue_categories (parent_id, slug, name, group_label, active)
+    VALUES (${inactiveParentId}, '${inactiveParentChildOldSlug}', 'Pasture', 'Automated tests', true)
+    RETURNING id
+  `).split("\n")[0]);
+  const collisionRootId = Number(sql(`
+    INSERT INTO ih_catalogue_categories (slug, name, group_label, active)
+    VALUES ('${collisionRootSlug}', 'Collision migration root ${testRunId}', 'Automated tests', true)
+    RETURNING id
+  `).split("\n")[0]);
+  const canonicalCollisionChildId = Number(sql(`
+    INSERT INTO ih_catalogue_categories (parent_id, slug, name, group_label, active)
+    VALUES (${collisionRootId}, 'foo', 'Existing foo', 'Automated tests', true)
+    RETURNING id
+  `).split("\n")[0]);
+  const normalizedCollisionChildId = Number(sql(`
+    INSERT INTO ih_catalogue_categories (parent_id, slug, name, group_label, active)
+    VALUES (${collisionRootId}, '${collisionOldSlug}', 'Prefixed foo', 'Automated tests', true)
+    RETURNING id
+  `).split("\n")[0]);
+  try {
+    sql(`DELETE FROM ih_schema_migrations WHERE name = '0011_normalize_taxonomy_child_slugs.sql'`);
+    runMigrations();
+
+    assert.equal(sql(`SELECT slug FROM ih_catalogue_categories WHERE id = ${activeId}`), "pasture");
+    assert.equal(sql(`SELECT slug FROM ih_catalogue_categories WHERE id = ${inactiveId}`), "equine");
+    assert.equal(sql(`SELECT slug FROM ih_catalogue_categories WHERE id = ${inactiveParentChildId}`), "pasture");
+    assert.equal(sql(`SELECT slug FROM ih_catalogue_categories WHERE id = ${canonicalCollisionChildId}`), "foo");
+    assert.equal(sql(`SELECT slug FROM ih_catalogue_categories WHERE id = ${normalizedCollisionChildId}`), "foo-2");
+    assert.equal(
+      sql(`SELECT to_path FROM ih_redirects WHERE from_path = '/products/${rootSlug}/${activeOldSlug}'`),
+      `/products/${rootSlug}`,
+    );
+    assert.equal(
+      sql(`SELECT to_path FROM ih_redirects WHERE from_path = '/products/${collisionRootSlug}/${collisionOldSlug}'`),
+      `/products/${collisionRootSlug}/foo-2`,
+    );
+    assert.equal(
+      sql(`SELECT to_path FROM ih_redirects WHERE from_path = '/products/${inactiveParentSlug}/${inactiveParentChildOldSlug}'`),
+      "/products",
+    );
+    assert.equal(
+      sql(`SELECT to_path FROM ih_redirects WHERE from_path = '/products/${rootSlug}/${inactiveOldSlug}'`),
+      `/products/${rootSlug}`,
+    );
+  } finally {
+    sql(`
+      DELETE FROM ih_redirects
+      WHERE from_path IN (
+        '/products/${rootSlug}/${activeOldSlug}',
+        '/products/${rootSlug}/${inactiveOldSlug}',
+        '/products/${inactiveParentSlug}/${inactiveParentChildOldSlug}',
+        '/products/${collisionRootSlug}/${collisionOldSlug}'
+      );
+      DELETE FROM ih_catalogue_categories WHERE id IN (
+        ${activeId}, ${inactiveId}, ${inactiveParentChildId},
+        ${canonicalCollisionChildId}, ${normalizedCollisionChildId}
+      );
+      DELETE FROM ih_catalogue_categories WHERE id = ${rootId};
+      DELETE FROM ih_catalogue_categories WHERE id = ${inactiveParentId};
+      DELETE FROM ih_catalogue_categories WHERE id = ${collisionRootId};
+    `);
+  }
+});
+
 test("category administration enforces nesting, activation, and deletion protection", async () => {
   const suffix = `category-test-${testRunId}`;
   const categoryInput = (slug, name, parentId = null) => ({
@@ -483,12 +576,19 @@ test("category administration enforces nesting, activation, and deletion protect
     assert.equal(updated.pageHeading, "Automated Category Seed");
     assert.equal(updated.seoTitle, "Automated Category Seed | IH Seeds");
     assert.equal(updated.seoDescription, "Editable category SEO description.");
+    assert.deepEqual(
+      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${parent.slug}`)}`), 200),
+      { toPath: `/products/${updatedSlug}` },
+    );
     const unrelatedUpdate = assertStatus(await request("PATCH", `/admin/categories/${parent.id}`, { active: false }), 200);
     assert.equal(unrelatedUpdate.pageHeading, "Automated Category Seed");
     assert.equal(unrelatedUpdate.seoTitle, "Automated Category Seed | IH Seeds");
     assert.equal(unrelatedUpdate.seoDescription, "Editable category SEO description.");
     assertStatus(await request("PATCH", `/admin/categories/${parent.id}`, { active: true }), 200);
-    assertStatus(await request("PATCH", `/admin/categories/${child.id}`, { slug: updatedSlug }), 409);
+    const normalizedChild = assertStatus(await request("PATCH", `/admin/categories/${child.id}`, {
+      slug: `${updatedSlug}-${suffix}-child-updated`,
+    }), 200);
+    assert.equal(normalizedChild.slug, `${suffix}-child-updated`);
 
     const product = await createProduct("category-draft-reference");
     const publishedProduct = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
@@ -510,6 +610,109 @@ test("category administration enforces nesting, activation, and deletion protect
     // Deletes are intentionally best-effort because a prior assertion may have removed either row.
     await request("DELETE", `/admin/categories/${child.id}`);
     await request("DELETE", `/admin/categories/${parent.id}`);
+  }
+});
+
+test("taxonomy deactivation redirects removed paths and moving a child updates live and draft root labels", async () => {
+  const suffix = `taxonomy-routing-${testRunId}`;
+  const categoryInput = (slug, name, parentId = null) => ({
+    parentId, slug, name, groupLabel: "Automated tests", lead: "", rainfall: "", image: "",
+    sortOrder: 999, active: true,
+  });
+  const redirectRoot = assertStatus(await request("POST", "/admin/categories",
+    categoryInput(`${suffix}-redirect-root`, `Redirect root ${testRunId}`)), 201);
+  const removedChild = assertStatus(await request("POST", "/admin/categories",
+    categoryInput(`${suffix}-removed`, "Removed child", redirectRoot.id)), 201);
+  const retainedChild = assertStatus(await request("POST", "/admin/categories",
+    categoryInput(`${suffix}-retained`, "Retained child", redirectRoot.id)), 201);
+  const sourceRoot = assertStatus(await request("POST", "/admin/categories",
+    categoryInput(`${suffix}-source`, `Source root ${testRunId}`)), 201);
+  const destinationRoot = assertStatus(await request("POST", "/admin/categories",
+    categoryInput(`${suffix}-destination`, `Destination root ${testRunId}`)), 201);
+  const movedChild = assertStatus(await request("POST", "/admin/categories",
+    categoryInput(`${suffix}-moved`, "Moved child", sourceRoot.id)), 201);
+  const product = await createProduct("taxonomy-move", { subcategoryId: movedChild.id });
+  try {
+    assertStatus(await request("PATCH", `/admin/categories/${removedChild.id}`, { active: false }), 200);
+    assert.deepEqual(
+      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${redirectRoot.slug}/${removedChild.slug}`)}`), 200),
+      { toPath: `/products/${redirectRoot.slug}` },
+    );
+    assert.equal((await request("GET", "/categories")).data.some((category) => category.id === removedChild.id), false);
+
+    assertStatus(await request("PATCH", `/admin/categories/${redirectRoot.id}`, { active: false }), 200);
+    assert.deepEqual(
+      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${redirectRoot.slug}`)}`), 200),
+      { toPath: "/products" },
+    );
+
+    const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+    assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(published, {
+      name: `Moved taxonomy draft ${testRunId}`,
+      subcategoryId: movedChild.id,
+    })), 200);
+    assertStatus(await request("PATCH", `/admin/categories/${movedChild.id}`, { parentId: destinationRoot.id }), 200);
+    const categories = assertStatus(await request("GET", "/categories"), 200);
+    assert.equal(categories.find((category) => category.id === movedChild.id)?.parentId, destinationRoot.id);
+    assert.deepEqual(
+      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${sourceRoot.slug}`)}`), 200),
+      { toPath: `/products/${destinationRoot.slug}` },
+    );
+    const movedProduct = await adminProduct(product.id);
+    assert.equal(movedProduct.category, destinationRoot.name);
+    assert.equal(movedProduct.draft.category, destinationRoot.name);
+
+    assertStatus(await request("PATCH", `/admin/categories/${movedChild.id}`, { parentId: null }), 200);
+    const promotedCategories = assertStatus(await request("GET", "/categories"), 200);
+    assert.equal(promotedCategories.find((category) => category.id === movedChild.id)?.parentId, null);
+    assert.deepEqual(
+      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${destinationRoot.slug}`)}`), 200),
+      { toPath: `/products/${movedChild.slug}` },
+    );
+    const promotedProduct = await adminProduct(product.id);
+    assert.equal(promotedProduct.category, movedChild.name);
+    assert.equal(promotedProduct.draft.category, movedChild.name);
+  } finally {
+    await request("DELETE", `/products/${product.id}`);
+    for (const category of [removedChild, retainedChild, movedChild, redirectRoot, sourceRoot, destinationRoot]) {
+      await request("DELETE", `/admin/categories/${category.id}`);
+    }
+  }
+});
+
+test("deleting taxonomy preserves removed and sibling canonical paths", async () => {
+  const suffix = `taxonomy-delete-${testRunId}`;
+  const categoryInput = (slug, name, parentId = null) => ({
+    parentId, slug, name, groupLabel: "Automated tests", lead: "", rainfall: "", image: "",
+    sortOrder: 999, active: true,
+  });
+  const root = assertStatus(await request("POST", "/admin/categories",
+    categoryInput(`${suffix}-root`, `Delete root ${testRunId}`)), 201);
+  const deletedChild = assertStatus(await request("POST", "/admin/categories",
+    categoryInput(`${suffix}-deleted`, "Deleted child", root.id)), 201);
+  const survivingChild = assertStatus(await request("POST", "/admin/categories",
+    categoryInput(`${suffix}-surviving`, "Surviving child", root.id)), 201);
+  try {
+    assertStatus(await request("DELETE", `/admin/categories/${deletedChild.id}`), 204);
+    assert.deepEqual(
+      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${root.slug}/${deletedChild.slug}`)}`), 200),
+      { toPath: `/products/${root.slug}` },
+    );
+    assert.deepEqual(
+      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${root.slug}/${survivingChild.slug}`)}`), 200),
+      { toPath: `/products/${root.slug}` },
+    );
+
+    assertStatus(await request("DELETE", `/admin/categories/${survivingChild.id}`), 204);
+    assertStatus(await request("DELETE", `/admin/categories/${root.id}`), 204);
+    assert.deepEqual(
+      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${root.slug}`)}`), 200),
+      { toPath: "/products" },
+    );
+  } finally {
+    await request("DELETE", `/admin/categories/${deletedChild.id}`);
+    await request("DELETE", `/admin/categories/${survivingChild.id}`);
+    await request("DELETE", `/admin/categories/${root.id}`);
   }
 });
 

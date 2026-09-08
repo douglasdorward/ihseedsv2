@@ -65,6 +65,25 @@ paths:
           description: Invalid product
         "409":
           description: Product name already exists
+  /products/slug/{slug}:
+    get:
+      operationId: getProductBySlug
+      tags: [catalogue]
+      summary: Get one published active product by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Published active product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicProduct"
+        "404":
+          description: Product is not published, active, or does not exist
   /products/{id}:
     parameters:
       - name: id

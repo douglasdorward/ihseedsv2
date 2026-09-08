@@ -6,6 +6,7 @@ import {
   insertCatalogueCategorySchema,
   productDraftsTable,
   productsTable,
+  redirectsTable,
   saleLinesTable,
   reorderCatalogueCategoriesSchema,
   updateCatalogueCategorySchema,
@@ -25,6 +26,52 @@ function isPostgresError(error: unknown, code: string) {
     current = "cause" in current ? current.cause : null;
   }
   return false;
+}
+
+type CategoryRow = typeof catalogueCategoriesTable.$inferSelect;
+
+function normalizedChildSlug(parentSlug: string, slug: string) {
+  const prefix = `${parentSlug}-`;
+  return slug.startsWith(prefix) ? slug.slice(prefix.length) : slug;
+}
+
+function categoryPath(category: CategoryRow, categories: CategoryRow[]) {
+  if (!category.active) return null;
+  if (category.parentId === null) return `/products/${category.slug}`;
+  const parent = categories.find((item) => item.id === category.parentId);
+  if (!parent?.active) return null;
+  const activeChildren = categories.filter((item) => item.parentId === parent.id && item.active);
+  return activeChildren.length === 1
+    ? `/products/${parent.slug}`
+    : `/products/${parent.slug}/${category.slug}`;
+}
+
+function categoryRedirectFallback(category: CategoryRow, categories: CategoryRow[]) {
+  if (category.parentId !== null) {
+    const parent = categories.find((item) => item.id === category.parentId);
+    if (parent?.active) return `/products/${parent.slug}`;
+  }
+  return "/products";
+}
+
+async function preserveCategoryRedirects(
+  tx: any,
+  before: CategoryRow[],
+  after: CategoryRow[],
+) {
+  // A root rename affects all child paths. Activating, deactivating, or moving
+  // a child can also switch its siblings into or out of the shared parent URL.
+  for (const oldCategory of before) {
+    const newCategory = after.find((category) => category.id === oldCategory.id);
+    const fromPath = categoryPath(oldCategory, before);
+    const toPath = newCategory
+      ? categoryPath(newCategory, after) ?? categoryRedirectFallback(newCategory, after)
+      : categoryRedirectFallback(oldCategory, after);
+    if (fromPath && toPath && fromPath !== toPath) {
+      await tx.insert(redirectsTable).values({ fromPath, toPath })
+        .onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath, updatedAt: new Date() } });
+    }
+  }
 }
 
 async function orderedCategories() {
@@ -90,7 +137,22 @@ router.post("/admin/categories", async (req, res): Promise<void> => {
     return;
   }
   try {
-    const [category] = await db.insert(catalogueCategoriesTable).values(parsed.data).returning();
+    let values = parsed.data;
+    if (values.parentId !== null) {
+      const [parent] = await db.select().from(catalogueCategoriesTable)
+        .where(eq(catalogueCategoriesTable.id, values.parentId));
+      if (!parent) {
+        res.status(400).json({ error: "Parent category not found." });
+        return;
+      }
+      const slug = normalizedChildSlug(parent.slug, values.slug);
+      if (!slug) {
+        res.status(400).json({ error: "A subcategory slug must include text after its parent prefix." });
+        return;
+      }
+      values = { ...values, slug };
+    }
+    const [category] = await db.insert(catalogueCategoriesTable).values(values).returning();
     res.status(201).json(category);
   } catch (error) {
     if (isPostgresError(error, "23505")) {
@@ -123,9 +185,20 @@ router.patch("/admin/categories/:id", async (req, res): Promise<void> => {
   }
   try {
     const category = await db.transaction(async (tx) => {
+      const before = await tx.select().from(catalogueCategoriesTable);
+      const parent = parentId === null ? null : before.find((category) => category.id === parentId);
+      if (parentId !== null && !parent) throw new Error("PARENT_CATEGORY_NOT_FOUND");
+      const requestedSlug = parsed.data.slug === undefined
+        ? existing.slug
+        : parsed.data.slug;
+      const slug = parent ? normalizedChildSlug(parent.slug, requestedSlug) : requestedSlug;
+      if (!slug) throw new Error("EMPTY_CHILD_SLUG");
       const [updated] = await tx.update(catalogueCategoriesTable)
-        .set({ ...parsed.data, updatedAt: new Date() })
+        .set({ ...parsed.data, slug, updatedAt: new Date() })
         .where(eq(catalogueCategoriesTable.id, id)).returning();
+      if (!updated) throw new Error("CATEGORY_NOT_FOUND");
+      const after = before.map((category) => category.id === id ? updated : category);
+      await preserveCategoryRedirects(tx, before, after);
       // A root name is the legacy-compatible product category label for itself
       // and for all of its children. Keep live records and pending snapshots aligned.
       if (existing.parentId === null && parsed.data.name && parsed.data.name !== existing.name) {
@@ -145,10 +218,37 @@ router.patch("/admin/categories/:id", async (req, res): Promise<void> => {
             })
             .where(eq(productDraftsTable.id, draft.id))));
       }
+      // A moved category belongs to its destination root (or itself once
+      // promoted to a root) for both live catalogue data and its pending
+      // revision. Keeping these labels together prevents cross-root listings
+      // and stale product breadcrumbs.
+      if (updated.parentId !== existing.parentId) {
+        const destinationRoot = updated.parentId === null
+          ? updated
+          : after.find((category) => category.id === updated.parentId);
+        if (!destinationRoot) throw new Error("PARENT_CATEGORY_NOT_FOUND");
+        await tx.update(productsTable).set({ category: destinationRoot.name, updatedAt: new Date() })
+          .where(eq(productsTable.subcategoryId, id));
+        const drafts = await tx.select().from(productDraftsTable);
+        await Promise.all(drafts
+          .filter((draft) => draft.snapshot.subcategoryId === id)
+          .map((draft) => tx.update(productDraftsTable)
+            .set({
+              snapshot: { ...draft.snapshot, category: destinationRoot.name },
+              updatedAt: new Date(),
+            })
+            .where(eq(productDraftsTable.id, draft.id))));
+      }
       return updated;
     });
     res.json(category);
   } catch (error) {
+    if (error instanceof Error && (error.message === "EMPTY_CHILD_SLUG" || error.message === "PARENT_CATEGORY_NOT_FOUND")) {
+      res.status(400).json({ error: error.message === "EMPTY_CHILD_SLUG"
+        ? "A subcategory slug must include text after its parent prefix."
+        : "Parent category not found." });
+      return;
+    }
     if (isPostgresError(error, "23505")) {
       res.status(409).json({ error: "A category with that slug already exists." });
       return;
@@ -195,7 +295,9 @@ router.delete("/admin/categories/:id", async (req, res): Promise<void> => {
     const drafts = await tx.select({ snapshot: productDraftsTable.snapshot }).from(productDraftsTable);
     const draftUsesCategory = drafts.some((draft) => draft.snapshot.subcategoryId === id);
     if (child || product || draftUsesCategory) return "in-use" as const;
+    const before = await tx.select().from(catalogueCategoriesTable);
     await tx.delete(catalogueCategoriesTable).where(eq(catalogueCategoriesTable.id, id));
+    await preserveCategoryRedirects(tx, before, before.filter((item) => item.id !== id));
     return "deleted" as const;
   });
   if (result === "not-found") {

@@ -100,6 +100,11 @@ function taxonomySlug(value: string) {
   return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
     .replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "catalogue";
 }
+function childTaxonomySlug(parentSlug: string, value: string) {
+  const slug = taxonomySlug(value);
+  const prefix = `${parentSlug}-`;
+  return slug.startsWith(prefix) ? slug.slice(prefix.length) || slug : slug;
+}
 function publishContentErrors(payload: { name: string; slug: string; category: string; details: ReturnType<typeof normalizeProductDetails> }) {
   return [
     !payload.name.trim() && "Product name",
@@ -262,9 +267,9 @@ export async function commitWorkbook(content: Buffer, token: string) {
     // Build the workbook taxonomy inside this transaction. Existing slugs stay
     // immutable while workbook names become the canonical display labels.
     let categories = await tx.select().from(catalogueCategoriesTable);
-    const uniqueSlug = (name: string) => {
+    const uniqueSlug = (name: string, parentId: number | null = null) => {
       const base = taxonomySlug(name); let candidate = base, n = 2;
-      while (categories.some((category) => category.slug === candidate)) candidate = `${base}-${n++}`;
+      while (categories.some((category) => category.parentId === parentId && category.slug === candidate)) candidate = `${base}-${n++}`;
       return candidate;
     };
     const workbookTaxonomy = new Map<string, { category: string; subcategory: string; order: number }>();
@@ -301,7 +306,7 @@ export async function commitWorkbook(content: Buffer, token: string) {
       if (!root) throw new Error(`UNRESOLVED_ROOT_TAXONOMY:${entry.category}`);
       if (entry.subcategory && !categories.some((category) => category.parentId === root.id && normal(category.name) === normal(entry.subcategory))) {
         const [child] = await tx.insert(catalogueCategoriesTable).values({
-          parentId: root.id, slug: uniqueSlug(`${root.slug}-${entry.subcategory}`), name: entry.subcategory,
+          parentId: root.id, slug: uniqueSlug(childTaxonomySlug(root.slug, entry.subcategory), root.id), name: entry.subcategory,
           groupLabel: root.name, lead: "", rainfall: "", image: "", sortOrder: entry.order, active: true,
         }).returning();
         categories = [...categories, child];

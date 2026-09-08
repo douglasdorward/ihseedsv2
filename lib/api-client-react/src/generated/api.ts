@@ -297,6 +297,83 @@ export const useCreateProduct = <TError = ErrorType<void>,
       return useMutation(getCreateProductMutationOptions(options));
     }
 
+export const getGetProductBySlugUrl = (slug: string,) => {
+
+
+
+
+  return `/api/products/slug/${slug}`
+}
+
+/**
+ * @summary Get one published active product by slug
+ */
+export const getProductBySlug = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<PublicProduct> => {
+
+  return customFetch<PublicProduct>(getGetProductBySlugUrl(slug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProductBySlugQueryKey = (slug: string,) => {
+    return [
+    `/api/products/slug/${slug}`
+    ] as const;
+    }
+
+
+export const getGetProductBySlugQueryOptions = <TData = Awaited<ReturnType<typeof getProductBySlug>>, TError = ErrorType<void>>(slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProductBySlug>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProductBySlugQueryKey(slug);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProductBySlug>>> = ({ signal }) => getProductBySlug(slug, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: slug !== null && slug !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProductBySlug>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProductBySlugQueryResult = NonNullable<Awaited<ReturnType<typeof getProductBySlug>>>
+export type GetProductBySlugQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get one published active product by slug
+ */
+
+export function useGetProductBySlug<TData = Awaited<ReturnType<typeof getProductBySlug>>, TError = ErrorType<void>>(
+ slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProductBySlug>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProductBySlugQueryOptions(slug,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getUpdateProductUrl = (id: number,) => {
 
 
