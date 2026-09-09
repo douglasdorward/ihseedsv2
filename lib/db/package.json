@@ -8,7 +8,10 @@
     "./schema": "./src/schema/index.ts"
   },
   "scripts": {
+    "export:catalogue": "node ./export-catalogue-seed.mjs",
     "migrate": "node ./migrate.mjs",
+    "seed": "node ./seed.mjs",
+    "setup": "node ./assert-empty.mjs && pnpm run push && pnpm run migrate && pnpm run seed",
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
   },

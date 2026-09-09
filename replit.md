@@ -9,6 +9,8 @@ Responsive pasture seed catalogue, weekly availability view, regional advice con
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- `pnpm run setup:database` — initialize an empty development database and import the catalogue seed (refuses populated databases)
+- `pnpm --filter @workspace/db run export:catalogue` — refresh the portable catalogue seed from development data
 - Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
@@ -33,6 +35,7 @@ Responsive pasture seed catalogue, weekly availability view, regional advice con
 - Catalogue and availability data come from PostgreSQL; the API seeds the imported catalogue only when the table is empty.
 - Farmer enquiries are validated at the API boundary and persisted in PostgreSQL.
 - This Replit is an independent working copy of the original `douglasdorward/ihseeds` repository. Do not push changes from this workspace back to that original repository; publish them to a separate fork repository and retain the original as a read-only upstream.
+- A fresh database imports the committed catalogue seed only when `ih_products` is empty. Catalogue exports intentionally exclude enquiries and other user-submitted data.
 
 ## Product
 
