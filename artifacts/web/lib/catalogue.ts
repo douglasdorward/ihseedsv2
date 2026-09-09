@@ -107,7 +107,7 @@ function apiUrl(path: string) {
 }
 
 async function catalogueFetch<T>(path: string): Promise<T> {
-  const response = await fetch(apiUrl(path), { next: { revalidate: 300 } });
+  const response = await fetch(apiUrl(path), { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Catalogue request failed (${response.status}) for ${path}`);
   }
@@ -120,7 +120,7 @@ export function getProducts() {
 
 export async function getProductBySlug(slug: string) {
   const response = await fetch(apiUrl(`/api/products/slug/${encodeURIComponent(slug)}`), {
-    next: { revalidate: 300 },
+    cache: "no-store",
   });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Product request failed (${response.status}) for ${slug}`);

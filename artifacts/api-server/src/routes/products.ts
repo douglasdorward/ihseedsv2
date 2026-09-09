@@ -298,6 +298,7 @@ router.get("/products/slug/:slug", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Product not found." });
     return;
   }
+  res.set("Cache-Control", "no-store");
   res.json(toPublicProduct(product, productLines));
 });
 

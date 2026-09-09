@@ -10,3 +10,4 @@
 - [Artifact command working directory](artifact-command-working-directory.md) — managed artifact commands start inside the artifact directory; workspace scripts need an explicit root directory.
 - [Legacy product URLs](legacy-product-urls.md) — keep one canonical old-site URL on each product; preserve additional historical aliases in the redirect map.
 - [Category URL transitions](category-url-transitions.md) — every formerly public taxonomy path must redirect, including deactivation and cross-parent moves.
+- [Cache freshness regressions](cache-freshness-regressions.md) — prime cached content before a mutation when testing that published changes become visible immediately.

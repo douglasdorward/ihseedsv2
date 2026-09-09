@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Icon, StatusPill } from "../components/ui";
 import { navigate, useLocation } from "../router";
 import AdminCategories from "./AdminCategories";
+import { persistLatestProductAndPublish } from "../persist-latest-product";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListAdminProducts,
@@ -782,9 +783,11 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   };
 
   const [form, setForm] = useState<any>(() => blankProduct);
+  const formRef = useRef<any>(blankProduct);
   const [viewMode, setViewMode] = useState<"draft" | "live">("draft");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [publishAttempted, setPublishAttempted] = useState(false);
   const [activeTab, setActiveTab] = useState(1);
   const [showSectionCompletion, setShowSectionCompletion] = useState(false);
@@ -799,9 +802,13 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const isDirty = JSON.stringify(form) !== persistedFormStr;
   useEffect(() => {
     if (product) {
-      setForm(toForm(product.draft ?? product));
+      const confirmedForm = toForm(product.draft ?? product);
+      formRef.current = confirmedForm;
+      setForm(confirmedForm);
     } else if (isNew) {
-      setForm(structuredClone(blankProduct));
+      const emptyForm = structuredClone(blankProduct);
+      formRef.current = emptyForm;
+      setForm(emptyForm);
     }
   }, [sourceDataStr, isNew]);
 
@@ -833,8 +840,19 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     if (error !== currentMessage) setError(currentMessage);
   }, [publishAttempted, publishIssues.length, error]);
 
-  const setField = (key: string, value: any) => setForm((current: any) => ({ ...current, [key]: value }));
-  const setDetail = (key: string, value: any) => setForm((current: any) => ({ ...current, details: { ...current.details, [key]: value } }));
+  const updateForm = (updater: (current: any) => any) => {
+    const nextForm = updater(formRef.current);
+    formRef.current = nextForm;
+    setForm(nextForm);
+  };
+  const reconcileForm = (confirmedProduct: AdminProduct) => {
+    const confirmedForm = toForm(confirmedProduct.draft ?? confirmedProduct);
+    formRef.current = confirmedForm;
+    setForm(confirmedForm);
+    queryClient.setQueryData(getGetAdminProductQueryKey(confirmedProduct.id), confirmedProduct);
+  };
+  const setField = (key: string, value: any) => updateForm((current: any) => ({ ...current, [key]: value }));
+  const setDetail = (key: string, value: any) => updateForm((current: any) => ({ ...current, details: { ...current.details, [key]: value } }));
   const toggleList = (key: string, value: string) => {
     const current = (form.details[key] as string[]) ?? [];
     setDetail(key, (current.includes(value) ? current.filter((item) => item !== value) : [...current, value]));
@@ -873,8 +891,10 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     event.preventDefault();
     setSaving(true);
     setError("");
+    setSuccess("");
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
     const action = submitter?.value; 
+    const editorForm = formRef.current;
 
     if (action === "back" && (viewMode === "live" || isArchived)) {
       navigate(`/admin/products?view=${isArchived ? "Archived" : "Published"}`);
@@ -883,7 +903,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
 
     if (action === "publish") {
       setPublishAttempted(true);
-      const issues = getPublishIssues(form);
+      const issues = getPublishIssues(editorForm);
       if (issues.length > 0) {
         setError(`Complete these fields before publishing: ${issues.map((issue) => issue.label).join(", ")}.`);
         setActiveTab(issues[0].tab);
@@ -893,10 +913,10 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     }
 
     const missingDraftFields = [
-      !form.name.trim() && "Product name",
-      !form.slug.trim() && "Slug",
-      !form.category.trim() && "Category",
-      !form.details.recordType && "Record type",
+      !editorForm.name.trim() && "Product name",
+      !editorForm.slug.trim() && "Slug",
+      !editorForm.category.trim() && "Category",
+      !editorForm.details.recordType && "Record type",
     ].filter(Boolean) as string[];
     if (missingDraftFields.length > 0) {
       setError(`Complete these fields before saving a draft: ${missingDraftFields.join(", ")}.`);
@@ -910,8 +930,8 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     }
 
     const payload = {
-      ...form,
-      details: { ...form.details, treatment: form.details.seedTreatment.join(" · ") },
+      ...editorForm,
+      details: { ...editorForm.details, treatment: editorForm.details.seedTreatment.join(" · ") },
     };
 
     try {
@@ -919,18 +939,29 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         payload.publishStatus = "Draft";
         const newProd = await createMutation.mutateAsync({ data: payload });
         if (action === "publish") {
-          await publishMutation.mutateAsync({ id: newProd.id });
+          const publishedProduct = await publishMutation.mutateAsync({ id: newProd.id });
+          reconcileForm(publishedProduct);
+          setSuccess("Published successfully. Your latest changes are now live.");
         }
         await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey(), refetchType: "all" });
         await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
         navigate(action === "save-and-back" ? "/admin/products?view=Draft" : `/admin/products/${newProd.id}`);
       } else {
         const { slug, publishStatus, ...draftPayload } = payload;
-        await saveDraftMutation.mutateAsync({ id: productId!, data: draftPayload });
         if (action === "publish") {
-          await publishMutation.mutateAsync({ id: productId! });
+          await persistLatestProductAndPublish({
+            getLatestDraft: () => draftPayload,
+            saveDraft: (latestDraft) => saveDraftMutation.mutateAsync({ id: productId!, data: latestDraft }),
+            publish: () => publishMutation.mutateAsync({ id: productId! }),
+            reconcile: reconcileForm,
+          });
+          setSuccess("Published successfully. Your latest changes are now live.");
+        } else {
+          const savedProduct = await saveDraftMutation.mutateAsync({ id: productId!, data: draftPayload });
+          reconcileForm(savedProduct);
+          setSuccess("Draft saved successfully.");
         }
-        await queryClient.invalidateQueries({ queryKey: getGetAdminProductQueryKey(productId!) });
+        await queryClient.invalidateQueries({ queryKey: getGetAdminProductQueryKey(productId!), refetchType: "all" });
         await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey(), refetchType: "all" });
         await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
         if (action === "save-and-back") {
@@ -1150,6 +1181,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
           <datalist id="admin-product-slugs">{products.filter((item) => item.id !== product?.id).map((item) => <option key={item.id} value={item.slug}>{item.name}</option>)}</datalist>
           <fieldset className="admin-editor-main" disabled={viewMode === "live" || isArchived}>
             {error && <div className="admin-notice" style={{color: "red"}}><p>{error}</p></div>}
+            {success && <div className="admin-notice"><p>{success}</p></div>}
             
             {activeTab === 1 && (
               <section className="admin-panel admin-form-card">

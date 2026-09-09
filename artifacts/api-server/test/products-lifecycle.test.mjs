@@ -10,6 +10,8 @@ const testRunId = `${process.pid}-${Date.now()}`;
 const createdProductIds = [];
 let child;
 let baseUrl;
+let webChild;
+let webBaseUrl;
 
 async function freePort() {
   const server = createServer();
@@ -41,6 +43,38 @@ async function waitForServer() {
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   throw new Error(`API server did not become ready: ${lastError?.message ?? "unknown error"}`);
+}
+
+async function waitForWeb() {
+  let lastError;
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (webChild.exitCode !== null) {
+      throw new Error(`Public web server exited before becoming ready: ${lastError?.message ?? "unknown error"}`);
+    }
+    try {
+      const response = await fetch(webBaseUrl);
+      if (response.ok) return;
+    } catch (error) {
+      lastError = error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`Public web server did not become ready: ${lastError?.message ?? "unknown error"}`);
+}
+
+async function stopChild(processToStop) {
+  if (!processToStop || processToStop.exitCode !== null) return;
+  processToStop.kill("SIGTERM");
+  await new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      processToStop.kill("SIGKILL");
+      resolve();
+    }, 2_000);
+    processToStop.once("exit", () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+  });
 }
 
 async function request(method, path, body) {
@@ -751,24 +785,35 @@ before(async () => {
   await waitForServer().catch((error) => {
     throw new Error(`${error.message}\n${stderr}`);
   });
+
+  execFileSync("pnpm", ["--filter", "@workspace/web", "run", "build"], {
+    cwd: new URL("../../..", import.meta.url),
+    env: { ...process.env, API_BASE: baseUrl },
+    encoding: "utf8",
+  });
+  const webPort = await freePort();
+  webBaseUrl = `http://127.0.0.1:${webPort}`;
+  webChild = spawn("pnpm", ["--dir", "artifacts/web", "exec", "next", "start", "-p", String(webPort)], {
+    cwd: new URL("../../..", import.meta.url),
+    env: { ...process.env, API_BASE: baseUrl },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  let webStderr = "";
+  webChild.stderr.setEncoding("utf8");
+  webChild.stderr.on("data", (chunk) => {
+    webStderr += chunk;
+  });
+  await waitForWeb().catch((error) => {
+    throw new Error(`${error.message}\n${webStderr}`);
+  });
 });
 
 after(async () => {
   for (const id of createdProductIds) {
     await request("DELETE", `/products/${id}`);
   }
-  if (!child || child.exitCode !== null) return;
-  child.kill("SIGTERM");
-  await new Promise((resolve) => {
-    const timeout = setTimeout(() => {
-      child.kill("SIGKILL");
-      resolve();
-    }, 2_000);
-    child.once("exit", () => {
-      clearTimeout(timeout);
-      resolve();
-    });
-  });
+  await stopChild(webChild);
+  await stopChild(child);
 });
 
 test("catalogue lifecycle transition matrix protects public content", async () => {
@@ -821,16 +866,26 @@ test("catalogue lifecycle transition matrix protects public content", async () =
    assert.deepEqual(publicProduct.details.keyAttributes, ["Lifecycle tested"]);
    assert.equal(publicProduct.details.distributionNote, "Distributed for lifecycle tests.");
   assert.equal(includesProduct(await availability(), product.id), true);
+  const originalRenderedPage = await fetch(`${webBaseUrl}/product/${product.slug}`);
+  assert.equal(originalRenderedPage.status, 200);
+  assert.match(await originalRenderedPage.text(), /Lifecycle test blurb/);
 
   const revisionName = `Lifecycle revision ${testRunId}`;
+  const revisionBlurb = `Latest editor blurb ${testRunId}`;
   const revised = assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
     name: revisionName,
     price: "$35.00 per kg",
+    details: {
+      ...product.details,
+      blurb: revisionBlurb,
+    },
   })), 200);
   assert.equal(revised.lifecycleStatus, "Published");
   assert.equal(revised.name, product.name);
   assert.equal(revised.hasDraft, true);
   assert.equal(revised.draft.name, revisionName);
+  assert.equal(revised.draft.details.blurb, revisionBlurb);
+  assert.equal((await adminProduct(product.id)).draft.details.blurb, revisionBlurb);
   assert.equal((await publicProducts()).find((item) => item.id === product.id).name, product.name);
 
   const stockUpdated = assertStatus(await request("PATCH", `/products/${product.id}`, { status: "low" }), 200);
@@ -846,8 +901,20 @@ test("catalogue lifecycle transition matrix protects public content", async () =
   const promoted = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
   assert.equal(promoted.lifecycleStatus, "Published");
   assert.equal(promoted.name, revisionName);
+  assert.equal(promoted.details.blurb, revisionBlurb);
   assert.equal(promoted.hasDraft, false);
-  assert.equal((await publicProducts()).find((item) => item.id === product.id).name, revisionName);
+  const publishedRevision = (await publicProducts()).find((item) => item.id === product.id);
+  assert.equal(publishedRevision.name, revisionName);
+  assert.equal(publishedRevision.details.blurb, revisionBlurb);
+  const publicDetailResponse = await fetch(`${baseUrl}/api/products/slug/${product.slug}`);
+  assert.equal(publicDetailResponse.status, 200);
+  assert.equal(publicDetailResponse.headers.get("cache-control"), "no-store");
+  assert.equal((await publicDetailResponse.json()).details.blurb, revisionBlurb);
+  const renderedProductPage = await fetch(`${webBaseUrl}/product/${product.slug}`);
+  assert.equal(renderedProductPage.status, 200);
+  const renderedProductHtml = await renderedProductPage.text();
+  assert.match(renderedProductHtml, new RegExp(revisionBlurb));
+  assert.doesNotMatch(renderedProductHtml, /Lifecycle test blurb/);
 
   const archivedRevisionName = `Archived revision ${testRunId}`;
   assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(promoted, {
