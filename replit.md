@@ -32,6 +32,7 @@ Responsive pasture seed catalogue, weekly availability view, regional advice con
 - The site remains a single responsive, anchor-navigated experience to preserve the imported homepage structure.
 - Catalogue and availability data come from PostgreSQL; the API seeds the imported catalogue only when the table is empty.
 - Farmer enquiries are validated at the API boundary and persisted in PostgreSQL.
+- This Replit is an independent working copy of the original `douglasdorward/ihseeds` repository. Do not push changes from this workspace back to that original repository; publish them to a separate fork repository and retain the original as a read-only upstream.
 
 ## Product
 
