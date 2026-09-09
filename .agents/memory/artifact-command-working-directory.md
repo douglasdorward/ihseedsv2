@@ -1,10 +1,10 @@
 ---
 name: Artifact command working directory
-description: Replit managed artifact commands start from the registered artifact directory rather than the workspace root.
+description: Development and production artifact commands use different working directories in this workspace.
 ---
 
-Managed artifact development and production commands execute with the artifact directory as their working directory. A command such as `pnpm run dev` therefore resolves that artifact package's script, not the workspace-root script.
+Managed artifact development commands execute from the artifact directory, while deployment production build and run commands execute from the workspace root. Relative `--dir` paths that are correct in development can therefore escape the project during deployment.
 
-**Why:** A public artifact intended to start the combined workspace runtime silently launched its retired package-local Vite server because the command assumed a root working directory.
+**Why:** A development command once launched the wrong package-local server when it assumed the workspace root; later, production commands using the development-safe `--dir ../..` resolved to `/home` and failed because no package manifest existed there.
 
-**How to apply:** When an artifact service must invoke a workspace-root script, explicitly set pnpm's directory to the workspace root. Verify the restarted workflow log identifies the expected workspace package and framework, not merely that the configured command text changed.
+**How to apply:** Treat development and production commands separately. Use an explicit root directory for development commands that need root scripts, but make production commands root-safe without parent traversal. Verify the exact configured commands in both contexts.

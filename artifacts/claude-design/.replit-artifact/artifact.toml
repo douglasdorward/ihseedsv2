@@ -17,10 +17,10 @@ run = "pnpm --dir ../.. run dev"
 [services.production]
 
 [services.production.build]
-args = [ "pnpm", "--dir", "../..", "run", "build:app" ]
+args = [ "pnpm", "run", "build:app" ]
 
 [services.production.run]
-args = [ "pnpm", "--dir", "../..", "run", "start" ]
+args = [ "pnpm", "run", "start" ]
 
 [services.production.health.startup]
 path = "/"

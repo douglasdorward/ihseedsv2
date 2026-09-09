@@ -15,7 +15,7 @@ run = "pnpm --filter @workspace/api-server run dev"
 [services.production]
 
 [services.production.build]
-args = ["pnpm", "--dir", "../..", "run", "build:api"]
+args = ["pnpm", "run", "build:api"]
 
 [services.production.build.env]
 NODE_ENV = "production"
