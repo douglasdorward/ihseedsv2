@@ -100,6 +100,25 @@ export type CatalogueCategory = {
 
 export type LegacyCatalogueProduct = { name: string };
 
+export function defaultSaleLine(product: CatalogueProduct) {
+  return product.saleLines?.find((line) => line.isDefault) ?? product.saleLines?.[0];
+}
+
+export function saleLinePriceDisplay(product: CatalogueProduct) {
+  return defaultSaleLine(product)?.priceDisplay?.trim() || "";
+}
+
+export function saleLinePackLabels(product: CatalogueProduct) {
+  const labels: string[] = [];
+  for (const line of product.saleLines ?? []) {
+    if (line.packKg == null || Number(line.packKg) <= 0) continue;
+    const unit = line.packUnit?.trim() || "kg";
+    const label = `${line.packKg} ${unit}`;
+    if (!labels.includes(label)) labels.push(label);
+  }
+  return labels;
+}
+
 function apiUrl(path: string) {
   const base = process.env.API_BASE?.replace(/\/+$/, "");
   if (!base) throw new Error("API_BASE environment variable is required.");

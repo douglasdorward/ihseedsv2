@@ -1,0 +1,31 @@
+---
+description: Keep product-editor field docs in sync when catalogue fields, visibility, or customer display change
+globs:
+  - artifacts/claude-design/src/pages/Admin.tsx
+  - artifacts/api-server/src/routes/products.ts
+  - artifacts/web/app/product/**
+  - artifacts/web/lib/product-quick-facts.ts
+  - artifacts/web/lib/catalogue.ts
+  - artifacts/web/app/products/**
+  - lib/api-spec/openapi.yaml
+  - lib/db/src/schema/products.ts
+  - docs/product-editor/**
+  - CATALOGUE_SYSTEM_GUIDE.md
+alwaysApply: false
+---
+
+# Product editor field docs
+
+`docs/product-editor/` is part of the catalogue contract.
+
+When a product field is added, removed, renamed, moved between tabs, or its label, allowed values, draft/publish requiredness, category visibility, public redaction, or customer display changes:
+
+1. Update the matching tab markdown under `docs/product-editor/`
+2. Update `docs/product-editor/fields.yaml`
+3. Update `CATALOGUE_SYSTEM_GUIDE.md` section 6 if a grouped visibility row is now wrong
+
+A change is incomplete if the editor, API, or public site moved and those docs still describe the previous behaviour.
+
+Do not invent display behaviour. Source it from the editor, `toPublicDetails`, and the public pages. OpenAPI remains authoritative for types.
+
+Read `docs/product-editor/README.md` before filling or changing product fields.

@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Manual Active/Legacy listing. Independent of Published/Draft/Archived. Legacy products cannot have availability.
+ */
 export type ProductListingState = typeof ProductListingState[keyof typeof ProductListingState];
 
 

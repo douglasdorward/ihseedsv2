@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { Icon } from "../../components/Icon";
 import type { CatalogueProduct } from "../../lib/catalogue";
 
@@ -28,7 +28,7 @@ export function ResourcesContent({ products, intro }: { products: CatalogueProdu
   return (
     <>
       <section style={{ background: "var(--sage)" }}>
-        {intro}
+        <Fragment key="intro">{intro}</Fragment>
         <div className="resource-tabs" style={{ maxWidth: 1180, margin: "0 auto", padding: "0 40px 32px", display: "flex", gap: 12 }}>
           <button onClick={() => setTab("articles")} style={{ padding: "12px 24px", borderRadius: 999, fontSize: 16, fontWeight: 700, cursor: "pointer", border: `2px solid ${tab === "articles" ? "var(--green)" : "transparent"}`, background: tab === "articles" ? "var(--green)" : "transparent", color: tab === "articles" ? "#fff" : "var(--green)" }}>Articles & Publications</button>
           <button onClick={() => setTab("sheets")} style={{ padding: "12px 24px", borderRadius: 999, fontSize: 16, fontWeight: 700, cursor: "pointer", border: `2px solid ${tab === "sheets" ? "var(--green)" : "transparent"}`, background: tab === "sheets" ? "var(--green)" : "transparent", color: tab === "sheets" ? "#fff" : "var(--green)" }}>Tech Sheets Hub</button>

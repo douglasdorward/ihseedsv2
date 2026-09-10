@@ -109,22 +109,22 @@ export function CategoryCatalogue({
     });
 
   return (
-    <>
-      {groups.length > 1 && (
-        <CategoryFilterControls
-          groups={groups}
-          initialGroup={initialGroup}
-          rootHeading={`${visibleProducts.length} ${root.name.toLowerCase() || "lines"}`}
-          navigates={initialGroup !== "All"}
-        />
-      )}
-
-      <section style={{ background: "#FFFFFF" }}>
-        <div className="page-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "64px 40px 96px", display: "flex", flexDirection: "column", gap: 32 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: "2px solid var(--green)", paddingBottom: 12 }}>
+    <section style={{ background: "#FFFFFF" }}>
+      <div className="page-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "48px 40px 96px", display: "flex", flexDirection: "column", gap: 32 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, borderBottom: "2px solid var(--green)", paddingBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
             <h2 id="category-products-heading" style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)" }}>{initialGroup === "All" ? `${visibleProducts.length} ${root.name.toLowerCase() || "lines"}` : groups.find((group) => group.id === initialGroup)?.label}</h2>
             <CategoryViewToggle />
           </div>
+          {groups.length > 1 && (
+            <CategoryFilterControls
+              groups={groups}
+              initialGroup={initialGroup}
+              rootHeading={`${visibleProducts.length} ${root.name.toLowerCase() || "lines"}`}
+              navigates={initialGroup !== "All"}
+            />
+          )}
+        </div>
 
           {visibleProducts.length > 0 ? (
             <>
@@ -206,6 +206,5 @@ export function CategoryCatalogue({
           )}
         </div>
       </section>
-    </>
-  );
+    );
 }

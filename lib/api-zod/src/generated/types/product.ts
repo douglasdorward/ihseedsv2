@@ -7,7 +7,6 @@
  */
 import type { ProductAvailabilityOverride } from './productAvailabilityOverride';
 import type { ProductDetails } from './productDetails';
-import type { ProductListingOverride } from './productListingOverride';
 import type { ProductListingState } from './productListingState';
 import type { ProductPublishStatus } from './productPublishStatus';
 import type { SaleLine } from './saleLine';
@@ -30,9 +29,8 @@ export interface Product {
   websiteUrlLegacy?: string;
   /** @nullable */
   availabilityOverride?: ProductAvailabilityOverride;
-  /** @nullable */
-  listingOverride?: ProductListingOverride;
-  listingState?: ProductListingState;
+  /** Manual Active/Legacy listing. Independent of Published/Draft/Archived. Legacy products cannot have availability. */
+  listingState: ProductListingState;
   saleLines?: SaleLine[];
   publishStatus: ProductPublishStatus;
   publishedAt?: Date | null;

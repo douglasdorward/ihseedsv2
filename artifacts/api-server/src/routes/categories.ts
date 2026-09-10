@@ -3,11 +3,12 @@ import { asc, eq, inArray } from "drizzle-orm";
 import {
   catalogueCategoriesTable,
   db,
+  forSearchMetadata,
   insertCatalogueCategorySchema,
+  isActiveListing,
   productDraftsTable,
   productsTable,
   redirectsTable,
-  saleLinesTable,
   reorderCatalogueCategoriesSchema,
   updateCatalogueCategorySchema,
 } from "@workspace/db";
@@ -54,6 +55,14 @@ function categoryRedirectFallback(category: CategoryRow, categories: CategoryRow
   return "/products";
 }
 
+function withPlainSearchMetadata<T extends { seoTitle?: string; seoDescription?: string }>(data: T): T {
+  return {
+    ...data,
+    ...(typeof data.seoTitle === "string" ? { seoTitle: forSearchMetadata(data.seoTitle) } : {}),
+    ...(typeof data.seoDescription === "string" ? { seoDescription: forSearchMetadata(data.seoDescription) } : {}),
+  };
+}
+
 async function preserveCategoryRedirects(
   tx: any,
   before: CategoryRow[],
@@ -91,20 +100,16 @@ async function validateParent(id: number | undefined, parentId: number | null, c
 }
 
 router.get("/categories", async (_req, res): Promise<void> => {
-  const [categories, products, saleLines] = await Promise.all([
+  const [categories, products] = await Promise.all([
     orderedCategories(),
-    db.select({ id: productsTable.id, subcategoryId: productsTable.subcategoryId, publishStatus: productsTable.publishStatus, listingOverride: productsTable.listingOverride })
+    db.select({ id: productsTable.id, subcategoryId: productsTable.subcategoryId, publishStatus: productsTable.publishStatus, listingState: productsTable.listingState })
       .from(productsTable),
-    db.select({ productId: saleLinesTable.productId, availability: saleLinesTable.availability }).from(saleLinesTable),
   ]);
-  const availableProductIds = new Set(saleLines.filter((line) => line.availability !== "Unavailable").map((line) => line.productId));
   const categoriesById = new Map(categories.map((category) => [category.id, category]));
   const activeIds = new Set(categories.filter((category) => category.active).map((category) => category.id));
   const counts = new Map<number, number>();
   for (const product of products) {
-    if (product.publishStatus === "Published" && product.subcategoryId !== null &&
-      (product.listingOverride === "Force active" ||
-        (product.listingOverride !== "Force legacy" && (availableProductIds.has(product.id) || !saleLines.some((line) => line.productId === product.id))))) {
+    if (product.publishStatus === "Published" && product.subcategoryId !== null && isActiveListing(product)) {
       const selected = categoriesById.get(product.subcategoryId);
       const selectedIsPublic = selected?.active
         && (selected.parentId === null || activeIds.has(selected.parentId));
@@ -152,7 +157,7 @@ router.post("/admin/categories", async (req, res): Promise<void> => {
       }
       values = { ...values, slug };
     }
-    const [category] = await db.insert(catalogueCategoriesTable).values(values).returning();
+    const [category] = await db.insert(catalogueCategoriesTable).values(withPlainSearchMetadata(values)).returning();
     res.status(201).json(category);
   } catch (error) {
     if (isPostgresError(error, "23505")) {
@@ -194,7 +199,7 @@ router.patch("/admin/categories/:id", async (req, res): Promise<void> => {
       const slug = parent ? normalizedChildSlug(parent.slug, requestedSlug) : requestedSlug;
       if (!slug) throw new Error("EMPTY_CHILD_SLUG");
       const [updated] = await tx.update(catalogueCategoriesTable)
-        .set({ ...parsed.data, slug, updatedAt: new Date() })
+        .set({ ...withPlainSearchMetadata(parsed.data), slug, updatedAt: new Date() })
         .where(eq(catalogueCategoriesTable.id, id)).returning();
       if (!updated) throw new Error("CATEGORY_NOT_FOUND");
       const after = before.map((category) => category.id === id ? updated : category);

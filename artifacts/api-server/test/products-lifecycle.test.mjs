@@ -122,8 +122,19 @@ function draftPayload(product, overrides = {}) {
     category: overrides.category ?? product.category,
     subcategoryId: overrides.subcategoryId ?? product.subcategoryId ?? null,
     techSheet: overrides.techSheet ?? product.techSheet,
+    listingState: overrides.listingState ?? product.listingState ?? "Active",
     details: overrides.details ?? product.details,
+    saleLines: overrides.saleLines ?? product.saleLines ?? [],
   };
+}
+
+function insertLeftoverDraft(product, overrides = {}) {
+  const snapshot = JSON.stringify(draftPayload(product, overrides)).replaceAll("'", "''");
+  sql(`
+    INSERT INTO ih_product_drafts (product_id, snapshot)
+    VALUES (${product.id}, '${snapshot}'::jsonb)
+    ON CONFLICT (product_id) DO UPDATE SET snapshot = EXCLUDED.snapshot, updated_at = now()
+  `);
 }
 
 async function createProduct(label, overrides = {}) {
@@ -196,7 +207,7 @@ test("committed workbook products keep valid lifecycle boundaries and drafts rem
 
 test("redirect lookup returns JSON while the legacy public route emits the HTTP redirect", async () => {
   const expectedRedirects = new Map([
-    ["/product/souwest-pasture-mix", "/product/souwest-pasture-mix-2"],
+    ["/product/souwest-pasture-mix-2", "/product/souwest-pasture-mix"],
     ["/product/avalon-persistent-perennial-ryegrass", "/products/ryegrass#catalogue"],
     ["/product/hard-seeded-persian-clover", "/products/clovers#catalogue"],
     ["/product/soft-seeded-persian-clover", "/products/clovers#catalogue"],
@@ -211,15 +222,15 @@ test("redirect lookup returns JSON while the legacy public route emits the HTTP 
   }
   assertStatus(await request("GET", "/redirects/lookup?fromPath=%2Fproduct%2Fnot-registered"), 404);
 
-  const redirect = await fetch(`${baseUrl}/product/souwest-pasture-mix`, { redirect: "manual" });
+  const redirect = await fetch(`${baseUrl}/product/souwest-pasture-mix-2`, { redirect: "manual" });
   assert.equal(redirect.status, 301);
-  assert.equal(redirect.headers.get("location"), "/product/souwest-pasture-mix-2");
+  assert.equal(redirect.headers.get("location"), "/product/souwest-pasture-mix");
 
   assert.equal(Number(sql(`
     SELECT COUNT(*)
     FROM ih_products
     WHERE (slug, website_url_legacy) IN (
-      ('souwest-pasture-mix-2', 'https://irwinhunter.com.au/product/souwest-pasture-mix-2/'),
+      ('souwest-pasture-mix', 'https://irwinhunter.com.au/product/souwest-pasture-mix-2/'),
       ('avalon-persistent-perennial-ryegrass', 'https://irwinhunter.com.au/product/avalon-persistent-perennial-ryegrass/'),
       ('hard-seeded-persian-clover', 'https://irwinhunter.com.au/product/hard-seeded-persian-clover/'),
       ('icon-lucerne', 'https://irwinhunter.com.au/product/icon-lucerne/'),
@@ -314,6 +325,63 @@ test("drafts require only identity fields while publishing requires public catal
   );
 });
 
+test("draft saves persist sale lines without making the product public", async () => {
+  const product = await createProduct("sale-lines-draft");
+  const saleLines = [{
+    stockCode: `life-${testRunId}`,
+    seedForm: "",
+    seedGrade: "",
+    packKg: 25,
+    packUnit: "kg",
+    availability: "Good stock",
+    priceDisplay: "Contact for pricing",
+    isDefault: true,
+    sortOrder: 0,
+  }];
+  const saved = assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+    saleLines,
+  })), 200);
+  assert.equal(saved.saleLines.length, 1);
+  assert.equal(saved.saleLines[0].stockCode, saleLines[0].stockCode);
+  assert.equal(includesProduct(await publicProducts(), product.id), false);
+
+  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  assert.equal(published.saleLines[0].stockCode, saleLines[0].stockCode);
+  assert.equal((await publicProducts()).find((item) => item.id === product.id).saleLines[0].stockCode, saleLines[0].stockCode);
+});
+
+test("manual listing state takes precedence over sale-line availability", async () => {
+  const product = await createProduct("listing-state");
+  const saleLines = [{
+    stockCode: `list-${testRunId}`,
+    seedForm: "",
+    seedGrade: "",
+    packKg: 25,
+    packUnit: "kg",
+    availability: "Unavailable",
+    priceDisplay: "Contact for pricing",
+    isDefault: true,
+    sortOrder: 0,
+  }];
+  assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+    listingState: "Active",
+    saleLines,
+  })), 200);
+  assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  assert.equal(includesProduct(await publicProducts(), product.id), true);
+
+  const legacy = assertStatus(await request("POST", `/admin/products/${product.id}/publish`, draftPayload(product, {
+    listingState: "Legacy",
+    saleLines: [{ ...saleLines[0], availability: "Good stock" }],
+  })), 200);
+  assert.equal(legacy.listingState, "Legacy");
+  assert.equal(legacy.saleLines[0].availability, "Unavailable");
+  assert.equal(includesProduct(await publicProducts(), product.id), false);
+  assert.equal(includesProduct(await availability(), product.id), false);
+  const names = assertStatus(await request("GET", `/products/category/${encodeURIComponent(product.category)}/legacy`), 200);
+  assert.equal(names.some((item) => item.name === product.name), true);
+});
+
 test("inactive taxonomy cannot be newly assigned but an existing assignment remains publishable", async () => {
   const suffix = `inactive-category-${testRunId}`;
   const categoryInput = (slug, active = true) => ({
@@ -326,17 +394,15 @@ test("inactive taxonomy cannot be newly assigned but an existing assignment rema
   try {
     assertStatus(await request("POST", `/admin/products/${retainedProduct.id}/publish`), 200);
     assertStatus(await request("PATCH", `/admin/categories/${retained.id}`, { active: false }), 200);
-    assertStatus(await request("POST", `/admin/products/${retainedProduct.id}/draft`, draftPayload(retainedProduct, {
+    assertStatus(await request("POST", `/admin/products/${retainedProduct.id}/publish`, draftPayload(retainedProduct, {
       name: `Inactive retained revision ${testRunId}`,
       subcategoryId: retained.id,
     })), 200);
-    assertStatus(await request("POST", `/admin/products/${retainedProduct.id}/publish`), 200);
 
     assertStatus(await request("POST", `/products`, {
       name: `Inactive blocked ${testRunId}`, slug: `${suffix}-blocked-product`, price: "", packSize: "",
       status: "in-stock", note: "", category: "", subcategoryId: retained.id, techSheet: "",
     }), 400);
-    assertStatus(await request("POST", `/admin/products/${pendingProduct.id}/publish`), 200);
     assertStatus(await request("POST", `/admin/products/${pendingProduct.id}/draft`, draftPayload(pendingProduct, {
       subcategoryId: blocked.id,
     })), 200);
@@ -364,18 +430,14 @@ test("renaming a root taxonomy category updates assigned product and draft label
   const childProduct = await createProduct("rename-child", { subcategoryId: child.id });
   try {
     assertStatus(await request("POST", `/admin/products/${rootProduct.id}/publish`), 200);
-    const publishedChild = assertStatus(await request("POST", `/admin/products/${childProduct.id}/publish`), 200);
-    assertStatus(await request("POST", `/admin/products/${childProduct.id}/draft`, draftPayload(publishedChild, {
-      name: `Renamed category draft ${testRunId}`,
-      subcategoryId: child.id,
-    })), 200);
+    assertStatus(await request("POST", `/admin/products/${childProduct.id}/publish`), 200);
 
     const renamed = `Renamed root ${testRunId}`;
     assertStatus(await request("PATCH", `/admin/categories/${root.id}`, { name: renamed }), 200);
     assert.equal((await adminProduct(rootProduct.id)).category, renamed);
     const childAdmin = await adminProduct(childProduct.id);
     assert.equal(childAdmin.category, renamed);
-    assert.equal(childAdmin.draft.category, renamed);
+    assert.equal(childAdmin.draft, null);
   } finally {
     await request("DELETE", `/products/${rootProduct.id}`);
     await request("DELETE", `/products/${childProduct.id}`);
@@ -457,7 +519,7 @@ test("a later published category choice for a seed product is not reverted", asy
   `).split("\t");
 
   try {
-    assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+    assertStatus(await request("POST", `/admin/products/${product.id}/publish`, draftPayload(product, {
       category: "Other",
       subcategoryId: otherCategory.id,
       details: {
@@ -472,7 +534,6 @@ test("a later published category choice for a seed product is not reverted", asy
         seoDescription: "Migration regression SEO description.",
       },
     })), 200);
-    assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
     runMigrations();
 
     const published = (await publicProducts()).find((item) => item.id === product.id);
@@ -636,8 +697,7 @@ test("category administration enforces nesting, activation, and deletion protect
     assert.equal(normalizedChild.slug, `${suffix}-child-updated`);
 
     const product = await createProduct("category-draft-reference");
-    const publishedProduct = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
-    assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(publishedProduct, {
+    assertStatus(await request("POST", `/admin/products/${product.id}/publish`, draftPayload(product, {
       subcategoryId: child.id,
     })), 200);
     assertStatus(await request("DELETE", `/admin/categories/${child.id}`), 409);
@@ -691,11 +751,7 @@ test("taxonomy deactivation redirects removed paths and moving a child updates l
       { toPath: "/products" },
     );
 
-    const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
-    assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(published, {
-      name: `Moved taxonomy draft ${testRunId}`,
-      subcategoryId: movedChild.id,
-    })), 200);
+    assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
     assertStatus(await request("PATCH", `/admin/categories/${movedChild.id}`, { parentId: destinationRoot.id }), 200);
     const categories = assertStatus(await request("GET", "/categories"), 200);
     assert.equal(categories.find((category) => category.id === movedChild.id)?.parentId, destinationRoot.id);
@@ -705,7 +761,7 @@ test("taxonomy deactivation redirects removed paths and moving a child updates l
     );
     const movedProduct = await adminProduct(product.id);
     assert.equal(movedProduct.category, destinationRoot.name);
-    assert.equal(movedProduct.draft.category, destinationRoot.name);
+    assert.equal(movedProduct.draft, null);
 
     assertStatus(await request("PATCH", `/admin/categories/${movedChild.id}`, { parentId: null }), 200);
     const promotedCategories = assertStatus(await request("GET", "/categories"), 200);
@@ -716,7 +772,7 @@ test("taxonomy deactivation redirects removed paths and moving a child updates l
     );
     const promotedProduct = await adminProduct(product.id);
     assert.equal(promotedProduct.category, movedChild.name);
-    assert.equal(promotedProduct.draft.category, movedChild.name);
+    assert.equal(promotedProduct.draft, null);
   } finally {
     await request("DELETE", `/products/${product.id}`);
     for (const category of [removedChild, retainedChild, movedChild, redirectRoot, sourceRoot, destinationRoot]) {
@@ -854,6 +910,7 @@ test("catalogue lifecycle transition matrix protects public content", async () =
   assert.equal(published.hasDraft, false);
   const publicProduct = (await publicProducts()).find((item) => item.id === product.id);
   assert.ok(publicProduct);
+  assert.equal(publicProduct.listingState, "Active");
   assert.equal(publicProduct.category, "Automated tests");
   for (const adminOnly of ["descriptionSource", "websiteUrlLegacy", "availabilityOverride", "listingOverride", "publishStatus", "publishedAt", "createdAt", "updatedAt"]) {
     assert.equal(adminOnly in publicProduct, false, `Public product exposed ${adminOnly}`);
@@ -872,7 +929,24 @@ test("catalogue lifecycle transition matrix protects public content", async () =
 
   const revisionName = `Lifecycle revision ${testRunId}`;
   const revisionBlurb = `Latest editor blurb ${testRunId}`;
-  const revised = assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+  const parkedDraft = await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+    name: revisionName,
+    details: { ...product.details, blurb: revisionBlurb },
+  }));
+  assertStatus(parkedDraft, 409);
+  assert.match(parkedDraft.data.error, /cannot be saved as drafts/i);
+  assert.equal((await publicProducts()).find((item) => item.id === product.id).name, product.name);
+
+  const blockedPublish = await request("POST", `/admin/products/${product.id}/publish`, draftPayload(product, {
+    name: `Unpublished incomplete ${testRunId}`,
+    details: { ...product.details, tagline: "" },
+  }));
+  assertStatus(blockedPublish, 400);
+  assert.match(blockedPublish.data.error, /Tagline/);
+  assert.equal((await adminProduct(product.id)).name, product.name);
+  assert.equal((await publicProducts()).find((item) => item.id === product.id).name, product.name);
+
+  const promoted = assertStatus(await request("POST", `/admin/products/${product.id}/publish`, draftPayload(product, {
     name: revisionName,
     price: "$35.00 per kg",
     details: {
@@ -880,25 +954,6 @@ test("catalogue lifecycle transition matrix protects public content", async () =
       blurb: revisionBlurb,
     },
   })), 200);
-  assert.equal(revised.lifecycleStatus, "Published");
-  assert.equal(revised.name, product.name);
-  assert.equal(revised.hasDraft, true);
-  assert.equal(revised.draft.name, revisionName);
-  assert.equal(revised.draft.details.blurb, revisionBlurb);
-  assert.equal((await adminProduct(product.id)).draft.details.blurb, revisionBlurb);
-  assert.equal((await publicProducts()).find((item) => item.id === product.id).name, product.name);
-
-  const stockUpdated = assertStatus(await request("PATCH", `/products/${product.id}`, { status: "low" }), 200);
-  assert.equal(stockUpdated.status, "low");
-  assert.equal((await adminProduct(product.id)).draft.status, "low");
-  assert.equal((await availability()).find((item) => item.id === product.id).status, "low");
-
-  assertStatus(await request("PATCH", `/products/${product.id}`, { name: `Illegal live edit ${testRunId}` }), 409);
-  const unchangedLive = await adminProduct(product.id);
-  assert.equal(unchangedLive.name, product.name);
-  assert.equal(unchangedLive.draft.name, revisionName);
-
-  const promoted = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
   assert.equal(promoted.lifecycleStatus, "Published");
   assert.equal(promoted.name, revisionName);
   assert.equal(promoted.details.blurb, revisionBlurb);
@@ -906,6 +961,17 @@ test("catalogue lifecycle transition matrix protects public content", async () =
   const publishedRevision = (await publicProducts()).find((item) => item.id === product.id);
   assert.equal(publishedRevision.name, revisionName);
   assert.equal(publishedRevision.details.blurb, revisionBlurb);
+
+  const stockUpdated = assertStatus(await request("PATCH", `/products/${product.id}`, { status: "low" }), 200);
+  assert.equal(stockUpdated.status, "low");
+  assert.equal((await adminProduct(product.id)).status, "low");
+  assert.equal((await adminProduct(product.id)).draft, null);
+  assert.equal((await availability()).find((item) => item.id === product.id).status, "low");
+
+  assertStatus(await request("PATCH", `/products/${product.id}`, { name: `Illegal live edit ${testRunId}` }), 409);
+  const unchangedLive = await adminProduct(product.id);
+  assert.equal(unchangedLive.name, revisionName);
+  assert.equal(unchangedLive.draft, null);
   const publicDetailResponse = await fetch(`${baseUrl}/api/products/slug/${product.slug}`);
   assert.equal(publicDetailResponse.status, 200);
   assert.equal(publicDetailResponse.headers.get("cache-control"), "no-store");
@@ -917,9 +983,7 @@ test("catalogue lifecycle transition matrix protects public content", async () =
   assert.doesNotMatch(renderedProductHtml, /Lifecycle test blurb/);
 
   const archivedRevisionName = `Archived revision ${testRunId}`;
-  assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(promoted, {
-    name: archivedRevisionName,
-  })), 200);
+  insertLeftoverDraft(promoted, { name: archivedRevisionName });
   const archived = assertStatus(await request("POST", `/admin/products/${product.id}/archive`), 200);
   assert.equal(archived.lifecycleStatus, "Archived");
   assert.equal(includesProduct(await publicProducts(), product.id), false);
@@ -937,9 +1001,8 @@ test("catalogue lifecycle transition matrix protects public content", async () =
   assert.equal(republished.name, archivedRevisionName);
 
   const discardedName = `Discarded revision ${testRunId}`;
-  assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(republished, {
-    name: discardedName,
-  })), 200);
+  insertLeftoverDraft(republished, { name: discardedName });
+  assert.equal((await adminProduct(product.id)).hasDraft, true);
   const discarded = assertStatus(await request("POST", `/admin/products/${product.id}/discard-draft`), 200);
   assert.equal(discarded.lifecycleStatus, "Published");
   assert.equal(discarded.name, archivedRevisionName);
@@ -1004,7 +1067,7 @@ test("source workbook reports publish gaps while exported legacy records round-t
   const book = xlsx.read(exported, { type: "buffer" });
   assert.deepEqual(book.SheetNames, [
     "1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines",
-    "5 Mix components", "6 Companions", "7 Website SEO", "Lists",
+    "5 Mix components", "6 Companions", "7 Website SEO", "8 Categories", "9 Redirects", "Lists",
   ]);
   const listsIndex = book.SheetNames.indexOf("Lists");
   assert.equal(book.Workbook?.Sheets?.[listsIndex]?.Hidden, 1);
@@ -1025,6 +1088,15 @@ test("source workbook reports publish gaps while exported legacy records round-t
       raw: false,
     });
     assert.equal(exportedComponents[0].includes("component_description"), true);
+  const exportedSeo = xlsx.utils.sheet_to_json(book.Sheets["7 Website SEO"], { header: 1, defval: "", raw: false });
+  assert.equal(["social_title", "social_description", "social_image", "canonical_url", "robots_index"]
+    .every((column) => exportedSeo[0].includes(column)), true);
+  const exportedCategories = xlsx.utils.sheet_to_json(book.Sheets["8 Categories"], { header: 1, defval: "", raw: false });
+  assert.equal(["parent_slug", "slug", "page_heading", "seo_title", "seo_description", "lead", "rainfall", "image", "active"]
+    .every((column) => exportedCategories[0].includes(column)), true);
+  const exportedRedirects = xlsx.utils.sheet_to_json(book.Sheets["9 Redirects"], { header: 1, defval: "", raw: false });
+  assert.equal(["from_path", "to_path"].every((column) => exportedRedirects[0].includes(column)), true);
+  assert.equal(["photo_1", "photo_2", "photo_3"].every((column) => productHeaders.includes(column)), true);
 
   const exportReport = assertStatus(await request("POST", "/admin/import/dry-run", {
     workbookBase64: exported.toString("base64"),
@@ -1063,6 +1135,11 @@ test("published workbook rows enforce content fields and retain products absent 
         product_url: legacyWebsiteUrl,
         seo_title: "Workbook SEO title",
         meta_description: "Workbook SEO description.",
+        social_title: "Workbook social title",
+        social_description: "Workbook social description.",
+        social_image: "https://example.com/share.jpg",
+        canonical_url: "https://example.com/product/canonical",
+        robots_index: "N",
       }]), "7 Website SEO");
     }
     xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ category: other.name, record_type: "Mix" }]), "Lists");
@@ -1097,6 +1174,11 @@ test("published workbook rows enforce content fields and retain products absent 
   assert.equal("bredByOrigin" in published.details, false);
   assert.equal("supplierName" in published.details, false);
   assert.equal((await adminProduct(imported.id)).websiteUrlLegacy, legacyWebsiteUrl);
+  assert.equal((await adminProduct(imported.id)).details.socialTitle, "Workbook social title");
+  assert.equal((await adminProduct(imported.id)).details.socialDescription, "Workbook social description.");
+  assert.equal((await adminProduct(imported.id)).details.socialImage, "https://example.com/share.jpg");
+  assert.equal((await adminProduct(imported.id)).details.canonicalUrl, "https://example.com/product/canonical");
+  assert.equal((await adminProduct(imported.id)).details.robotsIndex, false);
   assert.equal((await adminProduct(absent.id)).id, absent.id, "Absent workbook products must be retained");
 
   const exported = Buffer.from(await (await fetch(`${baseUrl}/api/admin/import/export`)).arrayBuffer());
@@ -1109,6 +1191,16 @@ test("published workbook rows enforce content fields and retain products absent 
   assert.equal(exportedRow.blurb, productRow.blurb);
   assert.equal(exportedRow.key_attributes, "First attribute|Second attribute");
   assert.equal(exportedRow.distribution_note, productRow.distribution_note);
+  const exportedSeoRow = xlsx.utils.sheet_to_json(exportedBook.Sheets["7 Website SEO"], { defval: "", raw: false })
+    .find((row) => row.product_slug === imported.slug);
+  assert.ok(exportedSeoRow);
+  assert.equal(exportedSeoRow.social_title, "Workbook social title");
+  assert.equal(exportedSeoRow.canonical_url, "https://example.com/product/canonical");
+  assert.equal(exportedSeoRow.robots_index, "N");
+  const exportedCategoryRow = xlsx.utils.sheet_to_json(exportedBook.Sheets["8 Categories"], { defval: "", raw: false })
+    .find((row) => row.slug === other.slug);
+  assert.ok(exportedCategoryRow);
+  assert.equal(exportedCategoryRow.name, other.name);
   const reimport = assertStatus(await request("POST", "/admin/import/dry-run", {
     workbookBase64: exported.toString("base64"),
   }), 200);
@@ -1140,33 +1232,35 @@ test("published workbook rows enforce content fields and retain products absent 
   }), 400);
 });
 
-test("taxonomy assignment is saved as a draft and only reaches public products on publish", async () => {
+test("taxonomy assignment on a draft stays private until publish, and published edits go live immediately", async () => {
   const product = await createProduct("taxonomy-assignment");
   const categories = assertStatus(await request("GET", "/admin/categories"), 200);
   const ryegrass = categories.find((category) => category.slug === "ryegrass");
   assert.ok(ryegrass, "Expected seeded ryegrass taxonomy category");
 
-  const initiallyPublished = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
-  assert.equal(initiallyPublished.subcategoryId, null);
-  assert.equal((await publicProducts()).find((item) => item.id === product.id).subcategoryId, null);
-
-  const revised = assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(initiallyPublished, {
+  const drafted = assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
     category: "Not the taxonomy display name",
     subcategoryId: ryegrass.id,
   })), 200);
-  assert.equal(revised.subcategoryId, null);
-  assert.equal(revised.draft.subcategoryId, ryegrass.id);
-  assert.equal(revised.draft.category, ryegrass.name);
-  const stillPublic = (await publicProducts()).find((item) => item.id === product.id);
-  assert.equal(stillPublic.subcategoryId, null);
-  assert.equal(stillPublic.category, "Automated tests");
+  assert.equal(drafted.subcategoryId, ryegrass.id);
+  assert.equal(drafted.category, ryegrass.name);
+  assert.equal(includesProduct(await publicProducts(), product.id), false);
 
-  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
-  assert.equal(published.subcategoryId, ryegrass.id);
-  assert.equal(published.category, ryegrass.name);
+  const initiallyPublished = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  assert.equal(initiallyPublished.subcategoryId, ryegrass.id);
+  assert.equal((await publicProducts()).find((item) => item.id === product.id).subcategoryId, ryegrass.id);
+
+  const clovers = categories.find((category) => category.slug === "clovers");
+  assert.ok(clovers, "Expected seeded clover taxonomy category");
+  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`, draftPayload(initiallyPublished, {
+    category: "Not the taxonomy display name",
+    subcategoryId: clovers.id,
+  })), 200);
+  assert.equal(published.subcategoryId, clovers.id);
+  assert.equal(published.category, clovers.name);
   const publicProduct = (await publicProducts()).find((item) => item.id === product.id);
-  assert.equal(publicProduct.subcategoryId, ryegrass.id);
-  assert.equal(publicProduct.category, ryegrass.name);
+  assert.equal(publicProduct.subcategoryId, clovers.id);
+  assert.equal(publicProduct.category, clovers.name);
 });
 
 test("generic updates cannot race publish or archive into live content", async () => {
@@ -1175,12 +1269,11 @@ test("generic updates cannot race publish or archive into live content", async (
 
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const revisionName = `Publish race revision ${testRunId} ${attempt}`;
-    assertStatus(await request("POST", `/admin/products/${published.id}/draft`, draftPayload(published, {
-      name: revisionName,
-    })), 200);
     const [patch, publish] = await Promise.all([
       request("PATCH", `/products/${published.id}`, { name: `Raced live edit ${testRunId} ${attempt}` }),
-      request("POST", `/admin/products/${published.id}/publish`),
+      request("POST", `/admin/products/${published.id}/publish`, draftPayload(published, {
+        name: revisionName,
+      })),
     ]);
     assertStatus(patch, 409);
     const result = assertStatus(publish, 200);
@@ -1229,14 +1322,13 @@ test("companion products save by slug while self and unknown references identify
   const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
   assert.deepEqual(published.details.companionSpecies, [companion.slug]);
 
-  const longSlugDraft = assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(published, {
+  const longSlugPublish = assertStatus(await request("POST", `/admin/products/${product.id}/publish`, draftPayload(published, {
     details: { ...published.details, companionSpecies: [longSlug] },
   })), 200);
-  assert.deepEqual(longSlugDraft.draft.details.companionSpecies, [longSlug]);
-  assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  assert.deepEqual(longSlugPublish.details.companionSpecies, [longSlug]);
 
   for (const invalidSlug of [product.slug, `unknown-companion-${testRunId}`]) {
-    const result = await request("POST", `/admin/products/${product.id}/draft`, draftPayload(published, {
+    const result = await request("POST", `/admin/products/${product.id}/publish`, draftPayload(published, {
       details: { ...published.details, companionSpecies: [invalidSlug] },
     }));
     assertStatus(result, 400);

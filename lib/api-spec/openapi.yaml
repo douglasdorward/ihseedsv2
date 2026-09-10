@@ -185,7 +185,7 @@ paths:
     post:
       operationId: saveProductDraftRevision
       tags: [admin]
-      summary: Save a product draft revision
+      summary: Save edits to a Draft product
       requestBody:
         required: true
         content:
@@ -221,7 +221,13 @@ paths:
     post:
       operationId: publishProduct
       tags: [admin]
-      summary: Promote the current draft to the public catalogue
+      summary: Publish a product, optionally from the current editor payload
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductDraftInput"
       responses:
         "200":
           description: Published product
@@ -295,7 +301,7 @@ paths:
     post:
       operationId: discardProductDraft
       tags: [admin]
-      summary: Discard pending changes to a published product
+      summary: Discard leftover unpublished revisions on a published product
       responses:
         "200":
           description: Published product
@@ -590,8 +596,7 @@ components:
         descriptionSource: { type: string, description: Admin-only provenance }
         websiteUrlLegacy: { type: string, description: Admin-only legacy URL }
         availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
-        listingOverride: { type: [string, "null"], enum: ["Force active", "Force legacy", null] }
-        listingState: { type: string, enum: [Active, Legacy] }
+        listingState: { type: string, enum: [Active, Legacy], description: "Manual Active/Legacy listing. Independent of Published/Draft/Archived. Legacy products cannot have availability." }
         saleLines:
           type: array
           items: { $ref: "#/components/schemas/SaleLine" }
@@ -601,7 +606,7 @@ components:
           $ref: "#/components/schemas/ProductDetails"
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-      required: [id, name, slug, price, packSize, status, note, category, techSheet, publishStatus, details, createdAt, updatedAt]
+      required: [id, name, slug, price, packSize, status, note, category, techSheet, listingState, publishStatus, details, createdAt, updatedAt]
     PublicProduct:
       type: object
       description: Published, Active catalogue data. Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.
@@ -708,13 +713,13 @@ components:
         descriptionSource: { type: string, maxLength: 240 }
         websiteUrlLegacy: { type: string, maxLength: 500 }
         availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
-        listingOverride: { type: [string, "null"], enum: ["Force active", "Force legacy", null] }
+        listingState: { type: string, enum: [Active, Legacy], description: "Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability." }
         details:
           $ref: "#/components/schemas/ProductDetails"
         saleLines:
           type: array
           items: { $ref: "#/components/schemas/SaleLine" }
-      required: [name, price, packSize, status, note, category, techSheet, guideYear, descriptionSource, websiteUrlLegacy, availabilityOverride, listingOverride, details]
+      required: [name, price, packSize, status, note, category, techSheet, guideYear, descriptionSource, websiteUrlLegacy, availabilityOverride, details]
     ProductDraft:
       allOf:
         - $ref: "#/components/schemas/ProductDraftInput"
@@ -751,11 +756,11 @@ components:
         descriptionSource: { type: string, maxLength: 240 }
         websiteUrlLegacy: { type: string, maxLength: 500 }
         availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
-        listingOverride: { type: [string, "null"], enum: ["Force active", "Force legacy", null] }
+        listingState: { type: string, enum: [Active, Legacy], description: "Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability." }
         publishStatus: { type: string, enum: [Published, Draft, Archived] }
         details:
           $ref: "#/components/schemas/ProductDetails"
-      required: [name, slug, price, packSize, status, note, category, techSheet, guideYear, descriptionSource, websiteUrlLegacy, availabilityOverride, listingOverride, publishStatus, details]
+      required: [name, slug, price, packSize, status, note, category, techSheet, guideYear, descriptionSource, websiteUrlLegacy, availabilityOverride, listingState, publishStatus, details]
     ProductCreateInput:
       type: object
       properties:
@@ -768,8 +773,12 @@ components:
         category: { type: string, minLength: 1, maxLength: 120 }
         subcategoryId: { type: number, multipleOf: 1, nullable: true }
         techSheet: { type: string, maxLength: 240 }
+        listingState: { type: string, enum: [Active, Legacy], description: "Manual Active/Legacy listing. Defaults to Active." }
         details:
           $ref: "#/components/schemas/ProductDetails"
+        saleLines:
+          type: array
+          items: { $ref: "#/components/schemas/SaleLine" }
       required: [name, slug, price, packSize, status, note, category, techSheet, details]
     ProductUpdate:
       type: object
@@ -786,7 +795,7 @@ components:
         descriptionSource: { type: string, maxLength: 240 }
         websiteUrlLegacy: { type: string, maxLength: 500 }
         availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
-        listingOverride: { type: [string, "null"], enum: ["Force active", "Force legacy", null] }
+        listingState: { type: string, enum: [Active, Legacy], description: "Manual Active/Legacy listing. Legacy products cannot have availability." }
         details:
           $ref: "#/components/schemas/ProductDetails"
     ProductDetails:

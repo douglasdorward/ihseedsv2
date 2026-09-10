@@ -1,0 +1,112 @@
+# Tab 1 — Basics
+
+Identity, taxonomy, listing state, and origin. Tabs 2–6 stay disabled until a category is chosen.
+
+Draft save requires Product name, Slug, Category, and Record type from this tab.
+
+## Product name
+
+- **API path:** `name`
+- **Workbook:** `1 Products.product_name`
+- **Required:** Draft yes / Publish yes
+- **Shown when:** always
+- **Customer website:** H1 on the product page; category cards; comparison table; related-product and Also popular names; JSON-LD Product `name`. Trademark symbols stay visible here.
+- **Public API:** yes (`name`)
+- **Purpose:** The customer-facing product title.
+- **How to fill:** Use the commercial name. Insert ™ with the TM button when the brand is trademarked. Do not put ™ or ® in SEO or social fields.
+- **Constraints:** 1–160 characters.
+
+## Slug
+
+- **API path:** `slug`
+- **Workbook:** `1 Products.slug`
+- **Required:** Draft yes / Publish yes
+- **Shown when:** always; input is disabled after the product exists
+- **Customer website:** Permanent URL `/product/{slug}`. Used to join related products, mix components, companions, and redirects.
+- **Public API:** yes (`slug`)
+- **Purpose:** Immutable public identifier.
+- **How to fill:** Lowercase kebab-case matching `^[a-z0-9]+(?:-[a-z0-9]+)*$`. Choose carefully on create; it cannot be edited later.
+- **Constraints:** 1–180 characters. Unique.
+
+## Category
+
+- **API path:** `category` (root category name)
+- **Workbook:** `1 Products.category`
+- **Required:** Draft yes / Publish yes
+- **Shown when:** always
+- **Customer website:** Breadcrumb, directory grouping, category page membership, Also popular pool.
+- **Public API:** yes (`category`)
+- **Purpose:** Places the product in the two-level taxonomy. Also decides which Category-specific fields appear.
+- **How to fill:** Choose an active root. Inactive roots remain available only for an existing assignment. Publishing a changed assignment to inactive taxonomy is rejected.
+- **Constraints:** Must match a catalogue root name.
+
+## Subcategory
+
+- **API path:** `subcategoryId`
+- **Workbook:** `1 Products.sub_category` (resolved to the child id)
+- **Required:** no
+- **Shown when:** a root category is selected
+- **Customer website:** Shown under the name on category cards; comparison-table “Sub-category” column; used as the category-page filter. Not shown in the product-page breadcrumb (that uses the root).
+- **Public API:** yes (`subcategoryId`)
+- **Purpose:** Optional child grouping inside the root.
+- **How to fill:** Choose a child of the selected root, or None. None stores the root id as `subcategoryId` in the editor select’s empty state when a root is selected — follow the current editor payload; do not invent a second parent.
+
+## Record type
+
+- **API path:** `details.recordType`
+- **Workbook:** `1 Products.record_type`
+- **Required:** Draft yes / Publish yes
+- **Shown when:** always
+- **Customer website:** Not printed as a label. `Mix` turns on the Mix components block on the product page. Variety / Commodity change how some agronomy copy is framed but are not a Quick fact.
+- **Public API:** yes (`details.recordType`)
+- **Purpose:** Distinguishes mixes from single varieties and generic commodities.
+- **How to fill:** `Mix`, `Variety`, or `Commodity / generic`. Use Mix only for blended products that should list components.
+- **Constraints:** Closed enum.
+
+## Listing state
+
+- **API path:** `listingState`
+- **Workbook:** `1 Products.listing_state` (wins over legacy `listing_override`)
+- **Required:** defaults to Active; not a publish-content check
+- **Shown when:** always
+- **Customer website:** Active products can appear in the main catalogue, availability, and sitemap. Legacy products appear only as names in the category page “Also in our catalogue” list. They are not saleable cards and cannot show stock.
+- **Public API:** public payloads only include Active products, and `listingState` is always `Active` there
+- **Purpose:** Manual current-selling vs catalogue-history choice. Independent of Published/Draft/Archived. Different from Archive, which removes the product from the public website.
+- **How to fill:** Active when the product may be sold or shown as current. Legacy when it should remain as history only. Legacy forces sale-line availability and the availability override to Unavailable.
+- **Constraints:** `Active` or `Legacy`.
+
+## Botanical name
+
+- **API path:** `details.botanicalName`
+- **Workbook:** `1 Products.botanical_name`
+- **Required:** no
+- **Shown when:** category is not Mixes
+- **Customer website:** Italic line under the tagline on the product hero, when present.
+- **Public API:** yes
+- **Purpose:** Scientific name for a variety or commodity.
+- **How to fill:** e.g. `Lolium multiflorum`. Leave blank if unknown. Mixes do not use this field in the editor.
+- **Constraints:** max 180 characters.
+
+## Bred by / origin
+
+- **API path:** `details.bredByOrigin`
+- **Workbook:** `1 Products.bred_by_origin`
+- **Required:** no
+- **Shown when:** category is not Mixes
+- **Customer website:** not shown
+- **Public API:** excluded (admin-only)
+- **Purpose:** Private breeder or origin reminder. Deliberately never public.
+- **How to fill:** e.g. `Agricom (NZ)`. Do not copy this into Description, Blurb, or SEO.
+- **Constraints:** max 2000 characters.
+
+## Also known as
+
+- **API path:** `details.alsoKnownAs[]`
+- **Workbook:** `1 Products.also_known_as`
+- **Required:** no
+- **Shown when:** always
+- **Customer website:** not shown
+- **Public API:** excluded (admin-only)
+- **Purpose:** Alternative names for staff search and provenance. Not a public synonym list.
+- **How to fill:** One alias per row. Blank rows are ignored.
+- **Constraints:** each alias max 120 characters.

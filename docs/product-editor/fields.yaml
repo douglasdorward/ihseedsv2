@@ -1,0 +1,1392 @@
+# Machine-readable product-editor field catalog.
+# OpenAPI (lib/api-spec/openapi.yaml) is authoritative for types.
+# Markdown tab docs are authoritative for human fill guidance.
+# Keep this file in the same change as editor, API, or public-display updates.
+version: 1
+payloads:
+  create: ProductCreateInput
+  update: ProductUpdate
+  draft: ProductDraftInput
+visibility:
+  customer: Shown on the public website
+  publicApi: In PublicProduct / PublicProductDetails but not rendered on current pages
+  adminOnly: Stripped by toPublicDetails; never public
+
+fields:
+  - id: name
+    tab: 1
+    apiPath: name
+    label: Product name
+    type: string
+    maxLength: 160
+    requiredForDraft: true
+    requiredForPublish: true
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [product-h1, category-cards, comparison-table, related-cards, also-popular, json-ld-name]
+    workbook: 1 Products.product_name
+    fillGuidance: Commercial title. Put ™/® here only, never in SEO or social fields.
+
+  - id: slug
+    tab: 1
+    apiPath: slug
+    label: Slug
+    type: string
+    maxLength: 180
+    pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+    requiredForDraft: true
+    requiredForPublish: true
+    visibleWhen: always
+    immutableAfterCreate: true
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [product-url]
+    workbook: 1 Products.slug
+    fillGuidance: Lowercase kebab-case. Permanent after create.
+
+  - id: category
+    tab: 1
+    apiPath: category
+    label: Category
+    type: string
+    maxLength: 120
+    requiredForDraft: true
+    requiredForPublish: true
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [breadcrumb, directory, category-page, also-popular-pool]
+    workbook: 1 Products.category
+    fillGuidance: Active root category name. Controls which tab 3 fields appear.
+
+  - id: subcategoryId
+    tab: 1
+    apiPath: subcategoryId
+    label: Subcategory
+    type: integer
+    nullable: true
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: root-category-selected
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [category-cards, comparison-table, category-filter]
+    workbook: 1 Products.sub_category
+    fillGuidance: Child of the selected root, or None. None stores the root id in the current editor.
+
+  - id: recordType
+    tab: 1
+    apiPath: details.recordType
+    label: Record type
+    type: enum
+    enumValues: [Mix, Variety, "Commodity / generic"]
+    requiredForDraft: true
+    requiredForPublish: true
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [mix-components-section-when-Mix]
+    workbook: 1 Products.record_type
+    fillGuidance: Mix only for blended products that list components.
+
+  - id: listingState
+    tab: 1
+    apiPath: listingState
+    label: Listing state
+    type: enum
+    enumValues: [Active, Legacy]
+    requiredForDraft: false
+    requiredForPublish: false
+    default: Active
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [main-catalogue-when-Active, also-in-catalogue-names-when-Legacy]
+    workbook: 1 Products.listing_state
+    fillGuidance: Active may sell. Legacy is history only and cannot have availability. Not the same as Archive.
+
+  - id: botanicalName
+    tab: 1
+    apiPath: details.botanicalName
+    label: Botanical name
+    type: string
+    maxLength: 180
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Mixes
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [product-hero]
+    workbook: 1 Products.botanical_name
+    fillGuidance: Scientific name, e.g. Lolium multiflorum.
+
+  - id: bredByOrigin
+    tab: 1
+    apiPath: details.bredByOrigin
+    label: Bred by / origin
+    type: string
+    maxLength: 2000
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Mixes
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 1 Products.bred_by_origin
+    fillGuidance: Private. Never copy into public copy.
+
+  - id: alsoKnownAs
+    tab: 1
+    apiPath: details.alsoKnownAs
+    label: Also known as
+    type: string[]
+    itemMaxLength: 120
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 1 Products.also_known_as
+    fillGuidance: Staff aliases only.
+
+  - id: sowingRates
+    tab: 2
+    apiPath: details.sowingRates
+    label: Sowing rates
+    type: object[]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, comparison-table, some-category-chips]
+    workbook: 2 Sowing rates
+    fillGuidance: One row per context with min/max and unit, usually kg/ha.
+
+  - id: rainfallMinMm
+    tab: 2
+    apiPath: details.rainfallMinMm
+    label: Minimum rainfall (mm)
+    type: integer
+    nullable: true
+    minimum: 0
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, category-chips, comparison-table]
+    workbook: 1 Products.rainfall_min_mm
+    fillGuidance: Lowest recommended annual rainfall.
+
+  - id: soilPhMin
+    tab: 2
+    apiPath: details.soilPhMin
+    label: Minimum soil pH
+    type: number
+    nullable: true
+    minimum: 0
+    maximum: 14
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts-when-soils-complete, comparison-table]
+    workbook: 1 Products.soil_ph_min
+    fillGuidance: Lowest suitable pH.
+
+  - id: soilPhScale
+    tab: 2
+    apiPath: details.soilPhScale
+    label: Soil pH scale
+    type: enum
+    enumValues: ["CaCl₂", water]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts-when-soils-complete, comparison-table]
+    workbook: 1 Products.soil_ph_scale
+    fillGuidance: Prefer CaCl₂ unless the source used water.
+
+  - id: soilRangeLightest
+    tab: 2
+    apiPath: details.soilRangeLightest
+    label: Lightest soil
+    type: enum
+    enumValues: ["", LS, S, L, H]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts-when-pH-complete, comparison-table]
+    workbook: 1 Products.soil_range_lightest
+    fillGuidance: LS light sand, S sand, L loam, H heavy.
+
+  - id: soilRangeHeaviest
+    tab: 2
+    apiPath: details.soilRangeHeaviest
+    label: Heaviest soil
+    type: enum
+    enumValues: ["", LS, S, L, H]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts-when-pH-complete, comparison-table]
+    workbook: 1 Products.soil_range_heaviest
+    fillGuidance: Must be as heavy or heavier than lightest soil.
+
+  - id: sowingDepthMinCm
+    tab: 2
+    apiPath: details.sowingDepthMinCm
+    label: Minimum sowing depth (cm)
+    type: number
+    nullable: true
+    minimum: 0
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 1 Products.sowing_depth_min_cm
+    fillGuidance: Staff only. Not on the public page.
+
+  - id: sowingDepthMaxCm
+    tab: 2
+    apiPath: details.sowingDepthMaxCm
+    label: Maximum sowing depth (cm)
+    type: number
+    nullable: true
+    minimum: 0
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 1 Products.sowing_depth_max_cm
+    fillGuidance: Staff only. Not on the public page.
+
+  - id: tolerance
+    tab: 2
+    apiPath: details.tolerance
+    label: Tolerance
+    type: object[]
+    enumValues: ["Low pH", Waterlogging, Salinity, Drought, Frost]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, comparison-table]
+    workbook: 1 Products.tolerance
+    fillGuidance: Toggle stresses. Optional Mild per selected stress.
+
+  - id: endUse
+    tab: 2
+    apiPath: details.endUse
+    label: End use
+    type: enum[]
+    enumValues: [Grazing, Hay, Silage, "Cover crop", "Green manure", Grain, Stockfeed, "Permanent pasture", "Erosion control / stabilisation", "Break crop", Biofumigant, Turf]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts]
+    workbook: 1 Products.end_use
+    fillGuidance: Multi-select intended uses.
+
+  - id: livestock
+    tab: 2
+    apiPath: details.livestock
+    label: Livestock
+    type: enum[]
+    enumValues: [Beef, Dairy, Sheep, Equine, Goat, Chicken, Alpaca, Weaners, "Lamb finishing"]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts]
+    workbook: 1 Products.livestock
+    fillGuidance: Multi-select target animals.
+
+  - id: persistencyType
+    tab: 2
+    apiPath: details.persistencyType
+    label: Persistency type
+    type: enum
+    enumValues: ["", Annual, Biennial, Perennial, "Hybrid perennial", "Short-term (1–2 years)"]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, herbs-category-chips]
+    workbook: 1 Products.persistency_type
+    fillGuidance: How long the stand lasts.
+
+  - id: australianBred
+    tab: 2
+    apiPath: details.australianBred
+    label: Australian bred
+    type: boolean
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 1 Products.australian_bred
+    fillGuidance: Internal flag. Not a public claim.
+
+  - id: companionSpecies
+    tab: 2
+    apiPath: details.companionSpecies
+    label: Companion species
+    type: slug[]
+    itemMaxLength: 180
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 6 Companions
+    fillGuidance: Other catalogue product slugs. Put general advice in grazing notes.
+
+  - id: inoculantGroup
+    tab: 2
+    apiPath: details.inoculantGroup
+    label: Inoculant group
+    type: enum
+    enumValues: [None, C, "G/S", G, S, AL, AM, B, BS, E, "F/E", I]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: legumes-not-grasses-herbs-mixes-biologicals
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 1 Products.inoculant_group
+    fillGuidance: Rhizobium group for staff.
+
+  - id: diseasePestResistance
+    tab: 2
+    apiPath: details.diseasePestResistance
+    label: Disease & pest resistance
+    type: string
+    maxLength: 3000
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [accordion]
+    workbook: 1 Products.disease_pest_resistance
+    fillGuidance: Public resistance notes. Keep out of Description.
+
+  - id: standLifeNotes
+    tab: 2
+    apiPath: details.standLifeNotes
+    label: Stand life notes
+    type: string
+    maxLength: 3000
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [accordion]
+    workbook: 1 Products.stand_life_notes
+    fillGuidance: Persistence and replacement guidance.
+
+  - id: grazingManagementNotes
+    tab: 2
+    apiPath: details.grazingManagementNotes
+    label: Grazing management notes
+    type: string
+    maxLength: 3000
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [accordion]
+    workbook: 1 Products.grazing_management_notes
+    fillGuidance: Planting and grazing advice. Do not repeat Quick facts.
+
+  - id: notes
+    tab: 5
+    apiPath: details.notes
+    label: Internal notes
+    alsoLabelled: Application notes on Biologicals tab 2
+    type: string
+    maxLength: 2000
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 1 Products.internal_notes
+    fillGuidance: Staff only. Same field as Biologicals application notes. Public rates belong in applicationRate.
+
+  - id: ploidy
+    tab: 3
+    apiPath: details.ploidy
+    label: Ploidy
+    type: enum
+    enumValues: ["", Diploid, Tetraploid, Hexaploid, "Mixed (blend)"]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Ryegrasses|Fescues & Other Grasses|Sub-Tropical Grasses|Mixes
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts-grasses-only, ryegrass-chips]
+    workbook: 3 Category specifics.ploidy
+    fillGuidance: Mix editor shows this; Mix Quick facts do not.
+
+  - id: headingDate
+    tab: 3
+    apiPath: details.headingDate
+    label: Heading date
+    type: enum
+    enumValues: ["", "Very early", Early, Mid, "Mid-late", Late]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Ryegrasses|Fescues & Other Grasses
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, ryegrass-chips]
+    workbook: 3 Category specifics.heading_date
+    fillGuidance: Relative heading class.
+
+  - id: endophyte
+    tab: 3
+    apiPath: details.endophyte
+    label: Endophyte
+    type: enum
+    enumValues: ["", Nil, Low, MaxP, Standard]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Ryegrasses|Fescues & Other Grasses
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, fescue-chips]
+    workbook: 3 Category specifics.endophyte
+    fillGuidance: Nil is omitted from category chips.
+
+  - id: headingOffsetDays
+    tab: 3
+    apiPath: details.headingOffsetDays
+    label: Heading offset days
+    type: integer
+    nullable: true
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Ryegrasses
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts]
+    workbook: 3 Category specifics.heading_offset_days
+    fillGuidance: Days versus Nui.
+
+  - id: argtResistant
+    tab: 3
+    apiPath: details.argtResistant
+    label: ARGT resistant
+    type: boolean
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Ryegrasses
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts-when-true]
+    workbook: 3 Category specifics.argt_resistant
+    fillGuidance: Check only for a real ARGT resistance claim.
+
+  - id: maturityDays
+    tab: 3
+    apiPath: details.maturityDays
+    label: Maturity days (Perth)
+    type: integer
+    nullable: true
+    minimum: 0
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Clovers|Serradellas & Medics
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, clover-serradella-chips]
+    workbook: 3 Category specifics.maturity_days
+    fillGuidance: Days to flowering at Perth.
+
+  - id: hardSeedLevel
+    tab: 3
+    apiPath: details.hardSeedLevel
+    label: Hard seed level
+    type: enum
+    enumValues: ["", Soft, Low, Moderate, High, "Very high"]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Clovers|Serradellas & Medics
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, clover-chips]
+    workbook: 3 Category specifics.hard_seed_level
+    fillGuidance: Soft through Very high.
+
+  - id: bloatRisk
+    tab: 3
+    apiPath: details.bloatRisk
+    label: Bloat risk
+    type: enum
+    enumValues: ["", Low, Moderate, High]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Clovers|Serradellas & Medics
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts]
+    workbook: 3 Category specifics.bloat_risk
+    fillGuidance: Closed risk class.
+
+  - id: flowerColour
+    tab: 3
+    apiPath: details.flowerColour
+    label: Flower colour
+    type: enum
+    enumValues: ["", Pink, Yellow, White, Crimson, Red, Purple]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Clovers|Serradellas & Medics
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, serradella-chips]
+    workbook: 3 Category specifics.flower_colour
+    fillGuidance: Closed colour list.
+
+  - id: oestrogenLevel
+    tab: 3
+    apiPath: details.oestrogenLevel
+    label: Oestrogen level
+    type: enum
+    enumValues: ["", None, Trace, Low, High]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Clovers
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts]
+    workbook: 3 Category specifics.oestrogen_level
+    fillGuidance: Clovers only.
+
+  - id: winterActivity
+    tab: 3
+    apiPath: details.winterActivity
+    label: Winter activity (1–10)
+    type: integer
+    nullable: true
+    minimum: 1
+    maximum: 10
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Lucerne
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, lucerne-chips]
+    workbook: 3 Category specifics.winter_activity
+    fillGuidance: Integer 1–10.
+
+  - id: growthSeason
+    tab: 3
+    apiPath: details.growthSeason
+    label: Growth season
+    type: enum
+    enumValues: ["", Summer-active, "Winter-active / Mediterranean", Year-round, Warm-season]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Fescues & Other Grasses|Sub-Tropical Grasses
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, fescue-chips]
+    workbook: 3 Category specifics.growth_season
+    fillGuidance: Seasonal growth class.
+
+  - id: growingSeason
+    tab: 3
+    apiPath: details.growingSeason
+    label: Growing season
+    type: enum
+    enumValues: ["", Summer, Winter, Either]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Forage & Grain Crops
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, forage-chips]
+    workbook: 3 Category specifics.growing_season
+    fillGuidance: Summer, Winter, or Either.
+
+  - id: weeksToFirstGrazing
+    tab: 3
+    apiPath: details.weeksToFirstGrazing
+    label: Weeks to first grazing
+    type: string
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Forage & Grain Crops
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, forage-chips]
+    workbook: 3 Category specifics.weeks_to_first_grazing
+    fillGuidance: Short text such as 6-8.
+
+  - id: prussicAcidRisk
+    tab: 3
+    apiPath: details.prussicAcidRisk
+    label: Prussic acid risk
+    type: enum
+    enumValues: ["", None, Low, "Standard – manage"]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Forage & Grain Crops
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts]
+    workbook: 3 Category specifics.prussic_acid_risk
+    fillGuidance: Closed risk class.
+
+  - id: regrowth
+    tab: 3
+    apiPath: details.regrowth
+    label: Regrowth
+    type: enum
+    enumValues: ["", "Single cut", "Multi-cut / regrazes"]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Forage & Grain Crops
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts]
+    workbook: 3 Category specifics.regrowth
+    fillGuidance: Single cut or multi-cut.
+
+  - id: floweringWindow
+    tab: 3
+    apiPath: details.floweringWindow
+    label: Flowering window
+    type: string
+    maxLength: 80
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Mixes
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    note: Category cards would chip this if the public API included it. toPublicDetails currently omits it.
+    workbook: 3 Category specifics.flowering_window
+    fillGuidance: Short season text such as Aug-Nov. Not currently public.
+
+  - id: formulationYear
+    tab: 3
+    apiPath: details.formulationYear
+    label: Formulation year
+    type: string
+    maxLength: 20
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Mixes
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [mix-table-caption]
+    workbook: mix details
+    fillGuidance: Year or season of this mix recipe.
+
+  - id: components
+    tab: 3
+    apiPath: details.components
+    label: Mix components
+    type: object[]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Mixes
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [mix-components-table]
+    workbook: 5 Mix components
+    fillGuidance: One card per ingredient. Never substitute the linked product blurb.
+
+  - id: components.speciesName
+    tab: 3
+    apiPath: details.components[].speciesName
+    label: Display name
+    type: string
+    maxLength: 120
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Mixes
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [mix-components-table]
+    workbook: 5 Mix components.component_name
+    fillGuidance: Required if the row has any other content.
+
+  - id: components.productLink
+    tab: 3
+    apiPath: details.components[].productLink
+    label: Linked product
+    type: slug
+    maxLength: 180
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Mixes
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [mix-component-link]
+    workbook: 5 Mix components.component_slug
+    fillGuidance: Optional catalogue slug. Not self. Not duplicated.
+
+  - id: components.inclusionRate
+    tab: 3
+    apiPath: details.components[].inclusionRate
+    label: Inclusion rate
+    type: number
+    nullable: true
+    minimum: 0
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Mixes
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [mix-rate-column-when-any-rate]
+    workbook: 5 Mix components.inclusion_rate
+    fillGuidance: Percentage rates cannot exceed 100.
+
+  - id: components.unit
+    tab: 3
+    apiPath: details.components[].unit
+    label: Unit
+    type: string
+    maxLength: 20
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Mixes
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [mix-rate-column-when-any-rate]
+    workbook: 5 Mix components.rate_unit
+    fillGuidance: Suggested %, kg/ha, g/ha, kg.
+
+  - id: components.description
+    tab: 3
+    apiPath: details.components[].description
+    label: Public description
+    type: string
+    maxLength: 10000
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Mixes
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [mix-component-description]
+    workbook: 5 Mix components.component_description
+    fillGuidance: Mix-specific copy. Blank means no description.
+
+  - id: components.note
+    tab: 3
+    apiPath: details.components[].note
+    label: Internal note
+    type: string
+    maxLength: 4000
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Mixes
+    publicApi: true
+    visibility: publicApi
+    customerSurfaces: []
+    workbook: 5 Mix components.formulation_note
+    fillGuidance: Staff only. Shared ProductComponent schema currently leaves this on the public API.
+
+  - id: productForm
+    tab: 3
+    apiPath: details.productForm
+    label: Product form
+    type: string
+    maxLength: 120
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, biologicals-chips]
+    workbook: 3 Category specifics.product_form
+    fillGuidance: Powder, Liquid, Peat, Granule, or similar.
+
+  - id: applicationRate
+    tab: 3
+    apiPath: details.applicationRate
+    label: Application rate
+    type: string
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, biologicals-chips]
+    workbook: 3 Category specifics.application_rate
+    fillGuidance: Public rate text, not internal notes.
+
+  - id: ecocertApproved
+    tab: 3
+    apiPath: details.ecocertApproved
+    label: ECOCERT approved
+    type: boolean
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: Biologicals
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 3 Category specifics.ecocert_approved
+    fillGuidance: Staff flag. Public claims use certification on Selling.
+
+  - id: saleLines
+    tab: 4
+    apiPath: saleLines
+    label: Sale lines
+    type: object[]
+    requiredForDraft: false
+    requiredForPublish: unique-stock-codes-and-exactly-one-default-if-any
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [how-its-sold, order-panel]
+    workbook: 4 Sale lines
+    fillGuidance: One card per warehouse stock code.
+
+  - id: saleLines.isDefault
+    tab: 4
+    apiPath: saleLines[].isDefault
+    label: Default
+    type: boolean
+    requiredForDraft: false
+    requiredForPublish: exactly-one-if-any-lines
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [order-panel-preferred-line]
+    workbook: 4 Sale lines.is_default
+    fillGuidance: Exactly one default when lines exist.
+
+  - id: saleLines.stockCode
+    tab: 4
+    apiPath: saleLines[].stockCode
+    label: Stock code
+    type: string
+    requiredForDraft: false
+    requiredForPublish: unique-if-any-lines
+    visibleWhen: always
+    publicApi: true
+    visibility: publicApi
+    customerSurfaces: []
+    workbook: 4 Sale lines.stock_code
+    fillGuidance: Globally unique warehouse code. Not shown in How it's sold.
+
+  - id: saleLines.seedForm
+    tab: 4
+    apiPath: saleLines[].seedForm
+    label: Seed form
+    type: enum
+    enumValues: ["", "Bare / de-hulled", Podded, Coated, "Coated + Gaucho", "BioNPK-S coated", "Goldstrike coated", Scarified, "Lime coated"]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [how-its-sold, some-category-chips]
+    workbook: 4 Sale lines.seed_form
+    fillGuidance: Public form. Blank displays as Bare.
+
+  - id: saleLines.seedGrade
+    tab: 4
+    apiPath: saleLines[].seedGrade
+    label: Seed grade
+    type: enum
+    enumValues: ["", Certified, Tested, "Certified & Tested", VNS]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: publicApi
+    customerSurfaces: []
+    workbook: 4 Sale lines.seed_grade
+    fillGuidance: Staff grading. Not in How it's sold.
+
+  - id: saleLines.packKg
+    tab: 4
+    apiPath: saleLines[].packKg
+    label: Pack weight
+    type: number
+    nullable: true
+    minimum: 0
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [how-its-sold, order-panel-available-in]
+    workbook: 4 Sale lines.pack_kg
+    fillGuidance: Numeric pack size.
+
+  - id: saleLines.packUnit
+    tab: 4
+    apiPath: saleLines[].packUnit
+    label: Pack unit
+    type: string
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [how-its-sold, order-panel-available-in]
+    workbook: 4 Sale lines.pack_unit
+    fillGuidance: Usually kg.
+
+  - id: saleLines.availability
+    tab: 4
+    apiPath: saleLines[].availability
+    label: Availability
+    type: enum
+    enumValues: ["Good stock", "Low stock", "Very low", Unavailable]
+    nullable: true
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [how-its-sold, product-stock-pill-when-no-override]
+    workbook: 4 Sale lines.availability
+    fillGuidance: Forced Unavailable when listingState is Legacy. Blank is TBA in the editor.
+
+  - id: saleLines.priceDisplay
+    tab: 4
+    apiPath: saleLines[].priceDisplay
+    label: Price display
+    type: string
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [order-panel]
+    workbook: 4 Sale lines.price_display
+    fillGuidance: Customer-facing string. Not a How it's sold column.
+
+  - id: saleLines.sortOrder
+    tab: 4
+    apiPath: saleLines[].sortOrder
+    label: Sale-line sort order
+    type: integer
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: editor-assigns-on-add
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [category-grid-after-featured, how-its-sold-order]
+    workbook: 4 Sale lines.sort_order
+    fillGuidance: Not the product details.sortOrder field.
+
+  - id: availabilityOverride
+    tab: 4
+    apiPath: availabilityOverride
+    label: Availability override
+    type: enum
+    enumValues: ["Good stock", "Low stock", "Very low", Unavailable]
+    nullable: true
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: [derived-product-status]
+    workbook: product availability fields
+    fillGuidance: Leave derived unless the product-level pill must differ from the lines. Legacy ignores it.
+
+  - id: pbrProtected
+    tab: 4
+    apiPath: details.pbrProtected
+    label: PBR protected
+    type: boolean
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [sidebar-pbr]
+    workbook: 1 Products.pbr_protected
+    fillGuidance: Check only for PBR varieties.
+
+  - id: pbrDetails
+    tab: 4
+    apiPath: details.pbrDetails
+    label: PBR details
+    type: string
+    maxLength: 300
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [sidebar-pbr]
+    workbook: product details
+    fillGuidance: Shown as PBR text when protected; otherwise the page says Protected.
+
+  - id: licenceRestriction
+    tab: 4
+    apiPath: details.licenceRestriction
+    label: Licence restriction
+    type: string
+    maxLength: 1000
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 1 Products.licence_restriction
+    fillGuidance: Private production or resale restriction.
+
+  - id: certification
+    tab: 4
+    apiPath: details.certification
+    label: Certification
+    type: enum[]
+    enumValues: ["ASF Code of Practice", "Certified Quality Assured Seed", "Certified seed", "Licensed production"]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [sidebar-certification]
+    workbook: 1 Products.certification
+    fillGuidance: Public certification list.
+
+  - id: isThirdPartyProduct
+    tab: 4
+    apiPath: details.isThirdPartyProduct
+    label: Third-party product
+    type: boolean
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 1 Products.is_third_party_product
+    fillGuidance: Private sourcing flag.
+
+  - id: supplierName
+    tab: 4
+    apiPath: details.supplierName
+    label: Supplier name
+    type: string
+    maxLength: 180
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 1 Products.supplier_name
+    fillGuidance: Private. Never copy into public copy.
+
+  - id: tagline
+    tab: 5
+    apiPath: details.tagline
+    label: Tagline
+    type: string
+    maxLength: 60
+    requiredForDraft: false
+    requiredForPublish: true
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [product-hero, category-cards, related-cards, also-popular, other-listings]
+    workbook: 1 Products.tagline
+    fillGuidance: Short promise. No ™/®.
+
+  - id: blurb
+    tab: 5
+    apiPath: details.blurb
+    label: Blurb
+    type: string
+    requiredForDraft: false
+    requiredForPublish: true
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [product-intro, seo-fallback]
+    workbook: 1 Products.blurb
+    fillGuidance: Opening paragraph. Not the full description.
+
+  - id: keyAttributes
+    tab: 5
+    apiPath: details.keyAttributes
+    label: Key attributes
+    type: string[]
+    requiredForDraft: false
+    requiredForPublish: true
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [product-bullets]
+    workbook: 1 Products.key_attributes
+    fillGuidance: At least one non-blank strength. Aim for 5–6.
+
+  - id: description
+    tab: 5
+    apiPath: details.description
+    label: Description
+    type: string
+    maxLength: 200000
+    requiredForDraft: false
+    requiredForPublish: true
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [about-this-variety]
+    workbook: 1 Products.description
+    fillGuidance: Paragraphs separated by blank lines. No Quick facts, breeder, or supplier.
+
+  - id: distributionNote
+    tab: 5
+    apiPath: details.distributionNote
+    label: Distribution note
+    type: string
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [highlighted-aside]
+    workbook: 1 Products.distribution_note
+    fillGuidance: Optional. Leave blank on most products.
+
+  - id: descriptionSource
+    tab: 5
+    apiPath: descriptionSource
+    label: Description source
+    type: string
+    maxLength: 240
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 1 Products.description_source
+    fillGuidance: Copy provenance.
+
+  - id: websiteUrlLegacy
+    tab: 5
+    apiPath: websiteUrlLegacy
+    label: Legacy website URL
+    type: string
+    maxLength: 500
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 1 Products.website_url
+    fillGuidance: Canonical old URL. Extra aliases belong in redirects.
+
+  - id: photos
+    tab: 5
+    apiPath: details.photos
+    label: Photos
+    type: object[]
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [product-hero, related-cards, also-popular, social-fallback]
+    workbook: 1 Products.photo_1
+    fillGuidance: First non-blank src is the hero. Category grids currently use placeholders.
+
+  - id: techSheet
+    tab: 5
+    apiPath: techSheet
+    label: Tech sheet URL
+    type: string
+    maxLength: 240
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [hero-download]
+    workbook: 1 Products.tech_sheet_pdf_path
+    fillGuidance: PDF path or URL.
+
+  - id: relatedProducts
+    tab: 5
+    apiPath: details.relatedProducts
+    label: Related products
+    type: slug[]
+    itemMaxLength: 180
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [related-products]
+    workbook: product related slugs
+    fillGuidance: Public product slugs in display order.
+
+  - id: sortOrder
+    tab: 5
+    apiPath: details.sortOrder
+    label: Sort order
+    type: integer
+    nullable: true
+    minimum: 0
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: false
+    visibility: adminOnly
+    customerSurfaces: []
+    workbook: 1 Products.sort_order
+    fillGuidance: Stored workbook hint. Current public pages do not sort by this.
+
+  - id: featured
+    tab: 5
+    apiPath: details.featured
+    label: Featured product
+    type: boolean
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [category-grid-first, also-popular-preference]
+    workbook: 1 Products.featured
+    fillGuidance: Merchandising flag. Use sparingly.
+
+  - id: seoTitle
+    tab: 6
+    apiPath: details.seoTitle
+    label: SEO title
+    type: string
+    maxLength: 180
+    requiredForDraft: false
+    requiredForPublish: true
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [document-title]
+    workbook: 7 Website SEO
+    fillGuidance: Plain text. ™/® are stripped. Not the H1.
+
+  - id: seoDescription
+    tab: 6
+    apiPath: details.seoDescription
+    label: SEO description
+    type: string
+    maxLength: 2000
+    requiredForDraft: false
+    requiredForPublish: true
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [meta-description, json-ld-description-fallback]
+    workbook: 7 Website SEO.meta_description
+    fillGuidance: Plain search snippet. ™/® are stripped.
+
+  - id: socialTitle
+    tab: 6
+    apiPath: details.socialTitle
+    label: Social sharing title
+    type: string
+    maxLength: 180
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [open-graph-title]
+    workbook: 7 Website SEO.social_title
+    fillGuidance: Optional. Blank uses SEO title. No trademarks.
+
+  - id: socialDescription
+    tab: 6
+    apiPath: details.socialDescription
+    label: Social sharing description
+    type: string
+    maxLength: 2000
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [open-graph-description]
+    workbook: 7 Website SEO.social_description
+    fillGuidance: Optional. Blank uses SEO description. No trademarks.
+
+  - id: socialImage
+    tab: 6
+    apiPath: details.socialImage
+    label: Social sharing image
+    type: string
+    maxLength: 500
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [open-graph-image]
+    workbook: 7 Website SEO.social_image
+    fillGuidance: Photo src or URL. Blank uses the hero image.
+
+  - id: canonicalUrl
+    tab: 6
+    apiPath: details.canonicalUrl
+    label: Canonical URL override
+    type: url
+    maxLength: 500
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [canonical-link, open-graph-url]
+    workbook: 7 Website SEO.canonical_url
+    fillGuidance: Leave blank for /product/{slug}. Not a redirect.
+
+  - id: robotsIndex
+    tab: 6
+    apiPath: details.robotsIndex
+    label: Allow search engines to index this product
+    type: boolean
+    requiredForDraft: false
+    requiredForPublish: false
+    default: true
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [robots-meta]
+    workbook: 7 Website SEO.robots_index
+    fillGuidance: Off publishes noindex. Sitemap is still Published + Active.

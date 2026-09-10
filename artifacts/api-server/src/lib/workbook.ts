@@ -2,11 +2,12 @@ import { createHash } from "node:crypto";
 import * as XLSX from "xlsx";
 import { eq } from "drizzle-orm";
 import {
-  catalogueCategoriesTable, db, normalizeProductDetails, productOptionsTable,
-  productDraftsTable, productsTable, redirectsTable, saleLinesTable,
+  applyListingAvailability,
+  catalogueCategoriesTable, db, forSearchMetadata, isActiveListing, normalizeProductDetails, productOptionsTable,
+  productDraftsTable, productsTable, redirectsTable, resolveListingState, saleLinesTable,
 } from "@workspace/db";
 
-export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "6 Companions", "7 Website SEO"] as const;
+export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "6 Companions", "7 Website SEO", "8 Categories", "9 Redirects"] as const;
 type Row = Record<string, unknown>;
 type SheetReport = { rows: number; accepted: number; skipped: number; reasons: string[] };
 export type WorkbookReport = {
@@ -35,7 +36,7 @@ const SPECIFICS: Record<string, string> = {
   bloat_risk: "bloatRisk", flower_colour: "flowerColour", winter_activity: "winterActivity",
   growing_season: "growingSeason", weeks_to_first_grazing: "weeksToFirstGrazing",
   prussic_acid_risk: "prussicAcidRisk", regrowth: "regrowth", flowering_window: "floweringWindow",
-  product_form: "productForm", application_rate: "applicationRate",
+  product_form: "productForm", application_rate: "applicationRate", ecocert_approved: "ecocertApproved",
 };
 const NUMBER_KEYS = new Set(["rainfallMinMm", "soilPhMin", "sowingDepthMinCm", "sowingDepthMaxCm", "sortOrder",
   "headingOffsetDays", "maturityDays", "winterActivity"]);
@@ -55,6 +56,7 @@ const OPTION_ALIASES: Record<string, string> = {
   soil_range_lightest: "soil_code", soil_range_heaviest: "soil_code",
   is_default: "yes_no", australian_bred: "yes_no", ecocert_approved: "yes_no", pbr_protected: "yes_no",
   is_third_party_product: "yes_no", featured: "yes_no", in_current_printed_guide: "yes_no", argt_resistant: "yes_no",
+  robots_index: "yes_no", active: "yes_no",
 };
 
 function optionKey(value: string) {
@@ -78,11 +80,20 @@ const applicableSpecifics: Record<string, Set<string>> = {
   "Sub-Tropical Grasses": new Set(["ploidy", "growth_season"]),
   "Forage & Grain Crops": new Set(["growing_season", "weeks_to_first_grazing", "prussic_acid_risk", "regrowth"]),
   "Mixes": new Set(["flowering_window"]),
-  "Biologicals": new Set(["product_form", "application_rate"]),
+  "Biologicals": new Set(["product_form", "application_rate", "ecocert_approved"]),
 };
 
 function cell(value: unknown) { return value == null ? "" : String(value).trim(); }
 function isNull(value: unknown) { return cell(value).toUpperCase() === "NULL"; }
+function importedListingState(row: Row, existing: { listingState?: unknown } | undefined) {
+  if (isNull(row.listing_state) && isNull(row.listing_override)) {
+    return resolveListingState(existing);
+  }
+  const state = isNull(row.listing_state) ? "" : cell(row.listing_state);
+  const override = isNull(row.listing_override) ? "" : cell(row.listing_override);
+  if (state || override) return resolveListingState({ listingState: state, listingOverride: override });
+  return resolveListingState(existing);
+}
 function yn(value: unknown) { const v = cell(value).toUpperCase(); return v === "Y" ? true : v === "N" ? false : undefined; }
 function num(value: unknown) {
   const text = cell(value);
@@ -122,8 +133,49 @@ function publishContentErrors(payload: { name: string; slug: string; category: s
 }
 function applySeoRow(details: ReturnType<typeof normalizeProductDetails>, row: Row | undefined) {
   if (!row) return;
-  details.seoTitle = cell(row.seo_title) || cell(row.menu_label);
-  details.seoDescription = cell(row.meta_description);
+  details.seoTitle = forSearchMetadata(cell(row.seo_title) || cell(row.menu_label));
+  details.seoDescription = forSearchMetadata(cell(row.meta_description));
+  if (cell(row.social_title) || isNull(row.social_title)) {
+    details.socialTitle = isNull(row.social_title) ? "" : forSearchMetadata(cell(row.social_title));
+  }
+  if (cell(row.social_description) || isNull(row.social_description)) {
+    details.socialDescription = isNull(row.social_description) ? "" : forSearchMetadata(cell(row.social_description));
+  }
+  if (cell(row.social_image) || isNull(row.social_image)) {
+    details.socialImage = isNull(row.social_image) ? "" : cell(row.social_image);
+  }
+  if (cell(row.canonical_url) || isNull(row.canonical_url)) {
+    details.canonicalUrl = isNull(row.canonical_url) ? "" : cell(row.canonical_url);
+  }
+  if (yn(row.robots_index) !== undefined || isNull(row.robots_index)) {
+    details.robotsIndex = isNull(row.robots_index) ? true : yn(row.robots_index)!;
+  }
+}
+
+function photoValue(details: ReturnType<typeof normalizeProductDetails>, index: number) {
+  const photo = details.photos[index];
+  return photo?.src || photo?.file || "";
+}
+
+function applyPhotoColumns(details: Record<string, unknown>, row: Row) {
+  const slots = ["Photo 1 · Hero", "Photo 2", "Photo 3"];
+  const current = Array.isArray(details.photos) ? [...details.photos] as ProductPhotoRow[] : [];
+  let touched = false;
+  for (const [index, slot] of slots.entries()) {
+    const column = `photo_${index + 1}`;
+    if (!cell(row[column]) && !isNull(row[column])) continue;
+    touched = true;
+    const value = isNull(row[column]) ? "" : cell(row[column]);
+    while (current.length <= index) current.push({ slot: slots[current.length], file: "", rating: "", src: "" });
+    current[index] = { slot: current[index]?.slot || slot, file: value, rating: current[index]?.rating || "", src: value };
+  }
+  if (touched) details.photos = current;
+}
+
+type ProductPhotoRow = { slot: string; file: string; rating: string; src: string };
+
+function isCataloguePath(value: string) {
+  return value.startsWith("/") && !value.includes("://") && !/\s/.test(value);
 }
 function requiredPublishContentFingerprint(payload: { name: string; slug: string; category: string; details: ReturnType<typeof normalizeProductDetails> }) {
   const { details } = payload;
@@ -177,6 +229,22 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
     let skipped = 0; const reasons: string[] = [];
     rows[name].forEach((row, i) => {
       const rowNo = i + 2, slugKey = name === "5 Mix components" ? "mix_slug" : ["2 Sowing rates", "3 Category specifics", "6 Companions"].includes(name) ? "slug" : "";
+      if (name === "8 Categories") {
+        const slug = cell(row.slug);
+        if (!slug && Object.values(row).some((value) => cell(value))) {
+          issues.push({ sheet: name, row: rowNo, column: "slug", problem: "Category slug is required" });
+        } else if (slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+          issues.push({ sheet: name, row: rowNo, column: "slug", problem: `Invalid category slug "${slug}"` });
+        }
+      }
+      if (name === "9 Redirects") {
+        const fromPath = cell(row.from_path), toPath = cell(row.to_path);
+        if (!fromPath && !toPath) { skipped++; reasons.push(`row ${rowNo}: blank redirect`); }
+        else {
+          if (!isCataloguePath(fromPath)) issues.push({ sheet: name, row: rowNo, column: "from_path", problem: "Redirect source must be a path starting with /" });
+          if (!isCataloguePath(toPath)) issues.push({ sheet: name, row: rowNo, column: "to_path", problem: "Redirect target must be a path starting with /" });
+        }
+      }
       if (name === "1 Products") {
         const lifecycle = cell(row.status);
         if (lifecycle && !LIFECYCLE_STATUSES.has(lifecycle)) {
@@ -233,11 +301,12 @@ function applyProductRow(details: Record<string, unknown>, row: Row) {
   }
   for (const [column, key] of Object.entries(ARRAY_KEYS)) if (cell(row[column]) || isNull(row[column])) details[key] = isNull(row[column]) ? [] : pipe(row[column]);
   for (const [column, key] of Object.entries(BOOL_COLUMNS)) if (yn(row[column]) !== undefined || isNull(row[column])) details[key] = isNull(row[column]) ? false : yn(row[column]);
+  if (cell(row.category) !== "Biologicals") details.ecocertApproved = false;
   if (cell(row.tolerance) || isNull(row.tolerance)) details.tolerance = isNull(row.tolerance) ? [] : pipe(row.tolerance).flatMap((v) => {
     const mild = /^mild\s+/i.test(v), name = v.replace(/^mild\s+/i, "");
     return ["Low pH", "Waterlogging", "Salinity", "Drought", "Frost"].includes(name) ? [{ name, mild }] : [];
   });
-  if (cell(row.photo_1) || isNull(row.photo_1)) details.photos = isNull(row.photo_1) ? [] : [{ slot: "photo_1", file: cell(row.photo_1), rating: "", src: cell(row.photo_1) }];
+  applyPhotoColumns(details, row);
   if (cell(row.formulation_year) || isNull(row.formulation_year)) details.formulationYear = isNull(row.formulation_year) ? "" : cell(row.formulation_year);
 }
 
@@ -317,6 +386,39 @@ export async function commitWorkbook(content: Buffer, token: string) {
       const child = categories.find((item) => item.parentId === root?.id && normal(item.name) === normal(subcategory));
       return { id: child?.id ?? (root && !subcategory ? root.id : null), category: root?.name ?? category };
     };
+    for (const row of rows["8 Categories"]) {
+      const slug = cell(row.slug); if (!slug) continue;
+      const parentSlug = cell(row.parent_slug);
+      const parent = parentSlug ? categories.find((category) => category.parentId === null && category.slug === parentSlug) : null;
+      if (parentSlug && !parent) continue;
+      const match = parent
+        ? categories.find((category) => category.parentId === parent.id && (category.slug === slug || category.slug === childTaxonomySlug(parent.slug, slug)))
+        : categories.find((category) => category.parentId === null && category.slug === slug);
+      const fields = {
+        name: isNull(row.name) ? match?.name ?? slug : cell(row.name) || match?.name || slug,
+        groupLabel: isNull(row.group_label) ? match?.groupLabel ?? (parent?.name || "Products") : cell(row.group_label) || match?.groupLabel || parent?.name || "Products",
+        lead: isNull(row.lead) ? "" : cell(row.lead) || match?.lead || "",
+        pageHeading: isNull(row.page_heading) ? "" : cell(row.page_heading) || match?.pageHeading || "",
+        seoTitle: isNull(row.seo_title) ? "" : forSearchMetadata(cell(row.seo_title) || match?.seoTitle || ""),
+        seoDescription: isNull(row.seo_description) ? "" : forSearchMetadata(cell(row.seo_description) || match?.seoDescription || ""),
+        rainfall: isNull(row.rainfall) ? "" : cell(row.rainfall) || match?.rainfall || "",
+        image: isNull(row.image) ? "" : cell(row.image) || match?.image || "",
+        sortOrder: isNull(row.sort_order) ? 0 : num(row.sort_order) ?? match?.sortOrder ?? 0,
+        active: yn(row.active) ?? match?.active ?? true,
+      };
+      if (match) {
+        const [updated] = await tx.update(catalogueCategoriesTable).set({ ...fields, updatedAt: new Date() })
+          .where(eq(catalogueCategoriesTable.id, match.id)).returning();
+        if (updated) categories = categories.map((category) => category.id === updated.id ? updated : category);
+      } else {
+        const [inserted] = await tx.insert(catalogueCategoriesTable).values({
+          parentId: parent?.id ?? null,
+          slug: parent ? childTaxonomySlug(parent.slug, slug) : slug,
+          ...fields,
+        }).returning();
+        if (inserted) categories = [...categories, inserted];
+      }
+    }
     for (const [listName, valuesSet] of lists(book)) {
       let order = 0; for (const value of valuesSet) await tx.insert(productOptionsTable).values({ listName, value, sortOrder: order++ }).onConflictDoUpdate({ target: [productOptionsTable.listName, productOptionsTable.value], set: { sortOrder: order - 1 } });
     }
@@ -348,16 +450,13 @@ export async function commitWorkbook(content: Buffer, token: string) {
         descriptionSource: isNull(row.description_source) ? "" : cell(row.description_source) || existing?.descriptionSource || "",
         websiteUrlLegacy: isNull(row.website_url) ? ""
           : cell(row.website_url) || cell(seoRow?.product_url) || existing?.websiteUrlLegacy || "",
-        // A workbook Legacy row without a sale line must not be interpreted as
-        // an old pre-v2 product by public listing code.  An explicit user
-        // override still wins when it is supplied by the workbook.
-        listingOverride: isNull(row.listing_override) ? null : cell(row.listing_override)
-          || (cell(row.listing_state) === "Legacy" && !rows["4 Sale lines"].some((line) => cell(line.slug) === slug) ? "Force legacy" : existing?.listingOverride || null),
+        listingState: importedListingState(row, existing),
         availabilityOverride: isNull(row.availability_override) ? null
-          : (cell(row.availability_override) as typeof existing.availabilityOverride) || existing?.availabilityOverride || null,
+          : (cell(row.availability_override) as "Good stock" | "Low stock" | "Very low" | "Unavailable") || existing?.availabilityOverride || null,
         publishStatus: lifecycle, publishedAt: lifecycle === "Published" ? existing?.publishedAt ?? new Date() : null,
         details: normalizeProductDetails(details, existing?.packSize ?? ""), updatedAt: new Date(),
       };
+      const listingPayload = applyListingAvailability(payload);
       if (lifecycle === "Published") {
         const missing = publishContentErrors({ name: payload.name, slug, category: payload.category, details: payload.details });
         const existingPayload = existing && {
@@ -378,8 +477,8 @@ export async function commitWorkbook(content: Buffer, token: string) {
           throw new Error(`PUBLISH_VALIDATION:${slug}:${missing.join(", ")}`);
         }
       }
-      if (existing) await tx.update(productsTable).set(payload).where(eq(productsTable.id, existing.id));
-      else await tx.insert(productsTable).values({ ...payload, slug });
+      if (existing) await tx.update(productsTable).set(listingPayload).where(eq(productsTable.id, existing.id));
+      else await tx.insert(productsTable).values({ ...listingPayload, slug });
       const [imported] = await tx.select().from(productsTable).where(eq(productsTable.slug, slug));
       if (imported) await tx.delete(productDraftsTable).where(eq(productDraftsTable.productId, imported.id));
     }
@@ -406,13 +505,18 @@ export async function commitWorkbook(content: Buffer, token: string) {
     for (const row of rows["7 Website SEO"]) {
       const slug = cell(row.product_slug) || cell(row.website_slug);
       await updateDetails(slug, (d) => {
-        const seoTitle = cell(row.seo_title) || cell(row.menu_label);
-        if (cell(row.meta_description)) d.seoDescription = cell(row.meta_description);
+        const seoTitle = forSearchMetadata(cell(row.seo_title) || cell(row.menu_label));
+        if (cell(row.meta_description)) d.seoDescription = forSearchMetadata(cell(row.meta_description));
         if (seoTitle) d.seoTitle = seoTitle;
       });
       const redirect = redirectFromNote(row); if (redirect) await tx.insert(redirectsTable).values({ fromPath: redirect.from, toPath: redirect.to }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath: redirect.to, updatedAt: new Date() } });
     }
-    for (const redirect of [{ from: "/product/souwest-pasture-mix", to: "/product/souwest-pasture-mix-2" }, { from: "/product/icon-lucerne", to: "/products/lucerne#catalogue" }]) await tx.insert(redirectsTable).values({ fromPath: redirect.from, toPath: redirect.to }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath: redirect.to, updatedAt: new Date() } });
+    for (const redirect of [{ from: "/product/souwest-pasture-mix-2", to: "/product/souwest-pasture-mix" }, { from: "/product/icon-lucerne", to: "/products/lucerne#catalogue" }]) await tx.insert(redirectsTable).values({ fromPath: redirect.from, toPath: redirect.to }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath: redirect.to, updatedAt: new Date() } });
+    for (const row of rows["9 Redirects"]) {
+      const fromPath = cell(row.from_path), toPath = cell(row.to_path);
+      if (!isCataloguePath(fromPath) || !isCataloguePath(toPath)) continue;
+      await tx.insert(redirectsTable).values({ fromPath, toPath }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath, updatedAt: new Date() } });
+    }
     // Sale lines are the one keyed sheet with replacement semantics: a price
     // list is authoritative for every workbook product, but products omitted
     // from the workbook are never touched.
@@ -422,7 +526,7 @@ export async function commitWorkbook(content: Buffer, token: string) {
     }
     for (const row of rows["4 Sale lines"]) {
       const product = productBySlug.get(cell(row.slug)), stockCode = cell(row.stock_code); if (!product || !stockCode) continue;
-      const line = { productId: product.id, stockCode, seedForm: cell(row.seed_form), seedGrade: cell(row.seed_grade), packKg: num(row.pack_kg)?.toString() ?? null, packUnit: cell(row.pack_unit) || "kg", availability: cell(row.availability) || null, priceDisplay: cell(row.price_display) || "Contact for pricing", isDefault: yn(row.is_default) ?? false, sortOrder: num(row.sort_order) ?? 0 };
+      const line = { productId: product.id, stockCode, seedForm: cell(row.seed_form), seedGrade: cell(row.seed_grade), packKg: num(row.pack_kg)?.toString() ?? null, packUnit: cell(row.pack_unit) || "kg", availability: isActiveListing(product) ? (cell(row.availability) || null) : "Unavailable", priceDisplay: cell(row.price_display) || "Contact for pricing", isDefault: yn(row.is_default) ?? false, sortOrder: num(row.sort_order) ?? 0 };
       await tx.insert(saleLinesTable).values(line).onConflictDoUpdate({ target: saleLinesTable.stockCode, set: line });
     }
   });
@@ -431,7 +535,10 @@ export async function commitWorkbook(content: Buffer, token: string) {
 
 export async function exportWorkbook() {
   const book = XLSX.utils.book_new(), products = await db.select().from(productsTable), lines = await db.select().from(saleLinesTable);
-  const taxonomy = new Map((await db.select().from(catalogueCategoriesTable)).map((category) => [category.id, category.name]));
+  const categories = await db.select().from(catalogueCategoriesTable);
+  const redirects = await db.select().from(redirectsTable);
+  const taxonomy = new Map(categories.map((category) => [category.id, category.name]));
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
   const options = await db.select().from(productOptionsTable);
   const optionLists = new Map<string, Set<string>>();
   for (const option of options.sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id)) {
@@ -466,16 +573,17 @@ export async function exportWorkbook() {
       tolerance: listedPipe("tolerance", details.tolerance.map((x) => `${x.mild ? "Mild " : ""}${x.name}`)),
       inoculant_group: listed("inoculant_group", details.inoculantGroup),
       seed_treatment: listedPipe("seed_treatment", details.seedTreatment),
-      ecocert_approved: details.ecocertApproved ? "Y" : "N", end_use: listedPipe("end_use", details.endUse),
+      ecocert_approved: p.category === "Biologicals" && details.ecocertApproved ? "Y" : "N", end_use: listedPipe("end_use", details.endUse),
       livestock: listedPipe("livestock", details.livestock), disease_pest_resistance: details.diseasePestResistance,
       stand_life_notes: details.standLifeNotes, grazing_management_notes: details.grazingManagementNotes,
       pbr_protected: details.pbrProtected ? "Y" : "N", pbr_details: details.pbrDetails,
       licence_restriction: details.licenceRestriction, certification: listedPipe("certification", details.certification),
       is_third_party_product: details.isThirdPartyProduct ? "Y" : "N", supplier_name: details.supplierName,
-      formulation_year: details.formulationYear, photo_1: details.photos[0]?.src || details.photos[0]?.file || "",
+      formulation_year: details.formulationYear,
+      photo_1: photoValue(details, 0), photo_2: photoValue(details, 1), photo_3: photoValue(details, 2),
       in_current_printed_guide: details.inCurrentPrintedGuide ? "Y" : "N", featured: details.featured ? "Y" : "N",
       related_products: details.relatedProducts.join("|"), sort_order: details.sortOrder,
-      listing_override: p.listingOverride ?? "", availability_override: p.availabilityOverride ?? "",
+      listing_state: p.listingState, listing_override: "", availability_override: p.availabilityOverride ?? "",
        status: p.publishStatus === "Published" && publishContentErrors({
          name: p.name, slug: p.slug, category: p.category, details,
        }).length ? "" : p.publishStatus,
@@ -488,6 +596,7 @@ export async function exportWorkbook() {
   }))));
   append("3 Category specifics", products.map((p) => ({ slug: p.slug, category: p.category, ...Object.fromEntries(Object.entries(SPECIFICS).map(([column, key]) => {
     const value = (d(p) as unknown as Record<string, unknown>)[key];
+    if (column === "ecocert_approved") return [column, p.category === "Biologicals" && value ? "Y" : "N"];
     return [column, typeof value === "string" ? listed(column, value) : typeof value === "boolean" ? (value ? "Y" : "N") : value];
   })) })));
   append("4 Sale lines", lines.map((x) => ({ slug: products.find((p) => p.id === x.productId)?.slug ?? "", stock_code: x.stockCode, seed_form: x.seedForm, seed_grade: x.seedGrade, pack_kg: x.packKg, pack_unit: x.packUnit, availability: x.availability, price_display: x.priceDisplay, is_default: x.isDefault ? "Y" : "N", sort_order: x.sortOrder })));
@@ -496,7 +605,26 @@ export async function exportWorkbook() {
   append("6 Companions", products.flatMap((p) => d(p).companionSpecies.map((x) => ({
     slug: p.slug, companion_slug: productSlugs.has(x) ? x : "", companion_text: productSlugs.has(x) ? "" : x,
   }))));
-  append("7 Website SEO", products.map((p) => ({ website_slug: p.slug, product_slug: p.slug, seo_title: d(p).seoTitle, meta_description: d(p).seoDescription })));
+  append("7 Website SEO", products.map((p) => {
+    const details = d(p);
+    return {
+      website_slug: p.slug, product_slug: p.slug, product_url: p.websiteUrlLegacy,
+      seo_title: details.seoTitle, meta_description: details.seoDescription,
+      social_title: details.socialTitle, social_description: details.socialDescription,
+      social_image: details.socialImage, canonical_url: details.canonicalUrl,
+      robots_index: details.robotsIndex ? "Y" : "N",
+    };
+  }));
+  append("8 Categories", [...categories].sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id).map((category) => ({
+    parent_slug: category.parentId ? categoryById.get(category.parentId)?.slug ?? "" : "",
+    slug: category.slug, name: category.name, group_label: category.groupLabel,
+    lead: category.lead, page_heading: category.pageHeading, seo_title: category.seoTitle,
+    seo_description: category.seoDescription, rainfall: category.rainfall, image: category.image,
+    sort_order: category.sortOrder, active: category.active ? "Y" : "N",
+  })));
+  append("9 Redirects", redirects.length
+    ? redirects.map((redirect) => ({ from_path: redirect.fromPath, to_path: redirect.toPath }))
+    : [{ from_path: "", to_path: "" }]);
   const listNames = [...optionLists.keys()];
   const listRows = Array.from({ length: Math.max(0, ...[...optionLists.values()].map((values) => values.size)) }, (_, index) =>
     Object.fromEntries(listNames.map((name) => [name, [...(optionLists.get(name) ?? [])][index] ?? ""])));

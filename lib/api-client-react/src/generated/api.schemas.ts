@@ -48,16 +48,8 @@ export const ProductAvailabilityOverride = {
 } as const;
 
 /**
- * @nullable
+ * Manual Active/Legacy listing. Independent of Published/Draft/Archived. Legacy products cannot have availability.
  */
-export type ProductListingOverride = typeof ProductListingOverride[keyof typeof ProductListingOverride] | null;
-
-
-export const ProductListingOverride = {
-  Force_active: 'Force active',
-  Force_legacy: 'Force legacy',
-} as const;
-
 export type ProductListingState = typeof ProductListingState[keyof typeof ProductListingState];
 
 
@@ -488,9 +480,8 @@ export interface Product {
   websiteUrlLegacy?: string;
   /** @nullable */
   availabilityOverride?: ProductAvailabilityOverride;
-  /** @nullable */
-  listingOverride?: ProductListingOverride;
-  listingState?: ProductListingState;
+  /** Manual Active/Legacy listing. Independent of Published/Draft/Archived. Legacy products cannot have availability. */
+  listingState: ProductListingState;
   saleLines?: SaleLine[];
   publishStatus: ProductPublishStatus;
   publishedAt?: string | null;
@@ -627,14 +618,14 @@ export const ProductDraftInputAvailabilityOverride = {
 } as const;
 
 /**
- * @nullable
+ * Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability.
  */
-export type ProductDraftInputListingOverride = typeof ProductDraftInputListingOverride[keyof typeof ProductDraftInputListingOverride] | null;
+export type ProductDraftInputListingState = typeof ProductDraftInputListingState[keyof typeof ProductDraftInputListingState];
 
 
-export const ProductDraftInputListingOverride = {
-  Force_active: 'Force active',
-  Force_legacy: 'Force legacy',
+export const ProductDraftInputListingState = {
+  Active: 'Active',
+  Legacy: 'Legacy',
 } as const;
 
 export interface ProductDraftInput {
@@ -663,8 +654,8 @@ export interface ProductDraftInput {
   websiteUrlLegacy: string;
   /** @nullable */
   availabilityOverride: ProductDraftInputAvailabilityOverride;
-  /** @nullable */
-  listingOverride: ProductDraftInputListingOverride;
+  /** Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability. */
+  listingState?: ProductDraftInputListingState;
   details: ProductDetails;
   saleLines?: SaleLine[];
 }
@@ -713,14 +704,14 @@ export const ProductInputAvailabilityOverride = {
 } as const;
 
 /**
- * @nullable
+ * Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability.
  */
-export type ProductInputListingOverride = typeof ProductInputListingOverride[keyof typeof ProductInputListingOverride] | null;
+export type ProductInputListingState = typeof ProductInputListingState[keyof typeof ProductInputListingState];
 
 
-export const ProductInputListingOverride = {
-  Force_active: 'Force active',
-  Force_legacy: 'Force legacy',
+export const ProductInputListingState = {
+  Active: 'Active',
+  Legacy: 'Legacy',
 } as const;
 
 export type ProductInputPublishStatus = typeof ProductInputPublishStatus[keyof typeof ProductInputPublishStatus];
@@ -764,8 +755,8 @@ export interface ProductInput {
   websiteUrlLegacy: string;
   /** @nullable */
   availabilityOverride: ProductInputAvailabilityOverride;
-  /** @nullable */
-  listingOverride: ProductInputListingOverride;
+  /** Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability. */
+  listingState: ProductInputListingState;
   publishStatus: ProductInputPublishStatus;
   details: ProductDetails;
 }
@@ -778,6 +769,17 @@ export const ProductCreateInputStatus = {
   low: 'low',
   'very-low': 'very-low',
   unavailable: 'unavailable',
+} as const;
+
+/**
+ * Manual Active/Legacy listing. Defaults to Active.
+ */
+export type ProductCreateInputListingState = typeof ProductCreateInputListingState[keyof typeof ProductCreateInputListingState];
+
+
+export const ProductCreateInputListingState = {
+  Active: 'Active',
+  Legacy: 'Legacy',
 } as const;
 
 export interface ProductCreateInput {
@@ -807,7 +809,10 @@ export interface ProductCreateInput {
   subcategoryId?: number | null;
   /** @maxLength 240 */
   techSheet: string;
+  /** Manual Active/Legacy listing. Defaults to Active. */
+  listingState?: ProductCreateInputListingState;
   details: ProductDetails;
+  saleLines?: SaleLine[];
 }
 
 export type ProductUpdateStatus = typeof ProductUpdateStatus[keyof typeof ProductUpdateStatus];
@@ -834,14 +839,14 @@ export const ProductUpdateAvailabilityOverride = {
 } as const;
 
 /**
- * @nullable
+ * Manual Active/Legacy listing. Legacy products cannot have availability.
  */
-export type ProductUpdateListingOverride = typeof ProductUpdateListingOverride[keyof typeof ProductUpdateListingOverride] | null;
+export type ProductUpdateListingState = typeof ProductUpdateListingState[keyof typeof ProductUpdateListingState];
 
 
-export const ProductUpdateListingOverride = {
-  Force_active: 'Force active',
-  Force_legacy: 'Force legacy',
+export const ProductUpdateListingState = {
+  Active: 'Active',
+  Legacy: 'Legacy',
 } as const;
 
 export interface ProductUpdate {
@@ -879,8 +884,8 @@ export interface ProductUpdate {
   websiteUrlLegacy?: string;
   /** @nullable */
   availabilityOverride?: ProductUpdateAvailabilityOverride;
-  /** @nullable */
-  listingOverride?: ProductUpdateListingOverride;
+  /** Manual Active/Legacy listing. Legacy products cannot have availability. */
+  listingState?: ProductUpdateListingState;
   details?: ProductDetails;
 }
 

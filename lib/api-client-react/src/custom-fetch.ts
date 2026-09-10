@@ -337,7 +337,13 @@ export async function customFetch<T = unknown>(
 
   const headers = mergeHeaders(isRequest(input) ? input.headers : undefined, headersInit);
 
-  if (
+  // Generated clients JSON.stringify optional bodies. JSON.stringify(undefined)
+  // is undefined, but they still send Content-Type: application/json. An empty
+  // JSON request makes Express's parser fail with an HTML 400 instead of JSON.
+  const hasBody = init.body !== undefined && init.body !== null && init.body !== "";
+  if (!hasBody) {
+    headers.delete("content-type");
+  } else if (
     typeof init.body === "string" &&
     !headers.has("content-type") &&
     looksLikeJson(init.body)
@@ -360,7 +366,12 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  const response = await fetch(input, {
+    ...init,
+    method,
+    headers,
+    body: hasBody ? init.body : undefined,
+  });
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);

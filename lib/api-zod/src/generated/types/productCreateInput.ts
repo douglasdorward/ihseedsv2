@@ -5,8 +5,10 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ProductCreateInputListingState } from './productCreateInputListingState';
 import type { ProductCreateInputStatus } from './productCreateInputStatus';
 import type { ProductDetails } from './productDetails';
+import type { SaleLine } from './saleLine';
 
 export interface ProductCreateInput {
   /**
@@ -35,5 +37,8 @@ export interface ProductCreateInput {
   subcategoryId?: number | null;
   /** @maxLength 240 */
   techSheet: string;
+  /** Manual Active/Legacy listing. Defaults to Active. */
+  listingState?: ProductCreateInputListingState;
   details: ProductDetails;
+  saleLines?: SaleLine[];
 }

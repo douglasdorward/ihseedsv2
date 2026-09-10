@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Icon } from "../../components/Icon";
 import { StatusPill } from "../../components/StatusPill";
 import { getProducts } from "../../lib/catalogue";
 
@@ -29,12 +30,17 @@ export default async function Availability() {
             ) : (
               products.map((product) => (
                 <div className="availability-row" key={product.id} data-testid={`row-availability-${product.id}`}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <Link href={`/product/${product.slug}`} className="availability-product" data-testid={`link-availability-product-${product.id}`}>
                     <strong>{product.name}</strong>
-                    <span style={{ fontSize: 13, lineHeight: 1.4 }}>{product.details.tagline}</span>
-                  </div>
-                  <span>{product.note}</span>
-                  <StatusPill status={product.status} />
+                    {product.details.tagline?.trim() ? <span className="availability-tagline">{product.details.tagline}</span> : null}
+                  </Link>
+                  <Link href="/contact" className="availability-enquire" aria-label={`${product.status === "unavailable" ? "Inquire about" : "Order"} ${product.name}`} data-testid={`link-availability-enquire-${product.id}`}>
+                    <span className="availability-status">
+                      <StatusPill status={product.status} />
+                      <span className="availability-action">{product.status === "unavailable" ? "Inquire" : "Order Now"}</span>
+                    </span>
+                    <span className="availability-chevron" aria-hidden="true"><Icon name="chevron-right" size={20} /></span>
+                  </Link>
                 </div>
               ))
             )}

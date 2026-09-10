@@ -760,7 +760,7 @@ export const getSaveProductDraftRevisionUrl = (id: number,) => {
 }
 
 /**
- * @summary Save a product draft revision
+ * @summary Save edits to a Draft product
  */
 export const saveProductDraftRevision = async (id: number,
     productDraftInput: ProductDraftInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminProduct> => {
@@ -810,7 +810,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SaveProductDraftRevisionMutationError = ErrorType<ApiError | ProductReferenceValidationError | void>
 
     /**
- * @summary Save a product draft revision
+ * @summary Save edits to a Draft product
  */
 export const useSaveProductDraftRevision = <TError = ErrorType<ApiError | ProductReferenceValidationError | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveProductDraftRevision>>, TError,{id: number;data: BodyType<ProductDraftInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -832,16 +832,17 @@ export const getPublishProductUrl = (id: number,) => {
 }
 
 /**
- * @summary Promote the current draft to the public catalogue
+ * @summary Publish a product, optionally from the current editor payload
  */
-export const publishProduct = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<AdminProduct> => {
+export const publishProduct = async (id: number,
+    productDraftInput?: ProductDraftInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminProduct> => {
 
   return customFetch<AdminProduct>(getPublishProductUrl(id),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(productDraftInput)
   }
 );}
 
@@ -850,8 +851,8 @@ export const publishProduct = async (id: number, options?: Parameters<typeof cus
 
 
 export const getPublishProductMutationOptions = <TError = ErrorType<PublishValidationError | ProductReferenceValidationError | void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number;data?: BodyType<ProductDraftInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number;data?: BodyType<ProductDraftInput>}, TContext> => {
 
 const mutationKey = ['publishProduct'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -863,10 +864,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishProduct>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishProduct>>, {id: number;data?: BodyType<ProductDraftInput>}> = (props) => {
+          const {id,data} = props ?? {};
 
-          return  publishProduct(id,requestOptions)
+          return  publishProduct(id,data,requestOptions)
         }
 
 
@@ -877,18 +878,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PublishProductMutationResult = NonNullable<Awaited<ReturnType<typeof publishProduct>>>
-
+    export type PublishProductMutationBody = BodyType<ProductDraftInput> | undefined
     export type PublishProductMutationError = ErrorType<PublishValidationError | ProductReferenceValidationError | void>
 
     /**
- * @summary Promote the current draft to the public catalogue
+ * @summary Publish a product, optionally from the current editor payload
  */
 export const usePublishProduct = <TError = ErrorType<PublishValidationError | ProductReferenceValidationError | void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishProduct>>, TError,{id: number;data?: BodyType<ProductDraftInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof publishProduct>>,
         TError,
-        {id: number},
+        {id: number;data?: BodyType<ProductDraftInput>},
         TContext
       > => {
       return useMutation(getPublishProductMutationOptions(options));
@@ -1045,7 +1046,7 @@ export const getDiscardProductDraftUrl = (id: number,) => {
 }
 
 /**
- * @summary Discard pending changes to a published product
+ * @summary Discard leftover unpublished revisions on a published product
  */
 export const discardProductDraft = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<AdminProduct> => {
 
@@ -1094,7 +1095,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DiscardProductDraftMutationError = ErrorType<void>
 
     /**
- * @summary Discard pending changes to a published product
+ * @summary Discard leftover unpublished revisions on a published product
  */
 export const useDiscardProductDraft = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discardProductDraft>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}

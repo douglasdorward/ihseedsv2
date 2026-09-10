@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Icon } from "../components/Icon";
 import { StatusPill } from "../components/StatusPill";
-import { getProducts } from "../lib/catalogue";
+import { getProducts, saleLinePriceDisplay } from "../lib/catalogue";
 
 export const metadata: Metadata = {
   title: "IH Seeds | Western Australia's Pasture Seed Specialists",
@@ -62,7 +62,7 @@ export default async function Home() {
                     <h3>{product.name}</h3>
                     <p className="product-card-tagline">{product.details.tagline}</p>
                     <small>{product.packSize}</small>
-                    <strong>{product.price}</strong>
+                    <strong>{saleLinePriceDisplay(product) || "Contact for pricing"}</strong>
                   </div>
                 </Link>
               ))}

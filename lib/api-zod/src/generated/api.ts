@@ -286,6 +286,8 @@ export const createProductBodyDetailsHeadingOffsetDaysMultipleOf = 1;
 
 export const createProductBodyDetailsProductFormMax = 120;
 
+export const createProductBodySaleLinesItemSortOrderMultipleOf = 1;
+
 
 
 export const CreateProductBody = zod.object({
@@ -298,6 +300,7 @@ export const CreateProductBody = zod.object({
   "category": zod.string().min(1).max(createProductBodyCategoryMax),
   "subcategoryId": zod.number().multipleOf(createProductBodySubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(createProductBodyTechSheetMax),
+  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active.'),
   "details": zod.object({
   "stockCode": zod.string().max(createProductBodyDetailsStockCodeMax),
   "guideSection": zod.string().max(createProductBodyDetailsGuideSectionMax),
@@ -398,7 +401,18 @@ export const CreateProductBody = zod.object({
   "regrowth": zod.string(),
   "productForm": zod.string().max(createProductBodyDetailsProductFormMax),
   "applicationRate": zod.string()
-})
+}),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(createProductBodySaleLinesItemSortOrderMultipleOf)
+})).optional()
 })
 
 export const createProductResponseSubcategoryIdMultipleOf = 1;
@@ -529,8 +543,7 @@ export const CreateProductResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -943,7 +956,7 @@ export const UpdateProductBody = zod.object({
   "descriptionSource": zod.string().max(updateProductBodyDescriptionSourceMax).optional(),
   "websiteUrlLegacy": zod.string().max(updateProductBodyWebsiteUrlLegacyMax).optional(),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(updateProductBodyDetailsStockCodeMax),
   "guideSection": zod.string().max(updateProductBodyDetailsGuideSectionMax),
@@ -1175,8 +1188,7 @@ export const UpdateProductResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -1445,8 +1457,7 @@ export const GetAdminSummaryResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -1827,8 +1838,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -1962,7 +1972,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "descriptionSource": zod.string().max(listAdminProductsResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(listAdminProductsResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -2346,8 +2356,7 @@ export const GetAdminProductResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -2481,7 +2490,7 @@ export const GetAdminProductResponse = zod.object({
   "descriptionSource": zod.string().max(getAdminProductResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(getAdminProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -2601,7 +2610,7 @@ export const GetAdminProductResponse = zod.object({
 
 
 /**
- * @summary Save a product draft revision
+ * @summary Save edits to a Draft product
  */
 export const SaveProductDraftRevisionParams = zod.object({
   "id": zod.coerce.number().int()
@@ -2751,7 +2760,7 @@ export const SaveProductDraftRevisionBody = zod.object({
   "descriptionSource": zod.string().max(saveProductDraftRevisionBodyDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(saveProductDraftRevisionBodyWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(saveProductDraftRevisionBodyDetailsStockCodeMax),
   "guideSection": zod.string().max(saveProductDraftRevisionBodyDetailsGuideSectionMax),
@@ -3123,8 +3132,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -3258,7 +3266,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "descriptionSource": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -3378,10 +3386,269 @@ export const SaveProductDraftRevisionResponse = zod.object({
 
 
 /**
- * @summary Promote the current draft to the public catalogue
+ * @summary Publish a product, optionally from the current editor payload
  */
 export const PublishProductParams = zod.object({
   "id": zod.coerce.number().int()
+})
+
+export const publishProductBodyNameMax = 160;
+
+export const publishProductBodyPriceMax = 80;
+
+export const publishProductBodyPackSizeMax = 80;
+
+export const publishProductBodyNoteMax = 500;
+
+export const publishProductBodyCategoryMax = 120;
+
+export const publishProductBodySubcategoryIdMultipleOf = 1;
+
+export const publishProductBodyTechSheetMax = 240;
+
+export const publishProductBodyGuideYearMax = 12;
+
+export const publishProductBodyDescriptionSourceMax = 240;
+
+export const publishProductBodyWebsiteUrlLegacyMax = 500;
+
+export const publishProductBodyDetailsStockCodeMax = 40;
+
+export const publishProductBodyDetailsGuideSectionMax = 120;
+
+export const publishProductBodyDetailsBotanicalNameMax = 180;
+
+export const publishProductBodyDetailsAlsoKnownAsItemMax = 120;
+
+export const publishProductBodyDetailsPackSizesItemLabelMax = 80;
+
+export const publishProductBodyDetailsPackSizesItemSizeMin = 0;
+
+export const publishProductBodyDetailsPackSizesItemUnitMax = 30;
+
+export const publishProductBodyDetailsTreatmentMax = 120;
+
+export const publishProductBodyDetailsBredByOriginMax = 2000;
+
+export const publishProductBodyDetailsDistributedByMax = 120;
+
+export const publishProductBodyDetailsSowingRatesItemMinMin = 0;
+
+export const publishProductBodyDetailsSowingRatesItemMaxMin = 0;
+
+export const publishProductBodyDetailsSowingRatesItemUnitMax = 20;
+
+export const publishProductBodyDetailsRainfallMinMmMin = 0;
+export const publishProductBodyDetailsRainfallMinMmMultipleOf = 1;
+
+export const publishProductBodyDetailsSoilPhMinMin = 0;
+export const publishProductBodyDetailsSoilPhMinMax = 14;
+
+export const publishProductBodyDetailsSowingDepthMinCmMin = 0;
+
+export const publishProductBodyDetailsSowingDepthMaxCmMin = 0;
+
+export const publishProductBodyDetailsMaturityDaysMin = 0;
+export const publishProductBodyDetailsMaturityDaysMultipleOf = 1;
+
+export const publishProductBodyDetailsFloweringWindowMax = 80;
+
+export const publishProductBodyDetailsWinterActivityMax = 10;
+export const publishProductBodyDetailsWinterActivityMultipleOf = 1;
+
+export const publishProductBodyDetailsCompanionSpeciesItemMax = 180;
+
+export const publishProductBodyDetailsDiseasePestResistanceMax = 3000;
+
+export const publishProductBodyDetailsStandLifeNotesMax = 3000;
+
+export const publishProductBodyDetailsGrazingManagementNotesMax = 3000;
+
+export const publishProductBodyDetailsPbrDetailsMax = 300;
+
+export const publishProductBodyDetailsLicenceRestrictionMax = 1000;
+
+export const publishProductBodyDetailsSupplierNameMax = 180;
+
+export const publishProductBodyDetailsTaglineMax = 60;
+
+export const publishProductBodyDetailsDescriptionMax = 200000;
+
+export const publishProductBodyDetailsNotesMax = 2000;
+
+export const publishProductBodyDetailsComponentsItemProductLinkMax = 180;
+
+export const publishProductBodyDetailsComponentsItemSpeciesNameMax = 120;
+
+export const publishProductBodyDetailsComponentsItemInclusionRateMin = 0;
+
+export const publishProductBodyDetailsComponentsItemUnitMax = 20;
+
+export const publishProductBodyDetailsComponentsItemDescriptionMax = 10000;
+
+export const publishProductBodyDetailsComponentsItemNoteMax = 4000;
+
+export const publishProductBodyDetailsFormulationYearMax = 20;
+
+export const publishProductBodyDetailsPhotosItemSlotMax = 40;
+
+export const publishProductBodyDetailsPhotosItemFileMax = 240;
+
+export const publishProductBodyDetailsPhotosItemRatingMax = 80;
+
+export const publishProductBodyDetailsPhotosItemSrcMax = 500;
+
+export const publishProductBodyDetailsSeoTitleMax = 180;
+
+export const publishProductBodyDetailsSeoDescriptionMax = 2000;
+
+export const publishProductBodyDetailsSocialTitleMax = 180;
+
+export const publishProductBodyDetailsSocialDescriptionMax = 2000;
+
+export const publishProductBodyDetailsSocialImageMax = 500;
+
+export const publishProductBodyDetailsCanonicalUrlMax = 500;
+
+export const publishProductBodyDetailsSortOrderMin = 0;
+export const publishProductBodyDetailsSortOrderMultipleOf = 1;
+
+export const publishProductBodyDetailsRelatedProductsItemMax = 180;
+
+export const publishProductBodyDetailsHeadingOffsetDaysMultipleOf = 1;
+
+export const publishProductBodyDetailsProductFormMax = 120;
+
+export const publishProductBodySaleLinesItemSortOrderMultipleOf = 1;
+
+
+
+export const PublishProductBody = zod.object({
+  "name": zod.string().min(1).max(publishProductBodyNameMax),
+  "price": zod.string().max(publishProductBodyPriceMax),
+  "packSize": zod.string().max(publishProductBodyPackSizeMax),
+  "status": zod.enum(['in-stock', 'low', 'very-low', 'unavailable']),
+  "note": zod.string().max(publishProductBodyNoteMax),
+  "category": zod.string().max(publishProductBodyCategoryMax),
+  "subcategoryId": zod.number().multipleOf(publishProductBodySubcategoryIdMultipleOf).nullish(),
+  "techSheet": zod.string().max(publishProductBodyTechSheetMax),
+  "guideYear": zod.string().max(publishProductBodyGuideYearMax),
+  "descriptionSource": zod.string().max(publishProductBodyDescriptionSourceMax),
+  "websiteUrlLegacy": zod.string().max(publishProductBodyWebsiteUrlLegacyMax),
+  "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
+  "details": zod.object({
+  "stockCode": zod.string().max(publishProductBodyDetailsStockCodeMax),
+  "guideSection": zod.string().max(publishProductBodyDetailsGuideSectionMax),
+  "recordType": zod.enum(['Mix', 'Variety', 'Commodity / generic']),
+  "botanicalName": zod.string().max(publishProductBodyDetailsBotanicalNameMax),
+  "alsoKnownAs": zod.array(zod.string().max(publishProductBodyDetailsAlsoKnownAsItemMax)),
+  "packSizes": zod.array(zod.object({
+  "label": zod.string().max(publishProductBodyDetailsPackSizesItemLabelMax),
+  "size": zod.number().min(publishProductBodyDetailsPackSizesItemSizeMin).nullable(),
+  "unit": zod.string().max(publishProductBodyDetailsPackSizesItemUnitMax)
+})),
+  "treatment": zod.string().max(publishProductBodyDetailsTreatmentMax),
+  "persistencyType": zod.enum(['', 'Annual', 'Biennial', 'Perennial', 'Hybrid perennial', 'Short-term (1–2 years)']),
+  "ploidy": zod.enum(['', 'Diploid', 'Tetraploid', 'Hexaploid', 'Mixed (blend)']),
+  "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
+  "bredByOrigin": zod.string().max(publishProductBodyDetailsBredByOriginMax),
+  "australianBred": zod.boolean(),
+  "distributedBy": zod.string().max(publishProductBodyDetailsDistributedByMax),
+  "sowingRates": zod.array(zod.object({
+  "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
+  "min": zod.number().min(publishProductBodyDetailsSowingRatesItemMinMin).nullable(),
+  "max": zod.number().min(publishProductBodyDetailsSowingRatesItemMaxMin).nullable(),
+  "unit": zod.string().max(publishProductBodyDetailsSowingRatesItemUnitMax)
+})),
+  "rainfallMinMm": zod.number().min(publishProductBodyDetailsRainfallMinMmMin).multipleOf(publishProductBodyDetailsRainfallMinMmMultipleOf).nullable(),
+  "soilPhMin": zod.number().min(publishProductBodyDetailsSoilPhMinMin).max(publishProductBodyDetailsSoilPhMinMax).nullable(),
+  "soilPhScale": zod.enum(['CaCl₂', 'water']),
+  "soilRangeLightest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "soilRangeHeaviest": zod.enum(['', 'LS', 'S', 'L', 'H']),
+  "sowingDepthMinCm": zod.number().min(publishProductBodyDetailsSowingDepthMinCmMin).nullable(),
+  "sowingDepthMaxCm": zod.number().min(publishProductBodyDetailsSowingDepthMaxCmMin).nullable(),
+  "tolerance": zod.array(zod.object({
+  "name": zod.enum(['Low pH', 'Waterlogging', 'Salinity', 'Drought', 'Frost']),
+  "mild": zod.boolean()
+})),
+  "maturityMeasure": zod.enum(['', 'Days to flowering (Perth)', 'Heading date', 'Time of flowering', 'Winter activity rating']),
+  "maturityDays": zod.number().min(publishProductBodyDetailsMaturityDaysMin).multipleOf(publishProductBodyDetailsMaturityDaysMultipleOf).nullable(),
+  "headingDate": zod.enum(['', 'Very early', 'Early', 'Mid', 'Mid-late', 'Late']),
+  "floweringWindow": zod.string().max(publishProductBodyDetailsFloweringWindowMax),
+  "winterActivity": zod.number().min(1).max(publishProductBodyDetailsWinterActivityMax).multipleOf(publishProductBodyDetailsWinterActivityMultipleOf).nullable(),
+  "inoculantGroup": zod.enum(['None', 'C', 'G/S', 'G', 'S', 'AL', 'AM', 'B', 'BS', 'E', 'F/E', 'I']),
+  "seedTreatment": zod.array(zod.enum(['Bare / untreated', 'Gaucho', 'Thiram', 'Goldstrike', 'BioNPK Powder S', 'Lime coated'])),
+  "ecocertApproved": zod.boolean(),
+  "endUse": zod.array(zod.enum(['Grazing', 'Hay', 'Silage', 'Cover crop', 'Green manure', 'Grain', 'Stockfeed', 'Permanent pasture', 'Erosion control / stabilisation', 'Break crop', 'Biofumigant', 'Turf'])),
+  "livestock": zod.array(zod.enum(['Beef', 'Dairy', 'Sheep', 'Equine', 'Goat', 'Chicken', 'Alpaca', 'Weaners', 'Lamb finishing'])),
+  "companionSpecies": zod.array(zod.string().max(publishProductBodyDetailsCompanionSpeciesItemMax)),
+  "diseasePestResistance": zod.string().max(publishProductBodyDetailsDiseasePestResistanceMax),
+  "standLifeNotes": zod.string().max(publishProductBodyDetailsStandLifeNotesMax),
+  "grazingManagementNotes": zod.string().max(publishProductBodyDetailsGrazingManagementNotesMax),
+  "pbrProtected": zod.boolean(),
+  "pbrDetails": zod.string().max(publishProductBodyDetailsPbrDetailsMax),
+  "licenceRestriction": zod.string().max(publishProductBodyDetailsLicenceRestrictionMax),
+  "certification": zod.array(zod.enum(['ASF Code of Practice', 'Certified Quality Assured Seed', 'Certified seed', 'Licensed production'])),
+  "isThirdPartyProduct": zod.boolean(),
+  "supplierName": zod.string().max(publishProductBodyDetailsSupplierNameMax),
+  "tagline": zod.string().max(publishProductBodyDetailsTaglineMax),
+  "blurb": zod.string(),
+  "keyAttributes": zod.array(zod.string()),
+  "distributionNote": zod.string(),
+  "description": zod.string().max(publishProductBodyDetailsDescriptionMax),
+  "notes": zod.string().max(publishProductBodyDetailsNotesMax),
+  "components": zod.array(zod.object({
+  "productLink": zod.string().max(publishProductBodyDetailsComponentsItemProductLinkMax),
+  "speciesName": zod.string().max(publishProductBodyDetailsComponentsItemSpeciesNameMax),
+  "inclusionRate": zod.number().min(publishProductBodyDetailsComponentsItemInclusionRateMin).nullable(),
+  "unit": zod.string().max(publishProductBodyDetailsComponentsItemUnitMax),
+  "description": zod.string().max(publishProductBodyDetailsComponentsItemDescriptionMax),
+  "note": zod.string().max(publishProductBodyDetailsComponentsItemNoteMax)
+})),
+  "formulationYear": zod.string().max(publishProductBodyDetailsFormulationYearMax),
+  "photos": zod.array(zod.object({
+  "slot": zod.string().max(publishProductBodyDetailsPhotosItemSlotMax),
+  "file": zod.string().max(publishProductBodyDetailsPhotosItemFileMax),
+  "rating": zod.string().max(publishProductBodyDetailsPhotosItemRatingMax),
+  "src": zod.string().max(publishProductBodyDetailsPhotosItemSrcMax)
+})),
+  "inCurrentPrintedGuide": zod.boolean(),
+  "seoTitle": zod.string().max(publishProductBodyDetailsSeoTitleMax),
+  "seoDescription": zod.string().max(publishProductBodyDetailsSeoDescriptionMax),
+  "socialTitle": zod.string().max(publishProductBodyDetailsSocialTitleMax),
+  "socialDescription": zod.string().max(publishProductBodyDetailsSocialDescriptionMax),
+  "socialImage": zod.string().max(publishProductBodyDetailsSocialImageMax),
+  "canonicalUrl": zod.string().max(publishProductBodyDetailsCanonicalUrlMax),
+  "robotsIndex": zod.boolean(),
+  "sortOrder": zod.number().min(publishProductBodyDetailsSortOrderMin).multipleOf(publishProductBodyDetailsSortOrderMultipleOf).nullable(),
+  "featured": zod.boolean(),
+  "relatedProducts": zod.array(zod.string().max(publishProductBodyDetailsRelatedProductsItemMax)),
+  "headingOffsetDays": zod.number().multipleOf(publishProductBodyDetailsHeadingOffsetDaysMultipleOf).nullable(),
+  "argtResistant": zod.boolean(),
+  "endophyte": zod.string(),
+  "growthSeason": zod.string(),
+  "hardSeedLevel": zod.string(),
+  "oestrogenLevel": zod.string(),
+  "bloatRisk": zod.string(),
+  "growingSeason": zod.string(),
+  "weeksToFirstGrazing": zod.string(),
+  "prussicAcidRisk": zod.string(),
+  "regrowth": zod.string(),
+  "productForm": zod.string().max(publishProductBodyDetailsProductFormMax),
+  "applicationRate": zod.string()
+}),
+  "saleLines": zod.array(zod.object({
+  "stockCode": zod.string(),
+  "seedForm": zod.string(),
+  "seedGrade": zod.string(),
+  "packKg": zod.number().nullable(),
+  "packUnit": zod.string(),
+  "availability": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
+  "priceDisplay": zod.string(),
+  "isDefault": zod.boolean(),
+  "sortOrder": zod.number().multipleOf(publishProductBodySaleLinesItemSortOrderMultipleOf)
+})).optional()
 })
 
 export const publishProductResponseOneSubcategoryIdMultipleOf = 1;
@@ -3641,8 +3908,7 @@ export const PublishProductResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -3776,7 +4042,7 @@ export const PublishProductResponse = zod.object({
   "descriptionSource": zod.string().max(publishProductResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(publishProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(publishProductResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(publishProductResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -4159,8 +4425,7 @@ export const ArchiveProductResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -4294,7 +4559,7 @@ export const ArchiveProductResponse = zod.object({
   "descriptionSource": zod.string().max(archiveProductResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(archiveProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -4677,8 +4942,7 @@ export const RestoreProductResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -4812,7 +5076,7 @@ export const RestoreProductResponse = zod.object({
   "descriptionSource": zod.string().max(restoreProductResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(restoreProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -4932,7 +5196,7 @@ export const RestoreProductResponse = zod.object({
 
 
 /**
- * @summary Discard pending changes to a published product
+ * @summary Discard leftover unpublished revisions on a published product
  */
 export const DiscardProductDraftParams = zod.object({
   "id": zod.coerce.number().int()
@@ -5195,8 +5459,7 @@ export const DiscardProductDraftResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional(),
+  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -5330,7 +5593,7 @@ export const DiscardProductDraftResponse = zod.object({
   "descriptionSource": zod.string().max(discardProductDraftResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(discardProductDraftResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingOverride": zod.union([zod.literal('Force active'),zod.literal('Force legacy'),zod.literal(null)]).nullable(),
+  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsGuideSectionMax),

@@ -27,6 +27,10 @@ function slugify(text: string) {
     .replace(/(^-|-$)+/g, "");
 }
 
+function forSearchMetadata(value: string) {
+  return value.replace(/[™®]/g, "").replace(/\s{2,}/g, " ").replace(/\s+([,.;:!?])/g, "$1").trim();
+}
+
 function PageHeader({ eyebrow, title, action, onBack }: { eyebrow: string; title: React.ReactNode; action?: React.ReactNode, onBack?: () => void }) {
   return (
     <header className="admin-page-header" style={{ flexDirection: "column", alignItems: "stretch", gap: 16 }}>
@@ -145,7 +149,7 @@ const CategoryForm = ({
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div className="admin-form-grid">
           <label>
-            Name <span className="admin-required-star">*</span>
+            <span className="admin-label-title">Name<span className="admin-required-star" aria-hidden="true">*</span></span>
             <input 
               value={form.name} 
               onChange={e => {
@@ -160,7 +164,7 @@ const CategoryForm = ({
             />
           </label>
           <label>
-            Slug <span className="admin-required-star">*</span>
+            <span className="admin-label-title">Slug<span className="admin-required-star" aria-hidden="true">*</span></span>
             <input 
               value={form.slug} 
               onChange={e => setForm(prev => ({ ...prev, slug: slugify(e.target.value) }))} 
@@ -179,7 +183,7 @@ const CategoryForm = ({
           {!isSubcategory && (
             <>
               <label>
-                Group Label
+                <span className="admin-label-title">Group Label<span className="admin-required-star" aria-hidden="true">*</span></span>
                 <input 
                   value={form.groupLabel} 
                   onChange={e => setForm(prev => ({ ...prev, groupLabel: e.target.value }))} 
@@ -247,20 +251,20 @@ const CategoryForm = ({
             SEO title
             <input
               value={form.seoTitle}
-              onChange={e => setForm(prev => ({ ...prev, seoTitle: e.target.value }))}
+              onChange={e => setForm(prev => ({ ...prev, seoTitle: forSearchMetadata(e.target.value) }))}
               placeholder={`${form.name || "Category"} Seed | IH Seeds`}
             />
-            <small>If blank, the public page uses “{form.name || "Category"} Seed | IH Seeds”.</small>
+            <small>If blank, the public page uses “{form.name || "Category"} Seed | IH Seeds”. Do not use ™ or ®.</small>
           </label>
           <label className="wide">
             Meta description
             <textarea
               value={form.seoDescription}
-              onChange={e => setForm(prev => ({ ...prev, seoDescription: e.target.value }))}
+              onChange={e => setForm(prev => ({ ...prev, seoDescription: forSearchMetadata(e.target.value) }))}
               placeholder={form.lead || parent?.lead || "Category lead copy is used when this is blank."}
               rows={3}
             />
-            <small>If blank, the public page uses the category lead copy.</small>
+            <small>If blank, the public page uses the category lead copy. Plain text only — no ™ or ®.</small>
           </label>
           <label className="wide admin-check-row">
             <input 

@@ -7,7 +7,7 @@
  */
 import type { ProductDetails } from './productDetails';
 import type { ProductUpdateAvailabilityOverride } from './productUpdateAvailabilityOverride';
-import type { ProductUpdateListingOverride } from './productUpdateListingOverride';
+import type { ProductUpdateListingState } from './productUpdateListingState';
 import type { ProductUpdateStatus } from './productUpdateStatus';
 
 export interface ProductUpdate {
@@ -45,7 +45,7 @@ export interface ProductUpdate {
   websiteUrlLegacy?: string;
   /** @nullable */
   availabilityOverride?: ProductUpdateAvailabilityOverride;
-  /** @nullable */
-  listingOverride?: ProductUpdateListingOverride;
+  /** Manual Active/Legacy listing. Legacy products cannot have availability. */
+  listingState?: ProductUpdateListingState;
   details?: ProductDetails;
 }

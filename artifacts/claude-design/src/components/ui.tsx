@@ -14,6 +14,7 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
   if (name === "arrow-left") return <svg {...common}><path d="M19 12H5m6-6-6 6 6 6" /></svg>;
   if (name === "arrow-right") return <svg {...common}><path d="M5 12h14m-6-6 6 6-6 6" /></svg>;
   if (name === "chevron-left") return <svg {...common}><path d="m15 18-6-6 6-6" /></svg>;
+  if (name === "chevron-right") return <svg {...common}><path d="m9 18 6-6-6-6" /></svg>;
   if (name === "chevron-up") return <svg {...common}><path d="m18 15-6-6-6 6" /></svg>;
   if (name === "chevron-down") return <svg {...common}><path d="m6 9 6 6 6-6" /></svg>;
   if (name === "info") return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>;
@@ -47,11 +48,35 @@ export function Logo({ inverse = false }: { inverse?: boolean }) {
   );
 }
 
+const stockLevelClass: Record<string, string> = {
+  "in-stock": "in-stock",
+  "Good stock": "in-stock",
+  low: "low",
+  "Low stock": "low",
+  "very-low": "very-low",
+  "Very low": "very-low",
+  unavailable: "unavailable",
+  Unavailable: "unavailable",
+  TBA: "unavailable",
+};
+
+const stockLevelLabel: Record<string, string> = {
+  "in-stock": "Good stock",
+  "Good stock": "Good stock",
+  low: "Low stock",
+  "Low stock": "Low stock",
+  "very-low": "Very low",
+  "Very low": "Very low",
+  unavailable: "Unavailable",
+  Unavailable: "Unavailable",
+  TBA: "TBA",
+};
+
 export function StatusPill({ status }: { status: string }) {
-  const labels: Record<string, string> = { "in-stock": "In stock", low: "Low stock", "very-low": "Very low", unavailable: "Unavailable" };
+  const level = stockLevelClass[status] ?? "unavailable";
   return (
-    <span className={`status-pill status-${status}`} data-testid={`status-product-${status}`}>
-      <i />{labels[status] ?? status}
+    <span className={`status-pill status-${level}`} data-testid={`status-product-${level}`}>
+      <i />{stockLevelLabel[status] ?? status}
     </span>
   );
 }

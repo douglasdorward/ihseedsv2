@@ -7,7 +7,7 @@
  */
 import type { ProductDetails } from './productDetails';
 import type { ProductDraftInputAvailabilityOverride } from './productDraftInputAvailabilityOverride';
-import type { ProductDraftInputListingOverride } from './productDraftInputListingOverride';
+import type { ProductDraftInputListingState } from './productDraftInputListingState';
 import type { ProductDraftInputStatus } from './productDraftInputStatus';
 import type { SaleLine } from './saleLine';
 
@@ -37,8 +37,8 @@ export interface ProductDraftInput {
   websiteUrlLegacy: string;
   /** @nullable */
   availabilityOverride: ProductDraftInputAvailabilityOverride;
-  /** @nullable */
-  listingOverride: ProductDraftInputListingOverride;
+  /** Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability. */
+  listingState?: ProductDraftInputListingState;
   details: ProductDetails;
   saleLines?: SaleLine[];
 }

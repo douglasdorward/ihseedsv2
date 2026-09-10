@@ -34,10 +34,10 @@ The public website does **not** read the workbook directly. The workbook is not 
 
 - PostgreSQL is the source of truth for the running catalogue.
 - Product slugs are permanent identifiers once a product exists.
-- Published product data is separate from unpublished draft revisions.
+- Published product data is separate from unpublished Draft products.
 - Sale lines are separate records linked to products.
 - Categories are a two-level taxonomy with stable slugs.
-- Generated workbooks are snapshots for bulk editing and safe re-import, not complete backups of every database entity. In particular, generated exports do not contain the redirect table.
+- Generated workbooks are snapshots for bulk editing and safe re-import, not complete backups of every database entity. Draft snapshots are not exported.
 - Server validation is authoritative. Browser checks improve usability but never weaken server rules.
 
 ## 2. Lifecycle and public eligibility
@@ -46,7 +46,9 @@ Three lifecycle states are supported:
 
 | Lifecycle | Meaning | Public? | Can be edited? |
 |---|---|---:|---|
-| **Published** | The approved live version | Yes, if also Active | Changes are saved as a separate draft revision |
+| **Published** | The approved live version | Yes, if also Active | Edits persist only when published; they replace the live page immediately |
+| **Draft** | Not yet approved for publication | No | Yes |
+| **Archived** | Retained but withdrawn | No | Read-only until restored |
 | **Draft** | Not yet approved for publication | No | Yes |
 | **Archived** | Retained but withdrawn | No | Read-only until restored |
 
@@ -80,19 +82,19 @@ duplicate stock codes, but it does not currently enforce the interactive
 publisher's exactly-one-default rule. This implementation difference should be
 treated as a compatibility gap, not permission to supply ambiguous defaults.
 
-Existing live products that predate a newly compulsory field are not automatically unpublished. They remain live until an edit is promoted or a workbook explicitly attempts to publish them. See [Legacy Published compatibility](#legacy-published-compatibility).
+Existing live products that predate a newly compulsory field are not automatically unpublished. They remain live until an edit is published or a workbook explicitly attempts to publish them. See [Legacy Published compatibility](#legacy-published-compatibility).
 
-### Published revisions
+### Published edits
 
-Editing a Published product does not overwrite the public version immediately:
+Editing a Published product does not park a draft revision:
 
-1. The administrator edits a draft snapshot.
-2. **Save draft** keeps the current public version unchanged.
-3. **Publish** atomically promotes the draft product and its draft sale lines.
-4. The draft snapshot is removed after successful publication.
-5. **Discard draft** removes the pending revision and leaves the live product untouched.
+1. The administrator edits the live product in the admin editor.
+2. **Save draft** is not available. Unpublished edits exist only in the browser until Publish succeeds.
+3. **Publish** validates the current editor payload and atomically replaces the live product and its sale lines.
+4. If publication fails validation, the live product is left unchanged.
+5. Leftover rows in `ih_product_drafts` (from the previous pending-revision model) can still be discarded, or published from the editor as unsaved form state.
 
-Published writes, publication, archive, restore, and discard operations lock the product record and re-check its lifecycle inside a database transaction. This prevents an older concurrent save from overwriting a newer publish or archive.
+Published writes, publication, archive, restore, and leftover discard operations lock the product record and re-check its lifecycle inside a database transaction. This prevents an older concurrent save from overwriting a newer publish or archive.
 
 ### Archive and restore
 
@@ -103,20 +105,14 @@ Published writes, publication, archive, restore, and discard operations lock the
 
 ### Active and Legacy are not lifecycle states
 
-`Published/Draft/Archived` controls whether a record is eligible to be public. `Active/Legacy` describes availability within the Published catalogue.
+`Published/Draft/Archived` controls whether a record is eligible to be public. `Active/Legacy` is a manual listing choice within the Published catalogue.
 
-The server derives the public listing as follows:
+- **Active** products can appear in the main public catalogue and may have availability.
+- **Legacy** products stay published as catalogue history only. They cannot have availability: sale-line stock and availability overrides are treated as Unavailable.
+- Listing state is chosen by the administrator. It is not derived from sale-line availability.
+- Archiving is different: Archive removes the product from the public website entirely while keeping the record. Restoring an Archived product returns it to Draft.
 
-1. `Force active` wins.
-2. Otherwise `Force legacy` wins.
-3. Otherwise a product is Active when it has no sale lines or at least one sale line is not `Unavailable`.
-4. A product whose sale lines are all unavailable is Legacy.
-
-Only **Published + Active** products appear in the main public catalogue and
-sitemap. A product with no sale lines is currently treated as Active. Published
-products that are forced Legacy, or whose sale lines are all unavailable, can
-appear only as names in the category page’s “Also in our catalogue” section.
-Draft and Archived products never appear there.
+Only **Published + Active** products appear in the main public catalogue and sitemap. Published Legacy products can appear only as names in the category page’s “Also in our catalogue” section. Draft and Archived products never appear there.
 
 ## 3. PostgreSQL data model
 
@@ -127,7 +123,7 @@ Each product stores:
 - Database ID, immutable unique slug, product name, note and timestamps
 - Category name plus a category/subcategory foreign key
 - Lifecycle state and first-publication timestamp
-- Top-level compatibility and operational values such as guide year, tech-sheet path, legacy URL, listing overrides and availability
+- Top-level compatibility and operational values such as guide year, tech-sheet path, legacy URL, listing state and availability
 - A structured JSON details object containing the main agronomy, copy, SEO, classification, mix, media and editorial fields
 
 The details normalizer retains compatibility with earlier field names and shapes, including the former `summary` name now represented as `tagline`.
@@ -148,9 +144,9 @@ Deleting a product cascades to its sale lines. Public pages expose a restricted 
 
 ### Product drafts
 
-At most one draft snapshot exists per product. It contains the complete editable product payload and its proposed sale lines. This is what allows a Published product to be revised without changing the live website.
+Unpublished products are stored as Draft rows on `ih_products`. Sale lines are stored on `ih_sale_lines` even while the product is Draft; public APIs still hide those products.
 
-A workbook upsert replaces the stored product directly according to import rules and removes any pending admin draft for that imported product. Do not import over products with valuable unfinished admin drafts without reviewing them first.
+The `ih_product_drafts` table is a leftover from the previous pending-revision model. New published edits are not written there. A workbook upsert replaces the stored product directly according to import rules and removes any leftover admin draft for that imported product.
 
 ### Taxonomy
 
@@ -167,7 +163,7 @@ Workbook imports may create missing root or child categories. Existing display n
 
 Redirect records map a unique old path to a target path. They support legacy `/product/...` and `/products/...` addresses and are checked when a requested product path is not found.
 
-Redirects can be added from `7 Website SEO` import information, but generated workbook exports do not export the redirect table. Existing database redirects remain stored; they simply do not round-trip through the generated spreadsheet.
+Redirects can be added from `7 Website SEO` import information or from `9 Redirects`. Generated workbook exports include the current redirect table on `9 Redirects`. Omission from an import does not delete existing redirects; listed rows are upserted by source path.
 
 ### Product options
 
@@ -188,11 +184,13 @@ The approved file contains:
 | `4 Sale lines` | 112 | 16 | Saleable pack/stock records |
 | `5 Mix components` | 125 | 17 | Components of Mix products |
 | `6 Companions` | 229 | 8 | Companion-product or free-text relationships |
-| `7 Website SEO` | 79 | 16 | SEO, old website paths and redirect hints |
+| `7 Website SEO` | 79 | 16 | SEO, social, canonical, index flag, old website paths and redirect hints |
+| `8 Categories` | generated | 12 | Category slugs, copy, SEO and visibility |
+| `9 Redirects` | generated | 2 | Canonical redirect table |
 | `Lists` | 12 | 45 | Required validation and option values |
 | `Review` | 434 | 4 | Optional warnings/work list; not catalogue content |
 
-The importer recognizes the seven numbered data sheets. `Lists` is required. `Review` is optional and its rows become warnings.
+The importer recognizes the numbered data sheets. `1`–`7` are the original product sheets; `8 Categories` and `9 Redirects` are optional on older workbooks and are written by current exports. `Lists` is required. `Review` is optional and its rows become warnings.
 
 ### Joins and stable keys
 
@@ -207,6 +205,8 @@ The importer recognizes the seven numbered data sheets. `Lists` is required. `Re
 | Companion owner | `6 Companions.slug` |
 | Linked companion product | `6 Companions.companion_slug` |
 | SEO row to product | `7 Website SEO.product_slug`, falling back to `website_slug` |
+| Category metadata | `8 Categories.slug` with optional `parent_slug` |
+| Redirect | `9 Redirects.from_path` |
 | Category | `1 Products.category` + optional `sub_category` |
 
 Product slug is the import identity. Renaming it does not rename a product; it risks creating another product and leaving the original untouched. Never change an existing slug to improve wording or SEO. Use redirects when a historic address must point somewhere else.
@@ -291,24 +291,31 @@ For imports:
   Do not rely on them for an import.
 - An explicit Published row must resolve both values.
 - It is not safe to revise only `1 Products.status` without also considering `7 Website SEO`.
+- Trademark symbols (`™`, `®`) belong on the product name. The importer strips them
+  from SEO title and description before storage. Put the mark on `product_name`, not
+  in `7 Website SEO`.
 
 ### Redirect import
 
 `7 Website SEO` can describe an old source path through `website_slug` or `product_url` and a target product path in `redirect_note`. Valid mappings are upserted by source path.
 
-Because exports do not include all redirect records, do not treat a generated workbook as the redirect register.
+Because older workbooks may omit `9 Redirects`, do not treat a historic spreadsheet as the complete redirect register. Current admin exports do include it.
 
 ### Export behavior
 
-The admin export writes the seven numbered import sheets and a hidden `Lists` sheet:
+The admin export writes the numbered import sheets and a hidden `Lists` sheet:
 
 - Database IDs are translated back to slugs and category names.
 - Arrays become pipe-delimited values.
 - Booleans become `Y`/`N`.
 - Product-linked companions are exported as slugs; free-text companions remain text.
 - Options are sorted into canonical list order.
+- Product SEO extras (social title, description, image, canonical URL, index flag) are exported on `7 Website SEO`.
+- Additional product photos are exported as `photo_2` and `photo_3`.
+- Category page heading, lead, SEO, rainfall, image, sort and active flag are exported on `8 Categories`.
+- Redirects are exported on `9 Redirects`.
 
-The export is designed to dry-run and re-import cleanly. Keep the sheet names and headers stable.
+The export is designed to dry-run and re-import cleanly. Keep the sheet names and headers stable. Older workbooks without sheets `8` and `9` still import; missing sheets leave those records unchanged.
 
 ### Legacy Published compatibility
 
@@ -351,11 +358,13 @@ This is the core row. It supplies identity, taxonomy, lifecycle intent, broad fa
 Important notes:
 
 - `status` means lifecycle: Published, Draft or Archived.
-- `listing_state`/`listing_override` concern Active/Legacy availability and are independent of lifecycle.
+- `listing_state` is the stored Active/Legacy listing. It is independent of lifecycle and takes precedence over availability. Legacy products cannot have availability.
+- `listing_override` is retained only for older workbook compatibility (`Force active` / `Force legacy` / `Active` / `Legacy`). `listing_state` wins when both are present.
 - `stock_codes` and `availability` are compatibility/summary values; `4 Sale lines` is the structured sale-line source.
 - `seo_title` and `seo_description` are present in this approved sheet but are
   not read by the current importer; maintain import SEO in `7 Website SEO`.
 - `distributed_by` is retained only for legacy workbook/storage compatibility. It is not editable or public.
+- `ecocert_approved` remains on this sheet for older workbook compatibility. Only Biologicals values are imported; the editor field lives on Category specifics.
 - `bred_by_origin`, `supplier_name`, `description_source`, source columns, internal notes and review flags are private/admin information.
 
 ### `2 Sowing rates`
@@ -377,7 +386,7 @@ slug, product_name, category, sub_category, ploidy, heading_date,
 heading_offset_days, argt_resistant, endophyte, growth_season, maturity_days,
 hard_seed_level, oestrogen_level, bloat_risk, flower_colour, seed_form_options,
 winter_activity, growing_season, weeks_to_first_grazing, prussic_acid_risk,
-regrowth, flowering_window, product_form, application_rate, _evidence
+regrowth, flowering_window, product_form, application_rate, ecocert_approved, _evidence
 ```
 
 The applicable fields depend on category. Examples:
@@ -391,7 +400,7 @@ The applicable fields depend on category. Examples:
 - Fescue/sub-tropical: growth season
 - Forage/grain: growing season, first grazing, prussic acid and regrowth
 - Mixes: flowering window
-- Biologicals: product form and application rate
+- Biologicals: product form, application rate and ECOCERT approval
 
 `_evidence` is provenance, not public copy.
 
@@ -413,8 +422,9 @@ private import context.
 The current public “How it’s sold” table intentionally shows seed form, pack and
 stock status. It does **not** render Grade or Price in that table, even though
 both remain in the public API sale-line data. A separate order panel may use the
-approved display price/pack for the default or first sale line with a reseller
-disclaimer.
+approved display price for the default or first sale line, and lists unique
+sale-line pack weights when any exist. Public pages must not fall back to the
+vestigial product-level `price` or `packSize` fields.
 
 ### `5 Mix components`
 
@@ -455,14 +465,38 @@ meta_description, words, tech_sheet_pdf_urls, images_on_page, notes,
 page_text_verbatim
 ```
 
-Current import uses this sheet primarily to merge SEO and legacy-address information:
+Current import uses this sheet to merge SEO, sharing and legacy-address information:
 
 - `product_slug` or `website_slug` identifies the product.
 - `menu_label` can supply the SEO title for legacy compatibility.
 - `meta_description` supplies SEO description.
-- `website_slug`, `product_url`, and `redirect_note` may define redirects.
+- `social_title`, `social_description`, `social_image`, `canonical_url` and `robots_index` store the admin SEO extras. Blank cells leave existing values; `NULL` clears them (`robots_index` NULL restores the default of indexed).
+- `website_slug`, `product_url`, and `redirect_note` may define redirects. The full redirect table is `9 Redirects`.
+
+Generated exports write one SEO row per product with the current title, description, social fields, canonical URL, index flag and legacy product URL.
 
 The remaining website-capture columns are reference/provenance unless explicitly mapped. Do not assume every captured legacy website field is public in the new site.
+
+### `8 Categories`
+
+Headers:
+
+```text
+parent_slug, slug, name, group_label, lead, page_heading, seo_title,
+seo_description, rainfall, image, sort_order, active
+```
+
+This sheet is the category metadata export. Root rows have a blank `parent_slug`. Import updates matching slugs and can create missing categories. It does not delete omitted categories or change parent/slug identity of existing rows.
+
+### `9 Redirects`
+
+Headers:
+
+```text
+from_path, to_path
+```
+
+Each row is one stored redirect. Import upserts by `from_path`. Omitted redirects are retained.
 
 ### `Lists`
 
@@ -490,7 +524,7 @@ The approved workbook contains 434 Review rows. The accompanying upload note say
 
 ## 6. Data and visibility matrix
 
-The following matrix groups related fields. “Publish required” means required by the server before an explicit publication, not that every historic Published record necessarily contains it.
+The following matrix groups related fields. “Publish required” means required by the server before an explicit publication, not that every historic Published record necessarily contains it. Field-by-field editor labels, fill guidance, and exact customer surfaces are in [docs/product-editor/](docs/product-editor/README.md).
 
 | Data group | Workbook source | Admin location | Draft required | Publish required | Public behavior |
 |---|---|---|---:|---:|---|
@@ -500,9 +534,7 @@ The following matrix groups related fields. “Publish required” means require
 | Record type | `record_type` | Basics | Yes | Yes | Quick facts and type-dependent UI |
 | Botanical name | `botanical_name` | Basics | No | No | Product hero where present |
 | Also known as | `also_known_as` | Basics | No | No | Stored/admin-only |
-| Persistency/type | `persistency_type` | Basics | No | No | Quick facts where present |
 | Breeder/origin | `bred_by_origin` | Basics | No | No | **Private; deliberately excluded** |
-| Australian bred | `australian_bred` | Basics | No | No | Stored/admin-only |
 | Supplier/third-party | `supplier_name`, `is_third_party_product` | Selling | No | No | **Private; deliberately excluded** |
 | Distributed by | `distributed_by` | Not editable | No | No | Compatibility storage only; absent from public contract |
 | Tagline | `tagline` | Content & publishing | No | Yes | Under H1 and on product cards |
@@ -520,7 +552,10 @@ The following matrix groups related fields. “Publish required” means require
 | Tolerances | `tolerance`, pipe list | Agronomy & fit | No | No | Quick facts and comparisons |
 | End use/livestock | pipe lists | Agronomy & fit | No | No | Quick facts |
 | Companion species | `6 Companions` | Agronomy & fit | No | No | Stored/admin-only currently |
-| Inoculant/ECOCERT | product fields | Agronomy & fit | No | No | Inoculant private; selected certification can be public |
+| Persistency/type | `persistency_type` | Agronomy & fit | No | No | Quick facts where present |
+| Australian bred | `australian_bred` | Agronomy & fit | No | No | Stored/admin-only |
+| Inoculant group | product fields | Agronomy & fit | No | No | Private; legumes only in the editor |
+| ECOCERT approved | `ecocert_approved` | Category-specific (Biologicals only) | No | No | Selected certification can be public |
 | Grazing management | `grazing_management_notes` | Agronomy & fit | No | No | Conditional accordion |
 | Disease/pest resistance | matching field | Agronomy & fit | No | No | Conditional accordion |
 | Stand life | `stand_life_notes` | Agronomy & fit | No | No | Conditional accordion |
@@ -530,21 +565,26 @@ The following matrix groups related fields. “Publish required” means require
 | Seed form | `seed_form` | Selling | No | No | “How it’s sold” |
 | Seed grade | `seed_grade` | Selling | No | No | Stored/admin-only; removed from public sales table |
 | Pack | `pack_kg`, `pack_unit` | Selling | No | No | “How it’s sold” and order panel |
-| Availability | sale line | Selling | No | No | Public stock status and Active/Legacy derivation |
+| Availability | sale line | Selling | No | No | Public stock status. Disabled when listing state is Legacy |
 | Display price | `price_display` | Selling | No | No | May appear in order panel; not “How it’s sold” |
 | Internal price-list fields | sale-line sheet | Import only | No | No | Private; not public contract |
 | Default sale line | `is_default` | Selling | No | At most one | Controls preferred sales presentation |
 | PBR/certification | product fields | Selling | No | No | Limited public metadata below related products |
 | Licence restriction | `licence_restriction` | Selling | No | No | Stored/admin-only currently |
 | Tech-sheet URL | `tech_sheet_pdf_path` | Content & publishing | No | No | Conditional download link |
-| Photos | `photo_1` plus stored slots | Content & publishing | No | No | First nonblank photo is hero; other slots retained |
+| Photos | `photo_1`, `photo_2`, `photo_3` | Content & publishing | No | No | First nonblank photo is hero; other slots retained |
 | Related products | slugs | Content & publishing | No | No | Explicit related-product cards |
-| Sort order/featured | product fields | Content & publishing | No | No | Ordering and “Also popular” preference |
-| Legacy URL | `website_url` | Content & publishing | No | No | Admin/compatibility; redirects are separate |
-| SEO title | `7 Website SEO.seo_title` or legacy `menu_label`; `1 Products` cells are currently ignored | SEO | No | **Yes** | Document title and metadata |
-| SEO description | `7 Website SEO.meta_description`; `1 Products` cells are currently ignored | SEO | No | **Yes** | Meta description and structured-data fallback |
+| Sort order/featured | product fields | Content & publishing | No | No | Featured sorts category grids first and prefers Also popular. Product `sortOrder` is stored/admin-only and is not used by the current public pages |
+| Legacy URL | `website_url` / `7 Website SEO.product_url` | Content & publishing | No | No | Admin/compatibility; redirects are separate |
+| SEO title | `7 Website SEO.seo_title` or legacy `menu_label`; `1 Products` cells are currently ignored | SEO | No | **Yes** | Document title and metadata; `™`/`®` are stripped |
+| SEO description | `7 Website SEO.meta_description`; `1 Products` cells are currently ignored | SEO | No | **Yes** | Meta description and structured-data fallback; `™`/`®` are stripped |
+| Social sharing | `social_title`, `social_description`, `social_image` | SEO | No | No | Optional; blank falls back to the product SEO/hero on the public site |
+| Canonical URL | `canonical_url` | SEO | No | No | Optional override of the product URL |
+| Search indexing | `robots_index` | SEO | No | No | `N` publishes with noindex |
+| Category metadata | `8 Categories` | Categories admin | No | No | Page heading, lead, SEO, rainfall, image, active |
+| Redirects | `9 Redirects` | Import/database | No | No | Old path to current path |
 | Lifecycle status | `status` | Product list/import | New defaults Draft | Explicit publication validated | Controls public eligibility |
-| Listing override | listing fields | Selling | No | No | Alters Active/Legacy derivation; public output only shows result |
+| Listing state | listing fields | Basics | Active | No | Manual Active/Legacy listing; public output only shows Active products |
 
 ## 7. Admin website behavior
 
@@ -554,7 +594,7 @@ The admin provides:
 
 - Published, Draft and Archived product lists
 - Search, category, listing and stock-status filters
-- Draft overlays for Published products with pending revisions
+- Leftover unpublished-change badges for any remaining `ih_product_drafts` rows
 - Bulk stock-status updates
 - Lifecycle actions with confirmation
 - Catalogue summary and attention panels
@@ -563,12 +603,14 @@ The admin provides:
 
 ### Six editor sections
 
-1. **Basics** — identity, category, record type, botanical/basic classification.
-2. **Agronomy & fit** — sowing, rainfall, pH, soils, tolerance, use, livestock and management.
-3. **Category-specific** — fields shown only where relevant, including Mix components.
-4. **Selling** — sale lines, availability/listing behavior, certification and private supplier information.
-5. **Content & publishing** — the public copy layers, distribution note, admin provenance, media, related products and ordering.
-6. **SEO** — title and description required before publication.
+Field-by-field purpose, fill guidance, and customer visibility for each tab live in [docs/product-editor/](docs/product-editor/README.md). Update those files in the same change as editor, API, or public-display updates.
+
+1. **Basics** — identity, category, record type, listing state, botanical name and origin. [01-basics.md](docs/product-editor/01-basics.md)
+2. **Agronomy & fit** — sowing, rainfall, pH, soils, tolerance, use, livestock, companions, persistency, Australian bred, and management. [02-agronomy-and-fit.md](docs/product-editor/02-agronomy-and-fit.md)
+3. **Category-specific** — fields shown only where relevant, including Mix components. [03-category-specific.md](docs/product-editor/03-category-specific.md)
+4. **Selling** — sale lines, availability, certification and private supplier information. [04-selling.md](docs/product-editor/04-selling.md)
+5. **Content & publishing** — the public copy layers, distribution note, admin provenance, media, related products and ordering. [05-content-and-publishing.md](docs/product-editor/05-content-and-publishing.md)
+6. **SEO** — title and description required before publication. [06-seo.md](docs/product-editor/06-seo.md)
 
 Desktop uses section tabs. Mobile uses an “Editing section” dropdown. Category-dependent sections remain unavailable until a category is selected.
 
@@ -578,13 +620,17 @@ Desktop uses section tabs. Mobile uses an “Editing section” dropdown. Catego
 - The completion panel is collapsible and reports each section.
 - Save/Publish actions appear only when there are unpublished changes.
 - Saving a Draft requires only the four identity fields.
-- Publishing asks for confirmation and promotes the draft/current changes.
+- Published products cannot be saved as drafts; Publish replaces the live page.
+- Publishing asks for confirmation, saves the current editor payload if the product is still a Draft, then publishes that payload.
 - Back navigates directly when the form is clean.
-- Back warns only when there are unsaved changes, offering Save draft & leave, Leave without saving, or Keep editing.
-- Published live view and Archived view are read-only.
+- Back warns only when there are unsaved changes. Draft products can Save draft & leave. Published products can only Leave without saving or Keep editing.
+- Leftover unpublished changes on a Published product can be compared with View Live, then published or discarded.
+- Archived view is read-only.
 - Archived products must be restored to Draft before editing.
 
 The SEO section labels its fields as compulsory before publish. The browser’s local pre-check does not currently enumerate those SEO errors, but the API does. A publication without SEO therefore fails safely at the server and reports validation errors.
+
+Trademark marks belong on the product name. The Basics tab includes a TM button for that field. SEO title, SEO description, and social sharing title/description are stored and published as plain text: `™` and `®` are stripped on edit, import, and public metadata.
 
 ## 8. Public website behavior
 
@@ -634,6 +680,7 @@ The current public hierarchy is:
 ### SEO and structured data
 
 - Document title and meta description use the stored SEO fields with safe content fallbacks.
+- `™` and `®` stay on the visible product name (H1, cards, JSON-LD Product `name`). They are stripped from document title, meta description, Open Graph title/description, and JSON-LD description.
 - Canonical product paths use `/product/{slug}`.
 - Product JSON-LD contains the public name, IH Seeds brand, public description, optional real image and selected Quick facts.
 - The sitemap contains the same Published + Active product set as the main catalogue.
@@ -683,7 +730,7 @@ After that upload, the running implementation was refined further:
 - PostgreSQL-backed Published/Draft/Archived lifecycle with separate snapshots for revisions to live products
 - Transactional row locking around lifecycle writes
 - Published-only public endpoints with no unsafe complete-static-catalogue fallback
-- Independent Active/Legacy derivation from sale lines and force overrides
+- Independent Active/Legacy listing chosen by the administrator, taking precedence over availability
 - Separate name-only Legacy section on category pages
 - Immutable product and category slugs, plus database redirects
 - Seven-sheet dry-run/token/commit workbook workflow
@@ -712,7 +759,7 @@ These figures are operational observations, not system invariants:
 - 49 Draft products
 - 100 products in the public Active catalogue
 - 102 sale lines
-- 2 pending draft snapshots attached to products
+- 2 leftover draft snapshots attached to products from the previous revision model
 - 8 redirects
 - 11 root categories
 - 45 child categories
@@ -730,7 +777,7 @@ Do not write tests or business logic that expects these exact totals. Normal cat
 
 1. Export a fresh workbook from the admin.
 2. Keep an untouched copy as a comparison point.
-3. Confirm whether any Published products have pending admin drafts; importing those products will replace their direct stored data and remove their draft snapshots.
+3. Confirm whether any Published products have leftover admin drafts; importing those products will replace their stored data and remove those leftover snapshots.
 4. Decide whether the job is:
    - copy refinement only,
    - taxonomy refinement,
@@ -790,8 +837,9 @@ Copy the following block into a future Claude request and add the specific edito
 You are refining an IH Seeds catalogue workbook for import into an existing
 PostgreSQL-backed website. Treat these as hard compatibility rules:
 
-1. Start from the newest admin export. Preserve the seven numbered sheet names
-   and the required Lists sheet.
+1. Start from the newest admin export. Preserve the numbered sheet names
+   (`1`–`9` on current exports) and the required Lists sheet. Older files may
+   omit `8 Categories` and `9 Redirects`.
 2. Product slug is the permanent identity and join key. Never change an existing
    slug. Never invent a replacement slug for an existing product.
 3. Do not remove products to archive or delete them. Omission does not delete
@@ -804,7 +852,8 @@ PostgreSQL-backed website. Treat these as hard compatibility rules:
 7. Effective import SEO comes from 7 Website SEO. The importer accepts its
    seo_title or legacy menu_label as title, and meta_description as description.
    Do not rely on the seo_title or seo_description cells present in 1 Products;
-   the current importer ignores those cells.
+   the current importer ignores those cells. Do not put ™ or ® in SEO fields;
+   those marks belong on product_name and are stripped from search metadata.
 8. Preserve description paragraph breaks. Description must be plain paragraphs,
    not embedded section headings.
 9. Use | for list values, Y/N for booleans, controlled values from Lists, and

@@ -89,6 +89,7 @@ export type SaleLine = {
 };
 
 export type ProductLifecycleStatus = "Published" | "Draft" | "Archived";
+export type ProductListingState = "Active" | "Legacy";
 export type ProductEditablePayload = {
   name: string;
   price: string;
@@ -102,10 +103,63 @@ export type ProductEditablePayload = {
   descriptionSource: string;
   websiteUrlLegacy: string;
   availabilityOverride: "Good stock" | "Low stock" | "Very low" | "Unavailable" | null;
-  listingOverride: "Force active" | "Force legacy" | null;
+  listingState: ProductListingState;
   details: ProductDetails;
   saleLines: SaleLine[];
 };
+
+const LEGACY_LISTING_VALUES = new Set(["Legacy", "Force legacy"]);
+const ACTIVE_LISTING_VALUES = new Set(["Active", "Force active"]);
+
+export function resolveListingState(value: unknown, fallback: ProductListingState = "Active"): ProductListingState {
+  if (typeof value === "string") {
+    if (LEGACY_LISTING_VALUES.has(value)) return "Legacy";
+    if (ACTIVE_LISTING_VALUES.has(value)) return "Active";
+    return fallback;
+  }
+  if (value && typeof value === "object") {
+    const record = value as { listingState?: unknown; listingOverride?: unknown };
+    if (record.listingState != null && record.listingState !== "") {
+      return resolveListingState(record.listingState, fallback);
+    }
+    if (record.listingOverride != null && record.listingOverride !== "") {
+      return resolveListingState(record.listingOverride, fallback);
+    }
+  }
+  return fallback;
+}
+
+export function isActiveListing(product: { listingState?: unknown; listingOverride?: unknown }) {
+  return resolveListingState(product) === "Active";
+}
+
+export function applyListingAvailability<T extends {
+  listingState?: unknown;
+  listingOverride?: unknown;
+  availabilityOverride?: unknown;
+  status?: string;
+  saleLines?: SaleLine[];
+}>(payload: T): T & { listingState: ProductListingState } {
+  const listingState = resolveListingState(payload);
+  if (listingState !== "Legacy") return { ...payload, listingState };
+  return {
+    ...payload,
+    listingState,
+    availabilityOverride: null,
+    status: "unavailable",
+    ...(payload.saleLines
+      ? { saleLines: payload.saleLines.map((line) => ({ ...line, availability: "Unavailable" as const })) }
+      : {}),
+  };
+}
+
+export function prepareEditablePayload(body: unknown): unknown {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return body;
+  const record = { ...(body as Record<string, unknown>) };
+  record.listingState = resolveListingState(record);
+  delete record.listingOverride;
+  return record;
+}
 
 const emptyProductDetails: ProductDetails = {
   stockCode: "",
@@ -188,6 +242,10 @@ type LegacyProductDetails = Omit<Partial<ProductDetails>, "tolerance" | "compone
   components?: Array<ProductDetails["components"][number] | { name?: string; note?: string }>;
 };
 
+export function forSearchMetadata(value: string) {
+  return value.replace(/[™®]/g, "").replace(/\s{2,}/g, " ").replace(/\s+([,.;:!?])/g, "$1").trim();
+}
+
 export function normalizeProductDetails(value: unknown, packSize = ""): ProductDetails {
   const raw = value && typeof value === "object" ? value as LegacyProductDetails : {};
   const {
@@ -262,6 +320,10 @@ export function normalizeProductDetails(value: unknown, packSize = ""): ProductD
     photos: Array.isArray(current.photos) ? current.photos : [],
     robotsIndex: current.robotsIndex ?? true,
     relatedProducts: Array.isArray(current.relatedProducts) ? current.relatedProducts : [],
+    seoTitle: forSearchMetadata(current.seoTitle ?? ""),
+    seoDescription: forSearchMetadata(current.seoDescription ?? ""),
+    socialTitle: forSearchMetadata(current.socialTitle ?? ""),
+    socialDescription: forSearchMetadata(current.socialDescription ?? ""),
   };
 }
 
@@ -280,7 +342,7 @@ export const productsTable = pgTable("ih_products", {
   descriptionSource: text("description_source").notNull().default(""),
   websiteUrlLegacy: text("website_url_legacy").notNull().default(""),
   availabilityOverride: text("availability_override"),
-  listingOverride: text("listing_override"),
+  listingState: text("listing_override").notNull().default("Active"),
   publishStatus: text("publish_status").notNull().default("Published"),
   publishedAt: timestamp("published_at", { withTimezone: true }),
   details: jsonb("details").$type<ProductDetails>().notNull().default(emptyProductDetails),
@@ -420,7 +482,7 @@ export const insertProductSchema = z.object({
   descriptionSource: z.string().trim().max(240).default(""),
   websiteUrlLegacy: z.string().trim().max(500).default(""),
   availabilityOverride: z.enum(["Good stock", "Low stock", "Very low", "Unavailable"]).nullable().default(null),
-  listingOverride: z.enum(["Force active", "Force legacy"]).nullable().default(null),
+  listingState: z.enum(["Active", "Legacy"]).default("Active"),
   publishStatus: z.enum(["Published", "Draft", "Archived"]),
   details: productDetailsSchema,
 });

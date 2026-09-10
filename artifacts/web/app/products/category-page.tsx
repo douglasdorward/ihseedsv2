@@ -11,6 +11,7 @@ import {
 } from "../../lib/catalogue";
 import { absoluteSiteUrl } from "../../lib/site-url";
 import { CategoryCatalogue } from "./CategoryCatalogue";
+import { forSearchMetadata } from "../../lib/search-metadata";
 
 type RouteParams = { category: string; subcategory?: string };
 
@@ -116,11 +117,12 @@ export async function categoryMetadata(params: RouteParams): Promise<Metadata> {
   }
 
   return {
-    title: page.selected.seoTitle.trim() || `${page.selected.name} Seed | IH Seeds`,
-    description:
+    title: forSearchMetadata(page.selected.seoTitle.trim() || `${page.selected.name} Seed | IH Seeds`),
+    description: forSearchMetadata(
       page.selected.seoDescription.trim() ||
       page.selected.lead.trim() ||
       page.root.lead,
+    ),
     alternates: { canonical: page.path },
   };
 }
@@ -186,17 +188,9 @@ export async function CategoryPage({ params }: { params: RouteParams }) {
         <div className="page-breadcrumb" style={{ maxWidth: 1180, margin: "0 auto", padding: "32px 40px 12px", fontSize: 14, fontWeight: 600, color: "var(--muted)" }}>
           <Link href="/products" style={{ textDecoration: "none", color: "inherit" }}>Products</Link> / {page.selected.id !== page.root.id && page.children.length > 1 ? `${page.root.name} / ${page.selected.name}` : page.root.name}
         </div>
-        <div className="page-hero-grid" style={{ maxWidth: 1180, margin: "0 auto", padding: "12px 40px 72px", display: "grid", gridTemplateColumns: "minmax(0,1.15fr) minmax(0,1fr)", gap: 64, alignItems: "center" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <h1 style={{ margin: 0, fontSize: 48, lineHeight: 1.2, fontWeight: 300, color: "var(--green)" }}>{title.light} <span style={{ fontWeight: 700 }}>{title.bold}</span></h1>
-            <p style={{ margin: 0, fontSize: 18, lineHeight: 1.6, color: "var(--black-green)", maxWidth: "52ch" }}>{description}</p>
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", paddingTop: 8 }}>
-              <a href="/IH-Seeds-2026-Pasture-Seed-Guide.pdf" className="button button-primary" download>Download the 2026 Pasture Seed Guide</a>
-            </div>
-          </div>
-          <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", minHeight: 340, background: "#C5CCC5" }}>
-            <div role="img" aria-label={page.selected.name} style={{ display: "block", width: "100%", height: 340, backgroundImage: `url(${page.selected.image || page.root.image})`, backgroundSize: "cover", backgroundPosition: "center" }} />
-          </div>
+        <div className="category-intro" style={{ maxWidth: 1180, margin: "0 auto", padding: "12px 40px 48px", display: "flex", flexDirection: "column", gap: 20 }}>
+          <h1 style={{ margin: 0, fontSize: 48, lineHeight: 1.2, fontWeight: 300, color: "var(--green)" }}>{title.light} <span style={{ fontWeight: 700 }}>{title.bold}</span></h1>
+          <p style={{ margin: 0, fontSize: 18, lineHeight: 1.6, color: "var(--black-green)", maxWidth: "64ch" }}>{description}</p>
         </div>
       </section>
 
@@ -230,6 +224,16 @@ export async function CategoryPage({ params }: { params: RouteParams }) {
           </div>
         </section>
       )}
+
+      <section style={{ background: "var(--sage)" }}>
+        <div className="category-guide-cta" style={{ maxWidth: 1180, margin: "0 auto", padding: "64px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 32 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: "54ch" }}>
+            <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)" }}>2026 Pasture Seed Guide</h2>
+            <p style={{ margin: 0, fontSize: 16, lineHeight: 1.6, color: "var(--black-green)" }}>Every line in this category, with sowing rates and regional notes.</p>
+          </div>
+          <a href="/IH-Seeds-2026-Pasture-Seed-Guide.pdf" className="button button-primary" download>Download the 2026 Pasture Seed Guide (PDF)</a>
+        </div>
+      </section>
     </>
   );
 }

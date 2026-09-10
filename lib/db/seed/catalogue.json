@@ -845,7 +845,7 @@
   "products": [
     {
       "name": "SouWest™ Pasture Mix",
-      "slug": "souwest-pasture-mix",
+      "slug": "souwest-pasture-mix-legacy",
       "price": "$25.00 per kg",
       "packSize": "Standard: 25 kg bag",
       "status": "in-stock",
@@ -20483,7 +20483,7 @@
     },
     {
       "name": "SouWest Pasture Mix",
-      "slug": "souwest-pasture-mix-2",
+      "slug": "souwest-pasture-mix",
       "price": "",
       "packSize": "",
       "status": "in-stock",
@@ -22627,7 +22627,7 @@
       "sortOrder": 0
     },
     {
-      "productSlug": "souwest-pasture-mix-2",
+      "productSlug": "souwest-pasture-mix",
       "stockCode": "SOU",
       "seedForm": "BioNPK-S coated",
       "seedGrade": "",
@@ -23815,8 +23815,8 @@
       "toPath": "/products/clovers#catalogue"
     },
     {
-      "fromPath": "/product/souwest-pasture-mix",
-      "toPath": "/product/souwest-pasture-mix-2"
+      "fromPath": "/product/souwest-pasture-mix-2",
+      "toPath": "/product/souwest-pasture-mix"
     },
     {
       "fromPath": "/products/biologicals/biologicals-biological",

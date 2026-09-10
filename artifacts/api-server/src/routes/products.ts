@@ -3,10 +3,12 @@ import { desc, eq, inArray } from "drizzle-orm";
 import {
   db,
   catalogueCategoriesTable,
+  forSearchMetadata,
   normalizeProductDetails,
   productDraftSchema,
   productDraftsTable,
   productsTable,
+  saleLineSchema,
   saleLinesTable,
   redirectsTable,
   type SaleLine,
@@ -14,6 +16,10 @@ import {
   type InsertProduct,
   type Product,
   type ProductEditablePayload,
+  applyListingAvailability,
+  isActiveListing,
+  prepareEditablePayload,
+  resolveListingState,
 } from "@workspace/db";
 import { insertProductSchema } from "@workspace/db";
 
@@ -55,8 +61,11 @@ function toPublicDetails(value: unknown, packSize: string) {
     pbrProtected: d.pbrProtected, pbrDetails: d.pbrDetails, certification: d.certification,
     description: d.description, components: d.components,
     relatedProducts: d.relatedProducts, formulationYear: d.formulationYear, photos: d.photos,
-    featured: d.featured, seoTitle: d.seoTitle, seoDescription: d.seoDescription || d.blurb,
-    socialTitle: d.socialTitle, socialDescription: d.socialDescription,
+    featured: d.featured,
+    seoTitle: forSearchMetadata(d.seoTitle),
+    seoDescription: forSearchMetadata(d.seoDescription || d.blurb),
+    socialTitle: forSearchMetadata(d.socialTitle),
+    socialDescription: forSearchMetadata(d.socialDescription),
     socialImage: d.socialImage, canonicalUrl: d.canonicalUrl, robotsIndex: d.robotsIndex,
   };
 }
@@ -94,7 +103,9 @@ async function liveSaleLines(productId: number): Promise<SaleLine[]> {
 }
 
 function toPublicProduct(product: Product, productLines: SaleLine[]): PublicProduct {
-  const availability = product.availabilityOverride ?? productLines.find((line) => line.isDefault)?.availability
+  const availability = product.listingState === "Legacy"
+    ? "Unavailable"
+    : product.availabilityOverride ?? productLines.find((line) => line.isDefault)?.availability
     ?? productLines.find((line) => line.availability !== "Unavailable")?.availability ?? "Unavailable";
   return {
     id: product.id, name: product.name, slug: product.slug, price: product.price, packSize: product.packSize,
@@ -105,14 +116,8 @@ function toPublicProduct(product: Product, productLines: SaleLine[]): PublicProd
   };
 }
 
-function isActiveListing(product: Product, productLines: SaleLine[]) {
-  if (product.listingOverride === "Force active") return true;
-  if (product.listingOverride === "Force legacy") return false;
-  return productLines.length === 0 || productLines.some((line) => line.availability !== "Unavailable");
-}
-
 function editableFromProduct(product: Product, saleLines: SaleLine[] = []): ProductEditablePayload {
-  return {
+  return applyListingAvailability({
     name: product.name,
     price: product.price,
     packSize: product.packSize,
@@ -125,15 +130,55 @@ function editableFromProduct(product: Product, saleLines: SaleLine[] = []): Prod
     descriptionSource: product.descriptionSource,
     websiteUrlLegacy: product.websiteUrlLegacy,
     availabilityOverride: product.availabilityOverride as ProductEditablePayload["availabilityOverride"],
-    listingOverride: product.listingOverride as ProductEditablePayload["listingOverride"],
+    listingState: resolveListingState(product),
     details: normalizeProductDetails(product.details, product.packSize),
     saleLines,
-  };
+  });
 }
 
 function normalizeEditable(payload: ProductEditablePayload): ProductEditablePayload {
-  return { ...payload, subcategoryId: payload.subcategoryId ?? null, saleLines: payload.saleLines ?? [],
-    details: normalizeProductDetails(payload.details, payload.packSize) };
+  return applyListingAvailability({
+    ...payload,
+    subcategoryId: payload.subcategoryId ?? null,
+    saleLines: payload.saleLines ?? [],
+    details: normalizeProductDetails(payload.details, payload.packSize),
+    listingState: resolveListingState(payload),
+  });
+}
+
+function productFieldsFromEditable(payload: ProductEditablePayload) {
+  const { saleLines: _saleLines, ...productFields } = payload;
+  return productFields;
+}
+
+function saleLineRows(productId: number, saleLines: ProductEditablePayload["saleLines"]) {
+  return saleLines.map((line) => ({
+    productId,
+    stockCode: line.stockCode,
+    seedForm: line.seedForm,
+    seedGrade: line.seedGrade,
+    packKg: line.packKg === null ? null : String(line.packKg),
+    packUnit: line.packUnit,
+    availability: line.availability,
+    priceDisplay: line.priceDisplay,
+    isDefault: line.isDefault,
+    sortOrder: line.sortOrder,
+  }));
+}
+
+async function replaceSaleLines(
+  tx: Pick<typeof db, "delete" | "insert">,
+  productId: number,
+  saleLines: ProductEditablePayload["saleLines"],
+) {
+  await tx.delete(saleLinesTable).where(eq(saleLinesTable.productId, productId));
+  if (saleLines.length) {
+    await tx.insert(saleLinesTable).values(saleLineRows(productId, saleLines));
+  }
+}
+
+function hasPublishPayload(body: unknown): body is Record<string, unknown> {
+  return Boolean(body && typeof body === "object" && !Array.isArray(body) && Object.keys(body).length > 0);
 }
 
 async function resolveTaxonomyCategory(subcategoryId: number | null): Promise<{ category: string; active: boolean } | null> {
@@ -281,7 +326,7 @@ router.get("/products", async (req, res): Promise<void> => {
   for (const line of lines) linesByProduct.set(line.productId, [...(linesByProduct.get(line.productId) ?? []), toSaleLine(line)]);
   res.json(products.filter((product) => {
     if (product.publishStatus !== "Published") return false;
-    return isActiveListing(product, linesByProduct.get(product.id) ?? []);
+    return isActiveListing(product);
   }).map((product): PublicProduct => toPublicProduct(product, linesByProduct.get(product.id) ?? [])));
 });
 
@@ -294,7 +339,7 @@ router.get("/products/slug/:slug", async (req, res): Promise<void> => {
     return;
   }
   const productLines = await liveSaleLines(product.id);
-  if (!isActiveListing(product, productLines)) {
+  if (!isActiveListing(product)) {
     res.status(404).json({ error: "Product not found." });
     return;
   }
@@ -308,12 +353,7 @@ router.get("/products/category/:category/legacy", async (req, res): Promise<void
   const category = decodeURIComponent(String(req.params.category));
   const products = await db.select().from(productsTable)
     .where(eq(productsTable.category, category));
-  const lines = await db.select().from(saleLinesTable);
-  const byProduct = new Map<number, SaleLine[]>();
-  for (const line of lines) byProduct.set(line.productId, [...(byProduct.get(line.productId) ?? []), toSaleLine(line)]);
-  res.json(products.filter((product) => product.publishStatus === "Published" &&
-    (product.listingOverride === "Force legacy" ||
-      (product.listingOverride !== "Force active" && (() => { const productLines = byProduct.get(product.id) ?? []; return productLines.length > 0 && !productLines.some((line) => line.availability !== "Unavailable"); })())))
+  res.json(products.filter((product) => product.publishStatus === "Published" && !isActiveListing(product))
     .map((product) => ({ name: product.name })));
 });
 
@@ -333,11 +373,8 @@ router.get("/redirects/lookup", async (req, res): Promise<void> => {
 
 router.get("/sitemap-products", async (_req, res): Promise<void> => {
   const products = await db.select().from(productsTable).where(eq(productsTable.publishStatus, "Published"));
-  const lines = await db.select().from(saleLinesTable);
-  const linesByProduct = new Map<number, SaleLine[]>();
-  for (const line of lines) linesByProduct.set(line.productId, [...(linesByProduct.get(line.productId) ?? []), toSaleLine(line)]);
   res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${
-    products.filter((product) => isActiveListing(product, linesByProduct.get(product.id) ?? []))
+    products.filter((product) => isActiveListing(product))
       .map((product) => `<url><loc>${escapeXml(canonicalProductUrl(product.slug))}</loc></url>`).join("")
   }</urlset>`);
 });
@@ -348,11 +385,11 @@ router.post("/products", async (req, res): Promise<void> => {
     res.status(400).json({ error: `Complete these fields before saving a draft: ${missingDraftFields.join(", ")}.` });
     return;
   }
-  const parsed = insertProductSchema.safeParse({
+  const parsed = insertProductSchema.safeParse(prepareEditablePayload({
     ...req.body,
     publishStatus: "Draft",
     details: normalizeProductDetails(req.body.details, String(req.body.packSize ?? "")),
-  });
+  }));
   if (!parsed.success) {
     req.log.warn({ errors: parsed.error.flatten() }, "Invalid product create request");
     res.status(400).json({ error: "Please complete all required product fields." });
@@ -368,12 +405,27 @@ router.post("/products", async (req, res): Promise<void> => {
     sendProductReferenceError(res, referenceIssues);
     return;
   }
+  const parsedSaleLines = saleLineSchema.array().safeParse(req.body?.saleLines ?? []);
+  if (!parsedSaleLines.success) {
+    res.status(400).json({ error: "Please complete all required product fields." });
+    return;
+  }
+  const listingPayload = applyListingAvailability({
+    ...taxonomyPayload,
+    listingState: resolveListingState(taxonomyPayload),
+    saleLines: parsedSaleLines.data,
+  });
+  const { saleLines, ...productValues } = listingPayload;
   try {
-    const [product] = await db.insert(productsTable).values({
-      ...taxonomyPayload,
-      publishStatus: "Draft",
-      publishedAt: null,
-    }).returning();
+    const product = await db.transaction(async (tx) => {
+      const [created] = await tx.insert(productsTable).values({
+        ...productValues,
+        publishStatus: "Draft",
+        publishedAt: null,
+      }).returning();
+      await replaceSaleLines(tx, created.id, saleLines);
+      return created;
+    });
     req.log.info({ productId: product.id }, "Draft product created");
     res.status(201).json(product);
   } catch (error) {
@@ -420,12 +472,16 @@ router.post("/admin/products/:id/draft", async (req, res): Promise<void> => {
     res.status(409).json({ error: "Archived products must be restored to Draft before editing." });
     return;
   }
+  if (product.publishStatus === "Published") {
+    res.status(409).json({ error: "Published products cannot be saved as drafts. Publish the changes instead." });
+    return;
+  }
   const missingDraftFields = getDraftValidationErrors({ ...req.body, slug: product.slug });
   if (missingDraftFields.length > 0) {
     res.status(400).json({ error: `Complete these fields before saving a draft: ${missingDraftFields.join(", ")}.` });
     return;
   }
-  const parsed = productDraftSchema.safeParse(req.body);
+  const parsed = productDraftSchema.safeParse(prepareEditablePayload(req.body));
   if (!parsed.success) {
     res.status(400).json({ error: "Please complete all required product fields." });
     return;
@@ -451,23 +507,12 @@ router.post("/admin/products/:id/draft", async (req, res): Promise<void> => {
         .where(eq(productsTable.id, id)).for("update");
       if (!lockedProduct) throw new Error("PRODUCT_NOT_FOUND");
       if (lockedProduct.publishStatus === "Archived") throw new Error("PRODUCT_ARCHIVED");
-      if (lockedProduct.publishStatus === "Published") {
-        const [existingDraft] = await tx.select().from(productDraftsTable)
-          .where(eq(productDraftsTable.productId, id));
-        if (existingDraft) {
-          await tx.update(productDraftsTable)
-            .set({ snapshot, updatedAt: new Date() })
-            .where(eq(productDraftsTable.id, existingDraft.id));
-        } else {
-          await tx.insert(productDraftsTable).values({ productId: id, snapshot });
-        }
-        return lockedProduct;
-      } else {
-        const [draftProduct] = await tx.update(productsTable)
-          .set({ ...snapshot, publishStatus: "Draft", updatedAt: new Date() })
-          .where(eq(productsTable.id, id)).returning();
-        return draftProduct;
-      }
+      if (lockedProduct.publishStatus === "Published") throw new Error("PRODUCT_PUBLISHED");
+      const [draftProduct] = await tx.update(productsTable)
+        .set({ ...productFieldsFromEditable(snapshot), publishStatus: "Draft", updatedAt: new Date() })
+        .where(eq(productsTable.id, id)).returning();
+      await replaceSaleLines(tx, id, snapshot.saleLines);
+      return draftProduct;
     });
     res.json(await getAdminProduct(updated));
   } catch (error) {
@@ -477,6 +522,10 @@ router.post("/admin/products/:id/draft", async (req, res): Promise<void> => {
     }
     if (error instanceof Error && error.message === "PRODUCT_ARCHIVED") {
       res.status(409).json({ error: "Archived products must be restored to Draft before editing." });
+      return;
+    }
+    if (error instanceof Error && error.message === "PRODUCT_PUBLISHED") {
+      res.status(409).json({ error: "Published products cannot be saved as drafts. Publish the changes instead." });
       return;
     }
     if (error instanceof Error && error.message.includes("duplicate key")) {
@@ -502,6 +551,15 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
     res.status(409).json({ error: "Restore this product to Draft before publishing it." });
     return;
   }
+  let bodyPayload: ProductEditablePayload | null = null;
+  if (hasPublishPayload(req.body)) {
+    const parsed = productDraftSchema.safeParse(prepareEditablePayload(req.body));
+    if (!parsed.success) {
+      res.status(400).json({ error: "Please complete all required product fields." });
+      return;
+    }
+    bodyPayload = normalizeEditable(parsed.data);
+  }
   try {
     const updated = await db.transaction(async (tx) => {
       const [lockedProduct] = await tx.select().from(productsTable)
@@ -510,7 +568,10 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       if (lockedProduct.publishStatus === "Archived") throw new Error("PRODUCT_ARCHIVED");
       const [draft] = await tx.select().from(productDraftsTable)
         .where(eq(productDraftsTable.productId, id));
-       const payload = draft?.snapshot ?? editableFromProduct(lockedProduct, await liveSaleLines(lockedProduct.id));
+      const liveLines = (await tx.select().from(saleLinesTable).where(eq(saleLinesTable.productId, id)))
+        .sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.sortOrder - b.sortOrder || a.id - b.id)
+        .map(toSaleLine);
+      const payload = bodyPayload ?? draft?.snapshot ?? editableFromProduct(lockedProduct, liveLines);
       const resolvedPayload = await applyTaxonomyCategory(
         normalizeEditable(payload),
         lockedProduct.subcategoryId === null ? new Set() : new Set([lockedProduct.subcategoryId]),
@@ -520,22 +581,14 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       const referenceIssues = await findProductReferenceIssues(normalizedPayload.details, lockedProduct.slug);
       if (referenceIssues.length > 0) throw new Error(`REFERENCE_VALIDATION:${JSON.stringify(referenceIssues)}`);
       const missingFields = getPublishValidationErrors(lockedProduct, normalizedPayload);
-       if (missingFields.length > 0) throw new Error(`PUBLISH_VALIDATION:${JSON.stringify(missingFields)}`);
+      if (missingFields.length > 0) throw new Error(`PUBLISH_VALIDATION:${JSON.stringify(missingFields)}`);
       const [published] = await tx.update(productsTable).set({
-        ...normalizedPayload,
+        ...productFieldsFromEditable(normalizedPayload),
         publishStatus: "Published",
         publishedAt: new Date(),
         updatedAt: new Date(),
       }).where(eq(productsTable.id, id)).returning();
-       // Sale lines are deliberately snapshot-only until this transaction.
-       await tx.delete(saleLinesTable).where(eq(saleLinesTable.productId, id));
-       if (normalizedPayload.saleLines.length) {
-         await tx.insert(saleLinesTable).values(normalizedPayload.saleLines.map((line) => ({
-           productId: id, stockCode: line.stockCode, seedForm: line.seedForm, seedGrade: line.seedGrade,
-           packKg: line.packKg === null ? null : String(line.packKg), packUnit: line.packUnit,
-           availability: line.availability, priceDisplay: line.priceDisplay, isDefault: line.isDefault, sortOrder: line.sortOrder,
-         })));
-       }
+      await replaceSaleLines(tx, id, normalizedPayload.saleLines);
       if (draft) await tx.delete(productDraftsTable).where(eq(productDraftsTable.id, draft.id));
       return published;
     });
@@ -646,11 +699,13 @@ router.post("/admin/products/:id/restore", async (req, res): Promise<void> => {
     }
     const [draft] = await tx.select().from(productDraftsTable)
       .where(eq(productDraftsTable.productId, id));
+    const restoredFields = draft && restoredDraftPayload ? productFieldsFromEditable(restoredDraftPayload) : {};
     const [restored] = await tx.update(productsTable).set({
-      ...(draft && restoredDraftPayload ? restoredDraftPayload : {}),
+      ...restoredFields,
       publishStatus: "Draft",
       updatedAt: new Date(),
     }).where(eq(productsTable.id, id)).returning();
+    if (draft && restoredDraftPayload) await replaceSaleLines(tx, id, restoredDraftPayload.saleLines);
     if (draft) await tx.delete(productDraftsTable).where(eq(productDraftsTable.id, draft.id));
     return restored;
   }).catch((error: unknown) => {
@@ -704,7 +759,7 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Invalid product id." });
     return;
   }
-  const parsed = updateProductSchema.safeParse(req.body);
+  const parsed = updateProductSchema.safeParse(prepareEditablePayload(req.body));
   if (!parsed.success || Object.keys(parsed.data).length === 0) {
     res.status(400).json({ error: "Please provide at least one valid product field." });
     return;
@@ -717,8 +772,12 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
   const { publishStatus, ...changes } = parsed.data;
   // v2 insert defaults must not turn a status-only patch into an attempted
   // published-content edit when Zod supplies their default values.
-  for (const key of ["guideYear", "descriptionSource", "websiteUrlLegacy", "availabilityOverride", "listingOverride"] as const) {
+  for (const key of ["guideYear", "descriptionSource", "websiteUrlLegacy", "availabilityOverride", "listingState"] as const) {
     if (!(key in req.body)) delete changes[key];
+  }
+  if (resolveListingState({ ...currentProduct, ...changes }) === "Legacy") {
+    changes.availabilityOverride = null;
+    changes.status = "unavailable";
   }
   if (publishStatus) {
     res.status(409).json({ error: "Use the lifecycle actions to change publication status." });
@@ -773,7 +832,7 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     return;
   }
   if (updateResult.kind === "published-content") {
-    res.status(409).json({ error: "Published catalogue content must be saved as a draft." });
+    res.status(409).json({ error: "Published catalogue content must be published. Use the publish action to apply changes." });
     return;
   }
   res.json(updateResult.product);
@@ -823,7 +882,7 @@ router.get("/admin/summary", async (_req, res): Promise<void> => {
     publishedProducts: products.filter((product) => product.publishStatus === "Published").length,
     draftProducts: products.filter((product) => product.publishStatus === "Draft").length,
     archivedProducts: products.filter((product) => product.publishStatus === "Archived").length,
-    pendingDrafts: (await db.select().from(productDraftsTable)).length,
+    pendingDrafts: products.filter((product) => product.publishStatus === "Draft").length,
     lowStockProducts: products.filter((product) => product.status === "low" || product.status === "very-low" || product.status === "unavailable").length,
     missingTechSheets: products.filter((product) => product.publishStatus !== "Archived" && !product.techSheet).length,
     recentProducts,
@@ -832,11 +891,7 @@ router.get("/admin/summary", async (_req, res): Promise<void> => {
 
 router.get("/availability", async (_req, res): Promise<void> => {
   const products = await ensureProducts();
-  const lines = await db.select().from(saleLinesTable);
-  const hasAvailableLine = new Set(lines.filter((line) => line.availability !== "Unavailable").map((line) => line.productId));
-  res.json(products.filter((product) => product.publishStatus === "Published" &&
-    (product.listingOverride === "Force active" ||
-      (product.listingOverride !== "Force legacy" && (hasAvailableLine.has(product.id) || !lines.some((line) => line.productId === product.id)))))
+  res.json(products.filter((product) => product.publishStatus === "Published" && isActiveListing(product))
     .map(({ id, name, note, status }) => ({ id, name, note, status })));
 });
 

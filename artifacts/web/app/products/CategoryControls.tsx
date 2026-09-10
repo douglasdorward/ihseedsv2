@@ -45,28 +45,26 @@ export function CategoryFilterControls({
   };
 
   return (
-    <section className="category-sticky" style={{ background: "#FFFFFF", borderBottom: "1px solid var(--line)", position: "sticky", top: 141, zIndex: 15 }}>
-      <div className="chip-scroller" style={{ maxWidth: 1180, margin: "0 auto", padding: "20px 40px", display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
-        {groups.map((group) => (
-          <button
-            key={group.id}
-            onClick={() => selectGroup(group)}
-            style={{
-              padding: "9px 20px",
-              borderRadius: 999,
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-              border: `2px solid ${activeGroup === group.id ? "var(--green)" : "var(--line)"}`,
-              background: activeGroup === group.id ? "var(--green)" : "transparent",
-              color: activeGroup === group.id ? "#FFFFFF" : "var(--green)",
-            }}
-          >
-            {group.label} ({group.count})
-          </button>
-        ))}
-      </div>
-    </section>
+    <div className="chip-scroller category-group-chips" style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
+      {groups.map((group) => (
+        <button
+          key={group.id}
+          onClick={() => selectGroup(group)}
+          style={{
+            padding: "9px 20px",
+            borderRadius: 999,
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: "pointer",
+            border: `2px solid ${activeGroup === group.id ? "var(--green)" : "var(--line)"}`,
+            background: activeGroup === group.id ? "var(--green)" : "transparent",
+            color: activeGroup === group.id ? "#FFFFFF" : "var(--green)",
+          }}
+        >
+          {group.label} ({group.count})
+        </button>
+      ))}
+    </div>
   );
 }
 

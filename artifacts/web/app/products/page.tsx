@@ -17,7 +17,7 @@ export default async function Products() {
         <div className="page-hero-grid" style={{ maxWidth: 1180, margin: "0 auto", padding: "80px 40px", display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(0, 1fr)", gap: 64, alignItems: "center" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)" }}>Products</div>
-            <h1 style={{ margin: 0, fontSize: 48, lineHeight: 1.2, fontWeight: 300, color: "var(--green)", maxWidth: "16ch" }}>Find the seed that fits your <span style={{ fontWeight: 700 }}>paddock</span></h1>
+            <h1 style={{ margin: 0, fontSize: 48, lineHeight: 1.2, fontWeight: 300, color: "var(--green)", maxWidth: "20ch" }}>Find the seed that fits your{"\u00A0"}<span style={{ fontWeight: 700 }}>paddock</span></h1>
             <p style={{ margin: 0, fontSize: 18, lineHeight: 1.6, color: "var(--black-green)", maxWidth: "52ch" }}>Browse the current online range by pasture category, sourced and tested for Western Australian conditions, then order through your local rural reseller.</p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap", paddingTop: 8 }}>
               <Link href="/contact" className="button button-primary">Get in Touch</Link>
