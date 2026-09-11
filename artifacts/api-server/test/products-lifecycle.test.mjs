@@ -219,6 +219,18 @@ test("redirect lookup returns JSON while the legacy public route emits the HTTP 
     ["/product/parafield-peas", "/products/forage-grain-crops#catalogue"],
   ]);
   for (const [fromPath, toPath] of expectedRedirects) {
+    const slug = fromPath.slice("/product/".length);
+    const live = sql(`
+      SELECT COUNT(*)
+      FROM ih_products
+      WHERE slug = '${slug.replaceAll("'", "''")}'
+        AND publish_status = 'Published'
+        AND listing_override = 'Active'
+    `);
+    if (Number(live) > 0) {
+      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 404);
+      continue;
+    }
     const lookup = assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 200);
     assert.deepEqual(lookup, { toPath });
   }
@@ -387,6 +399,29 @@ test("leftover drafts that omit sale lines keep live pack sizes on publish and r
   assert.equal(restored.name, leftoverRestoreName);
   assert.equal(restored.saleLines.length, 1);
   assert.equal(restored.saleLines[0].stockCode, saleLines[0].stockCode);
+});
+
+test("leftover catalogue redirects do not hide a restored Active product page", async () => {
+  const product = await createProduct("legacy-redirect");
+  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  const fromPath = `/product/${published.slug}`;
+  const toPath = "/products/forage-grain-crops#catalogue";
+  sql(`
+    INSERT INTO ih_redirects (from_path, to_path)
+    VALUES ('${fromPath.replaceAll("'", "''")}', '${toPath}')
+    ON CONFLICT (from_path) DO UPDATE SET to_path = EXCLUDED.to_path, updated_at = now()
+  `);
+  assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 404);
+  assert.equal((await publicProducts()).some((item) => item.slug === published.slug), true);
+
+  assertStatus(await request("POST", `/admin/products/${published.id}/publish`, draftPayload(published, {
+    listingState: "Legacy",
+  })), 200);
+  assert.deepEqual(
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 200),
+    { toPath },
+  );
+  sql(`DELETE FROM ih_redirects WHERE from_path = '${fromPath.replaceAll("'", "''")}'`);
 });
 
 test("manual listing state takes precedence over sale-line availability", async () => {

@@ -10,7 +10,6 @@ import {
   productsTable,
   saleLineSchema,
   saleLinesTable,
-  redirectsTable,
   type SaleLine,
   updateProductSchema,
   type InsertProduct,
@@ -22,6 +21,7 @@ import {
   resolveListingState,
 } from "@workspace/db";
 import { insertProductSchema } from "@workspace/db";
+import { publicRedirectTo } from "../lib/public-redirect";
 
 const router: IRouter = Router();
 const publicSiteBaseUrl = (process.env.PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "");
@@ -376,12 +376,12 @@ router.get("/redirects/lookup", async (req, res): Promise<void> => {
     res.status(400).json({ error: "A valid absolute fromPath is required." });
     return;
   }
-  const [redirect] = await db.select().from(redirectsTable).where(eq(redirectsTable.fromPath, fromPath));
-  if (!redirect) {
+  const toPath = await publicRedirectTo(fromPath);
+  if (!toPath) {
     res.status(404).json({ error: "Redirect not found." });
     return;
   }
-  res.json({ toPath: redirect.toPath });
+  res.json({ toPath });
 });
 
 router.get("/sitemap-products", async (_req, res): Promise<void> => {
