@@ -136,6 +136,19 @@ function editableFromProduct(product: Product, saleLines: SaleLine[] = []): Prod
   });
 }
 
+function sourceHasSaleLines(source: unknown): source is { saleLines: SaleLine[] } {
+  return Boolean(
+    source
+    && typeof source === "object"
+    && !Array.isArray(source)
+    && Array.isArray((source as { saleLines?: unknown }).saleLines),
+  );
+}
+
+function saleLinesFromSource(source: unknown, fallback: SaleLine[]): SaleLine[] {
+  return sourceHasSaleLines(source) ? source.saleLines : fallback;
+}
+
 function normalizeEditable(payload: ProductEditablePayload): ProductEditablePayload {
   return applyListingAvailability({
     ...payload,
@@ -571,7 +584,11 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       const liveLines = (await tx.select().from(saleLinesTable).where(eq(saleLinesTable.productId, id)))
         .sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.sortOrder - b.sortOrder || a.id - b.id)
         .map(toSaleLine);
-      const payload = bodyPayload ?? draft?.snapshot ?? editableFromProduct(lockedProduct, liveLines);
+      const source = bodyPayload ? req.body : draft?.snapshot;
+      const payload = {
+        ...(bodyPayload ?? draft?.snapshot ?? editableFromProduct(lockedProduct, liveLines)),
+        saleLines: saleLinesFromSource(source, liveLines),
+      };
       const resolvedPayload = await applyTaxonomyCategory(
         normalizeEditable(payload),
         lockedProduct.subcategoryId === null ? new Set() : new Set([lockedProduct.subcategoryId]),
@@ -705,7 +722,9 @@ router.post("/admin/products/:id/restore", async (req, res): Promise<void> => {
       publishStatus: "Draft",
       updatedAt: new Date(),
     }).where(eq(productsTable.id, id)).returning();
-    if (draft && restoredDraftPayload) await replaceSaleLines(tx, id, restoredDraftPayload.saleLines);
+    if (draft && restoredDraftPayload && sourceHasSaleLines(draft.snapshot)) {
+      await replaceSaleLines(tx, id, restoredDraftPayload.saleLines);
+    }
     if (draft) await tx.delete(productDraftsTable).where(eq(productDraftsTable.id, draft.id));
     return restored;
   }).catch((error: unknown) => {

@@ -201,6 +201,14 @@ function equivalentRoot(left: string, right: string) {
   return a === b || aliases.some((group) => group.includes(a) && group.includes(b));
 }
 
+function orderedCategoryRows(rows: Row[]) {
+  const withSlug = rows.filter((row) => cell(row.slug));
+  return [
+    ...withSlug.filter((row) => !cell(row.parent_slug)),
+    ...withSlug.filter((row) => cell(row.parent_slug)),
+  ];
+}
+
 export function readWorkbook(content: Buffer): { book: XLSX.WorkBook; rows: Record<string, Row[]> } {
   const book = XLSX.read(content, { type: "buffer", cellText: true, cellDates: false });
   const rows: Record<string, Row[]> = {};
@@ -223,6 +231,9 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
   const { book, rows } = readWorkbook(content);
   const issues: WorkbookReport["issues"] = [], warnings: string[] = [];
   const productSlugs = new Set(rows["1 Products"].map((r) => cell(r.slug)).filter(Boolean));
+  const categoryRootSlugs = new Set(
+    rows["8 Categories"].filter((row) => cell(row.slug) && !cell(row.parent_slug)).map((row) => cell(row.slug)),
+  );
   const stocks = new Set<string>(), optionLists = lists(book);
   const sheets: Record<string, SheetReport> = {};
   for (const name of importSheetNames) {
@@ -231,10 +242,14 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
       const rowNo = i + 2, slugKey = name === "5 Mix components" ? "mix_slug" : ["2 Sowing rates", "3 Category specifics", "6 Companions"].includes(name) ? "slug" : "";
       if (name === "8 Categories") {
         const slug = cell(row.slug);
+        const parentSlug = cell(row.parent_slug);
         if (!slug && Object.values(row).some((value) => cell(value))) {
           issues.push({ sheet: name, row: rowNo, column: "slug", problem: "Category slug is required" });
         } else if (slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
           issues.push({ sheet: name, row: rowNo, column: "slug", problem: `Invalid category slug "${slug}"` });
+        }
+        if (slug && parentSlug && !categoryRootSlugs.has(parentSlug)) {
+          issues.push({ sheet: name, row: rowNo, column: "parent_slug", problem: `Unknown parent slug "${parentSlug}"` });
         }
       }
       if (name === "9 Redirects") {
@@ -386,11 +401,11 @@ export async function commitWorkbook(content: Buffer, token: string) {
       const child = categories.find((item) => item.parentId === root?.id && normal(item.name) === normal(subcategory));
       return { id: child?.id ?? (root && !subcategory ? root.id : null), category: root?.name ?? category };
     };
-    for (const row of rows["8 Categories"]) {
-      const slug = cell(row.slug); if (!slug) continue;
+    for (const row of orderedCategoryRows(rows["8 Categories"])) {
+      const slug = cell(row.slug);
       const parentSlug = cell(row.parent_slug);
       const parent = parentSlug ? categories.find((category) => category.parentId === null && category.slug === parentSlug) : null;
-      if (parentSlug && !parent) continue;
+      if (parentSlug && !parent) throw new Error(`UNRESOLVED_CATEGORY_PARENT:${parentSlug}`);
       const match = parent
         ? categories.find((category) => category.parentId === parent.id && (category.slug === slug || category.slug === childTaxonomySlug(parent.slug, slug)))
         : categories.find((category) => category.parentId === null && category.slug === slug);

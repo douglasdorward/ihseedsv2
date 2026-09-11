@@ -129,10 +129,12 @@ function draftPayload(product, overrides = {}) {
 }
 
 function insertLeftoverDraft(product, overrides = {}) {
-  const snapshot = JSON.stringify(draftPayload(product, overrides)).replaceAll("'", "''");
+  const snapshot = draftPayload(product, overrides);
+  if (overrides.omitSaleLines) delete snapshot.saleLines;
+  const encoded = JSON.stringify(snapshot).replaceAll("'", "''");
   sql(`
     INSERT INTO ih_product_drafts (product_id, snapshot)
-    VALUES (${product.id}, '${snapshot}'::jsonb)
+    VALUES (${product.id}, '${encoded}'::jsonb)
     ON CONFLICT (product_id) DO UPDATE SET snapshot = EXCLUDED.snapshot, updated_at = now()
   `);
 }
@@ -348,6 +350,43 @@ test("draft saves persist sale lines without making the product public", async (
   const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
   assert.equal(published.saleLines[0].stockCode, saleLines[0].stockCode);
   assert.equal((await publicProducts()).find((item) => item.id === product.id).saleLines[0].stockCode, saleLines[0].stockCode);
+});
+
+test("leftover drafts that omit sale lines keep live pack sizes on publish and restore", async () => {
+  const product = await createProduct("leftover-sale-lines");
+  const saleLines = [{
+    stockCode: `keep-${testRunId}`,
+    seedForm: "",
+    seedGrade: "",
+    packKg: 25,
+    packUnit: "kg",
+    availability: "Good stock",
+    priceDisplay: "Contact for pricing",
+    isDefault: true,
+    sortOrder: 0,
+  }];
+  assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+    saleLines,
+  })), 200);
+  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  assert.equal(published.saleLines[0].stockCode, saleLines[0].stockCode);
+
+  const leftoverPublishName = `Leftover publish ${testRunId}`;
+  insertLeftoverDraft(published, { name: leftoverPublishName, omitSaleLines: true });
+  const republished = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  assert.equal(republished.name, leftoverPublishName);
+  assert.equal(republished.saleLines.length, 1);
+  assert.equal(republished.saleLines[0].stockCode, saleLines[0].stockCode);
+  assert.equal((await publicProducts()).find((item) => item.id === product.id).saleLines[0].stockCode, saleLines[0].stockCode);
+
+  const leftoverRestoreName = `Leftover restore ${testRunId}`;
+  insertLeftoverDraft(republished, { name: leftoverRestoreName, omitSaleLines: true });
+  assertStatus(await request("POST", `/admin/products/${product.id}/archive`), 200);
+  const restored = assertStatus(await request("POST", `/admin/products/${product.id}/restore`), 200);
+  assert.equal(restored.lifecycleStatus, "Draft");
+  assert.equal(restored.name, leftoverRestoreName);
+  assert.equal(restored.saleLines.length, 1);
+  assert.equal(restored.saleLines[0].stockCode, saleLines[0].stockCode);
 });
 
 test("manual listing state takes precedence over sale-line availability", async () => {
@@ -1230,6 +1269,52 @@ test("published workbook rows enforce content fields and retain products absent 
   assertStatus(await request("POST", "/admin/import/commit", {
     workbookBase64: degradedWorkbook.toString("base64"), token: degradedReport.token,
   }), 400);
+});
+
+test("category workbook import keeps child rows listed before their parent and reports unknown parents", async () => {
+  const suffix = `cat-order-${testRunId}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const parentSlug = `${suffix}-root`;
+  const childSlug = `${suffix}-child`;
+  const orphanSlug = `${suffix}-orphan`;
+  const makeWorkbook = (rows) => {
+    const book = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet(rows), "8 Categories");
+    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ category: "Automated tests", record_type: "Mix" }]), "Lists");
+    return xlsx.write(book, { type: "buffer", bookType: "xlsx" });
+  };
+  const unknownParent = makeWorkbook([{
+    parent_slug: `${suffix}-missing`, slug: orphanSlug, name: `Orphan ${testRunId}`, active: "Y",
+  }]);
+  const unknownReport = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: unknownParent.toString("base64"),
+  }), 200);
+  assert.equal(unknownReport.issues.some((issue) => issue.column === "parent_slug"), true);
+
+  const childFirst = makeWorkbook([
+    { parent_slug: parentSlug, slug: childSlug, name: `Child ${testRunId}`, active: "Y" },
+    { parent_slug: "", slug: parentSlug, name: `Root ${testRunId}`, active: "Y" },
+  ]);
+  const report = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: childFirst.toString("base64"),
+  }), 200);
+  assert.deepEqual(report.issues, []);
+  let parent;
+  let child;
+  try {
+    assertStatus(await request("POST", "/admin/import/commit", {
+      workbookBase64: childFirst.toString("base64"),
+      token: report.token,
+    }), 200);
+    const categories = assertStatus(await request("GET", "/admin/categories"), 200);
+    parent = categories.find((category) => category.slug === parentSlug);
+    child = categories.find((category) => category.parentId === parent?.id && category.slug === childSlug);
+    assert.ok(parent, "Expected the workbook root category to be created");
+    assert.ok(child, "Expected the child category listed before its parent to be created");
+    assert.equal(child.name, `Child ${testRunId}`);
+  } finally {
+    if (child) await request("DELETE", `/admin/categories/${child.id}`);
+    if (parent) await request("DELETE", `/admin/categories/${parent.id}`);
+  }
 });
 
 test("taxonomy assignment on a draft stays private until publish, and published edits go live immediately", async () => {
