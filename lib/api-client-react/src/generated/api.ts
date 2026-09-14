@@ -21,27 +21,45 @@ import type {
 
 import type {
   AdminProduct,
+  AdminSession,
   AdminSummary,
+  AdministratorAccessList,
+  AdministratorAccessRevocationInput,
+  AdministratorApprovalInput,
   ApiError,
   AvailabilityRow,
   CatalogueCategory,
   CatalogueCategoryInput,
   CatalogueCategoryReorder,
   CatalogueCategoryUpdate,
+  DeleteProductImageRequest,
   EnquiryCreated,
   EnquiryInput,
   HealthStatus,
   LegacyProductName,
+  ListMediaAssetsParams,
   LookupRedirectParams,
+  MediaAsset,
+  MediaAssetDetail,
+  MediaAssetPage,
+  MediaBackfillResult,
+  MediaDeleteConfirmation,
+  MediaInUseError,
+  MediaMetadataUpdate,
+  MediaUploadInput,
+  MediaUploadRequestResult,
   Product,
   ProductCreateInput,
   ProductDraftInput,
+  ProductImageUploadRequest,
+  ProductImageUploadResponse,
   ProductReferenceValidationError,
   ProductUpdate,
   PublicCatalogueCategory,
   PublicProduct,
   PublishValidationError,
   RedirectLookup,
+  SuccessResponse,
   WorkbookCommit,
   WorkbookReport,
   WorkbookUpload
@@ -151,6 +169,373 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
+
+export const getGetAdminSessionUrl = () => {
+
+
+
+
+  return `/api/auth/session`
+}
+
+/**
+ * @summary Resolve the current administrator session
+ */
+export const getAdminSession = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminSession> => {
+
+  return customFetch<AdminSession>(getGetAdminSessionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminSessionQueryKey = () => {
+    return [
+    `/api/auth/session`
+    ] as const;
+    }
+
+
+export const getGetAdminSessionQueryOptions = <TData = Awaited<ReturnType<typeof getAdminSession>>, TError = ErrorType<AdminSession>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminSessionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminSession>>> = ({ signal }) => getAdminSession({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminSession>>>
+export type GetAdminSessionQueryError = ErrorType<AdminSession>
+
+
+/**
+ * @summary Resolve the current administrator session
+ */
+
+export function useGetAdminSession<TData = Awaited<ReturnType<typeof getAdminSession>>, TError = ErrorType<AdminSession>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminSessionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdministratorsUrl = () => {
+
+
+
+
+  return `/api/admin/administrators`
+}
+
+/**
+ * @summary List active administrators, pending approvals, and access audit history
+ */
+export const getAdministrators = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdministratorAccessList> => {
+
+  return customFetch<AdministratorAccessList>(getGetAdministratorsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdministratorsQueryKey = () => {
+    return [
+    `/api/admin/administrators`
+    ] as const;
+    }
+
+
+export const getGetAdministratorsQueryOptions = <TData = Awaited<ReturnType<typeof getAdministrators>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdministrators>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdministratorsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdministrators>>> = ({ signal }) => getAdministrators({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdministrators>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdministratorsQueryResult = NonNullable<Awaited<ReturnType<typeof getAdministrators>>>
+export type GetAdministratorsQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary List active administrators, pending approvals, and access audit history
+ */
+
+export function useGetAdministrators<TData = Awaited<ReturnType<typeof getAdministrators>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdministrators>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdministratorsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAdministratorApprovalUrl = () => {
+
+
+
+
+  return `/api/admin/administrators/approvals`
+}
+
+/**
+ * @summary Approve one exact email to claim administrator access
+ */
+export const createAdministratorApproval = async (administratorApprovalInput: AdministratorApprovalInput, options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getCreateAdministratorApprovalUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(administratorApprovalInput)
+  }
+);}
+
+
+
+
+
+export const getCreateAdministratorApprovalMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdministratorApproval>>, TError,{data: BodyType<AdministratorApprovalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAdministratorApproval>>, TError,{data: BodyType<AdministratorApprovalInput>}, TContext> => {
+
+const mutationKey = ['createAdministratorApproval'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdministratorApproval>>, {data: BodyType<AdministratorApprovalInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAdministratorApproval(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdministratorApprovalMutationResult = NonNullable<Awaited<ReturnType<typeof createAdministratorApproval>>>
+    export type CreateAdministratorApprovalMutationBody = BodyType<AdministratorApprovalInput>
+    export type CreateAdministratorApprovalMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Approve one exact email to claim administrator access
+ */
+export const useCreateAdministratorApproval = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdministratorApproval>>, TError,{data: BodyType<AdministratorApprovalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAdministratorApproval>>,
+        TError,
+        {data: BodyType<AdministratorApprovalInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAdministratorApprovalMutationOptions(options));
+    }
+
+export const getDeleteAdministratorApprovalUrl = () => {
+
+
+
+
+  return `/api/admin/administrators/approvals`
+}
+
+/**
+ * @summary Cancel one pending administrator email approval
+ */
+export const deleteAdministratorApproval = async (administratorApprovalInput: AdministratorApprovalInput, options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getDeleteAdministratorApprovalUrl(),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(administratorApprovalInput)
+  }
+);}
+
+
+
+
+
+export const getDeleteAdministratorApprovalMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdministratorApproval>>, TError,{data: BodyType<AdministratorApprovalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdministratorApproval>>, TError,{data: BodyType<AdministratorApprovalInput>}, TContext> => {
+
+const mutationKey = ['deleteAdministratorApproval'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdministratorApproval>>, {data: BodyType<AdministratorApprovalInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  deleteAdministratorApproval(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdministratorApprovalMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdministratorApproval>>>
+    export type DeleteAdministratorApprovalMutationBody = BodyType<AdministratorApprovalInput>
+    export type DeleteAdministratorApprovalMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Cancel one pending administrator email approval
+ */
+export const useDeleteAdministratorApproval = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdministratorApproval>>, TError,{data: BodyType<AdministratorApprovalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdministratorApproval>>,
+        TError,
+        {data: BodyType<AdministratorApprovalInput>},
+        TContext
+      > => {
+      return useMutation(getDeleteAdministratorApprovalMutationOptions(options));
+    }
+
+export const getRevokeAdministratorAccessUrl = () => {
+
+
+
+
+  return `/api/admin/administrators/access`
+}
+
+/**
+ * @summary Revoke an administrator, preserving the final active administrator
+ */
+export const revokeAdministratorAccess = async (administratorAccessRevocationInput: AdministratorAccessRevocationInput, options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getRevokeAdministratorAccessUrl(),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(administratorAccessRevocationInput)
+  }
+);}
+
+
+
+
+
+export const getRevokeAdministratorAccessMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeAdministratorAccess>>, TError,{data: BodyType<AdministratorAccessRevocationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeAdministratorAccess>>, TError,{data: BodyType<AdministratorAccessRevocationInput>}, TContext> => {
+
+const mutationKey = ['revokeAdministratorAccess'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeAdministratorAccess>>, {data: BodyType<AdministratorAccessRevocationInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  revokeAdministratorAccess(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeAdministratorAccessMutationResult = NonNullable<Awaited<ReturnType<typeof revokeAdministratorAccess>>>
+    export type RevokeAdministratorAccessMutationBody = BodyType<AdministratorAccessRevocationInput>
+    export type RevokeAdministratorAccessMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Revoke an administrator, preserving the final active administrator
+ */
+export const useRevokeAdministratorAccess = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeAdministratorAccess>>, TError,{data: BodyType<AdministratorAccessRevocationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof revokeAdministratorAccess>>,
+        TError,
+        {data: BodyType<AdministratorAccessRevocationInput>},
+        TContext
+      > => {
+      return useMutation(getRevokeAdministratorAccessMutationOptions(options));
+    }
 
 export const getListProductsUrl = () => {
 
@@ -1107,6 +1492,902 @@ export const useDiscardProductDraft = <TError = ErrorType<void>,
       > => {
       return useMutation(getDiscardProductDraftMutationOptions(options));
     }
+
+export const getRequestProductImageUploadUrl = () => {
+
+
+
+
+  return `/api/admin/product-images/request-upload`
+}
+
+/**
+ * @summary Request a direct WebP product image upload
+ */
+export const requestProductImageUpload = async (productImageUploadRequest: ProductImageUploadRequest, options?: Parameters<typeof customFetch>[1]): Promise<ProductImageUploadResponse> => {
+
+  return customFetch<ProductImageUploadResponse>(getRequestProductImageUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(productImageUploadRequest)
+  }
+);}
+
+
+
+
+
+export const getRequestProductImageUploadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestProductImageUpload>>, TError,{data: BodyType<ProductImageUploadRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestProductImageUpload>>, TError,{data: BodyType<ProductImageUploadRequest>}, TContext> => {
+
+const mutationKey = ['requestProductImageUpload'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestProductImageUpload>>, {data: BodyType<ProductImageUploadRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestProductImageUpload(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestProductImageUploadMutationResult = NonNullable<Awaited<ReturnType<typeof requestProductImageUpload>>>
+    export type RequestProductImageUploadMutationBody = BodyType<ProductImageUploadRequest>
+    export type RequestProductImageUploadMutationError = ErrorType<void>
+
+    /**
+ * @summary Request a direct WebP product image upload
+ */
+export const useRequestProductImageUpload = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestProductImageUpload>>, TError,{data: BodyType<ProductImageUploadRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestProductImageUpload>>,
+        TError,
+        {data: BodyType<ProductImageUploadRequest>},
+        TContext
+      > => {
+      return useMutation(getRequestProductImageUploadMutationOptions(options));
+    }
+
+export const getDeleteProductImageUrl = () => {
+
+
+
+
+  return `/api/admin/product-images`
+}
+
+/**
+ * @summary Delete an abandoned or removed product image
+ */
+export const deleteProductImage = async (deleteProductImageRequest: DeleteProductImageRequest, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteProductImageUrl(),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(deleteProductImageRequest)
+  }
+);}
+
+
+
+
+
+export const getDeleteProductImageMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProductImage>>, TError,{data: BodyType<DeleteProductImageRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteProductImage>>, TError,{data: BodyType<DeleteProductImageRequest>}, TContext> => {
+
+const mutationKey = ['deleteProductImage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteProductImage>>, {data: BodyType<DeleteProductImageRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  deleteProductImage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteProductImageMutationResult = NonNullable<Awaited<ReturnType<typeof deleteProductImage>>>
+    export type DeleteProductImageMutationBody = BodyType<DeleteProductImageRequest>
+    export type DeleteProductImageMutationError = ErrorType<void>
+
+    /**
+ * @summary Delete an abandoned or removed product image
+ */
+export const useDeleteProductImage = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProductImage>>, TError,{data: BodyType<DeleteProductImageRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteProductImage>>,
+        TError,
+        {data: BodyType<DeleteProductImageRequest>},
+        TContext
+      > => {
+      return useMutation(getDeleteProductImageMutationOptions(options));
+    }
+
+export const getGetProductImageUrl = (productSlug: string,
+    fileName: string,) => {
+
+
+
+
+  return `/api/storage/objects/product-images/${productSlug}/${fileName}`
+}
+
+/**
+ * @summary Serve a public product image
+ */
+export const getProductImage = async (productSlug: string,
+    fileName: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetProductImageUrl(productSlug,fileName),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProductImageQueryKey = (productSlug: string,
+    fileName: string,) => {
+    return [
+    `/api/storage/objects/product-images/${productSlug}/${fileName}`
+    ] as const;
+    }
+
+
+export const getGetProductImageQueryOptions = <TData = Awaited<ReturnType<typeof getProductImage>>, TError = ErrorType<void>>(productSlug: string,
+    fileName: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProductImage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProductImageQueryKey(productSlug,fileName);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProductImage>>> = ({ signal }) => getProductImage(productSlug,fileName, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: productSlug !== null && productSlug !== undefined && fileName !== null && fileName !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProductImage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProductImageQueryResult = NonNullable<Awaited<ReturnType<typeof getProductImage>>>
+export type GetProductImageQueryError = ErrorType<void>
+
+
+/**
+ * @summary Serve a public product image
+ */
+
+export function useGetProductImage<TData = Awaited<ReturnType<typeof getProductImage>>, TError = ErrorType<void>>(
+ productSlug: string,
+    fileName: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProductImage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProductImageQueryOptions(productSlug,fileName,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListMediaAssetsUrl = (params?: ListMediaAssetsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/media?${stringifiedParams}` : `/api/admin/media`
+}
+
+/**
+ * @summary List the private shared image library and usage counts
+ */
+export const listMediaAssets = async (params?: ListMediaAssetsParams, options?: Parameters<typeof customFetch>[1]): Promise<MediaAssetPage> => {
+
+  return customFetch<MediaAssetPage>(getListMediaAssetsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMediaAssetsQueryKey = (params?: ListMediaAssetsParams,) => {
+    return [
+    `/api/admin/media`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListMediaAssetsQueryOptions = <TData = Awaited<ReturnType<typeof listMediaAssets>>, TError = ErrorType<unknown>>(params?: ListMediaAssetsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMediaAssets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMediaAssetsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMediaAssets>>> = ({ signal }) => listMediaAssets(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMediaAssets>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMediaAssetsQueryResult = NonNullable<Awaited<ReturnType<typeof listMediaAssets>>>
+export type ListMediaAssetsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the private shared image library and usage counts
+ */
+
+export function useListMediaAssets<TData = Awaited<ReturnType<typeof listMediaAssets>>, TError = ErrorType<unknown>>(
+ params?: ListMediaAssetsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMediaAssets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMediaAssetsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRequestMediaUploadUrl = () => {
+
+
+
+
+  return `/api/admin/media/upload-request`
+}
+
+/**
+ * @summary Request direct private upload for a JPEG, PNG, or WebP library image
+ */
+export const requestMediaUpload = async (mediaUploadInput: MediaUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<MediaUploadRequestResult> => {
+
+  return customFetch<MediaUploadRequestResult>(getRequestMediaUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(mediaUploadInput)
+  }
+);}
+
+
+
+
+
+export const getRequestMediaUploadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestMediaUpload>>, TError,{data: BodyType<MediaUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestMediaUpload>>, TError,{data: BodyType<MediaUploadInput>}, TContext> => {
+
+const mutationKey = ['requestMediaUpload'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestMediaUpload>>, {data: BodyType<MediaUploadInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestMediaUpload(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestMediaUploadMutationResult = NonNullable<Awaited<ReturnType<typeof requestMediaUpload>>>
+    export type RequestMediaUploadMutationBody = BodyType<MediaUploadInput>
+    export type RequestMediaUploadMutationError = ErrorType<void>
+
+    /**
+ * @summary Request direct private upload for a JPEG, PNG, or WebP library image
+ */
+export const useRequestMediaUpload = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestMediaUpload>>, TError,{data: BodyType<MediaUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestMediaUpload>>,
+        TError,
+        {data: BodyType<MediaUploadInput>},
+        TContext
+      > => {
+      return useMutation(getRequestMediaUploadMutationOptions(options));
+    }
+
+export const getBackfillMediaUsageUrl = () => {
+
+
+
+
+  return `/api/admin/media/backfill`
+}
+
+/**
+ * @summary Idempotently reconcile durable media references from catalogue and static manifest
+ */
+export const backfillMediaUsage = async ( options?: Parameters<typeof customFetch>[1]): Promise<MediaBackfillResult> => {
+
+  return customFetch<MediaBackfillResult>(getBackfillMediaUsageUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getBackfillMediaUsageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof backfillMediaUsage>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof backfillMediaUsage>>, TError,void, TContext> => {
+
+const mutationKey = ['backfillMediaUsage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof backfillMediaUsage>>, void> = () => {
+
+
+          return  backfillMediaUsage(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BackfillMediaUsageMutationResult = NonNullable<Awaited<ReturnType<typeof backfillMediaUsage>>>
+
+    export type BackfillMediaUsageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Idempotently reconcile durable media references from catalogue and static manifest
+ */
+export const useBackfillMediaUsage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof backfillMediaUsage>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof backfillMediaUsage>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getBackfillMediaUsageMutationOptions(options));
+    }
+
+export const getGetMediaAssetUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/media/${id}`
+}
+
+/**
+ * @summary Get library metadata and every known use
+ */
+export const getMediaAsset = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<MediaAssetDetail> => {
+
+  return customFetch<MediaAssetDetail>(getGetMediaAssetUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMediaAssetQueryKey = (id: string,) => {
+    return [
+    `/api/admin/media/${id}`
+    ] as const;
+    }
+
+
+export const getGetMediaAssetQueryOptions = <TData = Awaited<ReturnType<typeof getMediaAsset>>, TError = ErrorType<void>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMediaAsset>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMediaAssetQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMediaAsset>>> = ({ signal }) => getMediaAsset(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMediaAsset>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMediaAssetQueryResult = NonNullable<Awaited<ReturnType<typeof getMediaAsset>>>
+export type GetMediaAssetQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get library metadata and every known use
+ */
+
+export function useGetMediaAsset<TData = Awaited<ReturnType<typeof getMediaAsset>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMediaAsset>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMediaAssetQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateMediaAssetUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/media/${id}`
+}
+
+/**
+ * @summary Update library defaults without changing existing product snapshots
+ */
+export const updateMediaAsset = async (id: string,
+    mediaMetadataUpdate: MediaMetadataUpdate, options?: Parameters<typeof customFetch>[1]): Promise<MediaAsset> => {
+
+  return customFetch<MediaAsset>(getUpdateMediaAssetUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(mediaMetadataUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateMediaAssetMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMediaAsset>>, TError,{id: string;data: BodyType<MediaMetadataUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMediaAsset>>, TError,{id: string;data: BodyType<MediaMetadataUpdate>}, TContext> => {
+
+const mutationKey = ['updateMediaAsset'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMediaAsset>>, {id: string;data: BodyType<MediaMetadataUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateMediaAsset(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMediaAssetMutationResult = NonNullable<Awaited<ReturnType<typeof updateMediaAsset>>>
+    export type UpdateMediaAssetMutationBody = BodyType<MediaMetadataUpdate>
+    export type UpdateMediaAssetMutationError = ErrorType<void>
+
+    /**
+ * @summary Update library defaults without changing existing product snapshots
+ */
+export const useUpdateMediaAsset = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMediaAsset>>, TError,{id: string;data: BodyType<MediaMetadataUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMediaAsset>>,
+        TError,
+        {id: string;data: BodyType<MediaMetadataUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateMediaAssetMutationOptions(options));
+    }
+
+export const getDeleteMediaAssetUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/media/${id}`
+}
+
+/**
+ * @summary Delete an unreferenced library asset after confirmation
+ */
+export const deleteMediaAsset = async (id: string,
+    mediaDeleteConfirmation: MediaDeleteConfirmation, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteMediaAssetUrl(id),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(mediaDeleteConfirmation)
+  }
+);}
+
+
+
+
+
+export const getDeleteMediaAssetMutationOptions = <TError = ErrorType<void | MediaInUseError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMediaAsset>>, TError,{id: string;data: BodyType<MediaDeleteConfirmation>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMediaAsset>>, TError,{id: string;data: BodyType<MediaDeleteConfirmation>}, TContext> => {
+
+const mutationKey = ['deleteMediaAsset'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMediaAsset>>, {id: string;data: BodyType<MediaDeleteConfirmation>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  deleteMediaAsset(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMediaAssetMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMediaAsset>>>
+    export type DeleteMediaAssetMutationBody = BodyType<MediaDeleteConfirmation>
+    export type DeleteMediaAssetMutationError = ErrorType<void | MediaInUseError>
+
+    /**
+ * @summary Delete an unreferenced library asset after confirmation
+ */
+export const useDeleteMediaAsset = <TError = ErrorType<void | MediaInUseError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMediaAsset>>, TError,{id: string;data: BodyType<MediaDeleteConfirmation>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMediaAsset>>,
+        TError,
+        {id: string;data: BodyType<MediaDeleteConfirmation>},
+        TContext
+      > => {
+      return useMutation(getDeleteMediaAssetMutationOptions(options));
+    }
+
+export const getCompleteMediaUploadUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/media/${id}/complete`
+}
+
+/**
+ * @summary Verify uploaded object bytes and mark a library asset ready
+ */
+export const completeMediaUpload = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<MediaAsset> => {
+
+  return customFetch<MediaAsset>(getCompleteMediaUploadUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompleteMediaUploadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['completeMediaUpload'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeMediaUpload>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  completeMediaUpload(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteMediaUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completeMediaUpload>>>
+
+    export type CompleteMediaUploadMutationError = ErrorType<void>
+
+    /**
+ * @summary Verify uploaded object bytes and mark a library asset ready
+ */
+export const useCompleteMediaUpload = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeMediaUpload>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getCompleteMediaUploadMutationOptions(options));
+    }
+
+export const getPreviewMediaAssetUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/media/${id}/preview`
+}
+
+/**
+ * @summary Serve an authenticated private preview of a ready asset
+ */
+export const previewMediaAsset = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getPreviewMediaAssetUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getPreviewMediaAssetQueryKey = (id: string,) => {
+    return [
+    `/api/admin/media/${id}/preview`
+    ] as const;
+    }
+
+
+export const getPreviewMediaAssetQueryOptions = <TData = Awaited<ReturnType<typeof previewMediaAsset>>, TError = ErrorType<void>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof previewMediaAsset>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPreviewMediaAssetQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof previewMediaAsset>>> = ({ signal }) => previewMediaAsset(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof previewMediaAsset>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type PreviewMediaAssetQueryResult = NonNullable<Awaited<ReturnType<typeof previewMediaAsset>>>
+export type PreviewMediaAssetQueryError = ErrorType<void>
+
+
+/**
+ * @summary Serve an authenticated private preview of a ready asset
+ */
+
+export function usePreviewMediaAsset<TData = Awaited<ReturnType<typeof previewMediaAsset>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof previewMediaAsset>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getPreviewMediaAssetQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublishedMediaAssetUrl = (id: string,) => {
+
+
+
+
+  return `/api/media/${id}`
+}
+
+/**
+ * @summary Serve a library image only when it has a published reference
+ */
+export const getPublishedMediaAsset = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getGetPublishedMediaAssetUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublishedMediaAssetQueryKey = (id: string,) => {
+    return [
+    `/api/media/${id}`
+    ] as const;
+    }
+
+
+export const getGetPublishedMediaAssetQueryOptions = <TData = Awaited<ReturnType<typeof getPublishedMediaAsset>>, TError = ErrorType<void>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublishedMediaAsset>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublishedMediaAssetQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublishedMediaAsset>>> = ({ signal }) => getPublishedMediaAsset(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublishedMediaAsset>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublishedMediaAssetQueryResult = NonNullable<Awaited<ReturnType<typeof getPublishedMediaAsset>>>
+export type GetPublishedMediaAssetQueryError = ErrorType<void>
+
+
+/**
+ * @summary Serve a library image only when it has a published reference
+ */
+
+export function useGetPublishedMediaAsset<TData = Awaited<ReturnType<typeof getPublishedMediaAsset>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublishedMediaAsset>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublishedMediaAssetQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListAvailabilityUrl = () => {
 

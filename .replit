@@ -42,3 +42,11 @@ timeoutMs = 20000
 [nix]
 channel = "stable-25_05"
 packages = ["freetype", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "mupdf", "openjpeg", "swig", "unzip", "xcbuild"]
+
+[objectStorage]
+defaultBucketID = "replit-objstore-78f3e5a4-6315-496a-978a-ebf9a602bfee"
+
+[userenv]
+
+[userenv.production]
+ADMIN_BOOTSTRAP_EMAILS = "douglas@dorwards.net"

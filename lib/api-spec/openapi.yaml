@@ -30,6 +30,102 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /auth/session:
+    get:
+      operationId: getAdminSession
+      tags: [admin]
+      summary: Resolve the current administrator session
+      security:
+        - clerkSession: []
+      responses:
+        "200":
+          description: Authorized administrator
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSession"
+        "401":
+          description: No active sign-in session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSession"
+        "403":
+          description: Signed in without the administrator role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSession"
+  /admin/administrators:
+    get:
+      operationId: getAdministrators
+      tags: [admin]
+      summary: List active administrators, pending approvals, and access audit history
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Administrator access management data
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdministratorAccessList" }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "403": { description: Administrator access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/administrators/approvals:
+    post:
+      operationId: createAdministratorApproval
+      tags: [admin]
+      summary: Approve one exact email to claim administrator access
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdministratorApprovalInput" }
+      responses:
+        "200":
+          description: Approval created
+          content: { application/json: { schema: { $ref: "#/components/schemas/SuccessResponse" } } }
+        "400": { description: Invalid email address, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "403": { description: Administrator access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Email is already active or pending, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    delete:
+      operationId: deleteAdministratorApproval
+      tags: [admin]
+      summary: Cancel one pending administrator email approval
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdministratorApprovalInput" }
+      responses:
+        "200":
+          description: Pending approval cancelled
+          content: { application/json: { schema: { $ref: "#/components/schemas/SuccessResponse" } } }
+        "400": { description: Invalid email address, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "403": { description: Administrator access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Email has no pending approval, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/administrators/access:
+    delete:
+      operationId: revokeAdministratorAccess
+      tags: [admin]
+      summary: Revoke an administrator, preserving the final active administrator
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdministratorAccessRevocationInput" }
+      responses:
+        "200":
+          description: Administrator access revoked
+          content: { application/json: { schema: { $ref: "#/components/schemas/SuccessResponse" } } }
+        "400": { description: Invalid administrator id, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "403": { description: Administrator access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Cannot revoke the final administrator or an unavailable account, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
   /products:
     get:
       operationId: listProducts
@@ -48,6 +144,8 @@ paths:
       operationId: createProduct
       tags: [admin]
       summary: Create a product
+      security:
+        - clerkSession: []
       requestBody:
         required: true
         content:
@@ -101,6 +199,8 @@ paths:
       operationId: updateProduct
       tags: [admin]
       summary: Update a product
+      security:
+        - clerkSession: []
       requestBody:
         required: true
         content:
@@ -124,6 +224,8 @@ paths:
       operationId: deleteProduct
       tags: [admin]
       summary: Delete a product
+      security:
+        - clerkSession: []
       responses:
         "204":
           description: Product deleted
@@ -134,6 +236,8 @@ paths:
       operationId: getAdminSummary
       tags: [admin]
       summary: Get product management dashboard summary
+      security:
+        - clerkSession: []
       responses:
         "200":
           description: Product management summary
@@ -146,6 +250,8 @@ paths:
       operationId: listAdminProducts
       tags: [admin]
       summary: List catalogue products with lifecycle metadata
+      security:
+        - clerkSession: []
       responses:
         "200":
           description: Admin catalogue
@@ -166,6 +272,8 @@ paths:
       operationId: getAdminProduct
       tags: [admin]
       summary: Get a product and its current draft revision
+      security:
+        - clerkSession: []
       responses:
         "200":
           description: Admin product
@@ -186,6 +294,8 @@ paths:
       operationId: saveProductDraftRevision
       tags: [admin]
       summary: Save edits to a Draft product
+      security:
+        - clerkSession: []
       requestBody:
         required: true
         content:
@@ -222,6 +332,8 @@ paths:
       operationId: publishProduct
       tags: [admin]
       summary: Publish a product, optionally from the current editor payload
+      security:
+        - clerkSession: []
       requestBody:
         required: false
         content:
@@ -258,6 +370,8 @@ paths:
       operationId: archiveProduct
       tags: [admin]
       summary: Move a product to the archive
+      security:
+        - clerkSession: []
       responses:
         "200":
           description: Archived product
@@ -280,6 +394,8 @@ paths:
       operationId: restoreProduct
       tags: [admin]
       summary: Restore an archived product to Draft
+      security:
+        - clerkSession: []
       responses:
         "200":
           description: Draft product
@@ -302,6 +418,8 @@ paths:
       operationId: discardProductDraft
       tags: [admin]
       summary: Discard leftover unpublished revisions on a published product
+      security:
+        - clerkSession: []
       responses:
         "200":
           description: Published product
@@ -313,6 +431,165 @@ paths:
           description: Product not found
         "409":
           description: Invalid lifecycle transition
+  /admin/product-images/request-upload:
+    post:
+      operationId: requestProductImageUpload
+      tags: [admin]
+      summary: Request a direct WebP product image upload
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductImageUploadRequest" }
+      responses:
+        "200":
+          description: Presigned upload details
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductImageUploadResponse" }
+        "400": { description: Invalid image metadata }
+  /admin/product-images:
+    delete:
+      operationId: deleteProductImage
+      tags: [admin]
+      summary: Delete an abandoned or removed product image
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeleteProductImageRequest" }
+      responses:
+        "204": { description: Image deleted }
+        "400": { description: Invalid object path }
+        "409": { description: Image is still referenced by a product or draft }
+  /storage/objects/product-images/{productSlug}/{fileName}:
+    get:
+      operationId: getProductImage
+      tags: [catalogue]
+      summary: Serve a public product image
+      parameters:
+        - { name: productSlug, in: path, required: true, schema: { type: string, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" } }
+        - { name: fileName, in: path, required: true, schema: { type: string, pattern: "^[a-z0-9-]+-[a-f0-9]{12,64}-(?:full|card)\\.webp$" } }
+      responses:
+        "200": { description: Image bytes, content: { image/webp: { schema: { type: string, format: binary } } } }
+        "404": { description: Image not found }
+  /admin/media:
+    get:
+      operationId: listMediaAssets
+      tags: [admin]
+      summary: List the private shared image library and usage counts
+      security: [{ clerkSession: [] }]
+      parameters:
+        - { name: query, in: query, schema: { type: string, maxLength: 160 } }
+        - { name: usage, in: query, schema: { type: string, enum: [unassigned, draft, published, mixed] } }
+        - { name: area, in: query, schema: { type: string, enum: [product, category, static] } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: number, multipleOf: 1, minimum: 1, maximum: 100 } }
+      responses:
+        "200":
+          description: A page of library assets
+          content: { application/json: { schema: { $ref: "#/components/schemas/MediaAssetPage" } } }
+  /admin/media/upload-request:
+    post:
+      operationId: requestMediaUpload
+      tags: [admin]
+      summary: Request direct private upload for a JPEG, PNG, or WebP library image
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/MediaUploadInput" } } }
+      responses:
+        "201":
+          description: Presigned upload details
+          content: { application/json: { schema: { $ref: "#/components/schemas/MediaUploadRequestResult" } } }
+        "200":
+          description: Exact known duplicate; reuse the returned asset
+          content: { application/json: { schema: { $ref: "#/components/schemas/MediaUploadRequestResult" } } }
+        "400": { description: Unsupported type or file too large }
+  /admin/media/backfill:
+    post:
+      operationId: backfillMediaUsage
+      tags: [admin]
+      summary: Idempotently reconcile durable media references from catalogue and static manifest
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Usage index reconciled
+          content: { application/json: { schema: { $ref: "#/components/schemas/MediaBackfillResult" } } }
+  /admin/media/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getMediaAsset
+      tags: [admin]
+      summary: Get library metadata and every known use
+      security: [{ clerkSession: [] }]
+      responses:
+        "200": { description: Media asset, content: { application/json: { schema: { $ref: "#/components/schemas/MediaAssetDetail" } } } }
+        "404": { description: Asset not found }
+    patch:
+      operationId: updateMediaAsset
+      tags: [admin]
+      summary: Update library defaults without changing existing product snapshots
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/MediaMetadataUpdate" } } }
+      responses:
+        "200": { description: Updated asset, content: { application/json: { schema: { $ref: "#/components/schemas/MediaAsset" } } } }
+        "400": { description: Invalid metadata }
+        "404": { description: Asset not found }
+    delete:
+      operationId: deleteMediaAsset
+      tags: [admin]
+      summary: Delete an unreferenced library asset after confirmation
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/MediaDeleteConfirmation" } } }
+      responses:
+        "204": { description: Asset deleted }
+        "400": { description: Confirmation required }
+        "404": { description: Asset not found }
+        "409":
+          description: Asset has product, category, or static references
+          content: { application/json: { schema: { $ref: "#/components/schemas/MediaInUseError" } } }
+  /admin/media/{id}/complete:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: completeMediaUpload
+      tags: [admin]
+      summary: Verify uploaded object bytes and mark a library asset ready
+      security: [{ clerkSession: [] }]
+      responses:
+        "200": { description: Verified ready asset, content: { application/json: { schema: { $ref: "#/components/schemas/MediaAsset" } } } }
+        "400": { description: "Missing, corrupt, unsupported, or oversized object" }
+        "404": { description: Asset not found }
+        "409": { description: Exact duplicate; reuse existing asset }
+  /admin/media/{id}/preview:
+    get:
+      operationId: previewMediaAsset
+      tags: [admin]
+      summary: Serve an authenticated private preview of a ready asset
+      security: [{ clerkSession: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Private image bytes }
+        "404": { description: Asset not found or not ready }
+  /media/{id}:
+    get:
+      operationId: getPublishedMediaAsset
+      tags: [catalogue]
+      summary: Serve a library image only when it has a published reference
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Public image bytes }
+        "404": { description: Asset not published or not found }
   /availability:
     get:
       operationId: listAvailability
@@ -378,6 +655,8 @@ paths:
       operationId: dryRunProductImport
       tags: [admin]
       summary: Validate an XLSX import
+      security:
+        - clerkSession: []
       requestBody:
         required: true
         content:
@@ -394,6 +673,8 @@ paths:
       operationId: commitProductImport
       tags: [admin]
       summary: Commit a validated XLSX import
+      security:
+        - clerkSession: []
       requestBody:
         required: true
         content:
@@ -411,6 +692,8 @@ paths:
       operationId: exportProductWorkbook
       tags: [admin]
       summary: Export product workbook
+      security:
+        - clerkSession: []
       responses:
         "200":
           description: XLSX export
@@ -436,6 +719,8 @@ paths:
       operationId: listAdminCategories
       tags: [admin]
       summary: List all catalogue categories
+      security:
+        - clerkSession: []
       responses:
         "200":
           description: Category records
@@ -448,6 +733,8 @@ paths:
       operationId: createCategory
       tags: [admin]
       summary: Create a catalogue category
+      security:
+        - clerkSession: []
       requestBody:
         required: true
         content:
@@ -466,6 +753,8 @@ paths:
       operationId: reorderCategories
       tags: [admin]
       summary: Reorder catalogue categories
+      security:
+        - clerkSession: []
       requestBody:
         required: true
         content:
@@ -491,6 +780,8 @@ paths:
       operationId: updateCategory
       tags: [admin]
       summary: Update a catalogue category or its active state
+      security:
+        - clerkSession: []
       requestBody:
         required: true
         content:
@@ -509,6 +800,8 @@ paths:
       operationId: deleteCategory
       tags: [admin]
       summary: Delete an unused catalogue category
+      security:
+        - clerkSession: []
       responses:
         "204": { description: Category deleted }
         "404": { description: Category not found }
@@ -534,7 +827,22 @@ paths:
         "400":
           description: Invalid enquiry
 components:
+  securitySchemes:
+    clerkSession:
+      type: apiKey
+      in: cookie
+      name: __session
   schemas:
+    AdminSession:
+      type: object
+      required: [signedIn, authorized]
+      properties:
+        signedIn: { type: boolean }
+        authorized: { type: boolean }
+        userId: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [admin] }
+        developmentBypass: { type: boolean }
     PublishValidationError:
       type: object
       required: [error, issues]
@@ -556,6 +864,54 @@ components:
       required: [error]
       properties:
         error: { type: string }
+    SuccessResponse:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean, const: true }
+    AdministratorApprovalInput:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, minLength: 3, maxLength: 320 }
+    AdministratorAccessRevocationInput:
+      type: object
+      required: [clerkUserId]
+      properties:
+        clerkUserId: { type: string, minLength: 1, maxLength: 255 }
+    AdministratorAccessList:
+      type: object
+      required: [administrators, pendingApprovals, audit, currentUserId]
+      properties:
+        administrators:
+          type: array
+          items:
+            type: object
+            required: [clerkUserId, email, createdAt]
+            properties:
+              clerkUserId: { type: string }
+              email: { type: string }
+              createdAt: { type: string, format: date-time }
+        pendingApprovals:
+          type: array
+          items:
+            type: object
+            required: [email, createdAt]
+            properties:
+              email: { type: string }
+              createdAt: { type: string, format: date-time }
+        audit:
+          type: array
+          items:
+            type: object
+            required: [id, actorEmail, targetEmail, action, createdAt]
+            properties:
+              id: { type: number, multipleOf: 1 }
+              actorEmail: { type: string }
+              targetEmail: { type: string }
+              action: { type: string }
+              createdAt: { type: string, format: date-time }
+        currentUserId: { type: string }
     ProductReferenceValidationError:
       type: object
       required: [error, issues]
@@ -684,17 +1040,12 @@ components:
         components:
           type: array
           items: { $ref: "#/components/schemas/ProductComponent" }
-        faqs:
-          type: array
-          maxItems: 10
-          items: { $ref: "#/components/schemas/ProductFaq" }
         relatedProducts: { type: array, items: { type: string } }
         formulationYear: { type: string }
         photos:
           type: array
           items: { $ref: "#/components/schemas/ProductPhoto" }
         featured: { type: boolean }
-        h1: { type: string }
         seoTitle: { type: string }
         seoDescription: { type: string }
         socialTitle: { type: string }
@@ -702,7 +1053,7 @@ components:
         socialImage: { type: string }
         canonicalUrl: { type: string }
         robotsIndex: { type: boolean }
-      required: [recordType, botanicalName, tagline, blurb, keyAttributes, distributionNote, persistencyType, ploidy, flowerColour, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, tolerance, endUse, livestock, maturityMeasure, maturityDays, headingDate, headingOffsetDays, winterActivity, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, certification, description, components, faqs, relatedProducts, formulationYear, photos, featured, h1, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex]
+      required: [recordType, botanicalName, tagline, blurb, keyAttributes, distributionNote, persistencyType, ploidy, flowerColour, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, tolerance, endUse, livestock, maturityMeasure, maturityDays, headingDate, headingOffsetDays, winterActivity, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, certification, description, components, relatedProducts, formulationYear, photos, featured, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex]
     ProductDraftInput:
       type: object
       properties:
@@ -881,18 +1232,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ProductComponent"
-        faqs:
-          type: array
-          maxItems: 10
-          items:
-            $ref: "#/components/schemas/ProductFaq"
         formulationYear: { type: string, maxLength: 20 }
         photos:
           type: array
           items:
             $ref: "#/components/schemas/ProductPhoto"
         inCurrentPrintedGuide: { type: boolean }
-        h1: { type: string, maxLength: 160 }
         seoTitle: { type: string, maxLength: 180 }
         seoDescription: { type: string, maxLength: 2000 }
         socialTitle: { type: string, maxLength: 180 }
@@ -918,7 +1263,7 @@ components:
         regrowth: { type: string }
         productForm: { type: string, maxLength: 120 }
         applicationRate: { type: string }
-      required: [stockCode, guideSection, recordType, botanicalName, alsoKnownAs, packSizes, treatment, persistencyType, ploidy, flowerColour, bredByOrigin, australianBred, distributedBy, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, sowingDepthMinCm, sowingDepthMaxCm, tolerance, maturityMeasure, maturityDays, headingDate, floweringWindow, winterActivity, inoculantGroup, seedTreatment, ecocertApproved, endUse, livestock, companionSpecies, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, licenceRestriction, certification, isThirdPartyProduct, supplierName, tagline, blurb, keyAttributes, distributionNote, description, notes, components, faqs, formulationYear, photos, inCurrentPrintedGuide, h1, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex, sortOrder, featured, relatedProducts, headingOffsetDays, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate]
+      required: [stockCode, guideSection, recordType, botanicalName, alsoKnownAs, packSizes, treatment, persistencyType, ploidy, flowerColour, bredByOrigin, australianBred, distributedBy, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, sowingDepthMinCm, sowingDepthMaxCm, tolerance, maturityMeasure, maturityDays, headingDate, floweringWindow, winterActivity, inoculantGroup, seedTreatment, ecocertApproved, endUse, livestock, companionSpecies, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, licenceRestriction, certification, isThirdPartyProduct, supplierName, tagline, blurb, keyAttributes, distributionNote, description, notes, components, formulationYear, photos, inCurrentPrintedGuide, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex, sortOrder, featured, relatedProducts, headingOffsetDays, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate]
     SaleLine:
       type: object
       properties:
@@ -963,20 +1308,149 @@ components:
         description: { type: string, maxLength: 10000 }
         note: { type: string, maxLength: 4000 }
       required: [productLink, speciesName, inclusionRate, unit, description, note]
-    ProductFaq:
-      type: object
-      properties:
-        question: { type: string, maxLength: 180 }
-        answer: { type: string, maxLength: 4000 }
-      required: [question, answer]
     ProductPhoto:
       type: object
       properties:
+        assetId: { type: string, description: Immutable shared-library asset identity when selected from Images }
         slot: { type: string, maxLength: 40 }
         file: { type: string, maxLength: 240 }
         rating: { type: string, maxLength: 80 }
         src: { type: string, maxLength: 500 }
+        alt: { type: string, maxLength: 300 }
+        title: { type: string, maxLength: 300 }
+        role: { type: string, enum: [hero, gallery, detail] }
+        width: { type: number, multipleOf: 1, minimum: 1 }
+        height: { type: number, multipleOf: 1, minimum: 1 }
+        format: { type: string, maxLength: 20 }
+        objectPath: { type: string, maxLength: 500 }
+        srcSet: { type: string, maxLength: 2000 }
+        social: { type: boolean }
       required: [slot, file, rating, src]
+    ProductImageUploadRequest:
+      type: object
+      required: [productSlug, slot, contentVersion, variant, name, size, contentType]
+      properties:
+        productSlug: { type: string }
+        slot: { type: string }
+        contentVersion: { type: string, pattern: "^[a-f0-9]{12,64}$" }
+        variant: { type: string, enum: [full, card] }
+        name: { type: string }
+        size: { type: number, multipleOf: 1, minimum: 1, maximum: 4194304 }
+        contentType: { type: string, enum: [image/webp] }
+    ProductImageUploadResponse:
+      type: object
+      required: [uploadURL, objectPath, publicURL]
+      properties:
+        uploadURL: { type: string }
+        objectPath: { type: string }
+        publicURL: { type: string }
+    DeleteProductImageRequest:
+      type: object
+      required: [objectPath]
+      properties:
+        objectPath: { type: string }
+    MediaAsset:
+      type: object
+      required: [id, status, originalFilename, defaultAlt, defaultCaption, createdAt, updatedAt, storageKind, usageSummary]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [Pending, Ready, Failed] }
+        originalFilename: { type: string }
+        contentType: { type: [string, "null"], enum: [image/jpeg, image/png, image/webp, null] }
+        bytes: { type: [number, "null"], multipleOf: 1, minimum: 1 }
+        width: { type: [number, "null"], multipleOf: 1, minimum: 1 }
+        height: { type: [number, "null"], multipleOf: 1, minimum: 1 }
+        sha256: { type: [string, "null"] }
+        defaultAlt: { type: string, maxLength: 300 }
+        defaultCaption: { type: string, maxLength: 300 }
+        failureReason: { type: [string, "null"] }
+        storageKind: { type: string, enum: [managed, legacy, external] }
+        objectPath: { type: [string, "null"] }
+        previewURL: { type: [string, "null"] }
+        publicURL: { type: [string, "null"] }
+        usageSummary: { $ref: "#/components/schemas/MediaUsageSummary" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    MediaUsageSummary:
+      type: object
+      required: [total, draft, published, product, category, static]
+      properties:
+        total: { type: number, multipleOf: 1, minimum: 0 }
+        draft: { type: number, multipleOf: 1, minimum: 0 }
+        published: { type: number, multipleOf: 1, minimum: 0 }
+        product: { type: number, multipleOf: 1, minimum: 0 }
+        category: { type: number, multipleOf: 1, minimum: 0 }
+        static: { type: number, multipleOf: 1, minimum: 0 }
+    MediaReference:
+      type: object
+      required: [id, assetId, ownerType, ownerId, ownerName, field, role, usageState, metadata, createdAt, updatedAt]
+      properties:
+        id: { type: number, multipleOf: 1 }
+        assetId: { type: string }
+        ownerType: { type: string, enum: [product, category, static] }
+        ownerId: { type: string }
+        ownerName: { type: string }
+        field: { type: string }
+        role: { type: string }
+        usageState: { type: string, enum: [Draft, Published] }
+        editPath: { type: [string, "null"] }
+        metadata: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    MediaAssetDetail:
+      allOf:
+        - $ref: "#/components/schemas/MediaAsset"
+        - type: object
+          required: [usages]
+          properties:
+            usages: { type: array, items: { $ref: "#/components/schemas/MediaReference" } }
+    MediaAssetPage:
+      type: object
+      required: [items, nextCursor, staticUsageIndexed]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/MediaAsset" } }
+        nextCursor: { type: [string, "null"] }
+        staticUsageIndexed: { type: boolean }
+    MediaUploadInput:
+      type: object
+      required: [originalFilename, contentType, bytes]
+      properties:
+        originalFilename: { type: string, minLength: 1, maxLength: 240 }
+        contentType: { type: string, enum: [image/jpeg, image/png, image/webp] }
+        bytes: { type: number, multipleOf: 1, minimum: 1, maximum: 12582912 }
+        sha256: { type: string, pattern: "^[a-fA-F0-9]{64}$" }
+    MediaUploadRequestResult:
+      type: object
+      required: [duplicate]
+      properties:
+        duplicate: { type: boolean }
+        asset: { $ref: "#/components/schemas/MediaAsset" }
+        assetId: { type: string }
+        uploadURL: { type: string }
+        objectPath: { type: string }
+        previewURL: { type: string }
+    MediaMetadataUpdate:
+      type: object
+      properties:
+        defaultAlt: { type: string, maxLength: 300 }
+        defaultCaption: { type: string, maxLength: 300 }
+    MediaDeleteConfirmation:
+      type: object
+      required: [confirm]
+      properties:
+        confirm: { type: boolean, const: true }
+    MediaInUseError:
+      type: object
+      required: [error, usages]
+      properties:
+        error: { type: string }
+        usages: { type: array, items: { $ref: "#/components/schemas/MediaReference" } }
+    MediaBackfillResult:
+      type: object
+      required: [ok, message]
+      properties:
+        ok: { type: boolean }
+        message: { type: string }
     AdminSummary:
       type: object
       properties:
@@ -1000,12 +1474,6 @@ components:
         note: { type: string }
         status: { type: string }
       required: [id, name, note, status]
-    CatalogueCategoryFaq:
-      type: object
-      properties:
-        question: { type: string, maxLength: 200 }
-        answer: { type: string, maxLength: 2000 }
-      required: [question, answer]
     CatalogueCategory:
       type: object
       properties:
@@ -1020,15 +1488,11 @@ components:
         seoDescription: { type: string }
         rainfall: { type: string }
         image: { type: string }
-        faqs:
-          type: array
-          maxItems: 20
-          items: { $ref: "#/components/schemas/CatalogueCategoryFaq" }
         sortOrder: { type: number, multipleOf: 1 }
         active: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-      required: [id, parentId, slug, name, groupLabel, lead, pageHeading, seoTitle, seoDescription, rainfall, image, faqs, sortOrder, active, createdAt, updatedAt]
+      required: [id, parentId, slug, name, groupLabel, lead, pageHeading, seoTitle, seoDescription, rainfall, image, sortOrder, active, createdAt, updatedAt]
     PublicCatalogueCategory:
       allOf:
         - $ref: "#/components/schemas/CatalogueCategory"
@@ -1049,10 +1513,6 @@ components:
         seoDescription: { type: string, maxLength: 2000 }
         rainfall: { type: string, maxLength: 120 }
         image: { type: string, maxLength: 500 }
-        faqs:
-          type: array
-          maxItems: 20
-          items: { $ref: "#/components/schemas/CatalogueCategoryFaq" }
         sortOrder: { type: number, minimum: 0, multipleOf: 1 }
         active: { type: boolean }
       required: [parentId, slug, name, groupLabel, lead, pageHeading, seoTitle, seoDescription, rainfall, image, sortOrder, active]
@@ -1069,10 +1529,6 @@ components:
         seoDescription: { type: string, maxLength: 2000 }
         rainfall: { type: string, maxLength: 120 }
         image: { type: string, maxLength: 500 }
-        faqs:
-          type: array
-          maxItems: 20
-          items: { $ref: "#/components/schemas/CatalogueCategoryFaq" }
         sortOrder: { type: number, minimum: 0, multipleOf: 1 }
         active: { type: boolean }
     CatalogueCategoryReorder:

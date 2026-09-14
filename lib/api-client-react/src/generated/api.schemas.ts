@@ -5,6 +5,22 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type AdminSessionRole = typeof AdminSessionRole[keyof typeof AdminSessionRole];
+
+
+export const AdminSessionRole = {
+  admin: 'admin',
+} as const;
+
+export interface AdminSession {
+  signedIn: boolean;
+  authorized: boolean;
+  userId?: string;
+  email?: string;
+  role?: AdminSessionRole;
+  developmentBypass?: boolean;
+}
+
 export type PublishValidationErrorIssuesItem = {
   field: string;
   label: string;
@@ -17,6 +33,53 @@ export interface PublishValidationError {
 
 export interface ApiError {
   error: string;
+}
+
+export const SuccessResponseValue = {
+  success: true,
+} as const;
+export type SuccessResponse = typeof SuccessResponseValue;
+
+export interface AdministratorApprovalInput {
+  /**
+     * @minLength 3
+     * @maxLength 320
+     */
+  email: string;
+}
+
+export interface AdministratorAccessRevocationInput {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  clerkUserId: string;
+}
+
+export type AdministratorAccessListAdministratorsItem = {
+  clerkUserId: string;
+  email: string;
+  createdAt: string;
+};
+
+export type AdministratorAccessListPendingApprovalsItem = {
+  email: string;
+  createdAt: string;
+};
+
+export type AdministratorAccessListAuditItem = {
+  id: number;
+  actorEmail: string;
+  targetEmail: string;
+  action: string;
+  createdAt: string;
+};
+
+export interface AdministratorAccessList {
+  administrators: AdministratorAccessListAdministratorsItem[];
+  pendingApprovals: AdministratorAccessListPendingApprovalsItem[];
+  audit: AdministratorAccessListAuditItem[];
+  currentUserId: string;
 }
 
 export type ProductReferenceValidationErrorIssuesItem = {
@@ -332,14 +395,18 @@ export interface ProductComponent {
   note: string;
 }
 
-export interface ProductFaq {
-  /** @maxLength 180 */
-  question: string;
-  /** @maxLength 4000 */
-  answer: string;
-}
+export type ProductPhotoRole = typeof ProductPhotoRole[keyof typeof ProductPhotoRole];
+
+
+export const ProductPhotoRole = {
+  hero: 'hero',
+  gallery: 'gallery',
+  detail: 'detail',
+} as const;
 
 export interface ProductPhoto {
+  /** Immutable shared-library asset identity when selected from Images */
+  assetId?: string;
   /** @maxLength 40 */
   slot: string;
   /** @maxLength 240 */
@@ -348,6 +415,22 @@ export interface ProductPhoto {
   rating: string;
   /** @maxLength 500 */
   src: string;
+  /** @maxLength 300 */
+  alt?: string;
+  /** @maxLength 300 */
+  title?: string;
+  role?: ProductPhotoRole;
+  /** @minimum 1 */
+  width?: number;
+  /** @minimum 1 */
+  height?: number;
+  /** @maxLength 20 */
+  format?: string;
+  /** @maxLength 500 */
+  objectPath?: string;
+  /** @maxLength 2000 */
+  srcSet?: string;
+  social?: boolean;
 }
 
 export interface ProductDetails {
@@ -430,14 +513,10 @@ export interface ProductDetails {
   /** @maxLength 2000 */
   notes: string;
   components: ProductComponent[];
-  /** @maxItems 10 */
-  faqs: ProductFaq[];
   /** @maxLength 20 */
   formulationYear: string;
   photos: ProductPhoto[];
   inCurrentPrintedGuide: boolean;
-  /** @maxLength 160 */
-  h1: string;
   /** @maxLength 180 */
   seoTitle: string;
   /** @maxLength 2000 */
@@ -571,13 +650,10 @@ export interface PublicProductDetails {
   certification: string[];
   description: string;
   components: ProductComponent[];
-  /** @maxItems 10 */
-  faqs: ProductFaq[];
   relatedProducts: string[];
   formulationYear: string;
   photos: ProductPhoto[];
   featured: boolean;
-  h1: string;
   seoTitle: string;
   seoDescription: string;
   socialTitle: string;
@@ -903,6 +979,234 @@ export interface ProductUpdate {
   details?: ProductDetails;
 }
 
+export type ProductImageUploadRequestVariant = typeof ProductImageUploadRequestVariant[keyof typeof ProductImageUploadRequestVariant];
+
+
+export const ProductImageUploadRequestVariant = {
+  full: 'full',
+  card: 'card',
+} as const;
+
+export type ProductImageUploadRequestContentType = typeof ProductImageUploadRequestContentType[keyof typeof ProductImageUploadRequestContentType];
+
+
+export const ProductImageUploadRequestContentType = {
+  'image/webp': 'image/webp',
+} as const;
+
+export interface ProductImageUploadRequest {
+  productSlug: string;
+  slot: string;
+  /** @pattern ^[a-f0-9]{12,64}$ */
+  contentVersion: string;
+  variant: ProductImageUploadRequestVariant;
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 4194304
+     */
+  size: number;
+  contentType: ProductImageUploadRequestContentType;
+}
+
+export interface ProductImageUploadResponse {
+  uploadURL: string;
+  objectPath: string;
+  publicURL: string;
+}
+
+export interface DeleteProductImageRequest {
+  objectPath: string;
+}
+
+export type MediaAssetStatus = typeof MediaAssetStatus[keyof typeof MediaAssetStatus];
+
+
+export const MediaAssetStatus = {
+  Pending: 'Pending',
+  Ready: 'Ready',
+  Failed: 'Failed',
+} as const;
+
+/**
+ * @nullable
+ */
+export type MediaAssetContentType = typeof MediaAssetContentType[keyof typeof MediaAssetContentType] | null;
+
+
+export const MediaAssetContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export type MediaAssetStorageKind = typeof MediaAssetStorageKind[keyof typeof MediaAssetStorageKind];
+
+
+export const MediaAssetStorageKind = {
+  managed: 'managed',
+  legacy: 'legacy',
+  external: 'external',
+} as const;
+
+export interface MediaUsageSummary {
+  /** @minimum 0 */
+  total: number;
+  /** @minimum 0 */
+  draft: number;
+  /** @minimum 0 */
+  published: number;
+  /** @minimum 0 */
+  product: number;
+  /** @minimum 0 */
+  category: number;
+  /** @minimum 0 */
+  static: number;
+}
+
+export interface MediaAsset {
+  id: string;
+  status: MediaAssetStatus;
+  originalFilename: string;
+  /** @nullable */
+  contentType?: MediaAssetContentType;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  bytes?: number | null;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  width?: number | null;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  height?: number | null;
+  /** @nullable */
+  sha256?: string | null;
+  /** @maxLength 300 */
+  defaultAlt: string;
+  /** @maxLength 300 */
+  defaultCaption: string;
+  /** @nullable */
+  failureReason?: string | null;
+  storageKind: MediaAssetStorageKind;
+  /** @nullable */
+  objectPath?: string | null;
+  /** @nullable */
+  previewURL?: string | null;
+  /** @nullable */
+  publicURL?: string | null;
+  usageSummary: MediaUsageSummary;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MediaReferenceOwnerType = typeof MediaReferenceOwnerType[keyof typeof MediaReferenceOwnerType];
+
+
+export const MediaReferenceOwnerType = {
+  product: 'product',
+  category: 'category',
+  static: 'static',
+} as const;
+
+export type MediaReferenceUsageState = typeof MediaReferenceUsageState[keyof typeof MediaReferenceUsageState];
+
+
+export const MediaReferenceUsageState = {
+  Draft: 'Draft',
+  Published: 'Published',
+} as const;
+
+export type MediaReferenceMetadata = { [key: string]: unknown };
+
+export interface MediaReference {
+  id: number;
+  assetId: string;
+  ownerType: MediaReferenceOwnerType;
+  ownerId: string;
+  ownerName: string;
+  field: string;
+  role: string;
+  usageState: MediaReferenceUsageState;
+  /** @nullable */
+  editPath?: string | null;
+  metadata: MediaReferenceMetadata;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MediaAssetDetail = MediaAsset & {
+  usages: MediaReference[];
+};
+
+export interface MediaAssetPage {
+  items: MediaAsset[];
+  /** @nullable */
+  nextCursor: string | null;
+  staticUsageIndexed: boolean;
+}
+
+export type MediaUploadInputContentType = typeof MediaUploadInputContentType[keyof typeof MediaUploadInputContentType];
+
+
+export const MediaUploadInputContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface MediaUploadInput {
+  /**
+     * @minLength 1
+     * @maxLength 240
+     */
+  originalFilename: string;
+  contentType: MediaUploadInputContentType;
+  /**
+     * @minimum 1
+     * @maximum 12582912
+     */
+  bytes: number;
+  /** @pattern ^[a-fA-F0-9]{64}$ */
+  sha256?: string;
+}
+
+export interface MediaUploadRequestResult {
+  duplicate: boolean;
+  asset?: MediaAsset;
+  assetId?: string;
+  uploadURL?: string;
+  objectPath?: string;
+  previewURL?: string;
+}
+
+export interface MediaMetadataUpdate {
+  /** @maxLength 300 */
+  defaultAlt?: string;
+  /** @maxLength 300 */
+  defaultCaption?: string;
+}
+
+export const MediaDeleteConfirmationValue = {
+  confirm: true,
+} as const;
+export type MediaDeleteConfirmation = typeof MediaDeleteConfirmationValue;
+
+export interface MediaInUseError {
+  error: string;
+  usages: MediaReference[];
+}
+
+export interface MediaBackfillResult {
+  ok: boolean;
+  message: string;
+}
+
 export interface AdminSummary {
   totalProducts: number;
   publishedProducts: number;
@@ -921,13 +1225,6 @@ export interface AvailabilityRow {
   status: string;
 }
 
-export interface CatalogueCategoryFaq {
-  /** @maxLength 200 */
-  question: string;
-  /** @maxLength 2000 */
-  answer: string;
-}
-
 export interface CatalogueCategory {
   id: number;
   parentId: number | null;
@@ -940,8 +1237,6 @@ export interface CatalogueCategory {
   seoDescription: string;
   rainfall: string;
   image: string;
-  /** @maxItems 20 */
-  faqs: CatalogueCategoryFaq[];
   sortOrder: number;
   active: boolean;
   createdAt: string;
@@ -983,8 +1278,6 @@ export interface CatalogueCategoryInput {
   rainfall: string;
   /** @maxLength 500 */
   image: string;
-  /** @maxItems 20 */
-  faqs?: CatalogueCategoryFaq[];
   /** @minimum 0 */
   sortOrder: number;
   active: boolean;
@@ -1020,8 +1313,6 @@ export interface CatalogueCategoryUpdate {
   rainfall?: string;
   /** @maxLength 500 */
   image?: string;
-  /** @maxItems 20 */
-  faqs?: CatalogueCategoryFaq[];
   /** @minimum 0 */
   sortOrder?: number;
   active?: boolean;
@@ -1106,6 +1397,40 @@ export interface EnquiryCreated {
   id: number;
   createdAt: string;
 }
+
+export type ListMediaAssetsParams = {
+/**
+ * @maxLength 160
+ */
+query?: string;
+usage?: ListMediaAssetsUsage;
+area?: ListMediaAssetsArea;
+cursor?: string;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
+export type ListMediaAssetsUsage = typeof ListMediaAssetsUsage[keyof typeof ListMediaAssetsUsage];
+
+
+export const ListMediaAssetsUsage = {
+  unassigned: 'unassigned',
+  draft: 'draft',
+  published: 'published',
+  mixed: 'mixed',
+} as const;
+
+export type ListMediaAssetsArea = typeof ListMediaAssetsArea[keyof typeof ListMediaAssetsArea];
+
+
+export const ListMediaAssetsArea = {
+  product: 'product',
+  category: 'category',
+  static: 'static',
+} as const;
 
 export type LookupRedirectParams = {
 fromPath: string;
