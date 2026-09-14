@@ -44,6 +44,12 @@ export const listProductsResponseDetailsComponentsItemDescriptionMax = 10000;
 
 export const listProductsResponseDetailsComponentsItemNoteMax = 4000;
 
+export const listProductsResponseDetailsFaqsItemQuestionMax = 180;
+
+export const listProductsResponseDetailsFaqsItemAnswerMax = 4000;
+
+export const listProductsResponseDetailsFaqsMax = 10;
+
 export const listProductsResponseDetailsPhotosItemSlotMax = 40;
 
 export const listProductsResponseDetailsPhotosItemFileMax = 240;
@@ -137,6 +143,10 @@ export const ListProductsResponseItem = zod.object({
   "description": zod.string().max(listProductsResponseDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(listProductsResponseDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(listProductsResponseDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(listProductsResponseDetailsFaqsItemAnswerMax)
+})).max(listProductsResponseDetailsFaqsMax),
   "relatedProducts": zod.array(zod.string()),
   "formulationYear": zod.string(),
   "photos": zod.array(zod.object({
@@ -146,6 +156,7 @@ export const ListProductsResponseItem = zod.object({
   "src": zod.string().max(listProductsResponseDetailsPhotosItemSrcMax)
 })),
   "featured": zod.boolean(),
+  "h1": zod.string(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
   "socialTitle": zod.string(),
@@ -255,6 +266,12 @@ export const createProductBodyDetailsComponentsItemDescriptionMax = 10000;
 
 export const createProductBodyDetailsComponentsItemNoteMax = 4000;
 
+export const createProductBodyDetailsFaqsItemQuestionMax = 180;
+
+export const createProductBodyDetailsFaqsItemAnswerMax = 4000;
+
+export const createProductBodyDetailsFaqsMax = 10;
+
 export const createProductBodyDetailsFormulationYearMax = 20;
 
 export const createProductBodyDetailsPhotosItemSlotMax = 40;
@@ -264,6 +281,8 @@ export const createProductBodyDetailsPhotosItemFileMax = 240;
 export const createProductBodyDetailsPhotosItemRatingMax = 80;
 
 export const createProductBodyDetailsPhotosItemSrcMax = 500;
+
+export const createProductBodyDetailsH1Max = 160;
 
 export const createProductBodyDetailsSeoTitleMax = 180;
 
@@ -370,6 +389,10 @@ export const CreateProductBody = zod.object({
   "description": zod.string().max(createProductBodyDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(createProductBodyDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(createProductBodyDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(createProductBodyDetailsFaqsItemAnswerMax)
+})).max(createProductBodyDetailsFaqsMax),
   "formulationYear": zod.string().max(createProductBodyDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(createProductBodyDetailsPhotosItemSlotMax),
@@ -378,6 +401,7 @@ export const CreateProductBody = zod.object({
   "src": zod.string().max(createProductBodyDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(createProductBodyDetailsH1Max),
   "seoTitle": zod.string().max(createProductBodyDetailsSeoTitleMax),
   "seoDescription": zod.string().max(createProductBodyDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(createProductBodyDetailsSocialTitleMax),
@@ -495,6 +519,12 @@ export const createProductResponseDetailsComponentsItemDescriptionMax = 10000;
 
 export const createProductResponseDetailsComponentsItemNoteMax = 4000;
 
+export const createProductResponseDetailsFaqsItemQuestionMax = 180;
+
+export const createProductResponseDetailsFaqsItemAnswerMax = 4000;
+
+export const createProductResponseDetailsFaqsMax = 10;
+
 export const createProductResponseDetailsFormulationYearMax = 20;
 
 export const createProductResponseDetailsPhotosItemSlotMax = 40;
@@ -504,6 +534,8 @@ export const createProductResponseDetailsPhotosItemFileMax = 240;
 export const createProductResponseDetailsPhotosItemRatingMax = 80;
 
 export const createProductResponseDetailsPhotosItemSrcMax = 500;
+
+export const createProductResponseDetailsH1Max = 160;
 
 export const createProductResponseDetailsSeoTitleMax = 180;
 
@@ -626,6 +658,10 @@ export const CreateProductResponse = zod.object({
   "description": zod.string().max(createProductResponseDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(createProductResponseDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(createProductResponseDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(createProductResponseDetailsFaqsItemAnswerMax)
+})).max(createProductResponseDetailsFaqsMax),
   "formulationYear": zod.string().max(createProductResponseDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(createProductResponseDetailsPhotosItemSlotMax),
@@ -634,6 +670,7 @@ export const CreateProductResponse = zod.object({
   "src": zod.string().max(createProductResponseDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(createProductResponseDetailsH1Max),
   "seoTitle": zod.string().max(createProductResponseDetailsSeoTitleMax),
   "seoDescription": zod.string().max(createProductResponseDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(createProductResponseDetailsSocialTitleMax),
@@ -693,6 +730,12 @@ export const getProductBySlugResponseDetailsComponentsItemUnitMax = 20;
 export const getProductBySlugResponseDetailsComponentsItemDescriptionMax = 10000;
 
 export const getProductBySlugResponseDetailsComponentsItemNoteMax = 4000;
+
+export const getProductBySlugResponseDetailsFaqsItemQuestionMax = 180;
+
+export const getProductBySlugResponseDetailsFaqsItemAnswerMax = 4000;
+
+export const getProductBySlugResponseDetailsFaqsMax = 10;
 
 export const getProductBySlugResponseDetailsPhotosItemSlotMax = 40;
 
@@ -787,6 +830,10 @@ export const GetProductBySlugResponse = zod.object({
   "description": zod.string().max(getProductBySlugResponseDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(getProductBySlugResponseDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(getProductBySlugResponseDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(getProductBySlugResponseDetailsFaqsItemAnswerMax)
+})).max(getProductBySlugResponseDetailsFaqsMax),
   "relatedProducts": zod.array(zod.string()),
   "formulationYear": zod.string(),
   "photos": zod.array(zod.object({
@@ -796,6 +843,7 @@ export const GetProductBySlugResponse = zod.object({
   "src": zod.string().max(getProductBySlugResponseDetailsPhotosItemSrcMax)
 })),
   "featured": zod.boolean(),
+  "h1": zod.string(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
   "socialTitle": zod.string(),
@@ -910,6 +958,12 @@ export const updateProductBodyDetailsComponentsItemDescriptionMax = 10000;
 
 export const updateProductBodyDetailsComponentsItemNoteMax = 4000;
 
+export const updateProductBodyDetailsFaqsItemQuestionMax = 180;
+
+export const updateProductBodyDetailsFaqsItemAnswerMax = 4000;
+
+export const updateProductBodyDetailsFaqsMax = 10;
+
 export const updateProductBodyDetailsFormulationYearMax = 20;
 
 export const updateProductBodyDetailsPhotosItemSlotMax = 40;
@@ -919,6 +973,8 @@ export const updateProductBodyDetailsPhotosItemFileMax = 240;
 export const updateProductBodyDetailsPhotosItemRatingMax = 80;
 
 export const updateProductBodyDetailsPhotosItemSrcMax = 500;
+
+export const updateProductBodyDetailsH1Max = 160;
 
 export const updateProductBodyDetailsSeoTitleMax = 180;
 
@@ -1026,6 +1082,10 @@ export const UpdateProductBody = zod.object({
   "description": zod.string().max(updateProductBodyDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(updateProductBodyDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(updateProductBodyDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(updateProductBodyDetailsFaqsItemAnswerMax)
+})).max(updateProductBodyDetailsFaqsMax),
   "formulationYear": zod.string().max(updateProductBodyDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(updateProductBodyDetailsPhotosItemSlotMax),
@@ -1034,6 +1094,7 @@ export const UpdateProductBody = zod.object({
   "src": zod.string().max(updateProductBodyDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(updateProductBodyDetailsH1Max),
   "seoTitle": zod.string().max(updateProductBodyDetailsSeoTitleMax),
   "seoDescription": zod.string().max(updateProductBodyDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(updateProductBodyDetailsSocialTitleMax),
@@ -1140,6 +1201,12 @@ export const updateProductResponseDetailsComponentsItemDescriptionMax = 10000;
 
 export const updateProductResponseDetailsComponentsItemNoteMax = 4000;
 
+export const updateProductResponseDetailsFaqsItemQuestionMax = 180;
+
+export const updateProductResponseDetailsFaqsItemAnswerMax = 4000;
+
+export const updateProductResponseDetailsFaqsMax = 10;
+
 export const updateProductResponseDetailsFormulationYearMax = 20;
 
 export const updateProductResponseDetailsPhotosItemSlotMax = 40;
@@ -1149,6 +1216,8 @@ export const updateProductResponseDetailsPhotosItemFileMax = 240;
 export const updateProductResponseDetailsPhotosItemRatingMax = 80;
 
 export const updateProductResponseDetailsPhotosItemSrcMax = 500;
+
+export const updateProductResponseDetailsH1Max = 160;
 
 export const updateProductResponseDetailsSeoTitleMax = 180;
 
@@ -1271,6 +1340,10 @@ export const UpdateProductResponse = zod.object({
   "description": zod.string().max(updateProductResponseDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(updateProductResponseDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(updateProductResponseDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(updateProductResponseDetailsFaqsItemAnswerMax)
+})).max(updateProductResponseDetailsFaqsMax),
   "formulationYear": zod.string().max(updateProductResponseDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(updateProductResponseDetailsPhotosItemSlotMax),
@@ -1279,6 +1352,7 @@ export const UpdateProductResponse = zod.object({
   "src": zod.string().max(updateProductResponseDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(updateProductResponseDetailsH1Max),
   "seoTitle": zod.string().max(updateProductResponseDetailsSeoTitleMax),
   "seoDescription": zod.string().max(updateProductResponseDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(updateProductResponseDetailsSocialTitleMax),
@@ -1401,6 +1475,12 @@ export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemDescr
 
 export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemNoteMax = 4000;
 
+export const getAdminSummaryResponseRecentProductsItemDetailsFaqsItemQuestionMax = 180;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsFaqsItemAnswerMax = 4000;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsFaqsMax = 10;
+
 export const getAdminSummaryResponseRecentProductsItemDetailsFormulationYearMax = 20;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsPhotosItemSlotMax = 40;
@@ -1410,6 +1490,8 @@ export const getAdminSummaryResponseRecentProductsItemDetailsPhotosItemFileMax =
 export const getAdminSummaryResponseRecentProductsItemDetailsPhotosItemRatingMax = 80;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsPhotosItemSrcMax = 500;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsH1Max = 160;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsSeoTitleMax = 180;
 
@@ -1540,6 +1622,10 @@ export const GetAdminSummaryResponse = zod.object({
   "description": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsFaqsItemAnswerMax)
+})).max(getAdminSummaryResponseRecentProductsItemDetailsFaqsMax),
   "formulationYear": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsPhotosItemSlotMax),
@@ -1548,6 +1634,7 @@ export const GetAdminSummaryResponse = zod.object({
   "src": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsH1Max),
   "seoTitle": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSeoTitleMax),
   "seoDescription": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsSocialTitleMax),
@@ -1661,6 +1748,12 @@ export const listAdminProductsResponseOneDetailsComponentsItemDescriptionMax = 1
 
 export const listAdminProductsResponseOneDetailsComponentsItemNoteMax = 4000;
 
+export const listAdminProductsResponseOneDetailsFaqsItemQuestionMax = 180;
+
+export const listAdminProductsResponseOneDetailsFaqsItemAnswerMax = 4000;
+
+export const listAdminProductsResponseOneDetailsFaqsMax = 10;
+
 export const listAdminProductsResponseOneDetailsFormulationYearMax = 20;
 
 export const listAdminProductsResponseOneDetailsPhotosItemSlotMax = 40;
@@ -1670,6 +1763,8 @@ export const listAdminProductsResponseOneDetailsPhotosItemFileMax = 240;
 export const listAdminProductsResponseOneDetailsPhotosItemRatingMax = 80;
 
 export const listAdminProductsResponseOneDetailsPhotosItemSrcMax = 500;
+
+export const listAdminProductsResponseOneDetailsH1Max = 160;
 
 export const listAdminProductsResponseOneDetailsSeoTitleMax = 180;
 
@@ -1788,6 +1883,12 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemDescrip
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
+export const listAdminProductsResponseTwoDraftOneOneDetailsFaqsItemQuestionMax = 180;
+
+export const listAdminProductsResponseTwoDraftOneOneDetailsFaqsItemAnswerMax = 4000;
+
+export const listAdminProductsResponseTwoDraftOneOneDetailsFaqsMax = 10;
+
 export const listAdminProductsResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsPhotosItemSlotMax = 40;
@@ -1797,6 +1898,8 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsPhotosItemFileMax = 2
 export const listAdminProductsResponseTwoDraftOneOneDetailsPhotosItemRatingMax = 80;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
+
+export const listAdminProductsResponseTwoDraftOneOneDetailsH1Max = 160;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
@@ -1921,6 +2024,10 @@ export const ListAdminProductsResponseItem = zod.object({
   "description": zod.string().max(listAdminProductsResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(listAdminProductsResponseOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(listAdminProductsResponseOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(listAdminProductsResponseOneDetailsFaqsItemAnswerMax)
+})).max(listAdminProductsResponseOneDetailsFaqsMax),
   "formulationYear": zod.string().max(listAdminProductsResponseOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(listAdminProductsResponseOneDetailsPhotosItemSlotMax),
@@ -1929,6 +2036,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "src": zod.string().max(listAdminProductsResponseOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(listAdminProductsResponseOneDetailsH1Max),
   "seoTitle": zod.string().max(listAdminProductsResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(listAdminProductsResponseOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(listAdminProductsResponseOneDetailsSocialTitleMax),
@@ -2042,6 +2150,10 @@ export const ListAdminProductsResponseItem = zod.object({
   "description": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsFaqsItemAnswerMax)
+})).max(listAdminProductsResponseTwoDraftOneOneDetailsFaqsMax),
   "formulationYear": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsPhotosItemSlotMax),
@@ -2050,6 +2162,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "src": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsH1Max),
   "seoTitle": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsSocialTitleMax),
@@ -2179,6 +2292,12 @@ export const getAdminProductResponseOneDetailsComponentsItemDescriptionMax = 100
 
 export const getAdminProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
+export const getAdminProductResponseOneDetailsFaqsItemQuestionMax = 180;
+
+export const getAdminProductResponseOneDetailsFaqsItemAnswerMax = 4000;
+
+export const getAdminProductResponseOneDetailsFaqsMax = 10;
+
 export const getAdminProductResponseOneDetailsFormulationYearMax = 20;
 
 export const getAdminProductResponseOneDetailsPhotosItemSlotMax = 40;
@@ -2188,6 +2307,8 @@ export const getAdminProductResponseOneDetailsPhotosItemFileMax = 240;
 export const getAdminProductResponseOneDetailsPhotosItemRatingMax = 80;
 
 export const getAdminProductResponseOneDetailsPhotosItemSrcMax = 500;
+
+export const getAdminProductResponseOneDetailsH1Max = 160;
 
 export const getAdminProductResponseOneDetailsSeoTitleMax = 180;
 
@@ -2306,6 +2427,12 @@ export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemDescripti
 
 export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
+export const getAdminProductResponseTwoDraftOneOneDetailsFaqsItemQuestionMax = 180;
+
+export const getAdminProductResponseTwoDraftOneOneDetailsFaqsItemAnswerMax = 4000;
+
+export const getAdminProductResponseTwoDraftOneOneDetailsFaqsMax = 10;
+
 export const getAdminProductResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsPhotosItemSlotMax = 40;
@@ -2315,6 +2442,8 @@ export const getAdminProductResponseTwoDraftOneOneDetailsPhotosItemFileMax = 240
 export const getAdminProductResponseTwoDraftOneOneDetailsPhotosItemRatingMax = 80;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
+
+export const getAdminProductResponseTwoDraftOneOneDetailsH1Max = 160;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
@@ -2439,6 +2568,10 @@ export const GetAdminProductResponse = zod.object({
   "description": zod.string().max(getAdminProductResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(getAdminProductResponseOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(getAdminProductResponseOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(getAdminProductResponseOneDetailsFaqsItemAnswerMax)
+})).max(getAdminProductResponseOneDetailsFaqsMax),
   "formulationYear": zod.string().max(getAdminProductResponseOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(getAdminProductResponseOneDetailsPhotosItemSlotMax),
@@ -2447,6 +2580,7 @@ export const GetAdminProductResponse = zod.object({
   "src": zod.string().max(getAdminProductResponseOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(getAdminProductResponseOneDetailsH1Max),
   "seoTitle": zod.string().max(getAdminProductResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(getAdminProductResponseOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(getAdminProductResponseOneDetailsSocialTitleMax),
@@ -2560,6 +2694,10 @@ export const GetAdminProductResponse = zod.object({
   "description": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsFaqsItemAnswerMax)
+})).max(getAdminProductResponseTwoDraftOneOneDetailsFaqsMax),
   "formulationYear": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsPhotosItemSlotMax),
@@ -2568,6 +2706,7 @@ export const GetAdminProductResponse = zod.object({
   "src": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsH1Max),
   "seoTitle": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsSocialTitleMax),
@@ -2712,6 +2851,12 @@ export const saveProductDraftRevisionBodyDetailsComponentsItemDescriptionMax = 1
 
 export const saveProductDraftRevisionBodyDetailsComponentsItemNoteMax = 4000;
 
+export const saveProductDraftRevisionBodyDetailsFaqsItemQuestionMax = 180;
+
+export const saveProductDraftRevisionBodyDetailsFaqsItemAnswerMax = 4000;
+
+export const saveProductDraftRevisionBodyDetailsFaqsMax = 10;
+
 export const saveProductDraftRevisionBodyDetailsFormulationYearMax = 20;
 
 export const saveProductDraftRevisionBodyDetailsPhotosItemSlotMax = 40;
@@ -2721,6 +2866,8 @@ export const saveProductDraftRevisionBodyDetailsPhotosItemFileMax = 240;
 export const saveProductDraftRevisionBodyDetailsPhotosItemRatingMax = 80;
 
 export const saveProductDraftRevisionBodyDetailsPhotosItemSrcMax = 500;
+
+export const saveProductDraftRevisionBodyDetailsH1Max = 160;
 
 export const saveProductDraftRevisionBodyDetailsSeoTitleMax = 180;
 
@@ -2830,6 +2977,10 @@ export const SaveProductDraftRevisionBody = zod.object({
   "description": zod.string().max(saveProductDraftRevisionBodyDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(saveProductDraftRevisionBodyDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(saveProductDraftRevisionBodyDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(saveProductDraftRevisionBodyDetailsFaqsItemAnswerMax)
+})).max(saveProductDraftRevisionBodyDetailsFaqsMax),
   "formulationYear": zod.string().max(saveProductDraftRevisionBodyDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(saveProductDraftRevisionBodyDetailsPhotosItemSlotMax),
@@ -2838,6 +2989,7 @@ export const SaveProductDraftRevisionBody = zod.object({
   "src": zod.string().max(saveProductDraftRevisionBodyDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(saveProductDraftRevisionBodyDetailsH1Max),
   "seoTitle": zod.string().max(saveProductDraftRevisionBodyDetailsSeoTitleMax),
   "seoDescription": zod.string().max(saveProductDraftRevisionBodyDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(saveProductDraftRevisionBodyDetailsSocialTitleMax),
@@ -2955,6 +3107,12 @@ export const saveProductDraftRevisionResponseOneDetailsComponentsItemDescription
 
 export const saveProductDraftRevisionResponseOneDetailsComponentsItemNoteMax = 4000;
 
+export const saveProductDraftRevisionResponseOneDetailsFaqsItemQuestionMax = 180;
+
+export const saveProductDraftRevisionResponseOneDetailsFaqsItemAnswerMax = 4000;
+
+export const saveProductDraftRevisionResponseOneDetailsFaqsMax = 10;
+
 export const saveProductDraftRevisionResponseOneDetailsFormulationYearMax = 20;
 
 export const saveProductDraftRevisionResponseOneDetailsPhotosItemSlotMax = 40;
@@ -2964,6 +3122,8 @@ export const saveProductDraftRevisionResponseOneDetailsPhotosItemFileMax = 240;
 export const saveProductDraftRevisionResponseOneDetailsPhotosItemRatingMax = 80;
 
 export const saveProductDraftRevisionResponseOneDetailsPhotosItemSrcMax = 500;
+
+export const saveProductDraftRevisionResponseOneDetailsH1Max = 160;
 
 export const saveProductDraftRevisionResponseOneDetailsSeoTitleMax = 180;
 
@@ -3082,6 +3242,12 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItem
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsFaqsItemQuestionMax = 180;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsFaqsItemAnswerMax = 4000;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsFaqsMax = 10;
+
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsPhotosItemSlotMax = 40;
@@ -3091,6 +3257,8 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsPhotosItemFile
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsPhotosItemRatingMax = 80;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsH1Max = 160;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
@@ -3215,6 +3383,10 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "description": zod.string().max(saveProductDraftRevisionResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(saveProductDraftRevisionResponseOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(saveProductDraftRevisionResponseOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(saveProductDraftRevisionResponseOneDetailsFaqsItemAnswerMax)
+})).max(saveProductDraftRevisionResponseOneDetailsFaqsMax),
   "formulationYear": zod.string().max(saveProductDraftRevisionResponseOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(saveProductDraftRevisionResponseOneDetailsPhotosItemSlotMax),
@@ -3223,6 +3395,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "src": zod.string().max(saveProductDraftRevisionResponseOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(saveProductDraftRevisionResponseOneDetailsH1Max),
   "seoTitle": zod.string().max(saveProductDraftRevisionResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(saveProductDraftRevisionResponseOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(saveProductDraftRevisionResponseOneDetailsSocialTitleMax),
@@ -3336,6 +3509,10 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "description": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsFaqsItemAnswerMax)
+})).max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsFaqsMax),
   "formulationYear": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsPhotosItemSlotMax),
@@ -3344,6 +3521,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "src": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsH1Max),
   "seoTitle": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsSocialTitleMax),
@@ -3488,6 +3666,12 @@ export const publishProductBodyDetailsComponentsItemDescriptionMax = 10000;
 
 export const publishProductBodyDetailsComponentsItemNoteMax = 4000;
 
+export const publishProductBodyDetailsFaqsItemQuestionMax = 180;
+
+export const publishProductBodyDetailsFaqsItemAnswerMax = 4000;
+
+export const publishProductBodyDetailsFaqsMax = 10;
+
 export const publishProductBodyDetailsFormulationYearMax = 20;
 
 export const publishProductBodyDetailsPhotosItemSlotMax = 40;
@@ -3497,6 +3681,8 @@ export const publishProductBodyDetailsPhotosItemFileMax = 240;
 export const publishProductBodyDetailsPhotosItemRatingMax = 80;
 
 export const publishProductBodyDetailsPhotosItemSrcMax = 500;
+
+export const publishProductBodyDetailsH1Max = 160;
 
 export const publishProductBodyDetailsSeoTitleMax = 180;
 
@@ -3606,6 +3792,10 @@ export const PublishProductBody = zod.object({
   "description": zod.string().max(publishProductBodyDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(publishProductBodyDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(publishProductBodyDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(publishProductBodyDetailsFaqsItemAnswerMax)
+})).max(publishProductBodyDetailsFaqsMax),
   "formulationYear": zod.string().max(publishProductBodyDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(publishProductBodyDetailsPhotosItemSlotMax),
@@ -3614,6 +3804,7 @@ export const PublishProductBody = zod.object({
   "src": zod.string().max(publishProductBodyDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(publishProductBodyDetailsH1Max),
   "seoTitle": zod.string().max(publishProductBodyDetailsSeoTitleMax),
   "seoDescription": zod.string().max(publishProductBodyDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(publishProductBodyDetailsSocialTitleMax),
@@ -3731,6 +3922,12 @@ export const publishProductResponseOneDetailsComponentsItemDescriptionMax = 1000
 
 export const publishProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
+export const publishProductResponseOneDetailsFaqsItemQuestionMax = 180;
+
+export const publishProductResponseOneDetailsFaqsItemAnswerMax = 4000;
+
+export const publishProductResponseOneDetailsFaqsMax = 10;
+
 export const publishProductResponseOneDetailsFormulationYearMax = 20;
 
 export const publishProductResponseOneDetailsPhotosItemSlotMax = 40;
@@ -3740,6 +3937,8 @@ export const publishProductResponseOneDetailsPhotosItemFileMax = 240;
 export const publishProductResponseOneDetailsPhotosItemRatingMax = 80;
 
 export const publishProductResponseOneDetailsPhotosItemSrcMax = 500;
+
+export const publishProductResponseOneDetailsH1Max = 160;
 
 export const publishProductResponseOneDetailsSeoTitleMax = 180;
 
@@ -3858,6 +4057,12 @@ export const publishProductResponseTwoDraftOneOneDetailsComponentsItemDescriptio
 
 export const publishProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
+export const publishProductResponseTwoDraftOneOneDetailsFaqsItemQuestionMax = 180;
+
+export const publishProductResponseTwoDraftOneOneDetailsFaqsItemAnswerMax = 4000;
+
+export const publishProductResponseTwoDraftOneOneDetailsFaqsMax = 10;
+
 export const publishProductResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
 export const publishProductResponseTwoDraftOneOneDetailsPhotosItemSlotMax = 40;
@@ -3867,6 +4072,8 @@ export const publishProductResponseTwoDraftOneOneDetailsPhotosItemFileMax = 240;
 export const publishProductResponseTwoDraftOneOneDetailsPhotosItemRatingMax = 80;
 
 export const publishProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
+
+export const publishProductResponseTwoDraftOneOneDetailsH1Max = 160;
 
 export const publishProductResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
@@ -3991,6 +4198,10 @@ export const PublishProductResponse = zod.object({
   "description": zod.string().max(publishProductResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(publishProductResponseOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(publishProductResponseOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(publishProductResponseOneDetailsFaqsItemAnswerMax)
+})).max(publishProductResponseOneDetailsFaqsMax),
   "formulationYear": zod.string().max(publishProductResponseOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(publishProductResponseOneDetailsPhotosItemSlotMax),
@@ -3999,6 +4210,7 @@ export const PublishProductResponse = zod.object({
   "src": zod.string().max(publishProductResponseOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(publishProductResponseOneDetailsH1Max),
   "seoTitle": zod.string().max(publishProductResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(publishProductResponseOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(publishProductResponseOneDetailsSocialTitleMax),
@@ -4112,6 +4324,10 @@ export const PublishProductResponse = zod.object({
   "description": zod.string().max(publishProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(publishProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(publishProductResponseTwoDraftOneOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(publishProductResponseTwoDraftOneOneDetailsFaqsItemAnswerMax)
+})).max(publishProductResponseTwoDraftOneOneDetailsFaqsMax),
   "formulationYear": zod.string().max(publishProductResponseTwoDraftOneOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(publishProductResponseTwoDraftOneOneDetailsPhotosItemSlotMax),
@@ -4120,6 +4336,7 @@ export const PublishProductResponse = zod.object({
   "src": zod.string().max(publishProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(publishProductResponseTwoDraftOneOneDetailsH1Max),
   "seoTitle": zod.string().max(publishProductResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(publishProductResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(publishProductResponseTwoDraftOneOneDetailsSocialTitleMax),
@@ -4248,6 +4465,12 @@ export const archiveProductResponseOneDetailsComponentsItemDescriptionMax = 1000
 
 export const archiveProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
+export const archiveProductResponseOneDetailsFaqsItemQuestionMax = 180;
+
+export const archiveProductResponseOneDetailsFaqsItemAnswerMax = 4000;
+
+export const archiveProductResponseOneDetailsFaqsMax = 10;
+
 export const archiveProductResponseOneDetailsFormulationYearMax = 20;
 
 export const archiveProductResponseOneDetailsPhotosItemSlotMax = 40;
@@ -4257,6 +4480,8 @@ export const archiveProductResponseOneDetailsPhotosItemFileMax = 240;
 export const archiveProductResponseOneDetailsPhotosItemRatingMax = 80;
 
 export const archiveProductResponseOneDetailsPhotosItemSrcMax = 500;
+
+export const archiveProductResponseOneDetailsH1Max = 160;
 
 export const archiveProductResponseOneDetailsSeoTitleMax = 180;
 
@@ -4375,6 +4600,12 @@ export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemDescriptio
 
 export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
+export const archiveProductResponseTwoDraftOneOneDetailsFaqsItemQuestionMax = 180;
+
+export const archiveProductResponseTwoDraftOneOneDetailsFaqsItemAnswerMax = 4000;
+
+export const archiveProductResponseTwoDraftOneOneDetailsFaqsMax = 10;
+
 export const archiveProductResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
 export const archiveProductResponseTwoDraftOneOneDetailsPhotosItemSlotMax = 40;
@@ -4384,6 +4615,8 @@ export const archiveProductResponseTwoDraftOneOneDetailsPhotosItemFileMax = 240;
 export const archiveProductResponseTwoDraftOneOneDetailsPhotosItemRatingMax = 80;
 
 export const archiveProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
+
+export const archiveProductResponseTwoDraftOneOneDetailsH1Max = 160;
 
 export const archiveProductResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
@@ -4508,6 +4741,10 @@ export const ArchiveProductResponse = zod.object({
   "description": zod.string().max(archiveProductResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(archiveProductResponseOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(archiveProductResponseOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(archiveProductResponseOneDetailsFaqsItemAnswerMax)
+})).max(archiveProductResponseOneDetailsFaqsMax),
   "formulationYear": zod.string().max(archiveProductResponseOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(archiveProductResponseOneDetailsPhotosItemSlotMax),
@@ -4516,6 +4753,7 @@ export const ArchiveProductResponse = zod.object({
   "src": zod.string().max(archiveProductResponseOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(archiveProductResponseOneDetailsH1Max),
   "seoTitle": zod.string().max(archiveProductResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(archiveProductResponseOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(archiveProductResponseOneDetailsSocialTitleMax),
@@ -4629,6 +4867,10 @@ export const ArchiveProductResponse = zod.object({
   "description": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsFaqsItemAnswerMax)
+})).max(archiveProductResponseTwoDraftOneOneDetailsFaqsMax),
   "formulationYear": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsPhotosItemSlotMax),
@@ -4637,6 +4879,7 @@ export const ArchiveProductResponse = zod.object({
   "src": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsH1Max),
   "seoTitle": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsSocialTitleMax),
@@ -4765,6 +5008,12 @@ export const restoreProductResponseOneDetailsComponentsItemDescriptionMax = 1000
 
 export const restoreProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
+export const restoreProductResponseOneDetailsFaqsItemQuestionMax = 180;
+
+export const restoreProductResponseOneDetailsFaqsItemAnswerMax = 4000;
+
+export const restoreProductResponseOneDetailsFaqsMax = 10;
+
 export const restoreProductResponseOneDetailsFormulationYearMax = 20;
 
 export const restoreProductResponseOneDetailsPhotosItemSlotMax = 40;
@@ -4774,6 +5023,8 @@ export const restoreProductResponseOneDetailsPhotosItemFileMax = 240;
 export const restoreProductResponseOneDetailsPhotosItemRatingMax = 80;
 
 export const restoreProductResponseOneDetailsPhotosItemSrcMax = 500;
+
+export const restoreProductResponseOneDetailsH1Max = 160;
 
 export const restoreProductResponseOneDetailsSeoTitleMax = 180;
 
@@ -4892,6 +5143,12 @@ export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemDescriptio
 
 export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
+export const restoreProductResponseTwoDraftOneOneDetailsFaqsItemQuestionMax = 180;
+
+export const restoreProductResponseTwoDraftOneOneDetailsFaqsItemAnswerMax = 4000;
+
+export const restoreProductResponseTwoDraftOneOneDetailsFaqsMax = 10;
+
 export const restoreProductResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
 export const restoreProductResponseTwoDraftOneOneDetailsPhotosItemSlotMax = 40;
@@ -4901,6 +5158,8 @@ export const restoreProductResponseTwoDraftOneOneDetailsPhotosItemFileMax = 240;
 export const restoreProductResponseTwoDraftOneOneDetailsPhotosItemRatingMax = 80;
 
 export const restoreProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
+
+export const restoreProductResponseTwoDraftOneOneDetailsH1Max = 160;
 
 export const restoreProductResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
@@ -5025,6 +5284,10 @@ export const RestoreProductResponse = zod.object({
   "description": zod.string().max(restoreProductResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(restoreProductResponseOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(restoreProductResponseOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(restoreProductResponseOneDetailsFaqsItemAnswerMax)
+})).max(restoreProductResponseOneDetailsFaqsMax),
   "formulationYear": zod.string().max(restoreProductResponseOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(restoreProductResponseOneDetailsPhotosItemSlotMax),
@@ -5033,6 +5296,7 @@ export const RestoreProductResponse = zod.object({
   "src": zod.string().max(restoreProductResponseOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(restoreProductResponseOneDetailsH1Max),
   "seoTitle": zod.string().max(restoreProductResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(restoreProductResponseOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(restoreProductResponseOneDetailsSocialTitleMax),
@@ -5146,6 +5410,10 @@ export const RestoreProductResponse = zod.object({
   "description": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsFaqsItemAnswerMax)
+})).max(restoreProductResponseTwoDraftOneOneDetailsFaqsMax),
   "formulationYear": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsPhotosItemSlotMax),
@@ -5154,6 +5422,7 @@ export const RestoreProductResponse = zod.object({
   "src": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsH1Max),
   "seoTitle": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsSocialTitleMax),
@@ -5282,6 +5551,12 @@ export const discardProductDraftResponseOneDetailsComponentsItemDescriptionMax =
 
 export const discardProductDraftResponseOneDetailsComponentsItemNoteMax = 4000;
 
+export const discardProductDraftResponseOneDetailsFaqsItemQuestionMax = 180;
+
+export const discardProductDraftResponseOneDetailsFaqsItemAnswerMax = 4000;
+
+export const discardProductDraftResponseOneDetailsFaqsMax = 10;
+
 export const discardProductDraftResponseOneDetailsFormulationYearMax = 20;
 
 export const discardProductDraftResponseOneDetailsPhotosItemSlotMax = 40;
@@ -5291,6 +5566,8 @@ export const discardProductDraftResponseOneDetailsPhotosItemFileMax = 240;
 export const discardProductDraftResponseOneDetailsPhotosItemRatingMax = 80;
 
 export const discardProductDraftResponseOneDetailsPhotosItemSrcMax = 500;
+
+export const discardProductDraftResponseOneDetailsH1Max = 160;
 
 export const discardProductDraftResponseOneDetailsSeoTitleMax = 180;
 
@@ -5409,6 +5686,12 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemDescr
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
+export const discardProductDraftResponseTwoDraftOneOneDetailsFaqsItemQuestionMax = 180;
+
+export const discardProductDraftResponseTwoDraftOneOneDetailsFaqsItemAnswerMax = 4000;
+
+export const discardProductDraftResponseTwoDraftOneOneDetailsFaqsMax = 10;
+
 export const discardProductDraftResponseTwoDraftOneOneDetailsFormulationYearMax = 20;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsPhotosItemSlotMax = 40;
@@ -5418,6 +5701,8 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsPhotosItemFileMax =
 export const discardProductDraftResponseTwoDraftOneOneDetailsPhotosItemRatingMax = 80;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsPhotosItemSrcMax = 500;
+
+export const discardProductDraftResponseTwoDraftOneOneDetailsH1Max = 160;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsSeoTitleMax = 180;
 
@@ -5542,6 +5827,10 @@ export const DiscardProductDraftResponse = zod.object({
   "description": zod.string().max(discardProductDraftResponseOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(discardProductDraftResponseOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(discardProductDraftResponseOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(discardProductDraftResponseOneDetailsFaqsItemAnswerMax)
+})).max(discardProductDraftResponseOneDetailsFaqsMax),
   "formulationYear": zod.string().max(discardProductDraftResponseOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(discardProductDraftResponseOneDetailsPhotosItemSlotMax),
@@ -5550,6 +5839,7 @@ export const DiscardProductDraftResponse = zod.object({
   "src": zod.string().max(discardProductDraftResponseOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(discardProductDraftResponseOneDetailsH1Max),
   "seoTitle": zod.string().max(discardProductDraftResponseOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(discardProductDraftResponseOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(discardProductDraftResponseOneDetailsSocialTitleMax),
@@ -5663,6 +5953,10 @@ export const DiscardProductDraftResponse = zod.object({
   "description": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax),
   "note": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemNoteMax)
 })),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsFaqsItemQuestionMax),
+  "answer": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsFaqsItemAnswerMax)
+})).max(discardProductDraftResponseTwoDraftOneOneDetailsFaqsMax),
   "formulationYear": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsFormulationYearMax),
   "photos": zod.array(zod.object({
   "slot": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsPhotosItemSlotMax),
@@ -5671,6 +5965,7 @@ export const DiscardProductDraftResponse = zod.object({
   "src": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsPhotosItemSrcMax)
 })),
   "inCurrentPrintedGuide": zod.boolean(),
+  "h1": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsH1Max),
   "seoTitle": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsSeoTitleMax),
   "seoDescription": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsSeoDescriptionMax),
   "socialTitle": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsSocialTitleMax),
@@ -5844,6 +6139,12 @@ export const listCategoriesResponseOneIdMultipleOf = 1;
 
 export const listCategoriesResponseOneParentIdMultipleOf = 1;
 
+export const listCategoriesResponseOneFaqsItemQuestionMax = 200;
+
+export const listCategoriesResponseOneFaqsItemAnswerMax = 2000;
+
+export const listCategoriesResponseOneFaqsMax = 20;
+
 export const listCategoriesResponseOneSortOrderMultipleOf = 1;
 
 export const listCategoriesResponseTwoProductCountMin = 0;
@@ -5863,6 +6164,10 @@ export const ListCategoriesResponseItem = zod.object({
   "seoDescription": zod.string(),
   "rainfall": zod.string(),
   "image": zod.string(),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(listCategoriesResponseOneFaqsItemQuestionMax),
+  "answer": zod.string().max(listCategoriesResponseOneFaqsItemAnswerMax)
+})).max(listCategoriesResponseOneFaqsMax),
   "sortOrder": zod.number().multipleOf(listCategoriesResponseOneSortOrderMultipleOf),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -5880,6 +6185,12 @@ export const listAdminCategoriesResponseIdMultipleOf = 1;
 
 export const listAdminCategoriesResponseParentIdMultipleOf = 1;
 
+export const listAdminCategoriesResponseFaqsItemQuestionMax = 200;
+
+export const listAdminCategoriesResponseFaqsItemAnswerMax = 2000;
+
+export const listAdminCategoriesResponseFaqsMax = 20;
+
 export const listAdminCategoriesResponseSortOrderMultipleOf = 1;
 
 
@@ -5896,6 +6207,10 @@ export const ListAdminCategoriesResponseItem = zod.object({
   "seoDescription": zod.string(),
   "rainfall": zod.string(),
   "image": zod.string(),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(listAdminCategoriesResponseFaqsItemQuestionMax),
+  "answer": zod.string().max(listAdminCategoriesResponseFaqsItemAnswerMax)
+})).max(listAdminCategoriesResponseFaqsMax),
   "sortOrder": zod.number().multipleOf(listAdminCategoriesResponseSortOrderMultipleOf),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -5929,6 +6244,12 @@ export const createCategoryBodyRainfallMax = 120;
 
 export const createCategoryBodyImageMax = 500;
 
+export const createCategoryBodyFaqsItemQuestionMax = 200;
+
+export const createCategoryBodyFaqsItemAnswerMax = 2000;
+
+export const createCategoryBodyFaqsMax = 20;
+
 export const createCategoryBodySortOrderMin = 0;
 export const createCategoryBodySortOrderMultipleOf = 1;
 
@@ -5945,6 +6266,10 @@ export const CreateCategoryBody = zod.object({
   "seoDescription": zod.string().max(createCategoryBodySeoDescriptionMax),
   "rainfall": zod.string().max(createCategoryBodyRainfallMax),
   "image": zod.string().max(createCategoryBodyImageMax),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(createCategoryBodyFaqsItemQuestionMax),
+  "answer": zod.string().max(createCategoryBodyFaqsItemAnswerMax)
+})).max(createCategoryBodyFaqsMax).optional(),
   "sortOrder": zod.number().min(createCategoryBodySortOrderMin).multipleOf(createCategoryBodySortOrderMultipleOf),
   "active": zod.boolean()
 })
@@ -5952,6 +6277,12 @@ export const CreateCategoryBody = zod.object({
 export const createCategoryResponseIdMultipleOf = 1;
 
 export const createCategoryResponseParentIdMultipleOf = 1;
+
+export const createCategoryResponseFaqsItemQuestionMax = 200;
+
+export const createCategoryResponseFaqsItemAnswerMax = 2000;
+
+export const createCategoryResponseFaqsMax = 20;
 
 export const createCategoryResponseSortOrderMultipleOf = 1;
 
@@ -5969,6 +6300,10 @@ export const CreateCategoryResponse = zod.object({
   "seoDescription": zod.string(),
   "rainfall": zod.string(),
   "image": zod.string(),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(createCategoryResponseFaqsItemQuestionMax),
+  "answer": zod.string().max(createCategoryResponseFaqsItemAnswerMax)
+})).max(createCategoryResponseFaqsMax),
   "sortOrder": zod.number().multipleOf(createCategoryResponseSortOrderMultipleOf),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -5998,6 +6333,12 @@ export const reorderCategoriesResponseIdMultipleOf = 1;
 
 export const reorderCategoriesResponseParentIdMultipleOf = 1;
 
+export const reorderCategoriesResponseFaqsItemQuestionMax = 200;
+
+export const reorderCategoriesResponseFaqsItemAnswerMax = 2000;
+
+export const reorderCategoriesResponseFaqsMax = 20;
+
 export const reorderCategoriesResponseSortOrderMultipleOf = 1;
 
 
@@ -6014,6 +6355,10 @@ export const ReorderCategoriesResponseItem = zod.object({
   "seoDescription": zod.string(),
   "rainfall": zod.string(),
   "image": zod.string(),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(reorderCategoriesResponseFaqsItemQuestionMax),
+  "answer": zod.string().max(reorderCategoriesResponseFaqsItemAnswerMax)
+})).max(reorderCategoriesResponseFaqsMax),
   "sortOrder": zod.number().multipleOf(reorderCategoriesResponseSortOrderMultipleOf),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -6051,6 +6396,12 @@ export const updateCategoryBodyRainfallMax = 120;
 
 export const updateCategoryBodyImageMax = 500;
 
+export const updateCategoryBodyFaqsItemQuestionMax = 200;
+
+export const updateCategoryBodyFaqsItemAnswerMax = 2000;
+
+export const updateCategoryBodyFaqsMax = 20;
+
 export const updateCategoryBodySortOrderMin = 0;
 export const updateCategoryBodySortOrderMultipleOf = 1;
 
@@ -6067,6 +6418,10 @@ export const UpdateCategoryBody = zod.object({
   "seoDescription": zod.string().max(updateCategoryBodySeoDescriptionMax).optional(),
   "rainfall": zod.string().max(updateCategoryBodyRainfallMax).optional(),
   "image": zod.string().max(updateCategoryBodyImageMax).optional(),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(updateCategoryBodyFaqsItemQuestionMax),
+  "answer": zod.string().max(updateCategoryBodyFaqsItemAnswerMax)
+})).max(updateCategoryBodyFaqsMax).optional(),
   "sortOrder": zod.number().min(updateCategoryBodySortOrderMin).multipleOf(updateCategoryBodySortOrderMultipleOf).optional(),
   "active": zod.boolean().optional()
 })
@@ -6074,6 +6429,12 @@ export const UpdateCategoryBody = zod.object({
 export const updateCategoryResponseIdMultipleOf = 1;
 
 export const updateCategoryResponseParentIdMultipleOf = 1;
+
+export const updateCategoryResponseFaqsItemQuestionMax = 200;
+
+export const updateCategoryResponseFaqsItemAnswerMax = 2000;
+
+export const updateCategoryResponseFaqsMax = 20;
 
 export const updateCategoryResponseSortOrderMultipleOf = 1;
 
@@ -6091,6 +6452,10 @@ export const UpdateCategoryResponse = zod.object({
   "seoDescription": zod.string(),
   "rainfall": zod.string(),
   "image": zod.string(),
+  "faqs": zod.array(zod.object({
+  "question": zod.string().max(updateCategoryResponseFaqsItemQuestionMax),
+  "answer": zod.string().max(updateCategoryResponseFaqsItemAnswerMax)
+})).max(updateCategoryResponseFaqsMax),
   "sortOrder": zod.number().multipleOf(updateCategoryResponseSortOrderMultipleOf),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date(),

@@ -1,38 +1,33 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { getCategories, getProducts } from "../../lib/catalogue";
-import { ProductsCatalogue } from "./ProductsCatalogue";
+import { CATALOGUE_INDEX_PATH } from "../../lib/catalogue-paths";
+import { ProductsListing } from "./ProductsListing";
 
 export const metadata: Metadata = {
   title: "Pasture Seed Products | IH Seeds",
   description: "Browse pasture seed varieties and mixes selected for Western Australian rainfall zones, soils and grazing systems.",
+  alternates: { canonical: CATALOGUE_INDEX_PATH },
 };
 
-export default async function Products() {
+export default async function ProductsIndex() {
   const [categories, products] = await Promise.all([getCategories(), getProducts()]);
 
   return (
     <>
       <section style={{ background: "var(--sage)" }}>
-        <div className="page-hero-grid" style={{ maxWidth: 1180, margin: "0 auto", padding: "80px 40px", display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(0, 1fr)", gap: 64, alignItems: "center" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)" }}>Products</div>
-            <h1 style={{ margin: 0, fontSize: 48, lineHeight: 1.2, fontWeight: 300, color: "var(--green)", maxWidth: "20ch" }}>Find the seed that fits your{"\u00A0"}<span style={{ fontWeight: 700 }}>paddock</span></h1>
-            <p style={{ margin: 0, fontSize: 18, lineHeight: 1.6, color: "var(--black-green)", maxWidth: "52ch" }}>Browse the current online range by pasture category, sourced and tested for Western Australian conditions, then order through your local rural reseller.</p>
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", paddingTop: 8 }}>
-              <Link href="/contact" className="button button-primary">Get in Touch</Link>
-              <Link href="/contact" className="button button-outline">Find a reseller</Link>
-            </div>
-          </div>
-          <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)" }}>
-            <img className="products-hero-image" src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=900&q=80" alt="Seed in a weathered hand" style={{ display: "block", width: "100%", height: 380, objectFit: "cover" }} />
-          </div>
+        <div className="category-intro products-intro" style={{ maxWidth: 1180, margin: "0 auto", padding: "56px 40px 48px", display: "flex", flexDirection: "column", gap: 20 }}>
+          <h1 style={{ margin: 0, fontSize: 48, lineHeight: 1.2, fontWeight: 300, color: "var(--green)" }}>Find the seed that fits your <span>paddock</span></h1>
+          <p style={{ margin: 0, fontSize: 18, lineHeight: 1.6, color: "var(--black-green)", maxWidth: "64ch" }}>Browse the current online range by pasture category, sourced and tested for Western Australian conditions, then order through your local rural reseller.</p>
         </div>
       </section>
 
       <section style={{ background: "#FFFFFF" }}>
-        <div className="page-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "96px 40px 64px" }}>
-          <ProductsCatalogue categories={categories} products={products} />
+        <div className="page-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "48px 40px 64px" }}>
+          <Suspense fallback={<div className="empty-state">Loading products…</div>}>
+            <ProductsListing categories={categories} products={products} />
+          </Suspense>
         </div>
       </section>
 

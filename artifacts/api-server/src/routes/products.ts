@@ -5,9 +5,11 @@ import {
   catalogueCategoriesTable,
   forSearchMetadata,
   normalizeProductDetails,
+  resolveProductH1,
   productDraftSchema,
   productDraftsTable,
   productsTable,
+  redirectsTable,
   saleLineSchema,
   saleLinesTable,
   type SaleLine,
@@ -22,6 +24,7 @@ import {
 } from "@workspace/db";
 import { insertProductSchema } from "@workspace/db";
 import { publicRedirectTo } from "../lib/public-redirect";
+import { productPublicPath } from "../lib/product-path";
 
 const router: IRouter = Router();
 const publicSiteBaseUrl = (process.env.PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "");
@@ -31,8 +34,27 @@ function escapeXml(value: string) {
     ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", "\"": "&quot;" })[character]!);
 }
 
-function canonicalProductUrl(slug: string) {
-  return `${publicSiteBaseUrl}/product/${encodeURIComponent(slug)}`;
+function canonicalProductUrl(slug: string, categorySlug: string) {
+  const path = `/products/${encodeURIComponent(categorySlug)}/${encodeURIComponent(slug)}`;
+  return publicSiteBaseUrl ? `${publicSiteBaseUrl}${path}` : path;
+}
+
+async function preserveProductRedirects(
+  tx: any,
+  before: { slug: string; category: string },
+  after: { slug: string; category: string },
+) {
+  const categories = await tx.select({
+    parentId: catalogueCategoriesTable.parentId,
+    slug: catalogueCategoriesTable.slug,
+    name: catalogueCategoriesTable.name,
+  }).from(catalogueCategoriesTable);
+  const fromPath = productPublicPath(before.slug, before.category, categories);
+  const toPath = productPublicPath(after.slug, after.category, categories);
+  if (fromPath && toPath && fromPath !== toPath) {
+    await tx.insert(redirectsTable).values({ fromPath, toPath })
+      .onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath, updatedAt: new Date() } });
+  }
 }
 
 type PublicProduct = {
@@ -41,7 +63,7 @@ type PublicProduct = {
   listingState: "Active"; saleLines: SaleLine[]; details: ReturnType<typeof toPublicDetails>;
 };
 
-function toPublicDetails(value: unknown, packSize: string) {
+function toPublicDetails(value: unknown, packSize: string, name = "") {
   const d = normalizeProductDetails(value, packSize);
   return {
     recordType: d.recordType, botanicalName: d.botanicalName,
@@ -59,9 +81,10 @@ function toPublicDetails(value: unknown, packSize: string) {
     applicationRate: d.applicationRate, diseasePestResistance: d.diseasePestResistance,
     standLifeNotes: d.standLifeNotes, grazingManagementNotes: d.grazingManagementNotes,
     pbrProtected: d.pbrProtected, pbrDetails: d.pbrDetails, certification: d.certification,
-    description: d.description, components: d.components,
+    description: d.description, components: d.components, faqs: d.faqs,
     relatedProducts: d.relatedProducts, formulationYear: d.formulationYear, photos: d.photos,
     featured: d.featured,
+    h1: resolveProductH1(name, d.h1),
     seoTitle: forSearchMetadata(d.seoTitle),
     seoDescription: forSearchMetadata(d.seoDescription || d.blurb),
     socialTitle: forSearchMetadata(d.socialTitle),
@@ -112,7 +135,7 @@ function toPublicProduct(product: Product, productLines: SaleLine[]): PublicProd
     status: ({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as const)[availability] ?? "unavailable",
     note: product.note, category: product.category, subcategoryId: product.subcategoryId, techSheet: product.techSheet,
     guideYear: product.guideYear, listingState: "Active", saleLines: productLines,
-    details: toPublicDetails(product.details, product.packSize),
+    details: toPublicDetails(product.details, product.packSize, product.name),
   };
 }
 
@@ -284,7 +307,7 @@ type ProductReferenceIssue = {
 async function findProductReferenceIssues(details: InsertProduct["details"], ownSlug?: string): Promise<ProductReferenceIssue[]> {
   const referencesByField = [
     { field: "details.companionSpecies", label: "Companion species", values: details.companionSpecies.filter(Boolean) },
-    { field: "details.relatedProducts", label: "Related products", values: details.relatedProducts.filter(Boolean) },
+    { field: "details.relatedProducts", label: "Also popular", values: details.relatedProducts.filter(Boolean) },
     { field: "details.components", label: "Component links", values: details.components.map((component) => component.productLink).filter(Boolean) },
   ] as const;
   const references = [...new Set(referencesByField.flatMap((reference) => reference.values))];
@@ -385,10 +408,21 @@ router.get("/redirects/lookup", async (req, res): Promise<void> => {
 });
 
 router.get("/sitemap-products", async (_req, res): Promise<void> => {
-  const products = await db.select().from(productsTable).where(eq(productsTable.publishStatus, "Published"));
+  const [products, categories] = await Promise.all([
+    db.select().from(productsTable).where(eq(productsTable.publishStatus, "Published")),
+    db.select({
+      parentId: catalogueCategoriesTable.parentId,
+      slug: catalogueCategoriesTable.slug,
+      name: catalogueCategoriesTable.name,
+    }).from(catalogueCategoriesTable),
+  ]);
   res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${
     products.filter((product) => isActiveListing(product))
-      .map((product) => `<url><loc>${escapeXml(canonicalProductUrl(product.slug))}</loc></url>`).join("")
+      .map((product) => {
+        const path = productPublicPath(product.slug, product.category, categories);
+        const rootSlug = path.split("/")[2];
+        return `<url><loc>${escapeXml(canonicalProductUrl(product.slug, rootSlug))}</loc></url>`;
+      }).join("")
   }</urlset>`);
 });
 
@@ -605,6 +639,7 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
         publishedAt: new Date(),
         updatedAt: new Date(),
       }).where(eq(productsTable.id, id)).returning();
+      await preserveProductRedirects(tx, lockedProduct, published);
       await replaceSaleLines(tx, id, normalizedPayload.saleLines);
       if (draft) await tx.delete(productDraftsTable).where(eq(productDraftsTable.id, draft.id));
       return published;
@@ -798,6 +833,10 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     changes.availabilityOverride = null;
     changes.status = "unavailable";
   }
+  // #region agent log
+  const currentLines = await liveSaleLines(id);
+  fetch('http://127.0.0.1:7761/ingest/6b558af6-c042-43cf-8773-ba4a610de515',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'982dff'},body:JSON.stringify({sessionId:'982dff',runId:'pre-fix',hypothesisId:'A',location:'products.ts:PATCH',message:'Product PATCH stock fields',data:{id,bodyKeys:Object.keys(req.body ?? {}),bodyStatus:req.body?.status,parsedKeys:Object.keys(parsed.data),changeKeys:Object.keys(changes),publishStatus:currentProduct.publishStatus,listingState:resolveListingState(currentProduct),currentStatus:currentProduct.status,availabilityOverride:currentProduct.availabilityOverride,saleAvails:currentLines.map((line) => line.availability),legacyForced:resolveListingState({ ...currentProduct, ...changes }) === "Legacy"},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   if (publishStatus) {
     res.status(409).json({ error: "Use the lifecycle actions to change publication status." });
     return;
@@ -842,6 +881,9 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     }
     return { kind: "updated" as const, product: updated };
   });
+  // #region agent log
+  fetch('http://127.0.0.1:7761/ingest/6b558af6-c042-43cf-8773-ba4a610de515',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'982dff'},body:JSON.stringify({sessionId:'982dff',runId:'pre-fix',hypothesisId:'C',location:'products.ts:PATCH:result',message:'Product PATCH result',data:{id,kind:updateResult.kind,writtenStatus:updateResult.kind === "updated" ? updateResult.product.status : null,writtenOverride:updateResult.kind === "updated" ? updateResult.product.availabilityOverride : null,changeKeys:Object.keys(changes)},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   if (updateResult.kind === "not-found") {
     res.status(404).json({ error: "Product not found." });
     return;

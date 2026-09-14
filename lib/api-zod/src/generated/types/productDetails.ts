@@ -20,6 +20,7 @@ import type { ProductDetailsSeedTreatmentItem } from './productDetailsSeedTreatm
 import type { ProductDetailsSoilPhScale } from './productDetailsSoilPhScale';
 import type { ProductDetailsSoilRangeHeaviest } from './productDetailsSoilRangeHeaviest';
 import type { ProductDetailsSoilRangeLightest } from './productDetailsSoilRangeLightest';
+import type { ProductFaq } from './productFaq';
 import type { ProductPackSize } from './productPackSize';
 import type { ProductPhoto } from './productPhoto';
 import type { ProductSowingRate } from './productSowingRate';
@@ -105,10 +106,14 @@ export interface ProductDetails {
   /** @maxLength 2000 */
   notes: string;
   components: ProductComponent[];
+  /** @maxItems 10 */
+  faqs: ProductFaq[];
   /** @maxLength 20 */
   formulationYear: string;
   photos: ProductPhoto[];
   inCurrentPrintedGuide: boolean;
+  /** @maxLength 160 */
+  h1: string;
   /** @maxLength 180 */
   seoTitle: string;
   /** @maxLength 2000 */

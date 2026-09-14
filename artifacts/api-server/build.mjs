@@ -64,6 +64,8 @@ async function buildAll() {
       "@azure/*",
       "@opentelemetry/*",
       "@google-cloud/*",
+      "@replit/object-storage",
+      "@replit/*",
       "@google/*",
       "googleapis",
       "firebase-admin",

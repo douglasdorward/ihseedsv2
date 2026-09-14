@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Icon } from "../components/Icon";
 import { StatusPill } from "../components/StatusPill";
-import { getProducts, saleLinePriceDisplay } from "../lib/catalogue";
+import { getCategories, getProducts, saleLinePriceDisplay } from "../lib/catalogue";
+import { CATALOGUE_INDEX_PATH, productPublicPath } from "../lib/catalogue-paths";
 
 export const metadata: Metadata = {
   title: "IH Seeds | Western Australia's Pasture Seed Specialists",
@@ -17,7 +18,7 @@ const imageOptions = [
 ];
 
 export default async function Home() {
-  const products = await getProducts();
+  const [products, categories] = await Promise.all([getProducts(), getCategories()]);
   const visibleProducts = products.slice(0, 4);
 
   return (
@@ -29,7 +30,7 @@ export default async function Home() {
             <p>Independently owned since 1966. We source, test and blend {products.length > 0 ? `${products.length}+ varieties and mixes` : "improved pasture seed"} for every region of the state — from Esperance to Derby.</p>
             <div className="hero-actions">
               <Link href="/contact" className="button button-primary" data-testid="button-advice">Advice</Link>
-              <Link href="/products" className="button button-light" data-testid="button-browse-catalogue">Browse the catalogue</Link>
+              <Link href={CATALOGUE_INDEX_PATH} className="button button-light" data-testid="button-browse-catalogue">Browse the catalogue</Link>
             </div>
           </div>
         </div>
@@ -47,14 +48,14 @@ export default async function Home() {
         <div className="content-width">
           <div className="section-heading">
             <h2><span>Best</span> Sellers</h2>
-            <Link href="/products" className="button button-outline" data-testid="button-view-all">View all products</Link>
+            <Link href={CATALOGUE_INDEX_PATH} className="button button-outline" data-testid="button-view-all">View all products</Link>
           </div>
           {visibleProducts.length === 0 ? (
             <div className="empty-state" data-testid="status-products-empty">No products match.</div>
           ) : (
             <div className="product-grid">
               {visibleProducts.map((product, index) => (
-                <Link href={`/product/${product.slug}`} className="product-card" style={{ textDecoration: "none", color: "inherit" }} key={product.id} data-testid={`card-product-${product.id}`}>
+                <Link href={productPublicPath(product, categories)} className="product-card" style={{ textDecoration: "none", color: "inherit" }} key={product.id} data-testid={`card-product-${product.id}`}>
                   <div className="product-image" style={{ backgroundImage: `linear-gradient(180deg, transparent, rgba(29,40,28,.72)), url(${imageOptions[index % imageOptions.length]})` }}>
                     <StatusPill status={product.status} />
                   </div>

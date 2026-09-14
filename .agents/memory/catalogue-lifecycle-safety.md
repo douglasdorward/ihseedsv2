@@ -13,7 +13,7 @@ Published products cannot be saved as drafts. Editor changes persist only when P
 
 Lifecycle tests over the committed workbook must not assert the workbook's original Published/Draft counts. Those counts legitimately change as administrators publish products; assert valid lifecycle states and that drafts remain absent from public APIs instead.
 
-A leftover `/product/{slug}` redirect from a previous Legacy listing must not hide that product after it is published as Active. Redirect lookup and the public product route should serve the live page instead.
+A leftover `/product/{slug}` redirect from a previous Legacy listing must not hide that product after it is published as Active. Redirect lookup should return the live nested `/products/{category}/{slug}` path instead of the leftover category target.
 
 **Why:** A stale fallback can leak retired content during an outage, an unlocked check followed by a write can race publication, over-validating drafts prevents administrators from saving incomplete work safely, parking unpublished revisions on live products reintroduces a second meaning of "draft", and fixed lifecycle counts become false after normal admin actions.
 

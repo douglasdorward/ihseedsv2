@@ -1,6 +1,17 @@
 # Tab 6 — SEO
 
-Search and sharing metadata. SEO title and SEO description are required to publish. `™` and `®` are stripped from these fields on edit, import, and public metadata. Keep trademarks on the product name only.
+Search and sharing metadata. SEO title and SEO description are required to publish. `™` and `®` are stripped from SEO title, SEO description, and social title/description on edit, import, and public metadata. Keep trademarks on the product name, and on H1 if you overwrite it.
+
+## H1
+
+- **API path:** `details.h1`
+- **Workbook:** `7 Website SEO.h1`
+- **Required:** Draft no / Publish no (blank copies the product name)
+- **Customer website:** Product page H1. Blank uses the product name. Trademark symbols stay visible.
+- **Public API:** yes (the override, or the product name when blank)
+- **Purpose:** Optional page heading override. Leave blank to keep following the product name.
+- **How to fill:** The editor copies the product name until you type a different heading. Clear the field, or match the product name, to follow the name again.
+- **Constraints:** max 160 characters.
 
 ## SEO title
 
@@ -59,7 +70,7 @@ Search and sharing metadata. SEO title and SEO description are required to publi
 - **API path:** `details.canonicalUrl`
 - **Workbook:** `7 Website SEO.canonical_url`
 - **Required:** no
-- **Customer website:** `<link rel="canonical">` and Open Graph URL. Blank uses the normal `/product/{slug}` URL.
+- **Customer website:** `<link rel="canonical">` and Open Graph URL. Blank uses the normal `/products/{category}/{slug}` URL.
 - **Public API:** yes
 - **How to fill:** Leave blank unless this page must point at a different public URL. Do not use this as a substitute for the redirect table.
 - **Constraints:** max 500 characters; URL.

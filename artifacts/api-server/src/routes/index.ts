@@ -4,6 +4,8 @@ import productsRouter from "./products";
 import enquiriesRouter from "./enquiries";
 import categoriesRouter from "./categories";
 import importRouter from "./import";
+import uploadsRouter from "./uploads";
+import aiIngestRouter from "./ai-ingest";
 
 const router: IRouter = Router();
 
@@ -12,5 +14,7 @@ router.use(productsRouter);
 router.use(enquiriesRouter);
 router.use(categoriesRouter);
 router.use(importRouter);
+router.use(uploadsRouter);
+router.use(aiIngestRouter);
 
 export default router;

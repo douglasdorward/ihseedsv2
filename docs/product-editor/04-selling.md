@@ -41,9 +41,10 @@ One card per warehouse stock code. Legacy listing state disables availability on
 - **API path:** `saleLines[].seedGrade`
 - **Workbook:** `4 Sale lines.seed_grade`
 - **Required:** no
+- **Shown when:** not shown in the product editor
 - **Customer website:** not shown (removed from the sales table on purpose)
 - **Public API:** yes (public API, not shown)
-- **How to fill:** Certified, Tested, Certified & Tested, VNS. Staff grading only for the public page.
+- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
 
 ### Pack weight / Pack unit
 
@@ -97,7 +98,7 @@ One card per warehouse stock code. Legacy listing state disables availability on
 - **API path:** `details.pbrProtected`, `details.pbrDetails`
 - **Workbook:** `1 Products.pbr_protected` (details text is product details)
 - **Required:** no
-- **Customer website:** Sidebar line `PBR: {details or "Protected"}` when the checkbox is on. Shown below related products.
+- **Customer website:** Sidebar line `PBR: {details or "Protected"}` when the checkbox is on. Shown with certification below the order panel.
 - **Public API:** yes
 - **How to fill:** Check only for plant-breeder’s-rights varieties. Details e.g. variety code. Max 300 characters on details.
 
@@ -106,9 +107,11 @@ One card per warehouse stock code. Legacy listing state disables availability on
 - **API path:** `details.licenceRestriction`
 - **Workbook:** `1 Products.licence_restriction`
 - **Required:** no
+- **Shown when:** not shown in the product editor
 - **Customer website:** not shown
 - **Public API:** excluded (admin-only)
 - **Purpose:** Private production or resale restriction.
+- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
 - **Constraints:** max 1000 characters.
 
 ## Certification
@@ -125,7 +128,9 @@ One card per warehouse stock code. Legacy listing state disables availability on
 - **API path:** `details.isThirdPartyProduct`, `details.supplierName`
 - **Workbook:** `1 Products.is_third_party_product`, `supplier_name`
 - **Required:** no
+- **Shown when:** not shown in the product editor
 - **Customer website:** not shown
 - **Public API:** excluded (admin-only)
 - **Purpose:** Private sourcing. Never copy supplier names into public copy.
+- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes these fields.
 - **Constraints:** supplier name max 180 characters.

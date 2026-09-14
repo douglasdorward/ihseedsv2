@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import cors from "cors";
 import pinoHttp from "pino-http";
@@ -29,8 +30,11 @@ app.use(
 );
 app.use(cors());
 // Catalogue workbooks are posted as base64 JSON for a validation-first import.
-// Keep this bounded, but above the size of the maintained product workbook.
-app.use(express.json({ limit: "10mb" }));
+// PDF extract/tech-sheet uploads need a higher bound than the workbook path.
+app.use((req, res, next) => {
+  const large = req.originalUrl.startsWith("/api/admin/ai") || req.originalUrl.startsWith("/api/admin/tech-sheets");
+  express.json({ limit: large ? "25mb" : "10mb" })(req, res, next);
+});
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // A real HTTP redirect for legacy public product URLs. When no redirect is
@@ -42,6 +46,7 @@ app.get("/product/:slug", async (req, res, next): Promise<void> => {
 });
 
 app.use("/api", router);
+app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
 // The admin remains the existing Vite application. Express only delivers its
 // compiled files so Next.js can reserve the public routes for server rendering.

@@ -209,36 +209,38 @@ test("committed workbook products keep valid lifecycle boundaries and drafts rem
 
 test("redirect lookup returns JSON while the legacy public route emits the HTTP redirect", async () => {
   const expectedRedirects = new Map([
-    ["/product/souwest-pasture-mix-2", "/product/souwest-pasture-mix"],
-    ["/product/avalon-persistent-perennial-ryegrass", "/products/ryegrass#catalogue"],
-    ["/product/hard-seeded-persian-clover", "/products/clovers#catalogue"],
-    ["/product/soft-seeded-persian-clover", "/products/clovers#catalogue"],
-    ["/product/icon-lucerne", "/products/lucerne#catalogue"],
-    ["/product/anywhere-tall-fescue", "/products/fescues-other-grasses#catalogue"],
-    ["/product/nemnuke-biofumigant", "/products/forage-grain-crops#catalogue"],
-    ["/product/parafield-peas", "/products/forage-grain-crops#catalogue"],
+    ["/product/souwest-pasture-mix-2", "/products/mixes/souwest-pasture-mix"],
+    ["/product/avalon-persistent-perennial-ryegrass", "/products/ryegrass"],
+    ["/product/hard-seeded-persian-clover", "/products/clovers"],
+    ["/product/soft-seeded-persian-clover", "/products/clovers"],
+    ["/product/icon-lucerne", "/products/lucerne"],
+    ["/product/anywhere-tall-fescue", "/products/fescues-other-grasses"],
+    ["/product/nemnuke-biofumigant", "/products/forage-grain-crops"],
+    ["/product/parafield-peas", "/products/forage-grain-crops"],
   ]);
+  const categories = assertStatus(await request("GET", "/categories"), 200);
+  const rootByName = new Map(categories.filter((category) => category.parentId === null).map((category) => [category.name, category.slug]));
   for (const [fromPath, toPath] of expectedRedirects) {
     const slug = fromPath.slice("/product/".length);
     const live = sql(`
-      SELECT COUNT(*)
+      SELECT category
       FROM ih_products
       WHERE slug = '${slug.replaceAll("'", "''")}'
         AND publish_status = 'Published'
         AND listing_override = 'Active'
-    `);
-    if (Number(live) > 0) {
-      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 404);
+    `).trim();
+    const lookup = assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 200);
+    if (live) {
+      assert.deepEqual(lookup, { toPath: `/products/${rootByName.get(live)}/${slug}` });
       continue;
     }
-    const lookup = assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 200);
     assert.deepEqual(lookup, { toPath });
   }
   assertStatus(await request("GET", "/redirects/lookup?fromPath=%2Fproduct%2Fnot-registered"), 404);
 
   const redirect = await fetch(`${baseUrl}/product/souwest-pasture-mix-2`, { redirect: "manual" });
   assert.equal(redirect.status, 301);
-  assert.equal(redirect.headers.get("location"), "/product/souwest-pasture-mix");
+  assert.equal(redirect.headers.get("location"), "/products/mixes/souwest-pasture-mix");
 
   assert.equal(Number(sql(`
     SELECT COUNT(*)
@@ -262,12 +264,19 @@ test("redirect lookup returns JSON while the legacy public route emits the HTTP 
 
 test("sitemap contains only canonical Active Published product paths", async () => {
   const publicCatalogue = await publicProducts();
+  const categories = assertStatus(await request("GET", "/categories"), 200);
+  const rootByName = new Map(categories.filter((category) => category.parentId === null).map((category) => [category.name, category.slug]));
+  const categorySlug = (product) => rootByName.get(product.category)
+    || product.category.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+    || "catalogue";
   const response = await fetch(`${baseUrl}/api/sitemap-products`);
   assert.equal(response.status, 200);
   const xml = await response.text();
   const locations = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
-  assert.deepEqual(locations.sort(), publicCatalogue.map((product) => `/product/${encodeURIComponent(product.slug)}`).sort());
-  assert.equal(locations.some((location) => location.startsWith("/products/")), false);
+  assert.deepEqual(
+    locations.sort(),
+    publicCatalogue.map((product) => `/products/${categorySlug(product)}/${encodeURIComponent(product.slug)}`).sort(),
+  );
 });
 
 test("drafts require only identity fields while publishing requires public catalogue fields", async () => {
@@ -405,13 +414,15 @@ test("leftover catalogue redirects do not hide a restored Active product page", 
   const product = await createProduct("legacy-redirect");
   const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
   const fromPath = `/product/${published.slug}`;
-  const toPath = "/products/forage-grain-crops#catalogue";
+  const toPath = "/products/forage-grain-crops";
   sql(`
     INSERT INTO ih_redirects (from_path, to_path)
     VALUES ('${fromPath.replaceAll("'", "''")}', '${toPath}')
     ON CONFLICT (from_path) DO UPDATE SET to_path = EXCLUDED.to_path, updated_at = now()
   `);
-  assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 404);
+  const liveLookup = assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 200);
+  assert.equal(liveLookup.toPath.startsWith("/products/"), true);
+  assert.equal(liveLookup.toPath.endsWith(`/${published.slug}`), true);
   assert.equal((await publicProducts()).some((item) => item.slug === published.slug), true);
 
   assertStatus(await request("POST", `/admin/products/${published.id}/publish`, draftPayload(published, {
@@ -738,6 +749,7 @@ test("category administration enforces nesting, activation, and deletion protect
   });
   const parent = assertStatus(await request("POST", "/admin/categories",
     categoryInput(`${suffix}-parent`, `Category parent ${testRunId}`)), 201);
+  assert.deepEqual(parent.faqs, []);
   const child = assertStatus(await request("POST", "/admin/categories",
     categoryInput(`${suffix}-child`, `Category child ${testRunId}`, parent.id)), 201);
   try {
@@ -756,6 +768,17 @@ test("category administration enforces nesting, activation, and deletion protect
     assert.equal(updated.pageHeading, "Automated Category Seed");
     assert.equal(updated.seoTitle, "Automated Category Seed | IH Seeds");
     assert.equal(updated.seoDescription, "Editable category SEO description.");
+    const withFaqs = assertStatus(await request("PATCH", `/admin/categories/${parent.id}`, {
+      faqs: [
+        { question: "Can I buy seed direct?", answer: "We supply through rural resellers." },
+        { question: "   ", answer: "Dropped empty question." },
+        { question: "Is the seed tested?", answer: "Every line is germination and purity tested." },
+      ],
+    }), 200);
+    assert.deepEqual(withFaqs.faqs, [
+      { question: "Can I buy seed direct?", answer: "We supply through rural resellers." },
+      { question: "Is the seed tested?", answer: "Every line is germination and purity tested." },
+    ]);
     assert.deepEqual(
       assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${parent.slug}`)}`), 200),
       { toPath: `/products/${updatedSlug}` },
@@ -764,6 +787,7 @@ test("category administration enforces nesting, activation, and deletion protect
     assert.equal(unrelatedUpdate.pageHeading, "Automated Category Seed");
     assert.equal(unrelatedUpdate.seoTitle, "Automated Category Seed | IH Seeds");
     assert.equal(unrelatedUpdate.seoDescription, "Editable category SEO description.");
+    assert.deepEqual(unrelatedUpdate.faqs, withFaqs.faqs);
     assertStatus(await request("PATCH", `/admin/categories/${parent.id}`, { active: true }), 200);
     const normalizedChild = assertStatus(await request("PATCH", `/admin/categories/${child.id}`, {
       slug: `${updatedSlug}-${suffix}-child-updated`,
@@ -830,20 +854,26 @@ test("taxonomy deactivation redirects removed paths and moving a child updates l
     const categories = assertStatus(await request("GET", "/categories"), 200);
     assert.equal(categories.find((category) => category.id === movedChild.id)?.parentId, destinationRoot.id);
     assert.deepEqual(
-      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${sourceRoot.slug}`)}`), 200),
+      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${sourceRoot.slug}/${movedChild.slug}`)}`), 200),
       { toPath: `/products/${destinationRoot.slug}` },
     );
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${sourceRoot.slug}`)}`), 404);
     const movedProduct = await adminProduct(product.id);
     assert.equal(movedProduct.category, destinationRoot.name);
     assert.equal(movedProduct.draft, null);
+    assert.deepEqual(
+      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${sourceRoot.slug}/${movedProduct.slug}`)}`), 200),
+      { toPath: `/products/${destinationRoot.slug}/${movedProduct.slug}` },
+    );
 
     assertStatus(await request("PATCH", `/admin/categories/${movedChild.id}`, { parentId: null }), 200);
     const promotedCategories = assertStatus(await request("GET", "/categories"), 200);
     assert.equal(promotedCategories.find((category) => category.id === movedChild.id)?.parentId, null);
     assert.deepEqual(
-      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${destinationRoot.slug}`)}`), 200),
+      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${destinationRoot.slug}/${movedChild.slug}`)}`), 200),
       { toPath: `/products/${movedChild.slug}` },
     );
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${destinationRoot.slug}`)}`), 404);
     const promotedProduct = await adminProduct(product.id);
     assert.equal(promotedProduct.category, movedChild.name);
     assert.equal(promotedProduct.draft, null);
@@ -891,6 +921,22 @@ test("deleting taxonomy preserves removed and sibling canonical paths", async ()
   }
 });
 
+test("root category slug categories is reserved for the catalogue index", async () => {
+  const created = await request("POST", "/admin/categories", {
+    parentId: null,
+    slug: "categories",
+    name: "Categories",
+    groupLabel: "Automated tests",
+    lead: "",
+    rainfall: "",
+    image: "",
+    sortOrder: 999,
+    active: true,
+  });
+  assert.equal(created.response.status, 400);
+  assert.match(JSON.stringify(created.data), /reserved for the catalogue index/i);
+});
+
 before(async () => {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is required for lifecycle API tests");
@@ -899,7 +945,7 @@ before(async () => {
   baseUrl = `http://127.0.0.1:${port}`;
   child = spawn(process.execPath, ["--enable-source-maps", "./dist/index.mjs"], {
     cwd: new URL(serverRoot).pathname,
-    env: { ...process.env, NODE_ENV: "test", PORT: String(port) },
+    env: { ...process.env, NODE_ENV: "test", PORT: String(port), AI_EXTRACT_STUB: "1" },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let stderr = "";
@@ -1141,7 +1187,8 @@ test("source workbook reports publish gaps while exported legacy records round-t
   const book = xlsx.read(exported, { type: "buffer" });
   assert.deepEqual(book.SheetNames, [
     "1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines",
-    "5 Mix components", "6 Companions", "7 Website SEO", "8 Categories", "9 Redirects", "Lists",
+    "5 Mix components", "6 Companions", "7 Website SEO", "8 Categories", "9 Redirects",
+    "10 Product FAQs", "Lists",
   ]);
   const listsIndex = book.SheetNames.indexOf("Lists");
   assert.equal(book.Workbook?.Sheets?.[listsIndex]?.Hidden, 1);
@@ -1170,6 +1217,8 @@ test("source workbook reports publish gaps while exported legacy records round-t
     .every((column) => exportedCategories[0].includes(column)), true);
   const exportedRedirects = xlsx.utils.sheet_to_json(book.Sheets["9 Redirects"], { header: 1, defval: "", raw: false });
   assert.equal(["from_path", "to_path"].every((column) => exportedRedirects[0].includes(column)), true);
+  const exportedFaqs = xlsx.utils.sheet_to_json(book.Sheets["10 Product FAQs"], { header: 1, defval: "", raw: false });
+  assert.equal(["slug", "product_name", "question", "answer"].every((column) => exportedFaqs[0].includes(column)), true);
   assert.equal(["photo_1", "photo_2", "photo_3"].every((column) => productHeaders.includes(column)), true);
 
   const exportReport = assertStatus(await request("POST", "/admin/import/dry-run", {
@@ -1177,6 +1226,90 @@ test("source workbook reports publish gaps while exported legacy records round-t
   }), 200);
   assert.deepEqual(exportReport.issues, []);
   assert.equal(exportReport.sheets["1 Products"].rows > 0, true);
+});
+
+test("product FAQs export, replace, overlay, and validate through the workbook", async () => {
+  const categories = assertStatus(await request("GET", "/categories"), 200);
+  const other = categories.find((category) => category.slug === "other");
+  assert.ok(other, "Expected the seeded Other category");
+  const product = await createProduct("workbook-faqs", { category: other.name, subcategoryId: other.id });
+  const storedFaqs = [
+    { question: "When should I sow this?", answer: "Sow after the autumn break.\n\nKeep soil moisture in mind." },
+    { question: "Can I graze it early?", answer: "" },
+  ];
+  assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+    details: { ...product.details, faqs: storedFaqs },
+  })), 200);
+
+  const exported = Buffer.from(await (await fetch(`${baseUrl}/api/admin/import/export`)).arrayBuffer());
+  const exportedBook = xlsx.read(exported);
+  const exportedFaqRows = xlsx.utils.sheet_to_json(exportedBook.Sheets["10 Product FAQs"], { defval: "", raw: false })
+    .filter((row) => row.slug === product.slug);
+  assert.deepEqual(exportedFaqRows.map((row) => ({ question: row.question, answer: row.answer })), storedFaqs);
+
+  const productRow = {
+    slug: product.slug,
+    product_name: product.name,
+    category: other.name,
+    record_type: "Variety",
+  };
+  const makeFaqWorkbook = ({ faqRows, includeFaqSheet = true }) => {
+    const book = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([productRow]), "1 Products");
+    if (includeFaqSheet) {
+      xlsx.utils.book_append_sheet(
+        book,
+        xlsx.utils.json_to_sheet(faqRows.length ? faqRows : [{ slug: "", product_name: "", question: "", answer: "" }]),
+        "10 Product FAQs",
+      );
+    }
+    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ category: other.name, record_type: "Variety" }]), "Lists");
+    return xlsx.write(book, { type: "buffer", bookType: "xlsx" });
+  };
+  const commitWorkbookFile = async (buffer) => {
+    const report = assertStatus(await request("POST", "/admin/import/dry-run", {
+      workbookBase64: buffer.toString("base64"),
+    }), 200);
+    assert.deepEqual(report.issues, []);
+    assertStatus(await request("POST", "/admin/import/commit", {
+      workbookBase64: buffer.toString("base64"),
+      token: report.token,
+    }), 200);
+  };
+
+  const replacementFaqs = [
+    { slug: product.slug, product_name: product.name, question: "Is it drought tolerant?", answer: "It suits medium-rainfall country." },
+  ];
+  await commitWorkbookFile(makeFaqWorkbook({ faqRows: replacementFaqs }));
+  assert.deepEqual((await adminProduct(product.id)).details.faqs, [
+    { question: "Is it drought tolerant?", answer: "It suits medium-rainfall country." },
+  ]);
+
+  await commitWorkbookFile(makeFaqWorkbook({ faqRows: [], includeFaqSheet: false }));
+  assert.deepEqual((await adminProduct(product.id)).details.faqs, [
+    { question: "Is it drought tolerant?", answer: "It suits medium-rainfall country." },
+  ]);
+
+  await commitWorkbookFile(makeFaqWorkbook({
+    faqRows: [{ slug: product.slug, product_name: product.name, question: "", answer: "" }],
+  }));
+  assert.deepEqual((await adminProduct(product.id)).details.faqs, []);
+
+  const tooMany = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: makeFaqWorkbook({
+      faqRows: Array.from({ length: 11 }, (_, index) => ({
+        slug: product.slug, product_name: product.name, question: `Question ${index + 1}`, answer: `Answer ${index + 1}`,
+      })),
+    }).toString("base64"),
+  }), 200);
+  assert.equal(tooMany.issues.some((issue) => issue.sheet === "10 Product FAQs" && /maximum is 10/.test(issue.problem)), true);
+
+  const tooLong = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: makeFaqWorkbook({
+      faqRows: [{ slug: product.slug, product_name: product.name, question: "Q".repeat(181), answer: "A" }],
+    }).toString("base64"),
+  }), 200);
+  assert.equal(tooLong.issues.some((issue) => issue.sheet === "10 Product FAQs" && issue.column === "question"), true);
 });
 
 test("published workbook rows enforce content fields and retain products absent from an upsert", async () => {
@@ -1477,4 +1610,80 @@ test("companion products save by slug while self and unknown references identify
   const legacyPublish = await request("POST", `/admin/products/${product.id}/publish`);
   assertStatus(legacyPublish, 400);
   assert.equal(legacyPublish.data.issues[0].field, "details.companionSpecies");
+});
+
+function textPdfBase64(text) {
+  const escaped = text.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  const content = `BT /F1 12 Tf 72 720 Td (${escaped}) Tj ET`;
+  const pdf = `%PDF-1.1
+1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj
+2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj
+3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>endobj
+4 0 obj<< /Length ${content.length} >>stream
+${content}
+endstream
+endobj
+5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj
+trailer<< /Root 1 0 R >>
+%%EOF
+`;
+  return Buffer.from(pdf).toString("base64");
+}
+
+test("PDF extraction sanitizes the patch and does not write a Published product", async () => {
+  const product = await createProduct("ai-extract");
+  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  assert.equal(published.publishStatus, "Published");
+  const liveTagline = published.details.tagline;
+
+  const extracted = await request("POST", "/admin/ai/extract", {
+    productId: product.id,
+    files: [{ filename: "lifecycle-test-ai-extract.pdf", data: textPdfBase64("Winter active tetraploid ryegrass for dairy systems") }],
+    stubPatch: {
+      saleLines: [{ stockCode: "FAKECODE", isDefault: true }],
+      unknownField: "drop me",
+      details: {
+        bredByOrigin: "Barenbrug",
+        supplierName: "Secret Supplier Ltd",
+        tagline: "Barenbrug winter ryegrass",
+        blurb: "A reliable winter-active ryegrass for dairy systems.",
+        ploidy: "Tetraploid",
+        keyAttributes: ["Winter growth", "Dairy fit"],
+      },
+    },
+  });
+  const body = assertStatus(extracted, 200);
+  const paths = body.suggestions.map((suggestion) => suggestion.path);
+  assert.equal(paths.includes("saleLines"), false);
+  assert.equal(paths.includes("unknownField"), false);
+  assert.equal(paths.includes("details.bredByOrigin"), false);
+  assert.equal(paths.includes("details.tagline"), false);
+  assert.equal(paths.includes("details.ploidy"), false);
+  assert.ok(paths.includes("details.blurb"));
+  assert.ok(paths.includes("details.keyAttributes"));
+  assert.ok(paths.includes("techSheet"));
+  assert.match(JSON.stringify(body.warnings), /Ignored saleLines|Dropped unknown field|private breeder|not fillable/i);
+
+  const after = await adminProduct(product.id);
+  assert.equal(after.details.tagline, liveTagline);
+  assert.equal(after.details.blurb, published.details.blurb);
+  assert.equal(after.publishStatus, "Published");
+  assert.equal(after.hasDraft, false);
+});
+
+test("tech sheet queue matches a filename to a product without publishing", async () => {
+  const product = await createProduct("queue-match");
+  const uploaded = await request("POST", "/admin/tech-sheets", {
+    files: [{ filename: `${product.slug}-product-information.pdf`, data: textPdfBase64("Queue match tech sheet") }],
+    stubPatch: { details: { blurb: "Queued blurb from the tech sheet." } },
+  });
+  const items = assertStatus(uploaded, 201);
+  assert.equal(items.length, 1);
+  assert.equal(items[0].productId, product.id);
+  assert.equal(items[0].status, "ready");
+  const file = await fetch(`${baseUrl}${items[0].fileUrl}`);
+  assert.equal(file.status, 200);
+  assert.match(file.headers.get("content-type") ?? "", /pdf/);
+  const after = await adminProduct(product.id);
+  assert.notEqual(after.details.blurb, "Queued blurb from the tech sheet.");
 });

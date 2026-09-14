@@ -684,12 +684,17 @@ components:
         components:
           type: array
           items: { $ref: "#/components/schemas/ProductComponent" }
+        faqs:
+          type: array
+          maxItems: 10
+          items: { $ref: "#/components/schemas/ProductFaq" }
         relatedProducts: { type: array, items: { type: string } }
         formulationYear: { type: string }
         photos:
           type: array
           items: { $ref: "#/components/schemas/ProductPhoto" }
         featured: { type: boolean }
+        h1: { type: string }
         seoTitle: { type: string }
         seoDescription: { type: string }
         socialTitle: { type: string }
@@ -697,7 +702,7 @@ components:
         socialImage: { type: string }
         canonicalUrl: { type: string }
         robotsIndex: { type: boolean }
-      required: [recordType, botanicalName, tagline, blurb, keyAttributes, distributionNote, persistencyType, ploidy, flowerColour, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, tolerance, endUse, livestock, maturityMeasure, maturityDays, headingDate, headingOffsetDays, winterActivity, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, certification, description, components, relatedProducts, formulationYear, photos, featured, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex]
+      required: [recordType, botanicalName, tagline, blurb, keyAttributes, distributionNote, persistencyType, ploidy, flowerColour, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, tolerance, endUse, livestock, maturityMeasure, maturityDays, headingDate, headingOffsetDays, winterActivity, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, certification, description, components, faqs, relatedProducts, formulationYear, photos, featured, h1, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex]
     ProductDraftInput:
       type: object
       properties:
@@ -876,12 +881,18 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ProductComponent"
+        faqs:
+          type: array
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/ProductFaq"
         formulationYear: { type: string, maxLength: 20 }
         photos:
           type: array
           items:
             $ref: "#/components/schemas/ProductPhoto"
         inCurrentPrintedGuide: { type: boolean }
+        h1: { type: string, maxLength: 160 }
         seoTitle: { type: string, maxLength: 180 }
         seoDescription: { type: string, maxLength: 2000 }
         socialTitle: { type: string, maxLength: 180 }
@@ -907,7 +918,7 @@ components:
         regrowth: { type: string }
         productForm: { type: string, maxLength: 120 }
         applicationRate: { type: string }
-      required: [stockCode, guideSection, recordType, botanicalName, alsoKnownAs, packSizes, treatment, persistencyType, ploidy, flowerColour, bredByOrigin, australianBred, distributedBy, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, sowingDepthMinCm, sowingDepthMaxCm, tolerance, maturityMeasure, maturityDays, headingDate, floweringWindow, winterActivity, inoculantGroup, seedTreatment, ecocertApproved, endUse, livestock, companionSpecies, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, licenceRestriction, certification, isThirdPartyProduct, supplierName, tagline, blurb, keyAttributes, distributionNote, description, notes, components, formulationYear, photos, inCurrentPrintedGuide, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex, sortOrder, featured, relatedProducts, headingOffsetDays, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate]
+      required: [stockCode, guideSection, recordType, botanicalName, alsoKnownAs, packSizes, treatment, persistencyType, ploidy, flowerColour, bredByOrigin, australianBred, distributedBy, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, sowingDepthMinCm, sowingDepthMaxCm, tolerance, maturityMeasure, maturityDays, headingDate, floweringWindow, winterActivity, inoculantGroup, seedTreatment, ecocertApproved, endUse, livestock, companionSpecies, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, licenceRestriction, certification, isThirdPartyProduct, supplierName, tagline, blurb, keyAttributes, distributionNote, description, notes, components, faqs, formulationYear, photos, inCurrentPrintedGuide, h1, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex, sortOrder, featured, relatedProducts, headingOffsetDays, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate]
     SaleLine:
       type: object
       properties:
@@ -952,6 +963,12 @@ components:
         description: { type: string, maxLength: 10000 }
         note: { type: string, maxLength: 4000 }
       required: [productLink, speciesName, inclusionRate, unit, description, note]
+    ProductFaq:
+      type: object
+      properties:
+        question: { type: string, maxLength: 180 }
+        answer: { type: string, maxLength: 4000 }
+      required: [question, answer]
     ProductPhoto:
       type: object
       properties:
@@ -983,6 +1000,12 @@ components:
         note: { type: string }
         status: { type: string }
       required: [id, name, note, status]
+    CatalogueCategoryFaq:
+      type: object
+      properties:
+        question: { type: string, maxLength: 200 }
+        answer: { type: string, maxLength: 2000 }
+      required: [question, answer]
     CatalogueCategory:
       type: object
       properties:
@@ -997,11 +1020,15 @@ components:
         seoDescription: { type: string }
         rainfall: { type: string }
         image: { type: string }
+        faqs:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/CatalogueCategoryFaq" }
         sortOrder: { type: number, multipleOf: 1 }
         active: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-      required: [id, parentId, slug, name, groupLabel, lead, pageHeading, seoTitle, seoDescription, rainfall, image, sortOrder, active, createdAt, updatedAt]
+      required: [id, parentId, slug, name, groupLabel, lead, pageHeading, seoTitle, seoDescription, rainfall, image, faqs, sortOrder, active, createdAt, updatedAt]
     PublicCatalogueCategory:
       allOf:
         - $ref: "#/components/schemas/CatalogueCategory"
@@ -1022,6 +1049,10 @@ components:
         seoDescription: { type: string, maxLength: 2000 }
         rainfall: { type: string, maxLength: 120 }
         image: { type: string, maxLength: 500 }
+        faqs:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/CatalogueCategoryFaq" }
         sortOrder: { type: number, minimum: 0, multipleOf: 1 }
         active: { type: boolean }
       required: [parentId, slug, name, groupLabel, lead, pageHeading, seoTitle, seoDescription, rainfall, image, sortOrder, active]
@@ -1038,6 +1069,10 @@ components:
         seoDescription: { type: string, maxLength: 2000 }
         rainfall: { type: string, maxLength: 120 }
         image: { type: string, maxLength: 500 }
+        faqs:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/CatalogueCategoryFaq" }
         sortOrder: { type: number, minimum: 0, multipleOf: 1 }
         active: { type: boolean }
     CatalogueCategoryReorder:

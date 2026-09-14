@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getProducts } from "../../lib/catalogue";
+import { getCategories, getProducts } from "../../lib/catalogue";
 import { ResourcesContent } from "./ResourcesContent";
 
 export const metadata: Metadata = {
@@ -8,11 +8,12 @@ export const metadata: Metadata = {
 };
 
 export default async function Resources() {
-  const products = await getProducts();
+  const [products, categories] = await Promise.all([getProducts(), getCategories()]);
 
   return (
     <ResourcesContent
       products={products}
+      categories={categories}
       intro={
         <div className="page-content resource-intro" style={{ maxWidth: 1180, margin: "0 auto", padding: "64px 40px 40px", display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)" }}>Resources</div>

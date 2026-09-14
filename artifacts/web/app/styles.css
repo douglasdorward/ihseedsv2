@@ -33,6 +33,13 @@ button:disabled { cursor:not-allowed; opacity:.45; }
 .nav-cta { margin-left:8px; padding-inline:34px; }
 .utility-button,.icon-button { border:0; border-radius:50%; background:var(--yellow); color:var(--green); display:grid; place-items:center; width:36px; height:36px; }
 .utility-button:hover,.icon-button:hover { background:#F8D999; }
+.nav-dropdown { position:relative; align-self:stretch; display:flex; align-items:center; }
+.nav-dropdown-panel { position:absolute; top:100%; left:0; min-width:240px; padding:8px 22px 20px; background:#fff; border-radius:0 0 16px 16px; box-shadow:0 16px 36px rgba(29,40,28,.14); opacity:0; visibility:hidden; pointer-events:none; z-index:200; }
+.nav-dropdown:hover .nav-dropdown-panel,.nav-dropdown:focus-within .nav-dropdown-panel { opacity:1; visibility:visible; pointer-events:auto; }
+.nav-dropdown-list { list-style:none; margin:0; padding:10px 0 4px; display:flex; flex-direction:column; gap:0; }
+.nav-dropdown-list a { display:block; padding:8px 0; color:var(--green); font-weight:600; font-size:15px; line-height:1.35; }
+.nav-dropdown-list a:hover,.nav-dropdown-list a.is-current { color:#06763C; }
+.nav-dropdown-all { display:inline-flex; align-items:center; gap:4px; margin-top:10px; padding:8px 16px; min-height:36px; font-size:14px; }
 .mobile-menu-button { display:none; border:0; background:var(--yellow); color:var(--green); border-radius:50%; width:44px; height:44px; place-items:center; }
 .search-bar { padding:18px max(40px, calc((100vw - 1360px)/2)); background:var(--cream); display:flex; align-items:center; gap:16px; }
 .search-bar label { font-weight:700; color:var(--green); }
@@ -424,6 +431,11 @@ h1 strong { display:block; font-weight:800; }
   .logo { width:78px; }
   .desktop-nav { display:none; position:absolute; left:0; right:0; top:86px; padding:14px 20px 22px; background:#fff; box-shadow:0 12px 20px rgba(29,40,28,.12); flex-direction:column; align-items:stretch; gap:4px; }
   .desktop-nav.mobile-nav-open { display:flex; }.nav-link { text-align:left; padding:14px 4px; font-size:16px; }.site-header .nav-link { padding:14px 4px; }.nav-cta { margin:10px 0 4px; text-align:center; }.site-header .nav-cta { padding:14px 32px; min-height:48px; }.utility-button { display:none; }
+  .nav-dropdown { display:flex; flex-direction:column; align-items:stretch; }
+  .nav-dropdown-panel { position:static; opacity:1; visibility:visible; pointer-events:auto; box-shadow:none; border-radius:0; min-width:0; padding:0 0 8px 12px; background:transparent; }
+  .nav-dropdown-list { padding:0; }
+  .nav-dropdown-list a { padding:10px 4px; font-size:15px; }
+  .nav-dropdown-all { align-self:flex-start; margin:6px 0 8px; }
   .mobile-menu-button { display:grid; }.search-bar { padding:14px 20px; align-items:stretch; flex-direction:column; gap:8px; }.search-bar button { align-self:flex-start; }
   .hero-wrap { padding:0 12px; }.hero { min-height:600px; border-radius:16px; background-position:65% center; }.hero-copy { margin:0; padding:30px 26px; align-self:flex-end; }.hero-copy h1 { font-size:45px; }.hero-copy p { font-size:16px; margin:18px 0 24px; }.hero-actions { flex-wrap:wrap; }.button { padding-inline:24px; }
   .three-column { grid-template-columns:1fr; padding:34px 24px; gap:28px; }.pillar p { max-width:42ch; }
@@ -433,8 +445,8 @@ h1 strong { display:block; font-weight:800; }
   .category-intro { padding:12px 20px 32px !important; }
   .category-intro h1 { font-size:42px !important; }
   .category-intro h1 span { display:block; }
+  .products-intro { padding:40px 20px 32px !important; }
   .category-guide-cta { padding:48px 20px !important; }
-  .products-hero-image { height:240px !important; }
   .page-content { padding:56px 20px !important; }
   .page-wide { padding:40px 20px 64px !important; }
   .page-breadcrumb { padding:24px 20px 8px !important; }
@@ -484,7 +496,6 @@ h1 strong { display:block; font-weight:800; }
   .product-details h3 { font-size:20px; line-height:1.35; }
   .product-details p { font-size:15px; line-height:1.6; }
   .product-image .status-pill { left:12px; bottom:12px; padding:7px 10px; font-size:12px; }
-  .products-hero-image { height:200px !important; }
   .availability-heading h1 { font-size:46px !important; }
 }
 .admin-view-toggle { display:flex; align-items:center; gap:4px; background:#e9eeea; padding:4px; border-radius:8px; margin-right: 16px; }

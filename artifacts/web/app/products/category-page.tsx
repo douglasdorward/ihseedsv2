@@ -9,29 +9,21 @@ import {
   type CatalogueCategory,
   type CatalogueProduct,
 } from "../../lib/catalogue";
+import { CATALOGUE_INDEX_PATH, productPublicPath } from "../../lib/catalogue-paths";
 import { absoluteSiteUrl } from "../../lib/site-url";
 import { CategoryCatalogue } from "./CategoryCatalogue";
 import { forSearchMetadata } from "../../lib/search-metadata";
 
-type RouteParams = { category: string; subcategory?: string };
+type RouteParams = { category: string };
 
 type ResolvedCategoryPage = {
   root: CatalogueCategory;
-  selected: CatalogueCategory;
   children: CatalogueCategory[];
-  initialGroup: number | "All";
   path: string;
 };
 
-function categoryRoutePath(params: RouteParams) {
-  const segments = [params.category, params.subcategory].filter(
-    (segment): segment is string => Boolean(segment),
-  );
-  return `/products/${segments.map(encodeURIComponent).join("/")}`;
-}
-
 async function redirectUnresolvedCategory(params: RouteParams) {
-  const fromPath = categoryRoutePath(params);
+  const fromPath = `/products/${encodeURIComponent(params.category)}`;
   const toPath = await getRedirect(fromPath);
   if (toPath && toPath !== fromPath) permanentRedirect(toPath);
 }
@@ -53,34 +45,23 @@ export function resolveCategoryPage(
       category.slug === params.category,
   );
   if (!root) return null;
-
-  const children = activeChildren(categories, root.id);
-  if (!params.subcategory) {
-    return {
-      root,
-      selected: root,
-      children,
-      initialGroup: "All",
-      path: `/products/${root.slug}`,
-    };
-  }
-
-  if (children.length < 2) return null;
-  const child = children.find((category) => category.slug === params.subcategory);
-  if (!child) return null;
-
   return {
     root,
-    selected: child,
-    children,
-    initialGroup: child.id,
-    path: `/products/${root.slug}/${child.slug}`,
+    children: activeChildren(categories, root.id),
+    path: `/products/${root.slug}`,
   };
 }
 
 function headingFor(page: ResolvedCategoryPage) {
-  if (page.selected.pageHeading.trim()) return page.selected.pageHeading.trim();
-  return `${page.selected.name} Seed`;
+  if (page.root.pageHeading.trim()) return page.root.pageHeading.trim();
+  return `${page.root.name} Seed`;
+}
+
+function completeCategoryFaqs(faqs: CatalogueCategory["faqs"]) {
+  return (faqs ?? [])
+    .map((faq) => ({ question: faq.question?.trim() ?? "", answer: faq.answer?.trim() ?? "" }))
+    .filter((faq) => faq.question && faq.answer)
+    .slice(0, 20);
 }
 
 function splitHeading(heading: string) {
@@ -117,11 +98,9 @@ export async function categoryMetadata(params: RouteParams): Promise<Metadata> {
   }
 
   return {
-    title: forSearchMetadata(page.selected.seoTitle.trim() || `${page.selected.name} Seed | IH Seeds`),
+    title: forSearchMetadata(page.root.seoTitle.trim() || `${page.root.name} Seed | IH Seeds`),
     description: forSearchMetadata(
-      page.selected.seoDescription.trim() ||
-      page.selected.lead.trim() ||
-      page.root.lead,
+      page.root.seoDescription.trim() || page.root.lead.trim(),
     ),
     alternates: { canonical: page.path },
   };
@@ -140,19 +119,11 @@ export async function CategoryPage({ params }: { params: RouteParams }) {
   const rootProducts = productsForRoot(products, page.root, page.children);
   const heading = headingFor(page);
   const title = splitHeading(heading);
-  const description =
-    page.selected.seoDescription.trim() ||
-    page.selected.lead.trim() ||
-    page.root.lead;
-  const structuredProducts = page.initialGroup === "All"
-    ? rootProducts
-    : rootProducts.filter((product) => product.subcategoryId === page.initialGroup);
+  const description = page.root.seoDescription.trim() || page.root.lead.trim();
+  const faqs = completeCategoryFaqs(page.root.faqs);
   const breadcrumbItems = [
-    { name: "Products", item: "/products" },
-    { name: page.root.name, item: `/products/${page.root.slug}` },
-    ...(page.selected.id !== page.root.id && page.children.length > 1
-      ? [{ name: page.selected.name, item: page.path }]
-      : []),
+    { name: "Products", item: CATALOGUE_INDEX_PATH },
+    { name: page.root.name, item: page.path },
   ];
   const jsonLd = [
     {
@@ -169,13 +140,24 @@ export async function CategoryPage({ params }: { params: RouteParams }) {
       "@context": "https://schema.org",
       "@type": "ItemList",
       name: heading,
-      itemListElement: structuredProducts.map((product, index) => ({
+      itemListElement: rootProducts.map((product, index) => ({
         "@type": "ListItem",
         position: index + 1,
         name: product.name,
-        url: absoluteSiteUrl(`/product/${product.slug}`),
+        url: absoluteSiteUrl(productPublicPath(product, categories)),
       })),
     },
+    ...(faqs.length > 0
+      ? [{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: faqs.map((faq) => ({
+            "@type": "Question",
+            name: faq.question,
+            acceptedAnswer: { "@type": "Answer", text: faq.answer },
+          })),
+        }]
+      : []),
   ];
 
   return (
@@ -186,7 +168,7 @@ export async function CategoryPage({ params }: { params: RouteParams }) {
       />
       <section style={{ background: "var(--sage)" }}>
         <div className="page-breadcrumb" style={{ maxWidth: 1180, margin: "0 auto", padding: "32px 40px 12px", fontSize: 14, fontWeight: 600, color: "var(--muted)" }}>
-          <Link href="/products" style={{ textDecoration: "none", color: "inherit" }}>Products</Link> / {page.selected.id !== page.root.id && page.children.length > 1 ? `${page.root.name} / ${page.selected.name}` : page.root.name}
+          <Link href={CATALOGUE_INDEX_PATH} style={{ textDecoration: "none", color: "inherit" }}>Products</Link> / {page.root.name}
         </div>
         <div className="category-intro" style={{ maxWidth: 1180, margin: "0 auto", padding: "12px 40px 48px", display: "flex", flexDirection: "column", gap: 20 }}>
           <h1 style={{ margin: 0, fontSize: 48, lineHeight: 1.2, fontWeight: 300, color: "var(--green)" }}>{title.light} <span style={{ fontWeight: 700 }}>{title.bold}</span></h1>
@@ -198,8 +180,24 @@ export async function CategoryPage({ params }: { params: RouteParams }) {
         root={page.root}
         childCategories={page.children}
         products={rootProducts}
-        initialGroup={page.initialGroup}
+        categories={categories}
       />
+
+      {faqs.length > 0 && (
+        <section className="product-faq-section" id="faqs" aria-labelledby="category-faq-heading">
+          <div className="product-faq-inner">
+            <h2 id="category-faq-heading">FAQs</h2>
+            <div className="product-faq-list">
+              {faqs.map((faq, index) => (
+                <details className="product-faq-item" key={`${faq.question}-${index}`}>
+                  <summary>{faq.question}</summary>
+                  <p>{faq.answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {legacy.length > 0 && (
         <section id="catalogue" style={{ background: "#EFF1EE", padding: "64px 40px" }}>

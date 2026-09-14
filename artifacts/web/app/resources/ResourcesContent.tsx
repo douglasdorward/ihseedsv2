@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Fragment, useState, type ReactNode } from "react";
 import { Icon } from "../../components/Icon";
-import type { CatalogueProduct } from "../../lib/catalogue";
+import type { CatalogueCategory, CatalogueProduct } from "../../lib/catalogue";
+import { productPublicPath } from "../../lib/catalogue-paths";
 
 const articleSeed = [
   { category: "Editorial", date: "27 October 2025", title: "Mix & Match Custom Pasture", excerpt: "The need for sustainable and productive pastures has never been greater in today’s farming landscape.", image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1000&q=80" },
@@ -19,7 +20,7 @@ const imageOptions = [
   "https://images.unsplash.com/photo-1499529112087-3cb3b73cec95?auto=format&fit=crop&w=900&q=80",
 ];
 
-export function ResourcesContent({ products, intro }: { products: CatalogueProduct[]; intro: ReactNode }) {
+export function ResourcesContent({ products, categories, intro }: { products: CatalogueProduct[]; categories: CatalogueCategory[]; intro: ReactNode }) {
   const [tab, setTab] = useState<"articles" | "sheets">("articles");
   const [articleCat, setArticleCat] = useState("All");
   const articleCats = ["All", ...Array.from(new Set(articleSeed.map(a => a.category)))];
@@ -74,7 +75,7 @@ export function ResourcesContent({ products, intro }: { products: CatalogueProdu
                   <div style={{ fontSize: 14, color: "var(--black-green)" }}>{product.packSize}</div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>2026 range</div>
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <Link href={`/product/${product.slug}`} className="button button-outline" style={{ padding: "8px 16px", minHeight: "auto", fontSize: 14 }}>View tech sheet</Link>
+                    <Link href={productPublicPath(product, categories)} className="button button-outline" style={{ padding: "8px 16px", minHeight: "auto", fontSize: 14 }}>View tech sheet</Link>
                   </div>
                 </div>
               ))}

@@ -11,6 +11,8 @@ visibility:
   customer: Shown on the public website
   publicApi: In PublicProduct / PublicProductDetails but not rendered on current pages
   adminOnly: Stripped by toPublicDetails; never public
+# editorVisible defaults to true. false means the field is not shown in Form or
+# Product page views; values are retained on save and still written by workbook import.
 
 fields:
   - id: name
@@ -24,9 +26,9 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [product-h1, category-cards, comparison-table, related-cards, also-popular, json-ld-name]
+    customerSurfaces: [product-h1-default, category-cards, comparison-table, related-cards, also-popular, json-ld-name]
     workbook: 1 Products.product_name
-    fillGuidance: Commercial title. Put ™/® here only, never in SEO or social fields.
+    fillGuidance: Commercial title. Put ™/® here. H1 copies this unless overwritten on the SEO tab.
 
   - id: slug
     tab: 1
@@ -43,7 +45,7 @@ fields:
     visibility: customer
     customerSurfaces: [product-url]
     workbook: 1 Products.slug
-    fillGuidance: Lowercase kebab-case. Permanent after create.
+    fillGuidance: Lowercase kebab-case. Permanent after create. Public URL is /products/{category}/{slug}.
 
   - id: category
     tab: 1
@@ -129,12 +131,13 @@ fields:
     maxLength: 2000
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: category-not-Mixes
+    visibleWhen: not-in-editor
     publicApi: false
     visibility: adminOnly
+    editorVisible: false
     customerSurfaces: []
     workbook: 1 Products.bred_by_origin
-    fillGuidance: Private. Never copy into public copy.
+    fillGuidance: Not shown in the product editor. Retained on save and workbook import. Never copy into public copy.
 
   - id: alsoKnownAs
     tab: 1
@@ -144,12 +147,13 @@ fields:
     itemMaxLength: 120
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: always
+    visibleWhen: not-in-editor
     publicApi: false
     visibility: adminOnly
+    editorVisible: false
     customerSurfaces: []
     workbook: 1 Products.also_known_as
-    fillGuidance: Staff aliases only.
+    fillGuidance: Not shown in the product editor. Retained on save and workbook import.
 
   - id: sowingRates
     tab: 2
@@ -179,7 +183,7 @@ fields:
     visibility: customer
     customerSurfaces: [quick-facts, category-chips, comparison-table]
     workbook: 1 Products.rainfall_min_mm
-    fillGuidance: Lowest recommended annual rainfall.
+    fillGuidance: Dropdown 150–800 mm in 50 mm steps. Leave unset if unknown.
 
   - id: soilPhMin
     tab: 2
@@ -372,12 +376,13 @@ fields:
     enumValues: [None, C, "G/S", G, S, AL, AM, B, BS, E, "F/E", I]
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: legumes-not-grasses-herbs-mixes-biologicals
+    visibleWhen: not-in-editor
     publicApi: false
     visibility: adminOnly
+    editorVisible: false
     customerSurfaces: []
     workbook: 1 Products.inoculant_group
-    fillGuidance: Rhizobium group for staff.
+    fillGuidance: Not shown in the product editor. Retained on save and workbook import.
 
   - id: diseasePestResistance
     tab: 2
@@ -428,17 +433,18 @@ fields:
     tab: 5
     apiPath: details.notes
     label: Internal notes
-    alsoLabelled: Application notes on Biologicals tab 2
+    alsoLabelled: formerly Application notes on Biologicals tab 2
     type: string
     maxLength: 2000
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: always
+    visibleWhen: not-in-editor
     publicApi: false
     visibility: adminOnly
+    editorVisible: false
     customerSurfaces: []
     workbook: 1 Products.internal_notes
-    fillGuidance: Staff only. Same field as Biologicals application notes. Public rates belong in applicationRate.
+    fillGuidance: Not shown in the product editor. Retained on save and workbook import.
 
   - id: ploidy
     tab: 3
@@ -810,12 +816,13 @@ fields:
     maxLength: 4000
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: Mixes
+    visibleWhen: not-in-editor
     publicApi: true
     visibility: publicApi
+    editorVisible: false
     customerSurfaces: []
     workbook: 5 Mix components.formulation_note
-    fillGuidance: Staff only. Shared ProductComponent schema currently leaves this on the public API.
+    fillGuidance: Not shown in the product editor. Retained on save and workbook import. Staff only.
 
   - id: productForm
     tab: 3
@@ -853,12 +860,13 @@ fields:
     type: boolean
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: Biologicals
+    visibleWhen: not-in-editor
     publicApi: false
     visibility: adminOnly
+    editorVisible: false
     customerSurfaces: []
     workbook: 3 Category specifics.ecocert_approved
-    fillGuidance: Staff flag. Public claims use certification on Selling.
+    fillGuidance: Not shown in the product editor. Retained on save and workbook import. Public claims use certification on Selling.
 
   - id: saleLines
     tab: 4
@@ -925,12 +933,13 @@ fields:
     enumValues: ["", Certified, Tested, "Certified & Tested", VNS]
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: always
+    visibleWhen: not-in-editor
     publicApi: true
     visibility: publicApi
+    editorVisible: false
     customerSurfaces: []
     workbook: 4 Sale lines.seed_grade
-    fillGuidance: Staff grading. Not in How it's sold.
+    fillGuidance: Not shown in the product editor. Retained on save and workbook import. Not in How it's sold.
 
   - id: saleLines.packKg
     tab: 4
@@ -1059,12 +1068,13 @@ fields:
     maxLength: 1000
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: always
+    visibleWhen: not-in-editor
     publicApi: false
     visibility: adminOnly
+    editorVisible: false
     customerSurfaces: []
     workbook: 1 Products.licence_restriction
-    fillGuidance: Private production or resale restriction.
+    fillGuidance: Not shown in the product editor. Retained on save and workbook import.
 
   - id: certification
     tab: 4
@@ -1088,12 +1098,13 @@ fields:
     type: boolean
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: always
+    visibleWhen: not-in-editor
     publicApi: false
     visibility: adminOnly
+    editorVisible: false
     customerSurfaces: []
     workbook: 1 Products.is_third_party_product
-    fillGuidance: Private sourcing flag.
+    fillGuidance: Not shown in the product editor. Retained on save and workbook import.
 
   - id: supplierName
     tab: 4
@@ -1103,12 +1114,13 @@ fields:
     maxLength: 180
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: always
+    visibleWhen: not-in-editor
     publicApi: false
     visibility: adminOnly
+    editorVisible: false
     customerSurfaces: []
     workbook: 1 Products.supplier_name
-    fillGuidance: Private. Never copy into public copy.
+    fillGuidance: Not shown in the product editor. Retained on save and workbook import. Never copy into public copy.
 
   - id: tagline
     tab: 5
@@ -1190,12 +1202,13 @@ fields:
     maxLength: 240
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: always
+    visibleWhen: not-in-editor
     publicApi: false
     visibility: adminOnly
+    editorVisible: false
     customerSurfaces: []
     workbook: 1 Products.description_source
-    fillGuidance: Copy provenance.
+    fillGuidance: Not shown in the product editor. Retained on save and workbook import.
 
   - id: websiteUrlLegacy
     tab: 5
@@ -1224,7 +1237,7 @@ fields:
     visibility: customer
     customerSurfaces: [product-hero, related-cards, also-popular, social-fallback]
     workbook: 1 Products.photo_1
-    fillGuidance: First non-blank src is the hero. Category grids currently use placeholders.
+    fillGuidance: First non-blank src is the hero. Product page view can upload or paste a URL onto slot 1. Category grids currently use placeholders.
 
   - id: techSheet
     tab: 5
@@ -1239,12 +1252,57 @@ fields:
     visibility: customer
     customerSurfaces: [hero-download]
     workbook: 1 Products.tech_sheet_pdf_path
-    fillGuidance: PDF path or URL.
+    fillGuidance: PDF path or URL. Fill from PDF on Basics can set this to /api/admin/tech-sheets/{id}/file after review. AI never publishes.
+
+  - id: faqs
+    tab: 5
+    apiPath: details.faqs
+    label: FAQs
+    type: object[]
+    maxItems: 10
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [product-faqs, json-ld-faq]
+    workbook: 10 Product FAQs
+    fillGuidance: Up to ten question/answer cards. Incomplete cards stay in the editor and are hidden from customers. Question max 180. Answer max 4000. Workbook sheet `10 Product FAQs` replaces the set for each represented product slug.
+
+  - id: faqs.question
+    tab: 5
+    apiPath: details.faqs[].question
+    label: Question
+    type: string
+    maxLength: 180
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [product-faqs, json-ld-faq]
+    workbook: 10 Product FAQs.question
+    fillGuidance: Required if the card has an answer.
+
+  - id: faqs.answer
+    tab: 5
+    apiPath: details.faqs[].answer
+    label: Answer
+    type: string
+    maxLength: 4000
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [product-faqs, json-ld-faq]
+    workbook: 10 Product FAQs.answer
+    fillGuidance: Required if the card has a question.
 
   - id: relatedProducts
     tab: 5
     apiPath: details.relatedProducts
-    label: Related products
+    label: Also popular
     type: slug[]
     itemMaxLength: 180
     requiredForDraft: false
@@ -1252,9 +1310,9 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [related-products]
+    customerSurfaces: [also-popular]
     workbook: product related slugs
-    fillGuidance: Public product slugs in display order.
+    fillGuidance: Choose up to three Active published products by name. Empty list uses three other same-category Active products. A Legacy or otherwise ineligible pick is replaced in that slot.
 
   - id: sortOrder
     tab: 5
@@ -1265,12 +1323,13 @@ fields:
     minimum: 0
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: always
+    visibleWhen: not-in-editor
     publicApi: false
     visibility: adminOnly
+    editorVisible: false
     customerSurfaces: []
     workbook: 1 Products.sort_order
-    fillGuidance: Stored workbook hint. Current public pages do not sort by this.
+    fillGuidance: Not shown in the product editor. Retained on save and workbook import. Current public pages do not sort by this.
 
   - id: featured
     tab: 5
@@ -1282,9 +1341,24 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [category-grid-first, also-popular-preference]
+    customerSurfaces: [category-grid-first]
     workbook: 1 Products.featured
     fillGuidance: Merchandising flag. Use sparingly.
+
+  - id: h1
+    tab: 6
+    apiPath: details.h1
+    label: H1
+    type: string
+    maxLength: 160
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [product-h1]
+    workbook: 7 Website SEO.h1
+    fillGuidance: Copies the product name unless overwritten. Public API returns the effective heading. Trademark symbols stay visible.
 
   - id: seoTitle
     tab: 6
@@ -1374,7 +1448,7 @@ fields:
     visibility: customer
     customerSurfaces: [canonical-link, open-graph-url]
     workbook: 7 Website SEO.canonical_url
-    fillGuidance: Leave blank for /product/{slug}. Not a redirect.
+    fillGuidance: Leave blank for /products/{category}/{slug}. Not a redirect.
 
   - id: robotsIndex
     tab: 6

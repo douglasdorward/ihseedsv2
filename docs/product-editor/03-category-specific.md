@@ -208,7 +208,7 @@ Each card is one public ingredient row. Do not substitute the linked product’s
 - **API path:** `details.components[].productLink` (slug)
 - **Workbook:** `5 Mix components.component_slug`
 - **Required:** no
-- **Customer website:** Turns the display name into a link to `/product/{slug}` when that product is in the public catalogue. Unlinked names stay plain text.
+- **Customer website:** Turns the display name into a link to `/products/{category}/{slug}` when that product is in the public catalogue. Unlinked names stay plain text.
 - **Public API:** yes
 - **How to fill:** Choose a catalogue product, or leave empty for species IH Seeds does not sell alone. Cannot link to this mix. Cannot reuse the same slug on two rows.
 
@@ -236,8 +236,10 @@ Each card is one public ingredient row. Do not substitute the linked product’s
 - **API path:** `details.components[].note`
 - **Workbook:** `5 Mix components.formulation_note`
 - **Required:** no
+- **Shown when:** not shown in the product editor
 - **Customer website:** not shown
 - **Public API:** currently included on the shared `ProductComponent` object (not shown on the site). Treat as staff-only copy; do not put customer wording here.
+- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
 - **Constraints:** max 4,000 characters.
 
 ## Biologicals
@@ -259,13 +261,14 @@ Each card is one public ingredient row. Do not substitute the linked product’s
 - **Required:** no (completion counts it for Biologicals, including on tab 2)
 - **Customer website:** Quick facts “Application rate”. Biologicals cards chip it.
 - **Public API:** yes
-- **How to fill:** Public rate text. Not the admin-only Application notes field.
+- **How to fill:** Public rate text. Not the stored Application notes field (that field is not shown in the editor).
 
 ### ECOCERT approved
 
 - **API path:** `details.ecocertApproved`
 - **Workbook:** `1 Products.ecocert_approved` / `3 Category specifics.ecocert_approved` (Biologicals only on import)
 - **Required:** no
+- **Shown when:** not shown in the product editor
 - **Customer website:** not shown as its own badge. Public certification uses the Selling → Certification list, not this checkbox.
 - **Public API:** excluded (admin-only)
-- **How to fill:** Staff flag only. Add a public certification on the Selling tab if customers should see a claim.
+- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field. Add a public certification on the Selling tab if customers should see a claim.

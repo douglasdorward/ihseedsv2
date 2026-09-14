@@ -54,9 +54,11 @@ export type ProductDetails = {
   description: string;
   notes: string;
   components: { productLink: string; speciesName: string; inclusionRate: number | null; unit: string; description: string; note: string }[];
+  faqs: { question: string; answer: string }[];
   formulationYear: string;
   photos: { slot: string; file: string; rating: string; src: string }[];
   inCurrentPrintedGuide: boolean;
+  h1: string;
   seoTitle: string;
   seoDescription: string;
   socialTitle: string;
@@ -211,9 +213,11 @@ const emptyProductDetails: ProductDetails = {
   description: "",
   notes: "",
   components: [],
+  faqs: [],
   formulationYear: "",
   photos: [],
   inCurrentPrintedGuide: false,
+  h1: "",
   seoTitle: "",
   seoDescription: "",
   socialTitle: "",
@@ -244,6 +248,11 @@ type LegacyProductDetails = Omit<Partial<ProductDetails>, "tolerance" | "compone
 
 export function forSearchMetadata(value: string) {
   return value.replace(/[™®]/g, "").replace(/\s{2,}/g, " ").replace(/\s+([,.;:!?])/g, "$1").trim();
+}
+
+export function resolveProductH1(name: string, h1?: string | null) {
+  const override = (h1 ?? "").trim();
+  return override || name.trim();
 }
 
 export function normalizeProductDetails(value: unknown, packSize = ""): ProductDetails {
@@ -317,7 +326,14 @@ export function normalizeProductDetails(value: unknown, packSize = ""): ProductD
     keyAttributes: Array.isArray(current.keyAttributes) ? current.keyAttributes : [],
     certification: Array.isArray(current.certification) ? current.certification : [],
     components,
+    faqs: Array.isArray(current.faqs)
+      ? current.faqs.slice(0, 10).map((item) => ({
+        question: typeof item?.question === "string" ? item.question : "",
+        answer: typeof item?.answer === "string" ? item.answer : "",
+      }))
+      : [],
     photos: Array.isArray(current.photos) ? current.photos : [],
+    h1: typeof current.h1 === "string" ? current.h1 : "",
     robotsIndex: current.robotsIndex ?? true,
     relatedProducts: Array.isArray(current.relatedProducts) ? current.relatedProducts : [],
     seoTitle: forSearchMetadata(current.seoTitle ?? ""),
@@ -439,9 +455,11 @@ const productDetailsObjectSchema = z.object({
   description: z.string().max(200000),
   notes: z.string().max(2000),
   components: z.array(z.object({ productLink: z.string().max(180), speciesName: z.string().max(120), inclusionRate: z.number().nullable(), unit: z.string().max(20), description: z.string().max(10000), note: z.string().max(4000) })),
+  faqs: z.array(z.object({ question: z.string().max(180), answer: z.string().max(4000) })).max(10).default([]),
   formulationYear: z.string().max(20),
   photos: z.array(z.object({ slot: z.string().max(40), file: z.string().max(240), rating: z.string().max(80), src: z.string().max(500) })),
   inCurrentPrintedGuide: z.boolean(),
+  h1: z.string().max(160),
   seoTitle: z.string().max(180),
   seoDescription: z.string().max(2000),
   socialTitle: z.string().max(180),

@@ -23788,35 +23788,35 @@
   "redirects": [
     {
       "fromPath": "/product/anywhere-tall-fescue",
-      "toPath": "/products/fescues-other-grasses#catalogue"
+      "toPath": "/products/fescues-other-grasses"
     },
     {
       "fromPath": "/product/avalon-persistent-perennial-ryegrass",
-      "toPath": "/products/ryegrass#catalogue"
+      "toPath": "/products/ryegrass"
     },
     {
       "fromPath": "/product/hard-seeded-persian-clover",
-      "toPath": "/products/clovers#catalogue"
+      "toPath": "/products/clovers"
     },
     {
       "fromPath": "/product/icon-lucerne",
-      "toPath": "/products/lucerne#catalogue"
+      "toPath": "/products/lucerne"
     },
     {
       "fromPath": "/product/nemnuke-biofumigant",
-      "toPath": "/products/forage-grain-crops#catalogue"
+      "toPath": "/products/forage-grain-crops"
     },
     {
       "fromPath": "/product/parafield-peas",
-      "toPath": "/products/forage-grain-crops#catalogue"
+      "toPath": "/products/forage-grain-crops"
     },
     {
       "fromPath": "/product/soft-seeded-persian-clover",
-      "toPath": "/products/clovers#catalogue"
+      "toPath": "/products/clovers"
     },
     {
       "fromPath": "/product/souwest-pasture-mix-2",
-      "toPath": "/product/souwest-pasture-mix"
+      "toPath": "/products/mixes/souwest-pasture-mix"
     },
     {
       "fromPath": "/products/biologicals/biologicals-biological",

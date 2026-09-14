@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Icon } from "../../components/Icon";
 import { StatusPill } from "../../components/StatusPill";
-import { getProducts } from "../../lib/catalogue";
+import { getCategories, getProducts } from "../../lib/catalogue";
+import { productPublicPath } from "../../lib/catalogue-paths";
 
 export const metadata: Metadata = {
   title: "Seed Availability | IH Seeds",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Availability() {
-  const products = await getProducts();
+  const [products, categories] = await Promise.all([getProducts(), getCategories()]);
 
   return (
     <>
@@ -30,7 +31,7 @@ export default async function Availability() {
             ) : (
               products.map((product) => (
                 <div className="availability-row" key={product.id} data-testid={`row-availability-${product.id}`}>
-                  <Link href={`/product/${product.slug}`} className="availability-product" data-testid={`link-availability-product-${product.id}`}>
+                  <Link href={productPublicPath(product, categories)} className="availability-product" data-testid={`link-availability-product-${product.id}`}>
                     <strong>{product.name}</strong>
                     {product.details.tagline?.trim() ? <span className="availability-tagline">{product.details.tagline}</span> : null}
                   </Link>

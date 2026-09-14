@@ -332,6 +332,13 @@ export interface ProductComponent {
   note: string;
 }
 
+export interface ProductFaq {
+  /** @maxLength 180 */
+  question: string;
+  /** @maxLength 4000 */
+  answer: string;
+}
+
 export interface ProductPhoto {
   /** @maxLength 40 */
   slot: string;
@@ -423,10 +430,14 @@ export interface ProductDetails {
   /** @maxLength 2000 */
   notes: string;
   components: ProductComponent[];
+  /** @maxItems 10 */
+  faqs: ProductFaq[];
   /** @maxLength 20 */
   formulationYear: string;
   photos: ProductPhoto[];
   inCurrentPrintedGuide: boolean;
+  /** @maxLength 160 */
+  h1: string;
   /** @maxLength 180 */
   seoTitle: string;
   /** @maxLength 2000 */
@@ -560,10 +571,13 @@ export interface PublicProductDetails {
   certification: string[];
   description: string;
   components: ProductComponent[];
+  /** @maxItems 10 */
+  faqs: ProductFaq[];
   relatedProducts: string[];
   formulationYear: string;
   photos: ProductPhoto[];
   featured: boolean;
+  h1: string;
   seoTitle: string;
   seoDescription: string;
   socialTitle: string;
@@ -907,6 +921,13 @@ export interface AvailabilityRow {
   status: string;
 }
 
+export interface CatalogueCategoryFaq {
+  /** @maxLength 200 */
+  question: string;
+  /** @maxLength 2000 */
+  answer: string;
+}
+
 export interface CatalogueCategory {
   id: number;
   parentId: number | null;
@@ -919,6 +940,8 @@ export interface CatalogueCategory {
   seoDescription: string;
   rainfall: string;
   image: string;
+  /** @maxItems 20 */
+  faqs: CatalogueCategoryFaq[];
   sortOrder: number;
   active: boolean;
   createdAt: string;
@@ -960,6 +983,8 @@ export interface CatalogueCategoryInput {
   rainfall: string;
   /** @maxLength 500 */
   image: string;
+  /** @maxItems 20 */
+  faqs?: CatalogueCategoryFaq[];
   /** @minimum 0 */
   sortOrder: number;
   active: boolean;
@@ -995,6 +1020,8 @@ export interface CatalogueCategoryUpdate {
   rainfall?: string;
   /** @maxLength 500 */
   image?: string;
+  /** @maxItems 20 */
+  faqs?: CatalogueCategoryFaq[];
   /** @minimum 0 */
   sortOrder?: number;
   active?: boolean;

@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CatalogueCategoryFaq } from './catalogueCategoryFaq';
 
 export interface CatalogueCategory {
   id: number;
@@ -18,6 +19,8 @@ export interface CatalogueCategory {
   seoDescription: string;
   rainfall: string;
   image: string;
+  /** @maxItems 20 */
+  faqs: CatalogueCategoryFaq[];
   sortOrder: number;
   active: boolean;
   createdAt: Date;

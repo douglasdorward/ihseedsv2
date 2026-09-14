@@ -318,7 +318,10 @@ h1 strong { display:block; font-weight:800; }
 .admin-repeat-row { display:grid; grid-template-columns:minmax(0,1fr) 34px; align-items:center; gap:10px; border-radius:12px; padding:11px 13px; background:#f3f5f2; }
 .admin-repeat-row-pack { grid-template-columns:minmax(130px,1fr) minmax(80px,.45fr) minmax(80px,.45fr) 34px; }
 .admin-repeat-row-rate { grid-template-columns:minmax(130px,1fr) 80px 80px 90px 34px; }
+.admin-repeat-row-faq { align-items:start; }
+.admin-repeat-row-faq > div { display:flex; flex-direction:column; gap:8px; }
 .admin-repeat-row input,.admin-repeat-row select { width:100%; min-width:0; border:1px solid #c8cec9; border-radius:999px; padding:10px 13px; background:#fff; }
+.admin-repeat-row-faq textarea { width:100%; min-width:0; border:1px solid #c8cec9; border-radius:12px; padding:10px 13px; background:#fff; font:inherit; resize:vertical; }
 .admin-repeat-row > button { width:34px; height:34px; border:0; border-radius:50%; background:#fff; color:#778078; font-size:20px; }
 .admin-check-row { display:flex !important; flex-direction:row !important; align-items:flex-start; gap:11px !important; border-radius:12px; padding:13px 14px; background:#f3f5f2; cursor:pointer; }
 .admin-check-row input { width:17px !important; height:17px; margin:2px 0 0; padding:0 !important; accent-color:#0c583c; }

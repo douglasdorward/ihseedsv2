@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
+import { getCategories } from "../lib/catalogue";
+import { featuredNavCategories } from "../lib/catalogue-paths";
 import { publicSiteUrl } from "../lib/site-url";
 import "./styles.css";
 
@@ -10,12 +12,15 @@ export const metadata: Metadata = {
   description: "Western Australia's pasture seed specialists.",
 };
 
-export default function RootLayout({ children }: { children: any }) {
+export default async function RootLayout({ children }: { children: any }) {
+  const categories = await getCategories().catch(() => []);
+  const productCategories = featuredNavCategories(categories);
+
   return (
     <html lang="en">
       <body>
         <div className="site-shell">
-          <Header />
+          <Header productCategories={productCategories} />
           <main>{children}</main>
           <Footer />
         </div>

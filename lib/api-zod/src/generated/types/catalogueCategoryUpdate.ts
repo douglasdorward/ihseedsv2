@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CatalogueCategoryFaq } from './catalogueCategoryFaq';
 
 export interface CatalogueCategoryUpdate {
   parentId?: number | null;
@@ -36,6 +37,8 @@ export interface CatalogueCategoryUpdate {
   rainfall?: string;
   /** @maxLength 500 */
   image?: string;
+  /** @maxItems 20 */
+  faqs?: CatalogueCategoryFaq[];
   /** @minimum 0 */
   sortOrder?: number;
   active?: boolean;

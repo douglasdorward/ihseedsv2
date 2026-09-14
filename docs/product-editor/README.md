@@ -2,6 +2,13 @@
 
 These files describe every field on the admin product editor: what it is for, how to fill it, which API path it uses, and whether customers ever see it.
 
+The editor has two views of the same product payload:
+
+- **Form** — the six tabs in this folder (default when a product is opened)
+- **Product page** — a visual copy of the public product page, with empty customer-facing fields left visible so they can be filled in place. Fields customers do not see (SEO, slug, selling internals) sit in cards below that replica.
+
+Both views write the same API paths. Use the tab files below for field meaning; do not treat Product page as a second schema.
+
 They are for:
 
 - Administrators who are unsure what a field does
@@ -23,7 +30,7 @@ The system guide remains the source for lifecycle, workbook import, and taxonomy
 ## How to use this set
 
 1. Open the tab file that matches the editor section.
-2. Read the field’s visibility before filling it. Admin-only fields must never be copied into public copy.
+2. Read the field’s visibility before filling it. Admin-only fields must never be copied into public copy. **Fill from PDF** on Basics can populate every other tab the document supports; it never writes sale lines, slugs, or photos.
 3. For API or MCP writes, use the **API path** (`name`, `details.tagline`, `saleLines[].stockCode`). OpenAPI in `lib/api-spec/openapi.yaml` is authoritative for types and enums.
 4. Treat [fields.yaml](fields.yaml) as a map from editor UX onto those paths, not as a second schema.
 
@@ -35,7 +42,7 @@ Each field is exactly one of:
 |---|---|
 | **Shown to customers** | Rendered on the public website. The field entry names the surface (H1, cards, Quick facts, mix table, SEO, and so on). |
 | **Public API, not shown** | Included in `PublicProduct` / `PublicProductDetails` but the current pages do not render it. Do not assume customers see it. |
-| **Admin-only** | Stored for staff. Stripped by `toPublicDetails` and marked `(Admin-only)` in the editor. Never public. |
+| **Admin-only** | Stored for staff. Stripped by `toPublicDetails`. Some are marked `(Admin-only)` in the editor; others are not shown in the editor at all and are only retained on save and workbook import. Never public. |
 
 A value can be stored, present in the public API, and still unused by the website. Document the current behaviour, not the hoped-for one.
 

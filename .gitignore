@@ -47,3 +47,9 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Admin product photo uploads
+artifacts/api-server/uploads/products/*
+!artifacts/api-server/uploads/products/.gitkeep
+artifacts/api-server/uploads/tech-sheets/*
+!artifacts/api-server/uploads/tech-sheets/.gitkeep

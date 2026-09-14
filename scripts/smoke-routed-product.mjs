@@ -31,9 +31,16 @@ assert.doesNotMatch(
   "/ must not return the retired Vite public shell",
 );
 
+const productsIndex = await get("/products");
+assertStatus(productsIndex, 200);
+
 for (const path of ["/products", "/products/herbs"]) {
   assertStatus(await get(path), 200);
 }
+
+const categoriesIndex = await get("/products/categories");
+assertStatus(categoriesIndex, 308);
+assert.equal(new URL(categoriesIndex.response.headers.get("location") ?? "", baseUrl).pathname, "/products");
 
 for (const path of [
   "/products/not-a-real-category",

@@ -7,7 +7,11 @@ import {
   productDraftsTable, productsTable, redirectsTable, resolveListingState, saleLinesTable,
 } from "@workspace/db";
 
-export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "6 Companions", "7 Website SEO", "8 Categories", "9 Redirects"] as const;
+export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "6 Companions", "7 Website SEO", "8 Categories", "9 Redirects", "10 Product FAQs"] as const;
+const PRODUCT_FAQ_SHEET = "10 Product FAQs";
+const PRODUCT_FAQ_LIMIT = 10;
+const PRODUCT_FAQ_QUESTION_MAX = 180;
+const PRODUCT_FAQ_ANSWER_MAX = 4000;
 type Row = Record<string, unknown>;
 type SheetReport = { rows: number; accepted: number; skipped: number; reasons: string[] };
 export type WorkbookReport = {
@@ -84,6 +88,13 @@ const applicableSpecifics: Record<string, Set<string>> = {
 };
 
 function cell(value: unknown) { return value == null ? "" : String(value).trim(); }
+function faqAnswer(value: unknown) { return value == null ? "" : String(value); }
+function importedFaqs(rows: Row[], slug: string) {
+  return rows
+    .filter((row) => cell(row.slug) === slug)
+    .map((row) => ({ question: cell(row.question), answer: faqAnswer(row.answer) }))
+    .filter((faq) => faq.question || faq.answer);
+}
 function isNull(value: unknown) { return cell(value).toUpperCase() === "NULL"; }
 function importedListingState(row: Row, existing: { listingState?: unknown } | undefined) {
   if (isNull(row.listing_state) && isNull(row.listing_override)) {
@@ -133,6 +144,9 @@ function publishContentErrors(payload: { name: string; slug: string; category: s
 }
 function applySeoRow(details: ReturnType<typeof normalizeProductDetails>, row: Row | undefined) {
   if (!row) return;
+  if (cell(row.h1) || isNull(row.h1)) {
+    details.h1 = isNull(row.h1) ? "" : cell(row.h1);
+  }
   details.seoTitle = forSearchMetadata(cell(row.seo_title) || cell(row.menu_label));
   details.seoDescription = forSearchMetadata(cell(row.meta_description));
   if (cell(row.social_title) || isNull(row.social_title)) {
@@ -239,7 +253,7 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
   for (const name of importSheetNames) {
     let skipped = 0; const reasons: string[] = [];
     rows[name].forEach((row, i) => {
-      const rowNo = i + 2, slugKey = name === "5 Mix components" ? "mix_slug" : ["2 Sowing rates", "3 Category specifics", "6 Companions"].includes(name) ? "slug" : "";
+      const rowNo = i + 2, slugKey = name === "5 Mix components" ? "mix_slug" : ["2 Sowing rates", "3 Category specifics", "6 Companions", PRODUCT_FAQ_SHEET].includes(name) ? "slug" : "";
       if (name === "8 Categories") {
         const slug = cell(row.slug);
         const parentSlug = cell(row.parent_slug);
@@ -258,6 +272,22 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
         else {
           if (!isCataloguePath(fromPath)) issues.push({ sheet: name, row: rowNo, column: "from_path", problem: "Redirect source must be a path starting with /" });
           if (!isCataloguePath(toPath)) issues.push({ sheet: name, row: rowNo, column: "to_path", problem: "Redirect target must be a path starting with /" });
+        }
+      }
+      if (name === PRODUCT_FAQ_SHEET) {
+        const question = cell(row.question);
+        const answer = faqAnswer(row.answer);
+        if (!cell(row.slug) && !question && !answer.trim()) { skipped++; reasons.push(`row ${rowNo}: blank FAQ`); }
+        else {
+          if (!cell(row.slug) && (question || answer.trim())) {
+            issues.push({ sheet: name, row: rowNo, column: "slug", problem: "Product slug is required" });
+          }
+          if (question.length > PRODUCT_FAQ_QUESTION_MAX) {
+            issues.push({ sheet: name, row: rowNo, column: "question", problem: `Question must be ${PRODUCT_FAQ_QUESTION_MAX} characters or fewer` });
+          }
+          if (answer.length > PRODUCT_FAQ_ANSWER_MAX) {
+            issues.push({ sheet: name, row: rowNo, column: "answer", problem: `Answer must be ${PRODUCT_FAQ_ANSWER_MAX} characters or fewer` });
+          }
         }
       }
       if (name === "1 Products") {
@@ -297,6 +327,17 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
       }
     });
     sheets[name] = { rows: rows[name].length, accepted: rows[name].length - skipped, skipped, reasons };
+    if (name === PRODUCT_FAQ_SHEET) {
+      for (const slug of new Set(rows[name].map((row) => cell(row.slug)).filter(Boolean))) {
+        const count = importedFaqs(rows[name], slug).length;
+        if (count > PRODUCT_FAQ_LIMIT) {
+          issues.push({
+            sheet: name, row: 0, column: "question",
+            problem: `"${slug}" has ${count} FAQs; maximum is ${PRODUCT_FAQ_LIMIT}`,
+          });
+        }
+      }
+    }
   }
   if (!book.SheetNames.includes("Lists")) issues.push({ sheet: "Lists", row: 0, column: "", problem: "Lists sheet is required" });
   if (book.SheetNames.includes("Review")) {
@@ -337,7 +378,10 @@ function redirectFromNote(row: Row) {
     }
   }
   const parsedTarget = note.match(/(\/(?:product|products)\/[^\s,.)]+)/i)?.[1];
-  const target = parsedTarget?.replace(/^\/products\/ryegrasses(?=\/|#|$)/, "/products/ryegrass");
+  const target = parsedTarget
+    ?.replace(/^\/products\/ryegrasses(?=\/|#|$)/, "/products/ryegrass")
+    .replace(/#catalogue$/, "")
+    .replace(/\/products\/categories$/, "/products");
   return from && target ? { from, to: target } : null;
 }
 
@@ -517,16 +561,20 @@ export async function commitWorkbook(content: Buffer, token: string) {
     });
     for (const slug of new Set(rows["5 Mix components"].map((r) => cell(r.mix_slug)).filter(Boolean))) await updateDetails(slug, (d) => { d.components = rows["5 Mix components"].filter((r) => cell(r.mix_slug) === slug).map((r) => ({ productLink: cell(r.component_slug), speciesName: cell(r.component_name), inclusionRate: num(r.inclusion_rate), unit: cell(r.rate_unit) || "%", description: cell(r.component_description), note: cell(r.note) })); });
     for (const slug of new Set(rows["6 Companions"].map((r) => cell(r.slug)).filter(Boolean))) await updateDetails(slug, (d) => { d.companionSpecies = rows["6 Companions"].filter((r) => cell(r.slug) === slug).map((r) => cell(r.companion_slug) || cell(r.companion_text)).filter(Boolean); });
+    for (const slug of new Set(rows[PRODUCT_FAQ_SHEET].map((r) => cell(r.slug)).filter(Boolean))) {
+      await updateDetails(slug, (d) => { d.faqs = importedFaqs(rows[PRODUCT_FAQ_SHEET], slug).slice(0, PRODUCT_FAQ_LIMIT); });
+    }
     for (const row of rows["7 Website SEO"]) {
       const slug = cell(row.product_slug) || cell(row.website_slug);
       await updateDetails(slug, (d) => {
         const seoTitle = forSearchMetadata(cell(row.seo_title) || cell(row.menu_label));
         if (cell(row.meta_description)) d.seoDescription = forSearchMetadata(cell(row.meta_description));
         if (seoTitle) d.seoTitle = seoTitle;
+        if (cell(row.h1) || isNull(row.h1)) d.h1 = isNull(row.h1) ? "" : cell(row.h1);
       });
       const redirect = redirectFromNote(row); if (redirect) await tx.insert(redirectsTable).values({ fromPath: redirect.from, toPath: redirect.to }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath: redirect.to, updatedAt: new Date() } });
     }
-    for (const redirect of [{ from: "/product/souwest-pasture-mix-2", to: "/product/souwest-pasture-mix" }, { from: "/product/icon-lucerne", to: "/products/lucerne#catalogue" }]) await tx.insert(redirectsTable).values({ fromPath: redirect.from, toPath: redirect.to }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath: redirect.to, updatedAt: new Date() } });
+    for (const redirect of [{ from: "/product/souwest-pasture-mix-2", to: "/products/mixes/souwest-pasture-mix" }, { from: "/product/icon-lucerne", to: "/products/lucerne" }]) await tx.insert(redirectsTable).values({ fromPath: redirect.from, toPath: redirect.to }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath: redirect.to, updatedAt: new Date() } });
     for (const row of rows["9 Redirects"]) {
       const fromPath = cell(row.from_path), toPath = cell(row.to_path);
       if (!isCataloguePath(fromPath) || !isCataloguePath(toPath)) continue;
@@ -624,7 +672,7 @@ export async function exportWorkbook() {
     const details = d(p);
     return {
       website_slug: p.slug, product_slug: p.slug, product_url: p.websiteUrlLegacy,
-      seo_title: details.seoTitle, meta_description: details.seoDescription,
+      h1: details.h1, seo_title: details.seoTitle, meta_description: details.seoDescription,
       social_title: details.socialTitle, social_description: details.socialDescription,
       social_image: details.socialImage, canonical_url: details.canonicalUrl,
       robots_index: details.robotsIndex ? "Y" : "N",
@@ -640,6 +688,10 @@ export async function exportWorkbook() {
   append("9 Redirects", redirects.length
     ? redirects.map((redirect) => ({ from_path: redirect.fromPath, to_path: redirect.toPath }))
     : [{ from_path: "", to_path: "" }]);
+  const faqRows = products.flatMap((p) => d(p).faqs.map((faq) => ({
+    slug: p.slug, product_name: p.name, question: faq.question, answer: faq.answer,
+  })));
+  append(PRODUCT_FAQ_SHEET, faqRows.length ? faqRows : [{ slug: "", product_name: "", question: "", answer: "" }]);
   const listNames = [...optionLists.keys()];
   const listRows = Array.from({ length: Math.max(0, ...[...optionLists.values()].map((values) => values.size)) }, (_, index) =>
     Object.fromEntries(listNames.map((name) => [name, [...(optionLists.get(name) ?? [])][index] ?? ""])));

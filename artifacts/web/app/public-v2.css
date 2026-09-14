@@ -490,6 +490,67 @@
   min-width: 0;
 }
 
+.product-faq-section {
+  padding: 72px 40px 32px;
+}
+
+.product-faq-section#faqs {
+  padding-bottom: 64px;
+}
+
+.product-faq-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.product-faq-section h2 {
+  margin: 0 0 24px;
+  color: var(--green);
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.1;
+}
+
+.product-faq-list {
+  display: grid;
+  gap: 0;
+}
+
+.product-faq-item {
+  border-bottom: 1px solid var(--line);
+  padding: 4px 0 16px;
+}
+
+.product-faq-item summary,
+.product-faq-summary {
+  color: var(--green);
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.product-faq-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+}
+
+.product-faq-question {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  font: inherit;
+  color: inherit;
+}
+
+.product-faq-item p,
+.product-faq-answer {
+  margin: 16px 0 0;
+  max-width: 64ch;
+  line-height: 1.6;
+  width: 100%;
+}
+
 .also-popular-section {
   padding: 80px 40px 96px;
   background: var(--sage);
@@ -606,6 +667,10 @@
 }
 
 @media (max-width: 800px) {
+  .product-faq-section {
+    padding: 56px 20px 16px;
+  }
+
   .also-popular-section {
     padding: 64px 20px 72px;
   }
@@ -712,6 +777,170 @@
 }
 .comparison-table tr:hover td {
   background: rgba(0,0,0,0.02);
+}
+
+.product-listing-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+}
+.product-filter-toggle {
+  display: none;
+}
+.product-filter-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.product-filter-sidebar-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.product-filter-sidebar-header h2 {
+  margin: 0;
+  color: var(--green);
+  font-size: 22px;
+}
+.product-filter-clear {
+  border: 0;
+  background: transparent;
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.product-filter-group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.product-filter-group legend {
+  padding: 0;
+  margin-bottom: 8px;
+  color: var(--green);
+  font-size: 15px;
+  font-weight: 700;
+}
+.product-filter-subtitle {
+  margin: 12px 0 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.product-filter-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--black-green);
+  font-size: 14px;
+  cursor: pointer;
+}
+.product-filter-option select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--black-green);
+}
+.product-listing-count {
+  margin: 0 0 24px;
+  color: var(--green);
+  font-size: 22px;
+}
+.product-listing-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  min-height: 360px;
+  padding: 48px 40px;
+  background: var(--sage);
+  border-radius: 16px;
+}
+.product-listing-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--green);
+}
+.product-listing-empty h3 {
+  margin: 8px 0 0;
+  max-width: 22ch;
+  color: var(--green);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.product-listing-empty p {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--black-green);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.product-listing-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+.product-filter-drawer {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .product-listing-empty {
+    min-height: 0;
+    padding: 32px 24px;
+  }
+  .product-listing-empty h3 {
+    font-size: 24px;
+  }
+  .product-listing-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .product-filter-desktop {
+    display: none;
+  }
+  .product-filter-toggle {
+    display: inline-flex;
+    width: fit-content;
+  }
+  .product-filter-drawer {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: rgba(29, 40, 28, 0.45);
+  }
+  .product-filter-drawer-panel {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: min(360px, 92vw);
+    overflow: auto;
+    background: #fff;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .category-card-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 @media (max-width: 768px) {

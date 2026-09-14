@@ -1,13 +1,13 @@
 # Tab 5 — Content & publishing
 
-Public copy, media, related products, and display flags. Tagline, blurb, at least one key attribute, and description are required to publish.
+Public copy, media, FAQs, Also popular, and display flags. Tagline, blurb, at least one key attribute, and description are required to publish.
 
 ## Tagline
 
 - **API path:** `details.tagline`
 - **Workbook:** `1 Products.tagline`
 - **Required:** Draft no / Publish yes
-- **Customer website:** Under the H1 on the product hero; category cards; homepage/resource/availability cards; related-product and Also popular subtitles.
+- **Customer website:** Under the H1 on the product hero; category cards; homepage/resource/availability cards; Also popular subtitles.
 - **Public API:** yes
 - **Purpose:** Short product promise. Not the SEO title.
 - **How to fill:** One line. No ™ or ® (those belong on the product name).
@@ -57,9 +57,11 @@ Public copy, media, related products, and display flags. Tagline, blurb, at leas
 - **API path:** `descriptionSource`
 - **Workbook:** `1 Products.description_source`
 - **Required:** no
+- **Shown when:** not shown in the product editor
 - **Customer website:** not shown
 - **Public API:** excluded (admin-only)
 - **Purpose:** Provenance of the copy. Max 240 characters.
+- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
 
 ## Legacy website URL
 
@@ -76,9 +78,11 @@ Public copy, media, related products, and display flags. Tagline, blurb, at leas
 - **API path:** `details.notes`
 - **Workbook:** `1 Products.internal_notes`
 - **Required:** no
+- **Shown when:** not shown in the product editor
 - **Customer website:** not shown
 - **Public API:** excluded (admin-only)
-- **Purpose:** Staff reminders. On Biologicals this is the same field as Agronomy → Application notes.
+- **Purpose:** Staff reminders. Same field as the former Agronomy → Application notes on Biologicals.
+- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
 - **Constraints:** max 2000 characters.
 
 ## Photos
@@ -86,10 +90,10 @@ Public copy, media, related products, and display flags. Tagline, blurb, at leas
 - **API path:** `details.photos[]` (`slot`, `file`, `rating`, `src`)
 - **Workbook:** `1 Products.photo_1` (and further slots when present)
 - **Required:** no
-- **Customer website:** First non-blank `src` is the product-page hero and the default social image. Related-product and Also popular cards use that hero. Category grid cards currently use rotating placeholder images, not these photos.
+- **Customer website:** First non-blank `src` is the product-page hero and the default social image. Also popular cards use that hero. Category grid cards currently use rotating placeholder images, not these photos.
 - **Public API:** yes
-- **Purpose:** Product photography. The current editor lists slots; it does not upload new files from this tab.
-- **How to fill:** Keep `src` as a real URL. Empty slots are skipped for the hero.
+- **Purpose:** Product photography. The Form tab lists slots. The Product page view uploads or pastes a URL onto the hero (first non-blank `src`).
+- **How to fill:** Keep `src` as a real URL. Empty slots are skipped for the hero. The Product page editor can upload a hero image onto slot 1 (`Photo 1 · Hero`) or paste a URL over the hero. Extra slots can still take URLs in the publishing card under that view.
 
 ## Tech sheet URL
 
@@ -100,24 +104,40 @@ Public copy, media, related products, and display flags. Tagline, blurb, at leas
 - **Public API:** yes (`techSheet`)
 - **Purpose:** Link to the PDF fact sheet.
 - **Constraints:** max 240 characters.
+- **How to fill:** Paste an external URL, or use **Fill from PDF** on Form → Basics. That uploads the PDF to durable storage and can set this field to `/api/admin/tech-sheets/{id}/file` after you accept the suggestion. The bulk queue at `/admin/tech-sheets` stores the same files; Open editor applies suggestions into the Basics tab. AI never saves or publishes.
 
-## Related products
+## FAQs
 
-- **API path:** `details.relatedProducts[]` (slugs)
+- **API path:** `details.faqs[]` (`question`, `answer`)
+- **Workbook:** `10 Product FAQs` (`slug`, `question`, `answer`). Join by product `slug`. One row per FAQ; row order is stored order. A missing sheet leaves stored FAQs unchanged. If a product slug appears on the sheet, its FAQ set is replaced by those rows (max ten).
+- **Required:** no
+- **Shown when:** Form Content & publishing, and the Product page FAQ band above Also popular
+- **Customer website:** “FAQs” accordion band immediately above Also popular. Only items with both a question and an answer are shown. The whole section is omitted when none are complete. Max ten.
+- **Public API:** yes (`faqs`)
+- **Purpose:** Optional product questions customers ask. Do not repeat Quick facts or the full description.
+- **How to fill:** Add a card per question. Leave empty if the product does not need FAQs. Incomplete cards stay in the editor and are hidden from customers.
+- **Constraints:** max 10 items. Question max 180 characters. Answer max 4,000 characters.
+
+## Also popular
+
+- **API path:** `details.relatedProducts[]` (slugs; stored name unchanged)
 - **Workbook:** related product slug list on the product row
 - **Required:** no
-- **Customer website:** “Related products” cards, in listed order, only for slugs that resolve to public products.
-- **Public API:** yes
-- **How to fill:** Public product slugs. Invalid slugs are omitted on the site.
+- **Shown when:** Form Content & publishing, and the Product page Also popular band
+- **Customer website:** “Also popular” cards, max three. The picker only offers Published products with Active listing. If a stored pick is later set to Legacy (or is otherwise not public), that slot is filled with another Active product from the same category using a slug-seeded shuffle that is stable across loads. An empty list still shows three other Active products in the same category. Featured does not rank this list.
+- **Public API:** yes (`relatedProducts`)
+- **How to fill:** Choose up to three Active published products by name. Leave empty for the automatic same-category set.
 
 ## Sort order
 
 - **API path:** `details.sortOrder`
 - **Workbook:** `1 Products.sort_order`
 - **Required:** no
-- **Customer website:** not used by the current public pages (category grids prefer featured, then the first sale line’s sort order; Also popular prefers featured, then name)
+- **Shown when:** not shown in the product editor
+- **Customer website:** not used by the current public pages (category grids prefer featured, then the first sale line’s sort order)
 - **Public API:** excluded (admin-only)
-- **Purpose:** Stored catalogue ordering hint for staff/workbook. Do not assume it sorts the website.
+- **Purpose:** Stored catalogue ordering hint for workbook import. Do not assume it sorts the website.
+- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field. Use Featured to pin products on category grids.
 - **Constraints:** integer ≥ 0 or blank.
 
 ## Featured product
@@ -125,7 +145,7 @@ Public copy, media, related products, and display flags. Tagline, blurb, at leas
 - **API path:** `details.featured`
 - **Workbook:** `1 Products.featured`
 - **Required:** no
-- **Customer website:** Featured products sort first on category grids. Also popular prefers featured products in the same category (up to three).
+- **Customer website:** Featured products sort first on category grids. Also popular does not use this flag.
 - **Public API:** yes
 - **How to fill:** Check sparingly. This is a merchandising flag, not a lifecycle state.
 

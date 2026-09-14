@@ -70,9 +70,11 @@ export type CatalogueProduct = {
     certification?: string[];
     description?: string;
     components?: Array<{ speciesName?: string; inclusionRate?: number | null; unit?: string; description?: string; note?: string; productLink?: string }>;
+    faqs?: Array<{ question?: string; answer?: string }>;
     relatedProducts?: string[];
     formulationYear?: string;
     photos?: Array<{ src?: string; file?: string; slot?: string; rating?: string }>;
+    h1?: string;
     seoTitle?: string;
     seoDescription?: string;
     socialTitle?: string;
@@ -81,6 +83,11 @@ export type CatalogueProduct = {
     canonicalUrl?: string;
     robotsIndex?: boolean;
   };
+};
+
+export type CatalogueCategoryFaq = {
+  question: string;
+  answer: string;
 };
 
 export type CatalogueCategory = {
@@ -96,9 +103,15 @@ export type CatalogueCategory = {
   pageHeading: string;
   seoTitle: string;
   seoDescription: string;
+  faqs?: CatalogueCategoryFaq[];
+  productCount?: number;
 };
 
 export type LegacyCatalogueProduct = { name: string };
+
+export function productPageHeading(product: CatalogueProduct) {
+  return product.details.h1?.trim() || product.name;
+}
 
 export function defaultSaleLine(product: CatalogueProduct) {
   return product.saleLines?.find((line) => line.isDefault) ?? product.saleLines?.[0];

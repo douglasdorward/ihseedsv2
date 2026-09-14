@@ -4,13 +4,21 @@ Identity, taxonomy, listing state, and origin. Tabs 2–6 stay disabled until a 
 
 Draft save requires Product name, Slug, Category, and Record type from this tab.
 
+## Fill from PDF
+
+- **Shown when:** Form Basics. Also used when a tech-sheet queue item opens this product with `?aiItem=`.
+- **Purpose:** Read a tech-sheet PDF and suggest editor fields across every tab the document supports.
+- **How to fill:** Choose a category first, then upload a PDF. Review suggestions grouped by tab, then Apply to form. Suggestions stay in the form until Save draft (unpublished products) or Publish (live products). Reject anything the document does not clearly support. Private breeder/supplier wording is dropped from public copy. Sale lines, slugs, photos, listing state, and related products are never filled from the PDF.
+- **Tabs filled when present in the PDF:** Basics, Agronomy & fit, Category-specific, Content & publishing, SEO. Selling stock codes and prices are never filled. PBR and certification on Selling can be filled when the sheet states them.
+- **Scanned PDFs:** If the file has almost no text, fields are left blank and a warning is shown rather than guessed.
+
 ## Product name
 
 - **API path:** `name`
 - **Workbook:** `1 Products.product_name`
 - **Required:** Draft yes / Publish yes
 - **Shown when:** always
-- **Customer website:** H1 on the product page; category cards; comparison table; related-product and Also popular names; JSON-LD Product `name`. Trademark symbols stay visible here.
+- **Customer website:** Default H1 on the product page when SEO → H1 is blank; category cards; comparison table; Also popular names; JSON-LD Product `name`. Trademark symbols stay visible here.
 - **Public API:** yes (`name`)
 - **Purpose:** The customer-facing product title.
 - **How to fill:** Use the commercial name. Insert ™ with the TM button when the brand is trademarked. Do not put ™ or ® in SEO or social fields.
@@ -22,7 +30,7 @@ Draft save requires Product name, Slug, Category, and Record type from this tab.
 - **Workbook:** `1 Products.slug`
 - **Required:** Draft yes / Publish yes
 - **Shown when:** always; input is disabled after the product exists
-- **Customer website:** Permanent URL `/product/{slug}`. Used to join related products, mix components, companions, and redirects.
+- **Customer website:** Permanent URL `/products/{category-slug}/{slug}`. Used to join Also popular picks, mix components, companions, and redirects. Legacy `/product/{slug}` URLs redirect to this path.
 - **Public API:** yes (`slug`)
 - **Purpose:** Immutable public identifier.
 - **How to fill:** Lowercase kebab-case matching `^[a-z0-9]+(?:-[a-z0-9]+)*$`. Choose carefully on create; it cannot be edited later.
@@ -34,7 +42,7 @@ Draft save requires Product name, Slug, Category, and Record type from this tab.
 - **Workbook:** `1 Products.category`
 - **Required:** Draft yes / Publish yes
 - **Shown when:** always
-- **Customer website:** Breadcrumb, directory grouping, category page membership, Also popular pool.
+- **Customer website:** Breadcrumb, directory grouping, category page membership, Also popular pool (Active published products in this category).
 - **Public API:** yes (`category`)
 - **Purpose:** Places the product in the two-level taxonomy. Also decides which Category-specific fields appear.
 - **How to fill:** Choose an active root. Inactive roots remain available only for an existing assignment. Publishing a changed assignment to inactive taxonomy is rejected.
@@ -92,11 +100,11 @@ Draft save requires Product name, Slug, Category, and Record type from this tab.
 - **API path:** `details.bredByOrigin`
 - **Workbook:** `1 Products.bred_by_origin`
 - **Required:** no
-- **Shown when:** category is not Mixes
+- **Shown when:** not shown in the product editor
 - **Customer website:** not shown
 - **Public API:** excluded (admin-only)
 - **Purpose:** Private breeder or origin reminder. Deliberately never public.
-- **How to fill:** e.g. `Agricom (NZ)`. Do not copy this into Description, Blurb, or SEO.
+- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field. Do not copy this into Description, Blurb, or SEO.
 - **Constraints:** max 2000 characters.
 
 ## Also known as
@@ -104,9 +112,9 @@ Draft save requires Product name, Slug, Category, and Record type from this tab.
 - **API path:** `details.alsoKnownAs[]`
 - **Workbook:** `1 Products.also_known_as`
 - **Required:** no
-- **Shown when:** always
+- **Shown when:** not shown in the product editor
 - **Customer website:** not shown
 - **Public API:** excluded (admin-only)
-- **Purpose:** Alternative names for staff search and provenance. Not a public synonym list.
-- **How to fill:** One alias per row. Blank rows are ignored.
+- **Purpose:** Alternative names for provenance. Not a public synonym list.
+- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
 - **Constraints:** each alias max 120 characters.

@@ -7,6 +7,7 @@ import {
   useDeleteCategory,
   useReorderCategories,
   CatalogueCategory,
+  CatalogueCategoryFaq,
   CatalogueCategoryInput,
   CatalogueCategoryUpdate,
   getListAdminCategoriesQueryKey,
@@ -27,8 +28,21 @@ function slugify(text: string) {
     .replace(/(^-|-$)+/g, "");
 }
 
+function forSearchMetadataInput(value: string) {
+  return value.replace(/[™®]/g, "").replace(/\s{2,}/g, " ").replace(/\s+([,.;:!?])/g, "$1");
+}
+
 function forSearchMetadata(value: string) {
-  return value.replace(/[™®]/g, "").replace(/\s{2,}/g, " ").replace(/\s+([,.;:!?])/g, "$1").trim();
+  return forSearchMetadataInput(value).trim();
+}
+
+const MAX_CATEGORY_FAQS = 20;
+
+function completeFaqs(faqs: CatalogueCategoryFaq[] | undefined): CatalogueCategoryFaq[] {
+  return (faqs ?? [])
+    .map((item) => ({ question: item.question.trim(), answer: item.answer.trim() }))
+    .filter((item) => item.question && item.answer)
+    .slice(0, MAX_CATEGORY_FAQS);
 }
 
 function PageHeader({ eyebrow, title, action, onBack }: { eyebrow: string; title: React.ReactNode; action?: React.ReactNode, onBack?: () => void }) {
@@ -53,13 +67,11 @@ const defaultImages = [
 const CategoryForm = ({ 
   initialData, 
   parent,
-  sharesParentPage = false,
   onSave, 
   onCancel 
 }: { 
   initialData?: CatalogueCategory; 
   parent?: CatalogueCategory;
-  sharesParentPage?: boolean;
   onSave: (data: CatalogueCategoryInput | CatalogueCategoryUpdate) => Promise<void>; 
   onCancel: () => void;
 }) => {
@@ -73,6 +85,7 @@ const CategoryForm = ({
     seoDescription: initialData?.seoDescription || "",
     rainfall: initialData?.rainfall || "",
     image: initialData?.image || parent?.image || defaultImages[0],
+    faqs: (initialData?.faqs ?? []).map((item) => ({ question: item.question, answer: item.answer })),
     active: initialData?.active ?? true,
     sortOrder: initialData?.sortOrder ?? 0,
     parentId: initialData ? initialData.parentId : parent?.id ?? null,
@@ -83,6 +96,10 @@ const CategoryForm = ({
 
   const isEditing = !!initialData;
   const isSubcategory = form.parentId !== null;
+  const categorySlug = isSubcategory
+    ? (isEditing ? initialData?.slug || "" : slugify(form.name || ""))
+    : (form.slug || "");
+  const slugChanged = isEditing && !isSubcategory && categorySlug !== initialData?.slug;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,47 +111,62 @@ const CategoryForm = ({
       setSaving(false);
       return;
     }
-    
-    if (!form.slug?.trim()) {
-      setError("Slug is required");
+
+    if (!categorySlug) {
+      setError(isSubcategory
+        ? "Name must include letters or numbers so an internal identifier can be created."
+        : "Category URL is required");
       setSaving(false);
       return;
     }
-    if (!form.groupLabel?.trim()) {
+    if (!isSubcategory && !form.groupLabel?.trim()) {
       setError("Group label is required");
       setSaving(false);
       return;
     }
 
+    const groupLabel = form.groupLabel?.trim() || parent?.groupLabel || parent?.name || form.name;
+    const faqs = isSubcategory ? [] : completeFaqs(form.faqs);
     try {
       if (isEditing) {
-        await onSave({
-          name: form.name,
-          slug: form.slug,
-          groupLabel: form.groupLabel,
-          lead: form.lead,
-          pageHeading: form.pageHeading,
-          seoTitle: form.seoTitle,
-          seoDescription: form.seoDescription,
-          rainfall: form.rainfall,
-          image: form.image,
-          active: form.active,
-        } as CatalogueCategoryUpdate);
+        const update: CatalogueCategoryUpdate = isSubcategory
+          ? {
+              name: form.name,
+              slug: categorySlug,
+              groupLabel,
+              lead: form.lead,
+              active: form.active,
+            }
+          : {
+              name: form.name,
+              slug: categorySlug,
+              groupLabel,
+              lead: form.lead,
+              pageHeading: form.pageHeading,
+              seoTitle: form.seoTitle,
+              seoDescription: form.seoDescription,
+              rainfall: form.rainfall,
+              image: form.image,
+              faqs,
+              active: form.active,
+            };
+        await onSave(update);
       } else {
         await onSave({
           name: form.name,
-          slug: form.slug,
-          groupLabel: form.groupLabel,
-          lead: form.lead,
-          pageHeading: form.pageHeading,
-          seoTitle: form.seoTitle,
-          seoDescription: form.seoDescription,
-          rainfall: form.rainfall,
-          image: form.image,
-          active: form.active,
-          sortOrder: form.sortOrder,
-          parentId: form.parentId,
-        } as CatalogueCategoryInput);
+          slug: categorySlug,
+          groupLabel,
+          lead: form.lead || "",
+          pageHeading: isSubcategory ? "" : form.pageHeading || "",
+          seoTitle: isSubcategory ? "" : form.seoTitle || "",
+          seoDescription: isSubcategory ? "" : form.seoDescription || "",
+          rainfall: isSubcategory ? "" : form.rainfall || "",
+          image: isSubcategory ? parent?.image || "" : form.image || "",
+          faqs,
+          active: form.active ?? true,
+          sortOrder: form.sortOrder ?? 0,
+          parentId: form.parentId ?? null,
+        });
       }
     } catch (err: any) {
       setError(err.message || "Failed to save category");
@@ -145,7 +177,7 @@ const CategoryForm = ({
 
   return (
     <div className="admin-form-card" style={{ background: "#f5f7f4", border: "1px solid #c8cec9", borderRadius: 12, marginTop: 16, marginBottom: 16 }}>
-      <h3 style={{ fontSize: 18, color: "var(--green)", marginBottom: 16 }}>{isEditing ? "Edit Category" : isSubcategory ? "New Subcategory" : "New Root Category"}</h3>
+      <h3 style={{ fontSize: 18, color: "var(--green)", marginBottom: 16 }}>{isEditing ? isSubcategory ? "Edit Subcategory" : "Edit Category" : isSubcategory ? "New Subcategory" : "New Root Category"}</h3>
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div className="admin-form-grid">
           <label>
@@ -157,29 +189,28 @@ const CategoryForm = ({
                 setForm(prev => ({ 
                   ...prev, 
                   name, 
-                  slug: !isEditing ? slugify(name) : prev.slug 
+                  slug: !isEditing && !isSubcategory ? slugify(name) : prev.slug 
                 }));
               }} 
-              placeholder="e.g. Ryegrass" 
+              placeholder={isSubcategory ? "e.g. Annual" : "e.g. Ryegrass"} 
             />
           </label>
-          <label>
-            <span className="admin-label-title">Slug<span className="admin-required-star" aria-hidden="true">*</span></span>
-            <input 
-              value={form.slug} 
-              onChange={e => setForm(prev => ({ ...prev, slug: slugify(e.target.value) }))} 
-              placeholder="e.g. ryegrass" 
-            />
-            <small>Category landing page: {!form.active
-              ? "None while this category is inactive"
-              : isSubcategory && parent
-                ? !parent.active
-                  ? "None while the parent category is inactive"
-                  : sharesParentPage
-                    ? `/products/${parent.slug} (shared with its parent)`
-                    : `/products/${parent.slug}/${form.slug || "subcategory-slug"}`
-                : `/products/${form.slug || "category-slug"}`}</small>
-          </label>
+          {!isSubcategory && (
+            <label>
+              <span className="admin-label-title">Category URL<span className="admin-required-star" aria-hidden="true">*</span></span>
+              <input 
+                value={form.slug} 
+                onChange={e => setForm(prev => ({ ...prev, slug: slugify(e.target.value) }))} 
+                placeholder="e.g. ryegrass" 
+              />
+              <small>
+                {form.active
+                  ? `Public page: /products/${form.slug || "category-slug"}`
+                  : "No category page while inactive"}
+                {slugChanged ? ` The previous address /products/${initialData?.slug} will redirect here.` : ""}
+              </small>
+            </label>
+          )}
           {!isSubcategory && (
             <>
               <label>
@@ -228,44 +259,111 @@ const CategoryForm = ({
           )}
           {isSubcategory && (
             <label className="wide">
-              Lead description
+              Description
               <textarea
                 value={form.lead}
                 onChange={e => setForm(prev => ({ ...prev, lead: e.target.value }))}
-                placeholder={parent?.lead || "Short description for this subcategory..."}
+                placeholder="Optional notes about this subcategory..."
                 rows={3}
               />
-              <small>Used as the meta description fallback when the SEO description is blank.</small>
+              <small>Internal notes only. Not shown on the public site yet.</small>
             </label>
           )}
-          <label className="wide">
-            Page heading
-            <input
-              value={form.pageHeading}
-              onChange={e => setForm(prev => ({ ...prev, pageHeading: e.target.value }))}
-              placeholder={`${form.name || "Category"} Seed`}
-            />
-            <small>Optional full search heading. If blank, the public page uses “{form.name || "Category"} Seed”.</small>
-          </label>
-          <label className="wide">
-            SEO title
-            <input
-              value={form.seoTitle}
-              onChange={e => setForm(prev => ({ ...prev, seoTitle: forSearchMetadata(e.target.value) }))}
-              placeholder={`${form.name || "Category"} Seed | IH Seeds`}
-            />
-            <small>If blank, the public page uses “{form.name || "Category"} Seed | IH Seeds”. Do not use ™ or ®.</small>
-          </label>
-          <label className="wide">
-            Meta description
-            <textarea
-              value={form.seoDescription}
-              onChange={e => setForm(prev => ({ ...prev, seoDescription: forSearchMetadata(e.target.value) }))}
-              placeholder={form.lead || parent?.lead || "Category lead copy is used when this is blank."}
-              rows={3}
-            />
-            <small>If blank, the public page uses the category lead copy. Plain text only — no ™ or ®.</small>
-          </label>
+          {!isSubcategory && (
+            <>
+              <label className="wide">
+                Page heading
+                <input
+                  value={form.pageHeading}
+                  onChange={e => setForm(prev => ({ ...prev, pageHeading: e.target.value }))}
+                  placeholder={`${form.name || "Category"} Seed`}
+                />
+                <small>Optional full search heading. If blank, the public page uses “{form.name || "Category"} Seed”.</small>
+              </label>
+              <label className="wide">
+                SEO title
+                <input
+                  value={form.seoTitle}
+                  onChange={e => setForm(prev => ({ ...prev, seoTitle: forSearchMetadataInput(e.target.value) }))}
+                  onBlur={e => setForm(prev => ({ ...prev, seoTitle: forSearchMetadata(e.target.value) }))}
+                  placeholder={`${form.name || "Category"} Seed | IH Seeds`}
+                />
+                <small>If blank, the public page uses “{form.name || "Category"} Seed | IH Seeds”. Do not use ™ or ®.</small>
+              </label>
+              <label className="wide">
+                Meta description
+                <textarea
+                  value={form.seoDescription}
+                  onChange={e => setForm(prev => ({ ...prev, seoDescription: forSearchMetadataInput(e.target.value) }))}
+                  onBlur={e => setForm(prev => ({ ...prev, seoDescription: forSearchMetadata(e.target.value) }))}
+                  placeholder={form.lead || "Category lead copy is used when this is blank."}
+                  rows={3}
+                />
+                <small>If blank, the public page uses the category lead copy. Plain text only — no ™ or ®.</small>
+              </label>
+              <div className="admin-repeat-group wide">
+                <div className="admin-section-heading">
+                  <div>
+                    <h3>FAQs</h3>
+                    <p>Shown on the public category page above “Also in our catalogue”. Leave blank to hide the section.</p>
+                  </div>
+                  {(form.faqs?.length ?? 0) < MAX_CATEGORY_FAQS && (
+                    <button
+                      className="admin-button outline small"
+                      type="button"
+                      onClick={() => setForm((prev) => ({
+                        ...prev,
+                        faqs: [...(prev.faqs ?? []), { question: "", answer: "" }],
+                      }))}
+                    >
+                      <Icon name="plus" size={16} />
+                      Add FAQ
+                    </button>
+                  )}
+                </div>
+                {(form.faqs ?? []).map((faq, index) => (
+                  <div className="admin-repeat-row admin-repeat-row-faq" key={index}>
+                    <div>
+                      <input
+                        value={faq.question}
+                        onChange={(event) => setForm((prev) => ({
+                          ...prev,
+                          faqs: (prev.faqs ?? []).map((item, itemIndex) =>
+                            itemIndex === index ? { ...item, question: event.target.value } : item,
+                          ),
+                        }))}
+                        placeholder="Question"
+                        maxLength={200}
+                      />
+                      <textarea
+                        value={faq.answer}
+                        onChange={(event) => setForm((prev) => ({
+                          ...prev,
+                          faqs: (prev.faqs ?? []).map((item, itemIndex) =>
+                            itemIndex === index ? { ...item, answer: event.target.value } : item,
+                          ),
+                        }))}
+                        placeholder="Answer"
+                        rows={3}
+                        maxLength={2000}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setForm((prev) => ({
+                        ...prev,
+                        faqs: (prev.faqs ?? []).filter((_, itemIndex) => itemIndex !== index),
+                      }))}
+                      aria-label="Remove FAQ"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {(form.faqs?.length ?? 0) === 0 && <p className="admin-empty-inline">No FAQs added yet.</p>}
+              </div>
+            </>
+          )}
           <label className="wide admin-check-row">
             <input 
               type="checkbox" 
@@ -393,7 +491,7 @@ export default function AdminCategories() {
       <div className="admin-content">
         <div className="admin-notice">
           <Icon name="info" size={20}/>
-          <p>These settings organise catalogue browsing pages only. Root categories use /products/category-slug and subcategories use /products/category-slug/subcategory-slug. A parent with one active child shares the parent page. Individual products use /product/product-slug, managed on each product record.</p>
+          <p>Root categories use /products/category-slug as their public page, edited here. Subcategories group products on that landing page and are not their own URLs. Individual products use /products/category-slug/product-slug, managed on each product record.</p>
         </div>
         
         {error && <div className="admin-notice" style={{ background: "#fef3f2", color: "#b42318" }}>
@@ -410,7 +508,6 @@ export default function AdminCategories() {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {rootCategories.map(root => {
             const children = getChildren(root.id);
-            const activeChildren = children.filter(child => child.active);
             return (
               <div key={root.id} style={{ border: "1px solid #e0e4df", borderRadius: 12, background: "#fff", overflow: "hidden" }}>
                  <div className="admin-taxonomy-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", background: root.active ? "#fff" : "#fafafa", borderBottom: children.length > 0 || addingChildTo === root.id ? "1px solid #edf0ed" : "none" }}>
@@ -458,7 +555,7 @@ export default function AdminCategories() {
                              <div className="admin-taxonomy-meta" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <span style={{ fontSize: 14, fontWeight: 600, color: child.active ? "var(--green)" : "#7b827d" }}>{child.name}</span>
                               {!child.active && <span className="status-pill" style={{ background: "#edf0ed", color: "#7b827d" }}>Inactive</span>}
-                                <span style={{ fontSize: 12, color: "#7b827d" }}>{!child.active || !root.active ? "No category page while inactive" : activeChildren.length === 1 ? `Uses parent page: /products/${root.slug}` : `Category page: /products/${root.slug}/${child.slug}`}</span>
+                              <span style={{ fontSize: 12, color: "#7b827d" }}>Filter only — uses parent category page</span>
                             </div>
                           </div>
                            <div className="admin-taxonomy-actions" style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -471,7 +568,6 @@ export default function AdminCategories() {
                             <CategoryForm 
                               initialData={child}
                                parent={root}
-                              sharesParentPage={child.active && activeChildren.length === 1}
                               onSave={(data) => handleUpdate(child.id, data as CatalogueCategoryUpdate)}
                               onCancel={() => setEditingId(null)}
                             />

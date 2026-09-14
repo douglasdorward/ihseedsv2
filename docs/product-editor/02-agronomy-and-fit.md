@@ -25,8 +25,8 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **Customer website:** Quick facts “Min rainfall” as `{n} mm+`. Category cards (several categories) and comparison table.
 - **Public API:** yes
 - **Purpose:** Lowest annual rainfall the product is recommended for.
-- **How to fill:** Integer millimetres, e.g. `400`.
-- **Constraints:** ≥ 0, integer.
+- **How to fill:** Choose from the dropdown in 50 mm steps from 150 to 800, e.g. `450`. Leave as Not set if unknown.
+- **Constraints:** Editor options 150, 200, … 800. An existing value outside that set stays selectable until changed. API still accepts any integer ≥ 0.
 
 ## Minimum soil pH / Soil pH scale
 
@@ -135,11 +135,11 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **API path:** `details.inoculantGroup`
 - **Workbook:** `1 Products.inoculant_group`
 - **Required:** no
-- **Shown when:** legumes (hidden for Ryegrasses, Fescues & Other Grasses, Sub-Tropical Grasses, Herbs, Mixes, Biologicals)
+- **Shown when:** not shown in the product editor
 - **Customer website:** not shown
 - **Public API:** excluded (admin-only)
 - **Purpose:** Rhizobium group for staff.
-- **How to fill:** None, C, G/S, G, S, AL, AM, B, BS, E, F/E, I.
+- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
 
 ## Disease & pest resistance
 
@@ -179,9 +179,9 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **API path:** `details.notes`
 - **Workbook:** `1 Products.internal_notes`
 - **Required:** no
-- **Shown when:** Biologicals, on this tab, labelled Application notes
+- **Shown when:** not shown in the product editor
 - **Customer website:** not shown
 - **Public API:** excluded (admin-only)
-- **Purpose:** Same storage as Content & publishing → Internal notes. On Biologicals this tab is the convenient place to type staff application reminders. Customers never see it.
-- **How to fill:** Do not put public application rates here; that is Category-specific → Application rate.
+- **Purpose:** Same storage as Content & publishing → Internal notes. Staff application reminders. Customers never see it.
+- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field. Do not put public application rates here; that is Category-specific → Application rate.
 - **Constraints:** max 2000 characters.

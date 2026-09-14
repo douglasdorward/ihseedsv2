@@ -12,8 +12,10 @@ import {
   reorderCatalogueCategoriesSchema,
   updateCatalogueCategorySchema,
 } from "@workspace/db";
+import { CATALOGUE_INDEX_PATH, productPublicPath } from "../lib/product-path";
 
 const router: IRouter = Router();
+const RESERVED_ROOT_SLUGS = new Set(["categories"]);
 
 function validId(rawId: string) {
   const id = Number(rawId);
@@ -41,10 +43,14 @@ function categoryPath(category: CategoryRow, categories: CategoryRow[]) {
   if (category.parentId === null) return `/products/${category.slug}`;
   const parent = categories.find((item) => item.id === category.parentId);
   if (!parent?.active) return null;
-  const activeChildren = categories.filter((item) => item.parentId === parent.id && item.active);
-  return activeChildren.length === 1
-    ? `/products/${parent.slug}`
-    : `/products/${parent.slug}/${category.slug}`;
+  return `/products/${parent.slug}`;
+}
+
+function nestedChildPath(category: CategoryRow, categories: CategoryRow[]) {
+  if (category.parentId === null) return null;
+  const parent = categories.find((item) => item.id === category.parentId);
+  if (!parent) return null;
+  return `/products/${parent.slug}/${category.slug}`;
 }
 
 function categoryRedirectFallback(category: CategoryRow, categories: CategoryRow[]) {
@@ -52,7 +58,14 @@ function categoryRedirectFallback(category: CategoryRow, categories: CategoryRow
     const parent = categories.find((item) => item.id === category.parentId);
     if (parent?.active) return `/products/${parent.slug}`;
   }
-  return "/products";
+  return CATALOGUE_INDEX_PATH;
+}
+
+function reservedRootSlugError(parentId: number | null, slug: string) {
+  if (parentId === null && RESERVED_ROOT_SLUGS.has(slug)) {
+    return `"${slug}" is reserved for the catalogue index.`;
+  }
+  return null;
 }
 
 function withPlainSearchMetadata<T extends { seoTitle?: string; seoDescription?: string }>(data: T): T {
@@ -68,16 +81,21 @@ async function preserveCategoryRedirects(
   before: CategoryRow[],
   after: CategoryRow[],
 ) {
-  // A root rename affects all child paths. Activating, deactivating, or moving
-  // a child can also switch its siblings into or out of the shared parent URL.
   for (const oldCategory of before) {
     const newCategory = after.find((category) => category.id === oldCategory.id);
-    const fromPath = categoryPath(oldCategory, before);
     const toPath = newCategory
       ? categoryPath(newCategory, after) ?? categoryRedirectFallback(newCategory, after)
       : categoryRedirectFallback(oldCategory, after);
-    if (fromPath && toPath && fromPath !== toPath) {
-      await tx.insert(redirectsTable).values({ fromPath, toPath })
+    if (oldCategory.parentId === null) {
+      const fromPath = categoryPath(oldCategory, before);
+      if (fromPath && toPath && fromPath !== toPath) {
+        await tx.insert(redirectsTable).values({ fromPath, toPath })
+          .onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath, updatedAt: new Date() } });
+      }
+    }
+    const nestedFrom = nestedChildPath(oldCategory, before);
+    if (nestedFrom && toPath && nestedFrom !== toPath) {
+      await tx.insert(redirectsTable).values({ fromPath: nestedFrom, toPath })
         .onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath, updatedAt: new Date() } });
     }
   }
@@ -141,6 +159,11 @@ router.post("/admin/categories", async (req, res): Promise<void> => {
     res.status(400).json({ error: parentError });
     return;
   }
+  const reservedSlugError = reservedRootSlugError(parsed.data.parentId, parsed.data.slug);
+  if (reservedSlugError) {
+    res.status(400).json({ error: reservedSlugError });
+    return;
+  }
   try {
     let values = parsed.data;
     if (values.parentId !== null) {
@@ -188,14 +211,17 @@ router.patch("/admin/categories/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: parentError });
     return;
   }
+  const requestedSlug = parsed.data.slug === undefined ? existing.slug : parsed.data.slug;
+  const reservedSlugError = reservedRootSlugError(parentId, requestedSlug);
+  if (reservedSlugError) {
+    res.status(400).json({ error: reservedSlugError });
+    return;
+  }
   try {
     const category = await db.transaction(async (tx) => {
       const before = await tx.select().from(catalogueCategoriesTable);
       const parent = parentId === null ? null : before.find((category) => category.id === parentId);
       if (parentId !== null && !parent) throw new Error("PARENT_CATEGORY_NOT_FOUND");
-      const requestedSlug = parsed.data.slug === undefined
-        ? existing.slug
-        : parsed.data.slug;
       const slug = parent ? normalizedChildSlug(parent.slug, requestedSlug) : requestedSlug;
       if (!slug) throw new Error("EMPTY_CHILD_SLUG");
       const [updated] = await tx.update(catalogueCategoriesTable)
@@ -232,8 +258,18 @@ router.patch("/admin/categories/:id", async (req, res): Promise<void> => {
           ? updated
           : after.find((category) => category.id === updated.parentId);
         if (!destinationRoot) throw new Error("PARENT_CATEGORY_NOT_FOUND");
+        const assignedProducts = await tx.select().from(productsTable)
+          .where(eq(productsTable.subcategoryId, id));
         await tx.update(productsTable).set({ category: destinationRoot.name, updatedAt: new Date() })
           .where(eq(productsTable.subcategoryId, id));
+        for (const product of assignedProducts) {
+          const fromPath = productPublicPath(product.slug, product.category, before);
+          const toPath = productPublicPath(product.slug, destinationRoot.name, after);
+          if (fromPath !== toPath) {
+            await tx.insert(redirectsTable).values({ fromPath, toPath })
+              .onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath, updatedAt: new Date() } });
+          }
+        }
         const drafts = await tx.select().from(productDraftsTable);
         await Promise.all(drafts
           .filter((draft) => draft.snapshot.subcategoryId === id)
