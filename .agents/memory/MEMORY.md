@@ -12,3 +12,4 @@
 - [Legacy product URLs](legacy-product-urls.md) — keep one canonical old-site URL on each product; preserve additional historical aliases in the redirect map.
 - [Category URL transitions](category-url-transitions.md) — every formerly public taxonomy path must redirect, including deactivation and cross-parent moves.
 - [Cache freshness regressions](cache-freshness-regressions.md) — prime cached content before a mutation when testing that published changes become visible immediately.
+- [Git reconciliation safety](git-reconciliation-safety.md) — use normal fetch/merge or pull for concurrent GitHub work; never reconstruct overlapping commits through the API.
