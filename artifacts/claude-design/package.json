@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/react": "6.15.2",
+    "@clerk/themes": "^2.4.0",
     "@tanstack/react-query": "catalog:",
     "@workspace/api-client-react": "workspace:*",
     "react": "^18.3.1",

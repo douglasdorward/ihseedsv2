@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "export NODE_ENV=development VITE_ADMIN_DEV_AUTO_SIGN_IN=1 && pnpm --filter @workspace/claude-design run build && pnpm run build && pnpm run start",
-    "build": "node ./scripts/generate-static-media-usage.mjs && node ./build.mjs",
+    "build": "node ./build.mjs",
     "start": "pnpm --filter @workspace/db run seed && pnpm run backfill:media && node --enable-source-maps ./dist/index.mjs",
     "backfill:media": "tsx ./scripts/backfill-media-library.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",

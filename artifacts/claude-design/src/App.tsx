@@ -7,15 +7,16 @@ import {
   useAuth,
   useClerk,
 } from "@clerk/react";
-import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadesOfPurple } from "@clerk/themes";
 import Admin from "./pages/Admin";
 import { navigate, useLocation } from "./router";
 
-const clerkPubKey = publishableKeyFromHost(
-  window.location.hostname,
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
-);
+function readClerkPublishableKey() {
+  const key = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+  return typeof key === "string" && /^pk_(test|live)_/.test(key) ? key : "";
+}
+
+const clerkPubKey = readClerkPublishableKey();
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -96,6 +97,57 @@ function AccessDenied() {
         </button>
       </section>
     </main>
+  );
+}
+
+function DevelopmentAdminGate() {
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    document.title = "Admin — IH Seeds";
+    let active = true;
+    fetch("/api/auth/session", { credentials: "include", cache: "no-store" })
+      .then(async (response) => {
+        const body = await response.json().catch(() => ({}));
+        if (active) {
+          setSession({ ...body, authorized: response.ok && body.authorized === true });
+        }
+      })
+      .catch(() => {
+        if (active) setSession({ signedIn: false, authorized: false });
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return <main className="admin-auth-page"><div className="admin-auth-loading">Checking administrator access…</div></main>;
+  }
+  if (!session?.authorized) {
+    return (
+      <main className="admin-auth-page">
+        <section className="admin-access-card">
+          <h1>Admin API unavailable</h1>
+          <p>Start the local API on port 8080 with NODE_ENV=development, then refresh.</p>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <>
+      {session.developmentBypass ? (
+        <div className="admin-development-banner" role="status">
+          Development auto-sign-in · Administrator
+        </div>
+      ) : null}
+      <Admin />
+    </>
   );
 }
 
@@ -180,6 +232,9 @@ function AdminGate() {
 }
 
 export default function App() {
+  if (!clerkPubKey) {
+    return <DevelopmentAdminGate />;
+  }
   return (
     <ClerkProvider
       publishableKey={clerkPubKey}

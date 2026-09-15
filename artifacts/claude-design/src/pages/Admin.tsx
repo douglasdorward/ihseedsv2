@@ -1,23 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Icon, StatusPill } from "../components/ui";
-import { navigate, registerNavigationBlocker, useLocation } from "../router";
+import { AlsoPopularPicker } from "../components/AlsoPopularPicker";
+import { ProductPageEditor } from "../components/ProductPageEditor";
+import { FillFromPdf } from "../components/FillFromPdf";
+import AdminTechSheets from "./AdminTechSheets";
+import { fetchTechSheetItem } from "../ai-fill";
+import { isAlsoPopularEligible } from "../also-popular";
+import { navigate, useLocation } from "../router";
 import AdminCategories from "./AdminCategories";
-import AdminImages from "./AdminImages";
 import AdminAdministrators from "./AdminAdministrators";
-import ImagePickerModal from "../components/ImagePickerModal";
-import { DuplicateUploadCancelledError, mediaAssetPreviewSource, mediaAssetSource, useUploadMediaFlow, MediaAsset } from "../hooks/use-media";
-import {
-  applyProductPhotoUpdate,
-  assertProductPhotoStatePersisted,
-  createEditorPhotoId,
-  editorPhotoKey,
-  hasPendingProductPhotoUpload,
-  nextPhotoStorageSlot,
-  persistLatestProductAndPublish,
-  photoStorageSlot,
-  productForPhotoComparison,
-  productPhotosForSave,
-} from "../persist-latest-product";
+import { persistLatestProductAndPublish } from "../persist-latest-product";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListAdminProducts,
@@ -42,6 +34,7 @@ import type {
   AdminProduct,
   ProductDetails,
   ProductComponent,
+  ProductFaq,
   ProductPhoto,
   ProductPackSize,
   ProductSowingRate,
@@ -59,10 +52,22 @@ import type {
   ProductListingState
 } from "@workspace/api-client-react";
 import "../admin-v2.css";
-import "../admin-images.css";
+
+function forSearchMetadataInput(value: string) {
+  return value.replace(/[™®]/g, "").replace(/\s{2,}/g, " ").replace(/\s+([,.;:!?])/g, "$1");
+}
 
 function forSearchMetadata(value: string) {
-  return value.replace(/[™®]/g, "").replace(/\s{2,}/g, " ").replace(/\s+([,.;:!?])/g, "$1").trim();
+  return forSearchMetadataInput(value).trim();
+}
+
+function h1EditorValue(name: string, h1?: string) {
+  return h1?.trim() ? h1 : name;
+}
+
+function h1StoredValue(name: string, value: string) {
+  const trimmed = value.trim();
+  return !trimmed || trimmed === name.trim() ? "" : value;
 }
 
 type ProductStatus = "in-stock" | "low" | "very-low" | "unavailable";
@@ -76,9 +81,6 @@ type PublishIssueKey =
   | "details.blurb"
   | "details.keyAttributes"
   | "details.description"
-  | "details.photos"
-  | "details.photos.alt"
-  | "details.photos.metadata"
   | "details.seoTitle"
   | "details.seoDescription"
   | "saleLines.default"
@@ -90,6 +92,18 @@ type PublishIssue = {
   tab: number;
   message: string;
 };
+
+const RAINFALL_MIN_MM_OPTIONS = Array.from(
+  { length: Math.floor((800 - 150) / 50) + 1 },
+  (_, i) => 150 + i * 50,
+);
+
+function rainfallMinMmOptions(current: number | null | undefined) {
+  if (current == null || RAINFALL_MIN_MM_OPTIONS.includes(current)) {
+    return RAINFALL_MIN_MM_OPTIONS;
+  }
+  return [...RAINFALL_MIN_MM_OPTIONS, current].sort((a, b) => a - b);
+}
 
 const OPTS = {
   ploidy: ["", "Diploid", "Tetraploid", "Hexaploid", "Mixed (blend)"],
@@ -104,7 +118,6 @@ const OPTS = {
   regrowth: ["", "Single cut", "Multi-cut / regrazes"],
   productForm: ["", "Powder", "Liquid", "Peat", "Granule"],
   seedForm: ["", "Bare / de-hulled", "Podded", "Coated", "Coated + Gaucho", "BioNPK-S coated", "Goldstrike coated", "Scarified", "Lime coated"],
-  seedGrade: ["", "Certified", "Tested", "Certified & Tested", "VNS"],
   availability: ["Good stock", "Low stock", "Very low", "Unavailable"],
   availabilityOverride: ["", "Good stock", "Low stock", "Very low", "Unavailable"]
 };
@@ -176,9 +189,15 @@ const blankProduct: ProductInput = {
     distributionNote: "",
     notes: "",
     components: [],
+    faqs: [],
     formulationYear: "",
-    photos: [],
+    photos: [
+      { slot: "Photo 1 · Hero", file: "", rating: "", src: "" },
+      { slot: "Photo 2", file: "", rating: "", src: "" },
+      { slot: "Photo 3", file: "", rating: "", src: "" },
+    ],
     inCurrentPrintedGuide: false,
+    h1: "",
     seoTitle: "",
     seoDescription: "",
     socialTitle: "",
@@ -212,29 +231,6 @@ const statusOptions: { value: ProductStatus; label: string }[] = [
   { value: "unavailable", label: "Unavailable" },
 ];
 
-function photosForEditor(value: ProductPhoto[] | undefined) {
-  const usedKeys = new Set<string>();
-  return (value ?? [])
-    .filter((photo) => Boolean(photo.src?.trim() || photo.objectPath?.trim()))
-    .map((photo, index) => {
-      // Older records used the display slot to denote Hero. Convert it once on
-      // load so a later Hero choice cannot leave two visually selected photos.
-      const withRole = {
-        ...photo,
-        role: photo.role ?? (photo.slot?.includes("Hero") ? "hero" : undefined),
-      };
-      if (withRole.assetId) {
-        withRole._previewURL = `/api/admin/media/${withRole.assetId}/preview`;
-      }
-      const baseKey = editorPhotoKey(withRole, index);
-      let editorId = baseKey;
-      let suffix = 2;
-      while (usedKeys.has(editorId)) editorId = `${baseKey}:${suffix++}`;
-      usedKeys.add(editorId);
-      return { ...withRole, _editorId: editorId };
-    });
-}
-
 const formatDate = (value: string | null | undefined) => {
   if (!value) return "Never";
   const date = new Date(value);
@@ -245,30 +241,6 @@ const formatDate = (value: string | null | undefined) => {
 
 function getPublishIssues(form: any): PublishIssue[] {
   const saleLines = form.saleLines ?? [];
-  const managedPhotos = (form.details?.photos ?? []).filter((photo: ProductPhoto) => Boolean(photo.objectPath?.trim()));
-  const managedPhotoPath = /^\/objects\/product-images\/([a-z0-9-]+)\/([a-z0-9-]+)-([a-f0-9]{12,64})-full\.webp$/;
-  const invalidManagedPhoto = managedPhotos.some((photo: ProductPhoto) => {
-    // Library assets deliberately use their immutable media object path rather
-    // than the legacy responsive product-image path. Their canonical delivery
-    // URL is /api/media/:id and no stale legacy srcSet may be retained.
-    if (photo.assetId) {
-      const legacySource = managedPhotoPath.test(photo.objectPath ?? "")
-        ? `/api/storage${photo.objectPath}` : undefined;
-      return (photo.src !== `/api/media/${photo.assetId}` && photo.src !== legacySource)
-        || !photo.width || !photo.height || !photo.format;
-    }
-    const matched = photo.objectPath?.match(managedPhotoPath);
-    if (!matched) return true;
-    const [, slug, slot, version] = matched;
-    const base = `/api/storage/objects/product-images/${slug}/${slot}-${version}`;
-    return slug !== form.slug
-      || photo.src !== `${base}-full.webp`
-      || !photo.srcSet?.includes(`${base}-card.webp 800w`)
-      || !photo.srcSet?.includes(`${base}-full.webp 1600w`)
-      || photo.format !== "webp"
-      || !photo.width
-      || !photo.height;
-  });
   return [
     !form.name?.trim() && { key: "name", label: "Product name", tab: 1, message: "Enter a product name." },
     !form.slug?.trim() && { key: "slug", label: "Slug", tab: 1, message: "Enter a URL slug." },
@@ -278,12 +250,6 @@ function getPublishIssues(form: any): PublishIssue[] {
     !form.details?.blurb?.trim() && { key: "details.blurb", label: "Blurb", tab: 5, message: "Enter a blurb before publishing." },
     !(form.details?.keyAttributes ?? []).some((attribute: string) => attribute.trim()) && { key: "details.keyAttributes", label: "Key attributes", tab: 5, message: "Add at least one key attribute." },
     !form.details?.description?.trim() && { key: "details.description", label: "Product description", tab: 5, message: "Enter a product description." },
-    managedPhotos.length > 0 && !managedPhotos.some((photo: ProductPhoto) => photo.role === "hero" && Boolean(photo.src?.trim()))
-      && { key: "details.photos", label: "A usable hero product photo", tab: 5, message: "Choose a managed photo as the Hero image." },
-    managedPhotos.some((photo: ProductPhoto) => !photo.alt?.trim())
-      && { key: "details.photos.alt", label: "Meaningful alt text for App Storage photos", tab: 5, message: "Add meaningful Alt text to every uploaded photo." },
-    invalidManagedPhoto
-      && { key: "details.photos.metadata", label: "Valid App Storage photo metadata", tab: 5, message: "Replace the affected upload so its responsive image details can be regenerated." },
     !form.details?.seoTitle?.trim() && { key: "details.seoTitle", label: "SEO title", tab: 6, message: "Enter an SEO title before publishing." },
     !form.details?.seoDescription?.trim() && { key: "details.seoDescription", label: "SEO description", tab: 6, message: "Enter an SEO description before publishing." },
     saleLines.length > 0 && saleLines.filter((line: any) => line.isDefault).length !== 1 && { key: "saleLines.default", label: "Exactly one default sale line", tab: 4, message: "Choose exactly one default sale line." },
@@ -394,7 +360,7 @@ function getTabFields(tab: number, form: any) {
     if (isFescue || isSubTropical) f.push("details.growthSeason");
     if (isForage) f.push("details.growingSeason", "details.weeksToFirstGrazing", "details.prussicAcidRisk", "details.regrowth");
     if (isMix) f.push("details.floweringWindow", "details.formulationYear", "details.components");
-    if (isBio) f.push("details.productForm", "details.applicationRate", "details.ecocertApproved");
+    if (isBio) f.push("details.productForm", "details.applicationRate");
     return f;
   }
   if (tab === 4) {
@@ -423,6 +389,10 @@ function getFieldHasValue(form: any, field: string) {
 }
 
 const MIX_COMPONENT_UNITS = ["%", "kg/ha", "g/ha", "kg"];
+const PRODUCT_FAQ_LIMIT = 10;
+const PRODUCT_FAQ_QUESTION_MAX = 180;
+const PRODUCT_FAQ_ANSWER_MAX = 4000;
+const emptyProductFaq: ProductFaq = { question: "", answer: "" };
 
 function mixComponentFieldIssues(
   component: ProductComponent,
@@ -447,6 +417,17 @@ function mixComponentFieldIssues(
   if (unit.length > 20) issues.unit = "Unit must be 20 characters or fewer.";
   if (component.description.length > 10000) issues.description = "Description must be 10,000 characters or fewer.";
   if (component.note.length > 4000) issues.note = "Internal note must be 4,000 characters or fewer.";
+  return issues;
+}
+
+function faqFieldIssues(faq: ProductFaq) {
+  const issues: Partial<Record<"question" | "answer", string>> = {};
+  const question = faq.question.trim();
+  const answer = faq.answer.trim();
+  if (!question && answer) issues.question = "Add a question for this FAQ.";
+  else if (faq.question.length > PRODUCT_FAQ_QUESTION_MAX) issues.question = "Question must be 180 characters or fewer.";
+  if (!answer && question) issues.answer = "Add an answer for this FAQ.";
+  else if (faq.answer.length > PRODUCT_FAQ_ANSWER_MAX) issues.answer = "Answer must be 4,000 characters or fewer.";
   return issues;
 }
 
@@ -585,9 +566,8 @@ function AdminLayout({ children, mobileOpen, setMobileOpen }: { children: ReactN
   const nav = [
     { label: "Dashboard", icon: "dashboard", href: "/admin", enabled: true },
     { label: "Products & mixes", icon: "sprout", href: "/admin/products", enabled: true },
-    { label: "Images", icon: "image", href: "/admin/images", enabled: true },
     { label: "Administrators", icon: "users", href: "/admin/administrators", enabled: true },
-    { label: "Tech sheets", icon: "file-text", href: "", enabled: false },
+    { label: "Tech sheets", icon: "file-text", href: "/admin/tech-sheets", enabled: true },
     { label: "Site settings", icon: "settings", href: "", enabled: false },
   ];
 
@@ -696,6 +676,7 @@ function Dashboard() {
             ) : <div className="admin-empty">Everything is up to date.</div>}
           </section>
           <section className="admin-panel admin-quick-panel">
+            <div><span className="admin-feature-icon"><Icon name="file-text" size={24}/></span><h2>Fill from PDFs</h2><p>Upload tech sheets, match them to products, then review suggested fields in the editor. Nothing publishes automatically.</p><button className="admin-button outline" onClick={() => navigate("/admin/tech-sheets")}>Open tech sheets</button></div>
             <div><span className="admin-feature-icon"><Icon name="sprout" size={24}/></span><h2>Bulk stock update</h2><p>Select multiple products and change their availability in one action.</p><button className="admin-button outline" onClick={() => navigate("/admin/products")}>Open the product table</button></div>
             <div><h2>Recently updated</h2>{summary?.recentProducts.slice(0, 4).map((product) => <button key={product.id} onClick={() => navigate(`/admin/products/${product.id}`)}><span><strong>{product.name}</strong><small>{product.category}</small></span><small>{formatDate(product.updatedAt)}</small></button>)}</div>
           </section>
@@ -920,13 +901,44 @@ function ProductTable() {
     setSaving(true);
     setMessage("");
     try {
-      await Promise.all(selected.map((id) => updateProduct.mutateAsync({ id, data: { status: bulkStatus } })));
+      const selectedIds = [...selected];
+      const beforeRows = selectedIds.map((id) => {
+        const product = products.find((item) => item.id === id);
+        return product ? { id, status: product.status, override: product.availabilityOverride ?? null, saleAvails: (product.saleLines ?? []).map((line) => line.availability), listingState: getListingState(product), derived: getDerivedAvailability(product), hasDraft: product.hasDraft, lifecycle: product.lifecycleStatus } : { id };
+      });
+      // #region agent log
+      fetch('http://127.0.0.1:7761/ingest/6b558af6-c042-43cf-8773-ba4a610de515',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'982dff'},body:JSON.stringify({sessionId:'982dff',runId:'pre-fix',hypothesisId:'A',location:'Admin.tsx:applyBulk:start',message:'Bulk stock apply started',data:{bulkStatus,selectedIds,beforeRows},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      const patchResults = await Promise.all(selectedIds.map(async (id) => {
+        try {
+          const result = await updateProduct.mutateAsync({ id, data: { status: bulkStatus } });
+          return { id, ok: true, status: (result as { status?: string }).status, override: (result as { availabilityOverride?: string | null }).availabilityOverride ?? null, keys: Object.keys(result ?? {}) };
+        } catch (error) {
+          return { id, ok: false, error: error instanceof Error ? error.message : String(error) };
+        }
+      }));
+      // #region agent log
+      fetch('http://127.0.0.1:7761/ingest/6b558af6-c042-43cf-8773-ba4a610de515',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'982dff'},body:JSON.stringify({sessionId:'982dff',runId:'pre-fix',hypothesisId:'C',location:'Admin.tsx:applyBulk:patches',message:'Bulk PATCH results',data:{bulkStatus,patchResults},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      const failed = patchResults.filter((item) => !item.ok);
+      if (failed.length) throw new Error(failed[0]?.error || "Unable to update stock.");
       await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey() });
       await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
+      const refreshed = queryClient.getQueryData(getListAdminProductsQueryKey()) as AdminProduct[] | undefined;
+      const afterRows = selectedIds.map((id) => {
+        const product = refreshed?.find((item) => item.id === id);
+        return product ? { id, status: product.status, override: product.availabilityOverride ?? null, saleAvails: (product.saleLines ?? []).map((line) => line.availability), listingState: getListingState(product), derived: getDerivedAvailability(product), hasDraft: product.hasDraft, lifecycle: product.lifecycleStatus } : { id, missing: true };
+      });
+      // #region agent log
+      fetch('http://127.0.0.1:7761/ingest/6b558af6-c042-43cf-8773-ba4a610de515',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'982dff'},body:JSON.stringify({sessionId:'982dff',runId:'pre-fix',hypothesisId:'B',location:'Admin.tsx:applyBulk:after',message:'List cache after invalidate',data:{bulkStatus,cacheCount:refreshed?.length ?? 0,afterRows,derivedChanged:afterRows.some((row, index) => 'derived' in row && 'derived' in beforeRows[index] && row.derived !== beforeRows[index].derived)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       setSelected([]);
       setMessageTone("success");
       setMessage("Stock statuses updated.");
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7761/ingest/6b558af6-c042-43cf-8773-ba4a610de515',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'982dff'},body:JSON.stringify({sessionId:'982dff',runId:'pre-fix',hypothesisId:'E',location:'Admin.tsx:applyBulk:error',message:'Bulk stock apply failed',data:{error:error instanceof Error ? error.message : String(error)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       setMessageTone("error");
       setMessage(error instanceof Error ? stripHttpErrorPrefix(error.message) : "Unable to update stock.");
     } finally {
@@ -1081,420 +1093,6 @@ function ProductTable() {
   );
 }
 
-function ProductPhotoEditor({
-  photos,
-  onChange,
-  productSlug,
-  socialImage,
-  onSocialImageChange,
-  onUploadError,
-  disabled,
-  onUploadCountChange,
-}: {
-  photos: any[];
-  onChange: (photos: any[] | ((current: any[]) => any[])) => void;
-  productSlug: string;
-  socialImage: string;
-  onSocialImageChange: (url: string) => void;
-  onUploadError: (message: string) => void;
-  disabled: boolean;
-  onUploadCountChange: (delta: 1 | -1) => void;
-}) {
-  const [previewingPhoto, setPreviewingPhoto] = useState<number | null>(null);
-  const [pickerIndex, setPickerIndex] = useState<number | null>(null);
-  const lastFocusedRef = useRef<HTMLElement | null>(null);
-  const uploadInputRefs = useRef(new Map<string, HTMLInputElement>());
-  const focusUploadIdRef = useRef<string | null>(null);
-  const socialImageRef = useRef(socialImage);
-  socialImageRef.current = socialImage;
-  const uploadFlow = useUploadMediaFlow();
-
-  useEffect(() => {
-    if (previewingPhoto === null && lastFocusedRef.current) {
-      lastFocusedRef.current.focus();
-      lastFocusedRef.current = null;
-    }
-  }, [previewingPhoto]);
-
-  useEffect(() => {
-    const editorId = focusUploadIdRef.current;
-    if (!editorId) return;
-    const input = uploadInputRefs.current.get(editorId);
-    if (input) {
-      input.focus();
-      focusUploadIdRef.current = null;
-    }
-  }, [photos]);
-
-  const handleFile = async (index: number, file: File) => {
-    if (disabled) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      alert("Choose a JPEG, PNG, or WebP image.");
-      return;
-    }
-    if (file.size > 12 * 1024 * 1024) {
-      alert("File exceeds 12MB limit.");
-      return;
-    }
-    const uploadId = crypto.randomUUID();
-    const previewURL = URL.createObjectURL(file);
-    let previousPhoto: any = null;
-    onUploadCountChange(1);
-    onUploadError("");
-
-    onChange(current => {
-      const updated = [...current];
-      previousPhoto = updated[index] ? { ...updated[index] } : null;
-      updated[index] = {
-        ...updated[index],
-        _uploadId: uploadId,
-        _uploading: true,
-        _progress: 0,
-        src: previewURL,
-        file: file.name,
-      };
-      if (!updated[index].role && index === 0) updated[index].role = "hero";
-      return updated;
-    });
-
-    try {
-      const asset = await uploadFlow.mutateAsync({
-        file,
-        onProgress: (pct) => {
-          onChange(current => current.map((photo) => photo._uploadId === uploadId ? { ...photo, _progress: pct } : photo));
-        },
-        onDuplicate: async (dupAsset) => (
-          window.confirm(`File "${file.name}" is already in the library as "${dupAsset.originalFilename}".\n\nClick OK to reuse the ready image, or Cancel to leave this file unuploaded.`)
-            ? "reuse"
-            : "cancel"
-        ),
-      });
-      handleAssetSelection(index, asset, uploadId, previousPhoto);
-    } catch (e) {
-      const reason = e instanceof Error ? stripHttpErrorPrefix(e.message) : "The upload service did not accept the image.";
-      onUploadError(e instanceof DuplicateUploadCancelledError
-        ? `Duplicate upload cancelled for ${file.name}.`
-        : `Unable to upload ${file.name}. ${reason}`);
-      onChange(current => {
-        const targetIndex = current.findIndex((photo) => photo._uploadId === uploadId);
-        // The user may move, replace, or remove a card while the request is in
-        // flight. Restore only that stable upload card, never its old index.
-        if (targetIndex === -1) return current;
-        const next = [...current];
-        if (previousPhoto) next[targetIndex] = previousPhoto;
-        else next.splice(targetIndex, 1);
-        return next;
-      });
-    } finally {
-      URL.revokeObjectURL(previewURL);
-      onUploadCountChange(-1);
-    }
-  };
-
-  const handleAssetSelection = (index: number, asset: MediaAsset, uploadId?: string, previousPhoto?: any) => {
-    let isNowSocial = false;
-    let finalSrc = "";
-    onChange(current => {
-      const next = [...current];
-      const targetIndex = uploadId ? next.findIndex(p => p._uploadId === uploadId) : index;
-      if (targetIndex === -1 && uploadId) return current;
-
-      const actualIndex = targetIndex !== -1 ? targetIndex : index;
-      if (actualIndex >= next.length) {
-        next[actualIndex] = { role: actualIndex === 0 ? "hero" : undefined };
-      }
-
-      const prev = previousPhoto || (next[actualIndex] ? { ...next[actualIndex] } : null);
-      const newSrc = mediaAssetSource(asset);
-      if (!newSrc) return current;
-      finalSrc = newSrc;
-
-      isNowSocial = prev?.src === socialImageRef.current
-        || Boolean(prev?.social && !socialImageRef.current)
-        || (!socialImageRef.current && next[actualIndex].role === "hero");
-
-      const {
-        objectPath: _previousObjectPath,
-        srcSet: _previousSrcSet,
-        sizes: _previousSizes,
-        ...replacement
-      } = next[actualIndex];
-      next[actualIndex] = {
-        ...replacement,
-        assetId: asset.id,
-        src: newSrc,
-        ...(asset.objectPath ? { objectPath: asset.objectPath } : {}),
-        _previewURL: mediaAssetPreviewSource(asset) ?? undefined,
-        alt: replacement.alt || asset.defaultAlt,
-        title: replacement.title || asset.defaultCaption,
-        width: asset.width || undefined,
-        height: asset.height || undefined,
-        format: asset.contentType?.split("/")[1] || 'jpeg',
-        social: isNowSocial,
-        _uploading: false,
-        _progress: 100,
-        _newlyUploaded: true,
-      };
-      delete next[actualIndex]._uploadId;
-
-      return next;
-    });
-    if (isNowSocial) onSocialImageChange(finalSrc);
-
-
-  };
-
-  const handleRemove = (index: number) => {
-    const photo = photos[index];
-    onChange(current => {
-      const next = [...current];
-      next.splice(index, 1);
-      return next;
-    });
-    if (photo && photo.src && photo.src === socialImage) {
-      onSocialImageChange("");
-    }
-  };
-
-  const addPhoto = () => {
-    const editorId = createEditorPhotoId();
-    focusUploadIdRef.current = editorId;
-    onChange(current => [
-      ...current,
-      {
-        _editorId: editorId,
-        slot: nextPhotoStorageSlot(current),
-        file: "",
-        rating: "",
-        src: "",
-      },
-    ]);
-  };
-
-  const setHero = (index: number) => {
-    onChange(current => current.map((p, i) => ({ ...p, role: i === index ? 'hero' : 'gallery' })));
-  };
-
-  const movePhoto = (index: number, dir: -1 | 1) => {
-    onChange(current => {
-      if (index + dir < 0 || index + dir >= current.length) return current;
-      const next = [...current];
-      const temp = next[index];
-      next[index] = next[index + dir];
-      next[index + dir] = temp;
-      return next;
-    });
-  };
-
-  return (
-    <div className="admin-photo-list">
-      {photos.map((photo, i) => {
-        const isSocial = Boolean(photo.src && (
-          photo.src === socialImage
-          || (!socialImage && photo.social)
-        ));
-        const isHero = photo.role === 'hero';
-        const editorId = editorPhotoKey(photo, i);
-        return (
-          <div key={editorId} className={`admin-photo-row${photo.src ? "" : " is-empty"}`} data-testid={`photo-card-${i}`}>
-            <div className="admin-photo-preview">
-              {photo.src ? (
-                <>
-                  <button
-                    type="button"
-                    className="admin-photo-thumbnail-button"
-                    aria-label={`View full-size ${photo.alt || `photo ${i + 1}`}`}
-                    onClick={(event) => {
-                      lastFocusedRef.current = event.currentTarget;
-                      setPreviewingPhoto(i);
-                    }}
-                  >
-                      <img
-                        src={photo._previewURL || photo.src}
-                      alt={photo.alt || photo.file}
-                      onError={(event) => {
-                        event.currentTarget.onerror = null;
-                        event.currentTarget.src = "/admin/product-placeholder.png";
-                      }}
-                    />
-                    <span className="admin-photo-zoom-hint"><Icon name="zoom-in" size={15} /> View larger</span>
-                  </button>
-                  {photo._uploading && (
-                    <div className="admin-photo-progress-bar" style={{ width: `${photo._progress}%` }} />
-                  )}
-                </>
-              ) : (
-                <div className="admin-photo-empty-actions">
-                  <label className="admin-button outline" style={{ margin: 0 }}>
-                    <Icon name="upload" size={16} /> Upload image
-                    <input
-                      ref={(input) => {
-                        if (input) uploadInputRefs.current.set(editorId, input);
-                        else uploadInputRefs.current.delete(editorId);
-                      }}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      disabled={disabled}
-                      style={{ display: "none" }}
-                      onChange={e => e.target.files?.[0] && handleFile(i, e.target.files[0])}
-                      data-testid={`input-photo-${i}`}
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    className="admin-button ghost"
-                    disabled={disabled}
-                    onClick={() => setPickerIndex(i)}
-                  >
-                    <Icon name="image" size={16} /> Choose from library
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="admin-photo-actions">
-              <div className="admin-photo-row-heading">
-                <div>
-                  <strong>{`Photo ${i + 1}`}</strong>
-                  {photo._uploading && <span className="admin-photo-state">Uploading… {Math.round(photo._progress || 0)}%</span>}
-                  {photo._newlyUploaded && !photo._uploading && (
-                    <span className="admin-photo-state pending" role="status">Uploaded. Publish this product to attach the image to the saved live product.</span>
-                  )}
-                </div>
-                {!photo._uploading && (
-                  <div className="admin-photo-source-actions">
-                    {photo.src && (
-                      <label className="admin-button outline">
-                        Replace image
-                        <input className="admin-visually-hidden" aria-label={`Replace ${photo.alt || photo.file || `photo ${i + 1}`}`} type="file" accept="image/jpeg,image/png,image/webp" disabled={disabled} onChange={e => e.target.files?.[0] && handleFile(i, e.target.files[0])} />
-                      </label>
-                    )}
-                    {photo.src && (
-                      <button type="button" className="admin-button ghost" disabled={disabled} onClick={() => setPickerIndex(i)}>
-                        Choose from library
-                      </button>
-                    )}
-                    <button type="button" className="admin-button ghost admin-button-danger" aria-label={`Remove photo ${i + 1}`} onClick={() => handleRemove(i)}>
-                      Remove photo
-                    </button>
-                  </div>
-                )}
-              </div>
-              {photo.src && (
-                <div className="admin-photo-metadata">
-                  <label>
-                    <span>Alt text</span>
-                    <input
-                      type="text"
-                      maxLength={300}
-                      value={photo.alt || ""}
-                      placeholder="Describe the image"
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        onChange(current => current.map((item, index) => index === i ? { ...item, alt: value } : item));
-                      }}
-                      data-testid={`input-alt-${i}`}
-                    />
-                  </label>
-                  <label>
-                    <span>Caption</span>
-                    <input
-                      type="text"
-                      maxLength={300}
-                      value={photo.title || ""}
-                      placeholder="Optional caption"
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        onChange(current => current.map((item, index) => index === i ? { ...item, title: value } : item));
-                      }}
-                      data-testid={`input-caption-${i}`}
-                    />
-                  </label>
-                </div>
-              )}
-              <div className="admin-photo-controls">
-                <div className="admin-photo-role-controls">
-                   <button type="button" disabled={!photo.src || photo._uploading} onClick={() => setHero(i)} className={`admin-photo-badge ${isHero ? 'active' : ''}`} title={isHero ? "Current Hero image" : "Set as Hero image"} aria-pressed={isHero} data-testid={`btn-hero-${i}`}>
-                     <Icon name="star" size={14} />
-                     <span>Hero</span>
-                   </button>
-                   <button type="button" onClick={() => {
-                     const isTurningOn = !isSocial;
-                     onSocialImageChange(isTurningOn ? photo.src : "");
-                     onChange(current => current.map((p, idx) => ({ ...p, social: idx === i ? isTurningOn : false })));
-                    }} className={`admin-photo-badge ${isSocial ? 'active' : ''}`} disabled={!photo.src || photo._uploading} title={isSocial ? "Current Social image" : "Use as Social image"} aria-pressed={Boolean(isSocial)} data-testid={`btn-social-${i}`}>
-                     <Icon name="share-2" size={14} />
-                     <span>Social</span>
-                   </button>
-                </div>
-                <div className="admin-photo-order-controls">
-                   <button type="button" aria-label={`Move photo ${i + 1} earlier`} disabled={i === 0} onClick={() => movePhoto(i, -1)} className="admin-button ghost" data-testid={`btn-up-${i}`}>Move earlier</button>
-                   <button type="button" aria-label={`Move photo ${i + 1} later`} disabled={i === photos.length - 1} onClick={() => movePhoto(i, 1)} className="admin-button ghost" data-testid={`btn-down-${i}`}>Move later</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-
-      <button type="button" className="admin-photo-add-slot" onClick={addPhoto} data-testid="btn-add-slot">
-        <Icon name="plus" size={24} />
-        <span>Add photo</span>
-      </button>
-
-      {previewingPhoto !== null && photos[previewingPhoto]?.src && (
-         <div className="admin-dialog-backdrop" role="presentation" onMouseDown={() => setPreviewingPhoto(null)}>
-           <div className="admin-photo-lightbox" role="dialog" aria-modal="true" onMouseDown={e => e.stopPropagation()} onKeyDown={(event) => {
-             if (event.key === "Escape") setPreviewingPhoto(null);
-             if (event.key === "Tab") {
-               const focusable = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("button"));
-               const first = focusable[0];
-               const last = focusable.at(-1);
-               if (event.shiftKey && document.activeElement === first) {
-                 event.preventDefault();
-                 last?.focus();
-               } else if (!event.shiftKey && document.activeElement === last) {
-                 event.preventDefault();
-                 first?.focus();
-               }
-             }
-           }} aria-labelledby="photo-preview-title">
-              <div className="admin-photo-lightbox-heading">
-                <div>
-                  <h2 id="photo-preview-title">Photo preview</h2>
-                  {(photos[previewingPhoto].title || photos[previewingPhoto].alt) && (
-                    <p>{photos[previewingPhoto].title || photos[previewingPhoto].alt}</p>
-                  )}
-                </div>
-                <button autoFocus type="button" className="admin-photo-lightbox-close" aria-label="Close photo preview" onClick={() => setPreviewingPhoto(null)}>
-                  <Icon name="x" size={20} />
-                </button>
-              </div>
-               <img
-                  src={photos[previewingPhoto]._previewURL || photos[previewingPhoto].src}
-                 alt={photos[previewingPhoto].alt || photos[previewingPhoto].file}
-                 onError={(event) => {
-                   event.currentTarget.onerror = null;
-                   event.currentTarget.src = "/admin/product-placeholder.png";
-                 }}
-               />
-           </div>
-         </div>
-      )}
-
-      {pickerIndex !== null && (
-        <ImagePickerModal
-          onClose={() => setPickerIndex(null)}
-          onSelect={(asset) => {
-            handleAssetSelection(pickerIndex, asset);
-            setPickerIndex(null);
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
 function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: number }) {
   const queryClient = useQueryClient();
   const { data: product, isLoading: loadingProduct } = useGetAdminProduct(productId!, { query: { enabled: !!productId, queryKey: getGetAdminProductQueryKey(productId!) } });
@@ -1567,7 +1165,13 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         relatedProducts: raw.relatedProducts ?? [],
         alsoKnownAs: raw.alsoKnownAs ?? [],
         components,
-        photos: photosForEditor(raw.photos),
+        faqs: Array.isArray(raw.faqs)
+          ? raw.faqs.slice(0, PRODUCT_FAQ_LIMIT).map((item: any) => ({
+            question: typeof item?.question === "string" ? item.question : "",
+            answer: typeof item?.answer === "string" ? item.answer : "",
+          }))
+          : [],
+        photos: raw.photos?.length ? raw.photos : blankProduct.details.photos,
       },
     };
   };
@@ -1576,11 +1180,11 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const formRef = useRef<any>(blankProduct);
   const [viewMode, setViewMode] = useState<"draft" | "live">("draft");
   const [saving, setSaving] = useState(false);
-  const [activePhotoUploads, setActivePhotoUploads] = useState(0);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [publishAttempted, setPublishAttempted] = useState(false);
   const [activeTab, setActiveTab] = useState(1);
+  const [editorMode, setEditorMode] = useState<"form" | "page">("form");
   const focusedPublishIssues = useRef(false);
   const errorBannerRef = useRef<HTMLDivElement>(null);
   const [showSectionCompletion, setShowSectionCompletion] = useState(false);
@@ -1588,51 +1192,16 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const [showPublishPrompt, setShowPublishPrompt] = useState(false);
   const [companionQuery, setCompanionQuery] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!productId) return;
-    const key = `ih-admin-publish-error-${productId}`;
-    try {
-      const publishError = window.sessionStorage.getItem(key);
-      if (publishError) {
-        setError(publishError);
-        window.sessionStorage.removeItem(key);
-      }
-    } catch {
-      // The draft remains saved even when private-mode storage is unavailable.
-    }
-  }, [productId]);
+  const [aiHighlighted, setAiHighlighted] = useState<Set<string>>(new Set());
+  const [aiSeed, setAiSeed] = useState<{ suggestions: any[]; warnings: string[] } | null>(null);
+  const loadedAiItem = useRef<number | null>(null);
 
   const sourceDataStr = JSON.stringify(product);
   const persistedFormStr = useMemo(
-    () => JSON.stringify(productForPhotoComparison(product ? toForm(product.draft ?? product) : blankProduct)),
+    () => JSON.stringify(product ? toForm(product.hasDraft ? product : (product.draft ?? product)) : blankProduct),
     [sourceDataStr, isNew],
   );
-  const isDirty = JSON.stringify(productForPhotoComparison(form)) !== persistedFormStr;
-  const hasPendingPhotoUpload = hasPendingProductPhotoUpload(form, activePhotoUploads);
-  const hasUnpublishedUpload = Boolean(form.details?.photos?.some((photo: any) => photo._newlyUploaded));
-  useEffect(() => {
-    if (!hasUnpublishedUpload) return;
-    const warning = "A newly uploaded image is not attached to the saved live product until you publish. Leave without publishing?";
-    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    const unregisterNavigationBlocker = registerNavigationBlocker(() => window.confirm(warning));
-    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    const warnBeforeHistoryNavigation = () => {
-      if (window.confirm(warning)) return;
-      window.history.pushState({}, "", currentUrl);
-      window.dispatchEvent(new Event("ih-seeds:navigation"));
-    };
-    window.addEventListener("beforeunload", warnBeforeUnload);
-    window.addEventListener("popstate", warnBeforeHistoryNavigation);
-    return () => {
-      window.removeEventListener("beforeunload", warnBeforeUnload);
-      window.removeEventListener("popstate", warnBeforeHistoryNavigation);
-      unregisterNavigationBlocker();
-    };
-  }, [hasUnpublishedUpload]);
+  const isDirty = JSON.stringify(form) !== persistedFormStr;
   useEffect(() => {
     if (product) {
       const confirmedForm = toForm(product.draft ?? product);
@@ -1648,12 +1217,33 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     if (new URLSearchParams(window.location.search).get("publish") !== "1" || !product) return;
     setPublishAttempted(true);
   }, [product]);
+  useEffect(() => {
+    const itemId = Number(new URLSearchParams(window.location.search).get("aiItem"));
+    if (!itemId || !product || loadedAiItem.current === itemId) return;
+    loadedAiItem.current = itemId;
+    let cancelled = false;
+    fetchTechSheetItem(itemId).then((item) => {
+      if (cancelled) return;
+      setEditorMode("form");
+      setActiveTab(1);
+      setAiSeed({
+        suggestions: item.proposedPatch?.suggestions ?? [],
+        warnings: item.warnings ?? item.proposedPatch?.warnings ?? [],
+      });
+    }).catch(() => {
+      if (!cancelled) {
+        loadedAiItem.current = null;
+        setError("Could not load the suggested fields from that tech sheet.");
+      }
+    });
+    return () => { cancelled = true; };
+  }, [product]);
 
   const liveForm = useMemo(() => product ? toForm(product) : blankProduct, [product]);
   const currentForm = viewMode === "live" ? liveForm : form;
   const productOptions = useMemo(
     () => products
-      .filter((candidate) => candidate.id !== productId && candidate.slug !== form.slug)
+      .filter((candidate) => candidate.id !== productId && candidate.slug !== form.slug && isAlsoPopularEligible(candidate))
       .sort((a, b) => a.name.localeCompare(b.name)),
     [products, productId, form.slug],
   );
@@ -1681,6 +1271,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     const issues = getPublishIssues(formRef.current);
     if (issues.length === 0) return;
     focusedPublishIssues.current = true;
+    setEditorMode("form");
     setActiveTab(issues[0].tab);
   }, [publishAttempted, sourceDataStr, product]);
   useEffect(() => {
@@ -1693,6 +1284,15 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     formRef.current = nextForm;
     setForm(nextForm);
   };
+  const applyAiForm = (nextForm: any, highlightedPaths: string[]) => {
+    formRef.current = nextForm;
+    setForm(nextForm);
+    setAiHighlighted(new Set(highlightedPaths));
+    setEditorMode("form");
+    setActiveTab(1);
+    setSuccess("Suggested fields are in the form only, across every tab the PDF supported. Review highlighted fields, then Save draft or Publish. The live page is unchanged until Publish succeeds.");
+  };
+  const aiClass = (path: string) => aiHighlighted.has(path) ? " admin-ai-suggested" : "";
   const reconcileForm = (confirmedProduct: AdminProduct) => {
     const confirmedForm = toForm(confirmedProduct.draft ?? confirmedProduct);
     formRef.current = confirmedForm;
@@ -1757,6 +1357,30 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const toggleMildTolerance = (name: string) => setDetail("tolerance", form.details.tolerance.map((item: any) => item.name === name ? { ...item, mild: !item.mild } : item));
   const updateComponent = (index: number, patch: Partial<ProductComponent>) => setDetail("components", form.details.components.map((item: any, itemIndex: number) => itemIndex === index ? { ...item, ...patch } : item));
   const removeComponent = (index: number) => setDetail("components", form.details.components.filter((_: any, itemIndex: number) => itemIndex !== index));
+  const updateFaq = (index: number, patch: Partial<ProductFaq>) => updateForm((current: any) => ({
+    ...current,
+    details: {
+      ...current.details,
+      faqs: (current.details.faqs ?? []).map((item: ProductFaq, itemIndex: number) =>
+        itemIndex === index ? { ...item, ...patch } : item
+      ),
+    },
+  }));
+  const removeFaq = (index: number) => updateForm((current: any) => ({
+    ...current,
+    details: {
+      ...current.details,
+      faqs: (current.details.faqs ?? []).filter((_: ProductFaq, itemIndex: number) => itemIndex !== index),
+    },
+  }));
+  const addFaq = () => updateForm((current: any) => {
+    const faqs = (current.details.faqs ?? []) as ProductFaq[];
+    if (faqs.length >= PRODUCT_FAQ_LIMIT) return current;
+    return {
+      ...current,
+      details: { ...current.details, faqs: [...faqs, { ...emptyProductFaq }] },
+    };
+  });
   const linkComponentProduct = (index: number, slug: string) => {
     const component = form.details.components[index];
     const linked = productsBySlug.get(slug);
@@ -1769,7 +1393,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
 
   const detailsForSave = (editorForm: typeof form) => ({
     ...editorForm.details,
-    photos: productPhotosForSave(editorForm.details.photos),
     treatment: editorForm.details.seedTreatment.join(" · "),
     ecocertApproved: editorForm.category === "Biologicals" && Boolean(editorForm.details.ecocertApproved),
   });
@@ -1789,14 +1412,10 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     setSuccess("");
     setPublishAttempted(true);
     const editorForm = formRef.current;
-    if (editorForm.details?.photos?.some((photo: any) => photo._uploading)) {
-      setError("Wait for the product photo upload to finish before publishing.");
-      setActiveTab(5);
-      return;
-    }
     const issues = getPublishIssues(editorForm);
     if (issues.length > 0) {
       setError(`Complete these fields before publishing: ${issues.map((issue) => issue.label).join(", ")}.`);
+      setEditorMode("form");
       setActiveTab(issues[0].tab);
       return;
     }
@@ -1814,12 +1433,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   };
 
   const confirmPublish = async () => {
-    if (formRef.current.details?.photos?.some((photo: any) => photo._uploading)) {
-      setShowPublishPrompt(false);
-      setError("Wait for the product photo upload to finish before publishing.");
-      setActiveTab(5);
-      return;
-    }
     setSaving(true);
     setError("");
     setSuccess("");
@@ -1833,16 +1446,13 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         await persistLatestProductAndPublish({
           getLatestDraft: () => draftPayload,
           publish: (latestDraft) => publishMutation.mutateAsync({ id: newProd.id, data: latestDraft }),
-          validatePublished: (published, latestDraft) => {
-            assertProductPhotoStatePersisted(latestDraft.details, published.details);
-          },
           reconcile: reconcileForm,
         });
         await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey(), refetchType: "all" });
         await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
         setShowPublishPrompt(false);
         setSuccess("Published successfully. Your latest changes are now live.");
-        navigate(`/admin/products/${newProd.id}`, { bypassBlocker: true });
+        navigate(`/admin/products/${newProd.id}`);
       } else {
         const shouldSaveDraftFirst = product?.lifecycleStatus !== "Published" && product?.lifecycleStatus !== "Archived";
         await persistLatestProductAndPublish({
@@ -1851,9 +1461,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
             ? (latestDraft) => saveDraftMutation.mutateAsync({ id: productId!, data: latestDraft })
             : undefined,
           publish: (latestDraft) => publishMutation.mutateAsync({ id: productId!, data: latestDraft }),
-          validatePublished: (published, latestDraft) => {
-            assertProductPhotoStatePersisted(latestDraft.details, published.details);
-          },
           reconcile: reconcileForm,
         });
         setShowPublishPrompt(false);
@@ -1864,17 +1471,12 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
       }
     } catch (err) {
       setShowPublishPrompt(false);
-      const message = err instanceof Error ? stripHttpErrorPrefix(err.message) : "Unable to publish product.";
-      setError(message);
+      setError(err instanceof Error ? stripHttpErrorPrefix(err.message) : "Unable to publish product.");
       if (createdId) {
-        try {
-          window.sessionStorage.setItem(`ih-admin-publish-error-${createdId}`, message);
-        } catch {
-          // The destination remains a saved draft; avoid hiding the actual
-          // failure behind a storage availability problem.
-        }
         await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey(), refetchType: "all" });
-        navigate(`/admin/products/${createdId}`, { bypassBlocker: true });
+        navigate(`/admin/products/${createdId}`);
+      } else if (productId) {
+        await queryClient.invalidateQueries({ queryKey: getGetAdminProductQueryKey(productId), refetchType: "all" });
       }
     } finally {
       setSaving(false);
@@ -1889,13 +1491,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
     const action = submitter?.value; 
     const editorForm = formRef.current;
-
-    if (editorForm.details?.photos?.some((photo: any) => photo._uploading)) {
-      setError(`Wait for the product photo upload to finish before ${action === "publish" ? "publishing" : "saving"}.`);
-      setActiveTab(5);
-      setSaving(false);
-      return;
-    }
 
     if (action === "back" && (viewMode === "live" || isArchived)) {
       navigate(`/admin/products?view=${isArchived ? "Archived" : "Published"}`);
@@ -1931,7 +1526,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         const newProd = await createMutation.mutateAsync({ data: payload });
         await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey(), refetchType: "all" });
         await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
-        navigate(action === "save-and-back" ? "/admin/products?view=Draft" : `/admin/products/${newProd.id}`, { bypassBlocker: true });
+        navigate(action === "save-and-back" ? "/admin/products?view=Draft" : `/admin/products/${newProd.id}`);
       } else {
         const { slug, publishStatus, ...draftPayload } = payload;
         if (product?.lifecycleStatus === "Published") {
@@ -1946,7 +1541,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey(), refetchType: "all" });
         await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
         if (action === "save-and-back") {
-          navigate(`/admin/products?view=${product?.lifecycleStatus === "Published" ? "Published" : "Draft"}`, { bypassBlocker: true });
+          navigate(`/admin/products?view=${product?.lifecycleStatus === "Published" ? "Published" : "Draft"}`);
         }
       }
     } catch (err) {
@@ -2077,7 +1672,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const isMix = category === "Mixes";
   const isBio = category === "Biologicals";
   const isLegacyListing = getListingState(currentForm) === "Legacy";
-  const hideInoculant = isRyegrass || isFescue || isSubTropical || isHerb || isMix || isBio;
 
   const completeness = getOverallCompleteness(currentForm);
 
@@ -2098,8 +1692,8 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
             <button className="admin-button primary" type="button" onClick={restore} disabled={saving}>Restore to Draft</button>
           ) : viewMode === "draft" && (canSaveDraft || showPublish) ? (
             <>
-              {canSaveDraft && <button className="admin-button outline" type="submit" form="admin-product-form" name="action" value="draft" disabled={saving || hasPendingPhotoUpload}>{hasPendingPhotoUpload ? "Uploading image…" : "Save draft"}</button>}
-              {showPublish && <button className="admin-button primary" type="button" onClick={requestPublish} disabled={saving || hasPendingPhotoUpload}>{hasPendingPhotoUpload ? "Uploading image…" : saving ? "Publishing…" : isLive ? "Publish changes" : "Publish"}</button>}
+              {canSaveDraft && <button className="admin-button outline" type="submit" form="admin-product-form" name="action" value="draft" disabled={saving}>Save draft</button>}
+              {showPublish && <button className="admin-button primary" type="button" onClick={requestPublish} disabled={saving}>{saving ? "Publishing…" : isLive ? "Publish changes" : "Publish"}</button>}
             </>
           ) : null}
         </div>
@@ -2128,7 +1722,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         </div>
       </div>
 
-      <div className="admin-editor admin-claude-editor" style={{maxWidth: 1040, display: "block"}}>
+      <div className={`admin-editor admin-claude-editor${editorMode === "page" ? " is-page-mode" : ""}`} style={{maxWidth: editorMode === "page" ? "none" : 1040, display: "block"}}>
          {category && showSectionCompletion && (
            <div id="admin-section-completion" className="admin-v2-section-summary" aria-label="Section completion">
              <span className="admin-v2-section-summary-title">Section completion</span>
@@ -2142,6 +1736,14 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
              </div>
            </div>
          )}
+         <label className="admin-v2-mobile-mode-picker">
+           <span>Editor view</span>
+           <select value={editorMode} onChange={(event) => setEditorMode(event.target.value as "form" | "page")}>
+             <option value="form">Form</option>
+             <option value="page">Product page</option>
+           </select>
+         </label>
+         {editorMode === "form" && (
          <label className="admin-v2-mobile-tab-picker">
            <span>Editing section</span>
            <select value={activeTab} onChange={(event) => setActiveTab(Number(event.target.value))}>
@@ -2153,11 +1755,17 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
              <option value={6} disabled={!category}>SEO</option>
            </select>
          </label>
+         )}
           {publishIssues.length > 0 && (
             <div className="admin-v2-mobile-errors" role="status">
               <strong>Needs attention:</strong> {issueSectionNames.join(", ")}
             </div>
           )}
+        <div className="admin-v2-tabs admin-v2-mode-tabs" role="tablist" aria-label="Editor view">
+          <button type="button" role="tab" aria-selected={editorMode === "form"} className={`admin-v2-tab ${editorMode === "form" ? "active" : ""}`} onClick={() => setEditorMode("form")}>Form</button>
+          <button type="button" role="tab" aria-selected={editorMode === "page"} className={`admin-v2-tab ${editorMode === "page" ? "active" : ""}`} onClick={() => setEditorMode("page")}>Product page</button>
+        </div>
+        {editorMode === "form" && (
         <div className="admin-v2-tabs">
             <button type="button" className={`admin-v2-tab ${activeTab === 1 ? 'active' : ''}`} onClick={() => setActiveTab(1)} aria-label={`Basics${tabsWithIssues.has(1) ? ", needs attention" : ""}`}>Basics{tabsWithIssues.has(1) && <span className="admin-tab-error-dot" aria-hidden="true" />}</button>
            <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 2 ? 'active' : ''}`} onClick={() => setActiveTab(2)}>Agronomy &amp; fit</button>
@@ -2166,22 +1774,77 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
             <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 5 ? 'active' : ''}`} onClick={() => setActiveTab(5)} aria-label={`Content and publishing${tabsWithIssues.has(5) ? ", needs attention" : ""}`}>Content &amp; publishing{tabsWithIssues.has(5) && <span className="admin-tab-error-dot" aria-hidden="true" />}</button>
             <button type="button" disabled={!category} className={`admin-v2-tab ${activeTab === 6 ? 'active' : ''}`} onClick={() => setActiveTab(6)} aria-label={`SEO${tabsWithIssues.has(6) ? ", needs attention" : ""}`}>SEO{tabsWithIssues.has(6) && <span className="admin-tab-error-dot" aria-hidden="true" />}</button>
         </div>
+        )}
 
          <form id="admin-product-form" onSubmit={submit} noValidate>
           <datalist id="admin-product-slugs">{products.filter((item) => item.id !== product?.id).map((item) => <option key={item.id} value={item.slug}>{item.name}</option>)}</datalist>
-          <fieldset className="admin-editor-main" disabled={saving || (Boolean(hasDraft) && viewMode === "live") || isArchived}>
+          <fieldset className="admin-editor-main" disabled={(Boolean(hasDraft) && viewMode === "live") || isArchived}>
+            {error && <div className="admin-notice admin-notice-error"><p>{error}</p></div>}
             {success && <div className="admin-notice"><p>{success}</p></div>}
             {isLive && hasDraft && viewMode === "draft" && (
               <div className="admin-notice">
                 <p>This product has leftover unpublished changes. Publish them to replace the live page, or discard them to keep the current public version.</p>
               </div>
             )}
+            {editorMode === "page" && (
+              <ProductPageEditor
+                form={currentForm}
+                products={products}
+                rootOptions={rootOptions}
+                childOptions={childOptions}
+                selectedRoot={selectedRoot}
+                selectedTaxonomy={selectedTaxonomy}
+                productOptions={productOptions}
+                productsBySlug={productsBySlug}
+                loadingTaxonomy={loadingTaxonomy}
+                taxonomyError={taxonomyError}
+                readOnly={(Boolean(hasDraft) && viewMode === "live") || isArchived}
+                showPublishRequired={showPublishRequired}
+                isNew={isNew}
+                productId={productId}
+                issueFor={(key) => issueFor(key as PublishIssueKey)}
+                setField={setField}
+                setDetail={setDetail}
+                setNumberDetail={setNumberDetail}
+                setListingState={setListingState}
+                toggleList={toggleList}
+                updateStringItem={updateStringItem}
+                removeStringItem={removeStringItem}
+                addStringItem={addStringItem}
+                updateSowingRate={updateSowingRate}
+                toggleTolerance={toggleTolerance}
+                toggleMildTolerance={toggleMildTolerance}
+                updateSaleLine={updateSaleLine}
+                removeSaleLine={removeSaleLine}
+                addSaleLine={addSaleLine}
+                updateComponent={updateComponent}
+                removeComponent={removeComponent}
+                linkComponentProduct={linkComponentProduct}
+                updateFaq={updateFaq}
+                removeFaq={removeFaq}
+                addFaq={addFaq}
+                updatePhoto={updatePhoto}
+                handleCategoryChange={handleCategoryChange}
+                forSearchMetadata={forSearchMetadata}
+                forSearchMetadataInput={forSearchMetadataInput}
+                h1EditorValue={h1EditorValue}
+                h1StoredValue={h1StoredValue}
+              />
+            )}
             
-            {activeTab === 1 && (
+            {editorMode === "form" && activeTab === 1 && (
               <section className="admin-panel admin-form-card">
                 <h2>Basics</h2>
                 <div className="admin-form-grid">
-                   <label className={issueFor("name") ? "admin-field-invalid" : ""}>
+                  <FillFromPdf
+                    form={currentForm}
+                    productId={productId}
+                    readOnly={viewMode === "live" || isArchived}
+                    seed={aiSeed}
+                    onSeedConsumed={() => setAiSeed(null)}
+                    onApply={applyAiForm}
+                  />
+                   <label className={`${issueFor("name") ? "admin-field-invalid" : ""}${aiClass("name")}`}>
                      <FieldLabel required>Product name</FieldLabel>
                      <span className="admin-name-input-row">
                        <input ref={nameInputRef} required aria-invalid={Boolean(issueFor("name"))} value={currentForm.name} onChange={(event) => setField("name", event.target.value)} placeholder="e.g. SouWest™ Pasture Mix"/>
@@ -2209,42 +1872,34 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                     <FieldLabel hint="Active products can appear on the current selling catalogue and may have availability. Legacy products stay published as catalogue history only and cannot have availability. This is different from Archiving, which removes a product from the public website entirely.">Listing state</FieldLabel>
                     <div>{(["Active", "Legacy"] as ProductListingState[]).map((state) => <button key={state} type="button" className={getListingState(currentForm) === state ? "selected" : ""} onClick={() => setListingState(state)}>{state}</button>)}</div>
                   </div>
-                  {!isMix && <label>Botanical name<input value={currentForm.details.botanicalName} onChange={(event) => setDetail("botanicalName", event.target.value)} placeholder="e.g. Lolium multiflorum"/></label>}
-                  {!isMix && <label>Bred by / origin <AdminOnlyMark /><input value={currentForm.details.bredByOrigin} onChange={(event) => setDetail("bredByOrigin", event.target.value)} placeholder="e.g. Agricom (NZ)"/></label>}
-                </div>
-                <div className="admin-repeat-group">
-                  <div className="admin-section-heading"><div><h3>Also known as <AdminOnlyMark /></h3></div>{viewMode !== "live" && !isArchived && <button className="admin-button outline small" type="button" onClick={() => addStringItem("alsoKnownAs")}><Icon name="plus" size={16}/>Add name</button>}</div>
-                  {currentForm.details.alsoKnownAs.map((alias: string, index: number) => <div className="admin-repeat-row" key={index}><input value={alias} onChange={(event) => updateStringItem("alsoKnownAs", index, event.target.value)} placeholder="Alternative name"/>{viewMode !== "live" && !isArchived && <button type="button" onClick={() => removeStringItem("alsoKnownAs", index)} aria-label="Remove alternative name">×</button>}</div>)}
+                  {!isMix && <label className={aiClass("details.botanicalName")}>Botanical name<input value={currentForm.details.botanicalName} onChange={(event) => setDetail("botanicalName", event.target.value)} placeholder="e.g. Lolium multiflorum"/></label>}
                 </div>
               </section>
             )}
 
-            {activeTab === 2 && (
+            {editorMode === "form" && activeTab === 2 && (
               <section className="admin-panel admin-form-card">
                 <h2>Agronomy &amp; fit</h2>
                 {isBio ? (
-                  <>
-                    <label>Application notes <AdminOnlyMark /> <textarea value={currentForm.details.notes} onChange={(e) => setDetail("notes", e.target.value)} rows={4} /></label>
-                    <PersistencyAndAustralianBredFields details={currentForm.details} setDetail={setDetail} />
-                  </>
+                  <PersistencyAndAustralianBredFields details={currentForm.details} setDetail={setDetail} />
                 ) : (
                   <>
-                    <div className="admin-repeat-group">
+                    <div className={`admin-repeat-group${aiClass("details.sowingRates")}`}>
                       <div className="admin-section-heading"><div><h3>Sowing rates</h3></div>{viewMode !== "live" && !isArchived && <button className="admin-button outline small" type="button" onClick={() => setDetail("sowingRates", [...form.details.sowingRates, { context: "Pasture", min: null, max: null, unit: "kg/ha" }])}><Icon name="plus" size={16}/>Add rate</button>}</div>
                       {currentForm.details.sowingRates.map((rate: any, index: number) => <div className="admin-repeat-row admin-repeat-row-rate" key={index}><select value={rate.context} onChange={(event) => updateSowingRate(index, { context: event.target.value as any })}>{["Monoculture", "In a mix", "Dryland", "Irrigation", "Pasture", "Turf", "General", "Podded", "De-hulled", "Coated"].map((value) => <option key={value}>{value}</option>)}</select><input type="number" min="0" step="0.01" value={rate.min ?? ""} onChange={(event) => updateSowingRate(index, { min: event.target.value === "" ? null : Number(event.target.value) })} placeholder="Min"/><input type="number" min="0" step="0.01" value={rate.max ?? ""} onChange={(event) => updateSowingRate(index, { max: event.target.value === "" ? null : Number(event.target.value) })} placeholder="Max"/><input value={rate.unit} onChange={(event) => updateSowingRate(index, { unit: event.target.value })} placeholder="kg/ha"/>{viewMode !== "live" && !isArchived && <button type="button" onClick={() => setDetail("sowingRates", form.details.sowingRates.filter((_: any, itemIndex: number) => itemIndex !== index))} aria-label="Remove sowing rate">×</button>}</div>)}
                     </div>
                     <div className="admin-form-grid admin-form-grid-agronomy">
-                      <label className="admin-grid-half">Minimum rainfall (mm)<input type="number" min="0" value={currentForm.details.rainfallMinMm ?? ""} onChange={(event) => setNumberDetail("rainfallMinMm", event.target.value)} placeholder="400"/></label>
-                      <label className="admin-grid-quarter">Minimum soil pH<input type="number" min="0" step="0.1" value={currentForm.details.soilPhMin ?? ""} onChange={(event) => setNumberDetail("soilPhMin", event.target.value)} placeholder="5.5"/></label>
-                      <label className="admin-grid-quarter">Soil pH scale<select value={currentForm.details.soilPhScale} onChange={(event) => setDetail("soilPhScale", event.target.value as any)}><option>CaCl₂</option><option>water</option></select></label>
-                      <label className="admin-grid-half">Lightest soil<select value={currentForm.details.soilRangeLightest} onChange={(event) => setDetail("soilRangeLightest", event.target.value as any)}><option value="">Not set</option>{[{ code: "LS", label: "LS — light sand" }, { code: "S", label: "S — sand" }, { code: "L", label: "L — loam" }, { code: "H", label: "H — heavy" }].map((soil) => <option key={soil.code} value={soil.code}>{soil.label}</option>)}</select></label>
-                      <label className="admin-grid-half">Heaviest soil<select value={currentForm.details.soilRangeHeaviest} onChange={(event) => setDetail("soilRangeHeaviest", event.target.value as any)}><option value="">Not set</option>{[{ code: "LS", label: "LS — light sand" }, { code: "S", label: "S — sand" }, { code: "L", label: "L — loam" }, { code: "H", label: "H — heavy" }].map((soil) => <option key={soil.code} value={soil.code}>{soil.label}</option>)}</select></label>
-                      <label className="admin-grid-half">Minimum sowing depth (cm) <AdminOnlyMark /><input type="number" min="0" step="0.1" value={currentForm.details.sowingDepthMinCm ?? ""} onChange={(event) => setNumberDetail("sowingDepthMinCm", event.target.value)}/></label>
-                      <label className="admin-grid-half">Maximum sowing depth (cm) <AdminOnlyMark /><input type="number" min="0" step="0.1" value={currentForm.details.sowingDepthMaxCm ?? ""} onChange={(event) => setNumberDetail("sowingDepthMaxCm", event.target.value)}/></label>
+                      <label className={`admin-grid-half${aiClass("details.rainfallMinMm")}`}>Minimum rainfall (mm)<select value={currentForm.details.rainfallMinMm ?? ""} onChange={(event) => setNumberDetail("rainfallMinMm", event.target.value)}><option value="">Not set</option>{rainfallMinMmOptions(currentForm.details.rainfallMinMm).map((mm) => <option key={mm} value={mm}>{mm} mm</option>)}</select></label>
+                      <label className={`admin-grid-quarter${aiClass("details.soilPhMin")}`}>Minimum soil pH<input type="number" min="0" step="0.1" value={currentForm.details.soilPhMin ?? ""} onChange={(event) => setNumberDetail("soilPhMin", event.target.value)} placeholder="5.5"/></label>
+                      <label className={`admin-grid-quarter${aiClass("details.soilPhScale")}`}>Soil pH scale<select value={currentForm.details.soilPhScale} onChange={(event) => setDetail("soilPhScale", event.target.value as any)}><option>CaCl₂</option><option>water</option></select></label>
+                      <label className={`admin-grid-half${aiClass("details.soilRangeLightest")}`}>Lightest soil<select value={currentForm.details.soilRangeLightest} onChange={(event) => setDetail("soilRangeLightest", event.target.value as any)}><option value="">Not set</option>{[{ code: "LS", label: "LS — light sand" }, { code: "S", label: "S — sand" }, { code: "L", label: "L — loam" }, { code: "H", label: "H — heavy" }].map((soil) => <option key={soil.code} value={soil.code}>{soil.label}</option>)}</select></label>
+                      <label className={`admin-grid-half${aiClass("details.soilRangeHeaviest")}`}>Heaviest soil<select value={currentForm.details.soilRangeHeaviest} onChange={(event) => setDetail("soilRangeHeaviest", event.target.value as any)}><option value="">Not set</option>{[{ code: "LS", label: "LS — light sand" }, { code: "S", label: "S — sand" }, { code: "L", label: "L — loam" }, { code: "H", label: "H — heavy" }].map((soil) => <option key={soil.code} value={soil.code}>{soil.label}</option>)}</select></label>
+                      <label className={`admin-grid-half${aiClass("details.sowingDepthMinCm")}`}>Minimum sowing depth (cm) <AdminOnlyMark /><input type="number" min="0" step="0.1" value={currentForm.details.sowingDepthMinCm ?? ""} onChange={(event) => setNumberDetail("sowingDepthMinCm", event.target.value)}/></label>
+                      <label className={`admin-grid-half${aiClass("details.sowingDepthMaxCm")}`}>Maximum sowing depth (cm) <AdminOnlyMark /><input type="number" min="0" step="0.1" value={currentForm.details.sowingDepthMaxCm ?? ""} onChange={(event) => setNumberDetail("sowingDepthMaxCm", event.target.value)}/></label>
                     </div>
-                    <div className="admin-choice-field"><span>Tolerance (Off / On / Mild)</span><div>{["Low pH", "Waterlogging", "Salinity", "Drought", "Frost"].map((name) => { const selected = currentForm.details.tolerance.find((item: any) => item.name === name); return <span className="admin-tolerance-choice" key={name}><button type="button" className={selected ? "selected" : ""} onClick={() => toggleTolerance(name)}>{name}</button>{selected && <label><input type="checkbox" checked={selected.mild} onChange={() => toggleMildTolerance(name)}/>Mild</label>}</span>; })}</div></div>
-                    <div className="admin-choice-field"><span>End use</span><div>{["Grazing", "Hay", "Silage", "Cover crop", "Green manure", "Grain", "Stockfeed", "Permanent pasture", "Erosion control / stabilisation", "Break crop", "Biofumigant", "Turf"].map((value) => <button key={value} type="button" className={currentForm.details.endUse.includes(value as any) ? "selected" : ""} onClick={() => toggleList("endUse", value)}>{value}</button>)}</div></div>
-                    <div className="admin-choice-field"><span>Livestock</span><div>{["Beef", "Dairy", "Sheep", "Equine", "Goat", "Chicken", "Alpaca", "Weaners", "Lamb finishing"].map((value) => <button key={value} type="button" className={currentForm.details.livestock.includes(value as any) ? "selected" : ""} onClick={() => toggleList("livestock", value)}>{value}</button>)}</div></div>
+                    <div className={`admin-choice-field${aiClass("details.tolerance")}`}><span>Tolerance (Off / On / Mild)</span><div>{["Low pH", "Waterlogging", "Salinity", "Drought", "Frost"].map((name) => { const selected = currentForm.details.tolerance.find((item: any) => item.name === name); return <span className="admin-tolerance-choice" key={name}><button type="button" className={selected ? "selected" : ""} onClick={() => toggleTolerance(name)}>{name}</button>{selected && <label><input type="checkbox" checked={selected.mild} onChange={() => toggleMildTolerance(name)}/>Mild</label>}</span>; })}</div></div>
+                    <div className={`admin-choice-field${aiClass("details.endUse")}`}><span>End use</span><div>{["Grazing", "Hay", "Silage", "Cover crop", "Green manure", "Grain", "Stockfeed", "Permanent pasture", "Erosion control / stabilisation", "Break crop", "Biofumigant", "Turf"].map((value) => <button key={value} type="button" className={currentForm.details.endUse.includes(value as any) ? "selected" : ""} onClick={() => toggleList("endUse", value)}>{value}</button>)}</div></div>
+                    <div className={`admin-choice-field${aiClass("details.livestock")}`}><span>Livestock</span><div>{["Beef", "Dairy", "Sheep", "Equine", "Goat", "Chicken", "Alpaca", "Weaners", "Lamb finishing"].map((value) => <button key={value} type="button" className={currentForm.details.livestock.includes(value as any) ? "selected" : ""} onClick={() => toggleList("livestock", value)}>{value}</button>)}</div></div>
                     <PersistencyAndAustralianBredFields details={currentForm.details} setDetail={setDetail} />
                     <div className="admin-repeat-group">
                       <div className="admin-section-heading"><div><h3>Companion species <AdminOnlyMark /></h3><p className="admin-field-hint">Choose catalogue products here. Put general companion advice in the agronomy notes field. Not shown on the website.</p></div></div>
@@ -2276,60 +1931,59 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                         {currentForm.details.companionSpecies.length === 0 && <p className="admin-empty-inline">No companion products selected.</p>}
                       </div>
                     </div>
-                    {!hideInoculant && <label>Inoculant group <AdminOnlyMark /><select value={currentForm.details.inoculantGroup} onChange={(event) => setDetail("inoculantGroup", event.target.value as any)}>{["None", "C", "G/S", "G", "S", "AL", "AM", "B", "BS", "E", "F/E", "I"].map((value) => <option key={value}>{value}</option>)}</select></label>}
-                    <label>Disease &amp; pest resistance<textarea value={currentForm.details.diseasePestResistance} onChange={(e) => setDetail("diseasePestResistance", e.target.value)} rows={3}/></label>
-                    <label>Stand life notes<textarea value={currentForm.details.standLifeNotes} onChange={(e) => setDetail("standLifeNotes", e.target.value)} rows={3}/></label>
-                    <label>Grazing management notes<textarea value={currentForm.details.grazingManagementNotes} onChange={(e) => setDetail("grazingManagementNotes", e.target.value)} rows={3}/></label>
+                    <label className={aiClass("details.diseasePestResistance")}>Disease &amp; pest resistance<textarea value={currentForm.details.diseasePestResistance} onChange={(e) => setDetail("diseasePestResistance", e.target.value)} rows={3}/></label>
+                    <label className={aiClass("details.standLifeNotes")}>Stand life notes<textarea value={currentForm.details.standLifeNotes} onChange={(e) => setDetail("standLifeNotes", e.target.value)} rows={3}/></label>
+                    <label className={aiClass("details.grazingManagementNotes")}>Grazing management notes<textarea value={currentForm.details.grazingManagementNotes} onChange={(e) => setDetail("grazingManagementNotes", e.target.value)} rows={3}/></label>
                   </>
                 )}
               </section>
             )}
 
-            {activeTab === 3 && (
+            {editorMode === "form" && activeTab === 3 && (
               <section className="admin-panel admin-form-card">
                 <h2>{category ? `${category} specifics` : "Category specifics"}</h2>
                 {!category ? <p>Please select a category in the Basics tab first.</p> :
                  isHerb ? <p>No category-specific fields for herbs.</p> :
                  <div className="admin-form-grid">
                    {(isRyegrass || isFescue || isSubTropical || isMix) && (
-                     <label>Ploidy <select value={currentForm.details.ploidy} onChange={(e) => setDetail("ploidy", e.target.value)}>{OPTS.ploidy.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
+                     <label className={aiClass("details.ploidy")}>Ploidy <select value={currentForm.details.ploidy} onChange={(e) => setDetail("ploidy", e.target.value)}>{OPTS.ploidy.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
                    )}
                    {(isRyegrass || isFescue) && (
                      <>
-                       <label>Heading date <select value={currentForm.details.headingDate} onChange={(e) => setDetail("headingDate", e.target.value)}>{OPTS.headingDate.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
-                       <label>Endophyte <select value={currentForm.details.endophyte} onChange={(e) => setDetail("endophyte", e.target.value)}>{OPTS.endophyte.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
+                       <label className={aiClass("details.headingDate")}>Heading date <select value={currentForm.details.headingDate} onChange={(e) => setDetail("headingDate", e.target.value)}>{OPTS.headingDate.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
+                       <label className={aiClass("details.endophyte")}>Endophyte <select value={currentForm.details.endophyte} onChange={(e) => setDetail("endophyte", e.target.value)}>{OPTS.endophyte.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
                      </>
                    )}
                    {isRyegrass && (
                      <>
-                       <label>Heading offset days <input type="number" value={currentForm.details.headingOffsetDays ?? ""} onChange={(e) => setNumberDetail("headingOffsetDays", e.target.value)} /></label>
-                       <label className="admin-check-row"><input type="checkbox" checked={currentForm.details.argtResistant} onChange={(e) => setDetail("argtResistant", e.target.checked)}/><span><strong>ARGT resistant</strong></span></label>
+                       <label className={aiClass("details.headingOffsetDays")}>Heading offset days <input type="number" value={currentForm.details.headingOffsetDays ?? ""} onChange={(e) => setNumberDetail("headingOffsetDays", e.target.value)} /></label>
+                       <label className={`admin-check-row${aiClass("details.argtResistant")}`}><input type="checkbox" checked={currentForm.details.argtResistant} onChange={(e) => setDetail("argtResistant", e.target.checked)}/><span><strong>ARGT resistant</strong></span></label>
                      </>
                    )}
                    {(isClover || isSerradella) && (
                      <>
-                       <label>Maturity days (Perth) <input type="number" value={currentForm.details.maturityDays ?? ""} onChange={(e) => setNumberDetail("maturityDays", e.target.value)} /></label>
-                       <label>Hard seed level <select value={currentForm.details.hardSeedLevel} onChange={(e) => setDetail("hardSeedLevel", e.target.value)}>{OPTS.hardSeedLevel.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
-                       <label>Bloat risk <select value={currentForm.details.bloatRisk} onChange={(e) => setDetail("bloatRisk", e.target.value)}>{OPTS.bloatRisk.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
-                       <label>Flower colour <select value={currentForm.details.flowerColour} onChange={(e) => setDetail("flowerColour", e.target.value)}>{["", "Pink", "Yellow", "White", "Crimson", "Red", "Purple"].map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
+                       <label className={aiClass("details.maturityDays")}>Maturity days (Perth) <input type="number" value={currentForm.details.maturityDays ?? ""} onChange={(e) => setNumberDetail("maturityDays", e.target.value)} /></label>
+                       <label className={aiClass("details.hardSeedLevel")}>Hard seed level <select value={currentForm.details.hardSeedLevel} onChange={(e) => setDetail("hardSeedLevel", e.target.value)}>{OPTS.hardSeedLevel.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
+                       <label className={aiClass("details.bloatRisk")}>Bloat risk <select value={currentForm.details.bloatRisk} onChange={(e) => setDetail("bloatRisk", e.target.value)}>{OPTS.bloatRisk.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
+                       <label className={aiClass("details.flowerColour")}>Flower colour <select value={currentForm.details.flowerColour} onChange={(e) => setDetail("flowerColour", e.target.value)}>{["", "Pink", "Yellow", "White", "Crimson", "Red", "Purple"].map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
                      </>
                    )}
-                   {isClover && <label>Oestrogen level <select value={currentForm.details.oestrogenLevel} onChange={(e) => setDetail("oestrogenLevel", e.target.value)}>{OPTS.oestrogenLevel.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>}
-                   {isLucerne && <label>Winter activity (1–10) <input type="number" min="1" max="10" value={currentForm.details.winterActivity ?? ""} onChange={(e) => setNumberDetail("winterActivity", e.target.value)}/></label>}
-                   {(isFescue || isSubTropical) && <label>Growth season <select value={currentForm.details.growthSeason} onChange={(e) => setDetail("growthSeason", e.target.value)}>{OPTS.growthSeason.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>}
+                   {isClover && <label className={aiClass("details.oestrogenLevel")}>Oestrogen level <select value={currentForm.details.oestrogenLevel} onChange={(e) => setDetail("oestrogenLevel", e.target.value)}>{OPTS.oestrogenLevel.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>}
+                   {isLucerne && <label className={aiClass("details.winterActivity")}>Winter activity (1–10) <input type="number" min="1" max="10" value={currentForm.details.winterActivity ?? ""} onChange={(e) => setNumberDetail("winterActivity", e.target.value)}/></label>}
+                   {(isFescue || isSubTropical) && <label className={aiClass("details.growthSeason")}>Growth season <select value={currentForm.details.growthSeason} onChange={(e) => setDetail("growthSeason", e.target.value)}>{OPTS.growthSeason.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>}
                    {isForage && (
                      <>
-                       <label>Growing season <select value={currentForm.details.growingSeason} onChange={(e) => setDetail("growingSeason", e.target.value)}>{OPTS.growingSeasonForage.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
-                       <label>Weeks to first grazing <input type="text" value={currentForm.details.weeksToFirstGrazing} onChange={(e) => setDetail("weeksToFirstGrazing", e.target.value)} placeholder="e.g. 6-8"/></label>
-                       <label>Prussic acid risk <select value={currentForm.details.prussicAcidRisk} onChange={(e) => setDetail("prussicAcidRisk", e.target.value)}>{OPTS.prussicAcidRisk.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
-                       <label>Regrowth <select value={currentForm.details.regrowth} onChange={(e) => setDetail("regrowth", e.target.value)}>{OPTS.regrowth.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
+                       <label className={aiClass("details.growingSeason")}>Growing season <select value={currentForm.details.growingSeason} onChange={(e) => setDetail("growingSeason", e.target.value)}>{OPTS.growingSeasonForage.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
+                       <label className={aiClass("details.weeksToFirstGrazing")}>Weeks to first grazing <input type="text" value={currentForm.details.weeksToFirstGrazing} onChange={(e) => setDetail("weeksToFirstGrazing", e.target.value)} placeholder="e.g. 6-8"/></label>
+                       <label className={aiClass("details.prussicAcidRisk")}>Prussic acid risk <select value={currentForm.details.prussicAcidRisk} onChange={(e) => setDetail("prussicAcidRisk", e.target.value)}>{OPTS.prussicAcidRisk.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
+                       <label className={aiClass("details.regrowth")}>Regrowth <select value={currentForm.details.regrowth} onChange={(e) => setDetail("regrowth", e.target.value)}>{OPTS.regrowth.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select></label>
                      </>
                    )}
                    {isMix && (
                      <>
-                       <label>Flowering window <input type="text" value={currentForm.details.floweringWindow} onChange={(e) => setDetail("floweringWindow", e.target.value)} placeholder="e.g. Aug-Nov"/></label>
-                       <label>Formulation year <input type="text" value={currentForm.details.formulationYear} onChange={(e) => setDetail("formulationYear", e.target.value)}/></label>
-                       <div className="admin-repeat-group wide">
+                       <label className={aiClass("details.floweringWindow")}>Flowering window <input type="text" value={currentForm.details.floweringWindow} onChange={(e) => setDetail("floweringWindow", e.target.value)} placeholder="e.g. Aug-Nov"/></label>
+                       <label className={aiClass("details.formulationYear")}>Formulation year <input type="text" value={currentForm.details.formulationYear} onChange={(e) => setDetail("formulationYear", e.target.value)}/></label>
+                       <div className={`admin-repeat-group wide${aiClass("details.components")}`}>
                           <div className="admin-section-heading"><div><h3>Mix components</h3><p className="admin-field-hint">Each card is one ingredient on the public mix page. Link a catalogue product if customers should open that product. Leave the link empty for species you do not sell on their own.</p></div>{viewMode !== "live" && !isArchived && <button className="admin-button outline small" type="button" onClick={() => setDetail("components", [...form.details.components, { productLink: "", speciesName: "", inclusionRate: null, unit: "%", description: "", note: "" }])}><Icon name="plus" size={16}/>Add component</button>}</div>
                          <div className="admin-component-list">
                             {currentForm.details.components.map((component: ProductComponent, index: number) => {
@@ -2374,11 +2028,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                                     {fieldIssues.description && <span className="admin-inline-field-error">{fieldIssues.description}</span>}
                                     <span className="admin-character-count">{(component.description ?? "").length}/10000</span>
                                   </label>
-                                  <label className={`admin-component-note ${fieldIssues.note ? "admin-field-invalid" : ""}`}>Internal note <AdminOnlyMark />
-                                    <span className="admin-field-hint">Not shown on the website.</span>
-                                    <input maxLength={4000} value={component.note} onChange={(event) => updateComponent(index, { note: event.target.value })} placeholder="Sourcing, substitution, or formulation reminder" aria-invalid={Boolean(fieldIssues.note)} />
-                                    {fieldIssues.note && <span className="admin-inline-field-error">{fieldIssues.note}</span>}
-                                  </label>
                                 </div>
                               </div>
                               );
@@ -2391,9 +2040,8 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                    )}
                    {isBio && (
                      <>
-                        <label>Product form <input value={currentForm.details.productForm} onChange={(e) => setDetail("productForm", e.target.value)} placeholder="e.g. Powder|Liquid|Peat"/></label>
-                       <label>Application rate <input type="text" value={currentForm.details.applicationRate} onChange={(e) => setDetail("applicationRate", e.target.value)}/></label>
-                       <label className="admin-check-row wide"><input type="checkbox" checked={currentForm.details.ecocertApproved} onChange={(e) => setDetail("ecocertApproved", e.target.checked)}/><span><strong>ECOCERT approved <AdminOnlyMark /></strong></span></label>
+                        <label className={aiClass("details.productForm")}>Product form <input value={currentForm.details.productForm} onChange={(e) => setDetail("productForm", e.target.value)} placeholder="e.g. Powder|Liquid|Peat"/></label>
+                       <label className={aiClass("details.applicationRate")}>Application rate <input type="text" value={currentForm.details.applicationRate} onChange={(e) => setDetail("applicationRate", e.target.value)}/></label>
                      </>
                    )}
                  </div>
@@ -2401,7 +2049,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
               </section>
             )}
 
-            {activeTab === 4 && (
+            {editorMode === "form" && activeTab === 4 && (
               <section className="admin-panel admin-form-card">
                 <h2>Selling</h2>
                 <div className={`admin-repeat-group wide ${issueFor("saleLines.default") || issueFor("saleLines.stockCodes") ? "admin-field-invalid admin-group-invalid" : ""}`}>
@@ -2428,9 +2076,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                         </label>
                         <label>Seed form
                           <select value={line.seedForm} onChange={(e) => updateSaleLine(i, { seedForm: e.target.value })}>{OPTS.seedForm.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select>
-                        </label>
-                        <label>Seed grade <AdminOnlyMark />
-                          <select value={line.seedGrade} onChange={(e) => updateSaleLine(i, { seedGrade: e.target.value })}>{OPTS.seedGrade.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select>
                         </label>
                         <div className="admin-sale-line-pack">
                           <span>Pack</span>
@@ -2464,29 +2109,25 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                      </label>
                    </div>
                    
-                   <label className="admin-check-row wide"><input type="checkbox" checked={currentForm.details.pbrProtected} onChange={(event) => setDetail("pbrProtected", event.target.checked)}/><span><strong>PBR protected</strong></span></label>
-                   <label>PBR details <input value={currentForm.details.pbrDetails} onChange={(e) => setDetail("pbrDetails", e.target.value)} /></label>
-                   <label>Licence restriction <AdminOnlyMark /><input value={currentForm.details.licenceRestriction} onChange={(e) => setDetail("licenceRestriction", e.target.value)} /></label>
+                   <label className={`admin-check-row wide${aiClass("details.pbrProtected")}`}><input type="checkbox" checked={currentForm.details.pbrProtected} onChange={(event) => setDetail("pbrProtected", event.target.checked)}/><span><strong>PBR protected</strong></span></label>
+                   <label className={aiClass("details.pbrDetails")}>PBR details <input value={currentForm.details.pbrDetails} onChange={(e) => setDetail("pbrDetails", e.target.value)} /></label>
                    
-                   <div className="admin-choice-field wide"><span>Certification</span><div>{["ASF Code of Practice", "Certified Quality Assured Seed", "Certified seed", "Licensed production"].map((value) => <button key={value} type="button" className={currentForm.details.certification.includes(value as any) ? "selected" : ""} onClick={() => toggleList("certification", value)}>{value}</button>)}</div></div>
-                   
-                   <label className="admin-check-row wide"><input type="checkbox" checked={currentForm.details.isThirdPartyProduct} onChange={(event) => setDetail("isThirdPartyProduct", event.target.checked)}/><span><strong>Third-party product <AdminOnlyMark /></strong></span></label>
-                   <label>Supplier name <AdminOnlyMark /><input value={currentForm.details.supplierName} onChange={(e) => setDetail("supplierName", e.target.value)} /></label>
+                   <div className={`admin-choice-field wide${aiClass("details.certification")}`}><span>Certification</span><div>{["ASF Code of Practice", "Certified Quality Assured Seed", "Certified seed", "Licensed production"].map((value) => <button key={value} type="button" className={currentForm.details.certification.includes(value as any) ? "selected" : ""} onClick={() => toggleList("certification", value)}>{value}</button>)}</div></div>
                 </div>
               </section>
             )}
 
-            {activeTab === 5 && (
+            {editorMode === "form" && activeTab === 5 && (
               <section className="admin-panel admin-form-card">
                 <h2>Content &amp; publishing</h2>
                 <div className="admin-form-grid">
-                  <label className={`wide ${issueFor("details.tagline") ? "admin-field-invalid" : ""}`}>
+                  <label className={`wide ${issueFor("details.tagline") ? "admin-field-invalid" : ""}${aiClass("details.tagline")}`}>
                     <FieldLabel required={showPublishRequired} hint="Short product promise shown on product cards and below the product name (60 characters max).">Tagline</FieldLabel>
                     <input aria-invalid={Boolean(issueFor("details.tagline"))} maxLength={60} value={currentForm.details.tagline} onChange={(e) => setDetail("tagline", e.target.value)} />
                     {issueFor("details.tagline") && <span className="admin-inline-field-error">{issueFor("details.tagline")!.message}</span>}
                     <span className="admin-character-count">{currentForm.details.tagline.length}/60</span>
                   </label>
-                  <label className={`wide ${issueFor("details.blurb") ? "admin-field-invalid" : ""}`}>
+                  <label className={`wide ${issueFor("details.blurb") ? "admin-field-invalid" : ""}${aiClass("details.blurb")}`}>
                     <FieldLabel required={showPublishRequired} hint="A concise introduction shown at the top of the product page.">Blurb</FieldLabel>
                     <textarea aria-invalid={Boolean(issueFor("details.blurb"))} value={currentForm.details.blurb} onChange={(e) => setDetail("blurb", e.target.value)} rows={3}/>
                     {issueFor("details.blurb") && <span className="admin-inline-field-error">{issueFor("details.blurb")!.message}</span>}
@@ -2497,51 +2138,97 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                     {currentForm.details.keyAttributes.length === 0 && <p className="admin-empty-inline">No key attributes added yet.</p>}
                     {issueFor("details.keyAttributes") && <span className="admin-inline-field-error">{issueFor("details.keyAttributes")!.message}</span>}
                   </div>
-                  <label className={`wide ${issueFor("details.description") ? "admin-field-invalid" : ""}`}>
+                  <label className={`wide ${issueFor("details.description") ? "admin-field-invalid" : ""}${aiClass("details.description")}`}>
                     <FieldLabel required={showPublishRequired}>Description</FieldLabel>
                     <textarea aria-invalid={Boolean(issueFor("details.description"))} value={currentForm.details.description} onChange={(e) => setDetail("description", e.target.value)} rows={6}/>
                     {issueFor("details.description") && <span className="admin-inline-field-error">{issueFor("details.description")!.message}</span>}
                   </label>
-                  <label className="wide">Distribution note <span className="admin-field-hint">Optional highlighted information about availability or distribution.</span><textarea value={currentForm.details.distributionNote} onChange={(e) => setDetail("distributionNote", e.target.value)} rows={2}/></label>
-                  <label>Description source <AdminOnlyMark /><input value={currentForm.descriptionSource} onChange={(e) => setField("descriptionSource", e.target.value)} /></label>
+                  <label className={`wide${aiClass("details.distributionNote")}`}>Distribution note <span className="admin-field-hint">Optional highlighted information about availability or distribution.</span><textarea value={currentForm.details.distributionNote} onChange={(e) => setDetail("distributionNote", e.target.value)} rows={2}/></label>
                   <label>Legacy website URL <AdminOnlyMark /><input value={currentForm.websiteUrlLegacy} onChange={(e) => setField("websiteUrlLegacy", e.target.value)} /></label>
-                  <label className="wide">Internal notes <AdminOnlyMark /><textarea value={currentForm.details.notes} onChange={(e) => setDetail("notes", e.target.value)} rows={3}/></label>
                   
-                  <div className={`admin-repeat-group wide ${issueFor("details.photos") || issueFor("details.photos.alt") || issueFor("details.photos.metadata") ? "admin-field-invalid admin-group-invalid" : ""}`}>
+                  <div className="admin-repeat-group wide">
                     <div className="admin-section-heading"><div><h3>Photos</h3></div></div>
-                    <ProductPhotoEditor
-                      photos={currentForm.details.photos || []}
-                      onChange={updater => {
-                        updateForm((latestForm: any) => applyProductPhotoUpdate(
-                          latestForm,
-                          typeof updater === "function" ? updater : () => updater,
-                        ));
-                      }}
-                      productSlug={currentForm.slug}
-                      socialImage={currentForm.details.socialImage || ""}
-                      onSocialImageChange={url => setDetail("socialImage", url)}
-                      onUploadError={message => {
-                        setError(message);
-                        if (message) setActiveTab(5);
-                      }}
-                      disabled={saving}
-                      onUploadCountChange={delta => setActivePhotoUploads(count => Math.max(0, count + delta))}
-                    />
-                    {(["details.photos", "details.photos.alt", "details.photos.metadata"] as PublishIssueKey[]).map(key => (
-                      issueFor(key) ? <span className="admin-inline-field-error" key={key}>{issueFor(key)!.message}</span> : null
-                    ))}
+                    <div className="admin-photo-list">
+                      {currentForm.details.photos.map((photo: any, index: number) => (
+                        <div className="admin-photo-row" key={photo.slot}>
+                          <div className="admin-photo-thumb">{photo.src ? <img src={photo.src} alt={photo.file}/> : <Icon name="image" size={24}/>}</div>
+                          <span><small>{photo.slot}</small><strong>{photo.file || "No file selected"}</strong></span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   
-                  <label className="wide">Tech sheet URL<input value={currentForm.techSheet} onChange={(e) => setField("techSheet", e.target.value)} /></label>
-                  
-                  <div className="admin-repeat-group wide" style={{marginTop: 16}}>
-                    <div className="admin-section-heading"><div><h3>Related products</h3></div>{viewMode !== "live" && !isArchived && <button className="admin-button outline small" type="button" onClick={() => addStringItem("relatedProducts")}><Icon name="plus" size={16}/>Add related</button>}</div>
-                    {currentForm.details.relatedProducts.map((alias: string, index: number) => <div className="admin-repeat-row" key={index}><input value={alias} onChange={(event) => updateStringItem("relatedProducts", index, event.target.value)} placeholder="Product slug"/>{viewMode !== "live" && !isArchived && <button type="button" onClick={() => removeStringItem("relatedProducts", index)} aria-label="Remove item">×</button>}</div>)}
+                  <label className={`wide${aiClass("techSheet")}`}>Tech sheet URL<input value={currentForm.techSheet} onChange={(e) => setField("techSheet", e.target.value)} /></label>
+
+                  <div className="admin-repeat-group wide">
+                    <div className="admin-section-heading">
+                      <div>
+                        <h3>FAQs</h3>
+                        <p className="admin-field-hint">Optional questions shown above Also popular on the product page. Add up to {PRODUCT_FAQ_LIMIT}. Incomplete cards are hidden from customers.</p>
+                      </div>
+                      {viewMode !== "live" && !isArchived && (
+                        <button
+                          className="admin-button outline small"
+                          type="button"
+                          disabled={(currentForm.details.faqs ?? []).length >= PRODUCT_FAQ_LIMIT}
+                          onClick={addFaq}
+                        >
+                          <Icon name="plus" size={16}/>Add FAQ
+                        </button>
+                      )}
+                    </div>
+                    <div className="admin-component-list">
+                      {(currentForm.details.faqs ?? []).map((faq: ProductFaq, index: number) => {
+                        const fieldIssues = faqFieldIssues(faq);
+                        return (
+                          <div className={`admin-component-block ${Object.keys(fieldIssues).length ? "is-invalid" : ""}`} key={index}>
+                            <div className="admin-component-block-head">
+                              <h4>FAQ {index + 1}</h4>
+                              {viewMode !== "live" && !isArchived && <button type="button" className="admin-button ghost" onClick={() => removeFaq(index)}>Remove</button>}
+                            </div>
+                            <div className="admin-component-fields">
+                              <label className={`admin-component-description ${fieldIssues.question ? "admin-field-invalid" : ""}`}>Question
+                                <input
+                                  maxLength={PRODUCT_FAQ_QUESTION_MAX}
+                                  value={faq.question}
+                                  onChange={(event) => updateFaq(index, { question: event.target.value })}
+                                  placeholder="e.g. When should I sow this?"
+                                  aria-invalid={Boolean(fieldIssues.question)}
+                                />
+                                {fieldIssues.question && <span className="admin-inline-field-error">{fieldIssues.question}</span>}
+                                <span className="admin-character-count">{faq.question.length}/{PRODUCT_FAQ_QUESTION_MAX}</span>
+                              </label>
+                              <label className={`admin-component-description ${fieldIssues.answer ? "admin-field-invalid" : ""}`}>Answer
+                                <span className="admin-field-hint">Shown when a customer opens this question.</span>
+                                <textarea
+                                  rows={4}
+                                  maxLength={PRODUCT_FAQ_ANSWER_MAX}
+                                  value={faq.answer}
+                                  onChange={(event) => updateFaq(index, { answer: event.target.value })}
+                                  placeholder="Give a clear, practical answer"
+                                  aria-invalid={Boolean(fieldIssues.answer)}
+                                />
+                                {fieldIssues.answer && <span className="admin-inline-field-error">{fieldIssues.answer}</span>}
+                                <span className="admin-character-count">{faq.answer.length}/{PRODUCT_FAQ_ANSWER_MAX}</span>
+                              </label>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {(currentForm.details.faqs ?? []).length === 0 && <p className="admin-empty-inline">No FAQs yet.</p>}
+                    </div>
                   </div>
+                  
+                  <AlsoPopularPicker
+                    selectedSlugs={currentForm.details.relatedProducts}
+                    options={productOptions}
+                    productsBySlug={productsBySlug}
+                    readOnly={viewMode === "live" || isArchived}
+                    onChange={(slugs) => setDetail("relatedProducts", slugs)}
+                  />
                   
                   <div className="admin-section-heading wide" style={{marginTop: 16}}><h3>Display</h3></div>
-                  <label>Sort order <AdminOnlyMark /><input type="number" min="0" value={currentForm.details.sortOrder ?? ""} onChange={(e) => setNumberDetail("sortOrder", e.target.value)} /></label>
-                  <label className="admin-check-row"><input type="checkbox" checked={currentForm.details.featured} onChange={(event) => setDetail("featured", event.target.checked)}/><span><strong>Featured product</strong></span></label>
+                  <label className="admin-check-row"><input type="checkbox" checked={currentForm.details.featured} onChange={(event) => setDetail("featured", event.target.checked)}/><span><strong>Featured product</strong><span className="admin-field-hint">Pins this product first on category grids. Does not change Also popular.</span></span></label>
                 </div>
                 
                 {!isNew && (
@@ -2554,26 +2241,34 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
               </section>
             )}
 
-            {activeTab === 6 && (
+            {editorMode === "form" && activeTab === 6 && (
               <section className="admin-panel admin-form-card">
                 <h2>SEO</h2>
                 <div className="admin-form-grid">
-                  <label className={`wide ${issueFor("details.seoTitle") ? "admin-field-invalid" : ""}`}>
+                  <label className="wide">
+                    <FieldLabel hint="Copies the product name unless you overwrite it. Trademark symbols stay visible on the page H1.">H1</FieldLabel>
+                    <input
+                      maxLength={160}
+                      value={h1EditorValue(currentForm.name, currentForm.details.h1)}
+                      onChange={(e) => setDetail("h1", h1StoredValue(currentForm.name, e.target.value))}
+                    />
+                  </label>
+                  <label className={`wide ${issueFor("details.seoTitle") ? "admin-field-invalid" : ""}${aiClass("details.seoTitle")}`}>
                     <FieldLabel required={showPublishRequired} hint="Required before publishing. Shown in search results and browser tabs. Do not use ™ or ® — those belong on the product name.">SEO title</FieldLabel>
-                    <input aria-invalid={Boolean(issueFor("details.seoTitle"))} value={currentForm.details.seoTitle} onChange={(e) => setDetail("seoTitle", forSearchMetadata(e.target.value))} />
+                    <input aria-invalid={Boolean(issueFor("details.seoTitle"))} value={currentForm.details.seoTitle} onChange={(e) => setDetail("seoTitle", forSearchMetadataInput(e.target.value))} onBlur={(e) => setDetail("seoTitle", forSearchMetadata(e.target.value))} />
                     {issueFor("details.seoTitle") && <span className="admin-inline-field-error">{issueFor("details.seoTitle")!.message}</span>}
                   </label>
-                  <label className={`wide ${issueFor("details.seoDescription") ? "admin-field-invalid" : ""}`}>
+                  <label className={`wide ${issueFor("details.seoDescription") ? "admin-field-invalid" : ""}${aiClass("details.seoDescription")}`}>
                     <FieldLabel required={showPublishRequired} hint="Required before publishing. A concise summary that may appear beneath the page title in search results. Plain text only — no ™ or ®.">SEO description</FieldLabel>
-                    <textarea aria-invalid={Boolean(issueFor("details.seoDescription"))} value={currentForm.details.seoDescription} onChange={(e) => setDetail("seoDescription", forSearchMetadata(e.target.value))} rows={4} />
+                    <textarea aria-invalid={Boolean(issueFor("details.seoDescription"))} value={currentForm.details.seoDescription} onChange={(e) => setDetail("seoDescription", forSearchMetadataInput(e.target.value))} onBlur={(e) => setDetail("seoDescription", forSearchMetadata(e.target.value))} rows={4} />
                     {issueFor("details.seoDescription") && <span className="admin-inline-field-error">{issueFor("details.seoDescription")!.message}</span>}
                   </label>
-                  <label className="wide"><FieldLabel hint="Optional. Uses the SEO title when left blank. Do not use ™ or ®.">Social sharing title</FieldLabel><input value={currentForm.details.socialTitle} onChange={(e) => setDetail("socialTitle", forSearchMetadata(e.target.value))} /></label>
-                  <label className="wide"><FieldLabel hint="Optional. Uses the SEO description when left blank. Do not use ™ or ®.">Social sharing description</FieldLabel><textarea value={currentForm.details.socialDescription} onChange={(e) => setDetail("socialDescription", forSearchMetadata(e.target.value))} rows={4} /></label>
+                  <label className="wide"><FieldLabel hint="Optional. Uses the SEO title when left blank. Do not use ™ or ®.">Social sharing title</FieldLabel><input value={currentForm.details.socialTitle} onChange={(e) => setDetail("socialTitle", forSearchMetadataInput(e.target.value))} onBlur={(e) => setDetail("socialTitle", forSearchMetadata(e.target.value))} /></label>
+                  <label className="wide"><FieldLabel hint="Optional. Uses the SEO description when left blank. Do not use ™ or ®.">Social sharing description</FieldLabel><textarea value={currentForm.details.socialDescription} onChange={(e) => setDetail("socialDescription", forSearchMetadataInput(e.target.value))} onBlur={(e) => setDetail("socialDescription", forSearchMetadata(e.target.value))} rows={4} /></label>
                   <label className="wide"><FieldLabel hint="Choose a product photo or enter another image URL below.">Social sharing image</FieldLabel>
                     <select value={currentForm.details.photos.some((photo: any) => photo.src && photo.src === currentForm.details.socialImage) ? currentForm.details.socialImage : ""} onChange={(e) => setDetail("socialImage", e.target.value)}>
                       <option value="">Use the product hero image</option>
-                       {currentForm.details.photos.map((photo: any, index: number) => photo.src ? <option key={editorPhotoKey(photo, index)} value={photo.src}>{`Photo ${index + 1}`}</option> : null)}
+                      {currentForm.details.photos.filter((photo: any) => photo.src).map((photo: any, index: number) => <option key={`${photo.slot}-${index}`} value={photo.src}>{photo.slot || `Photo ${index + 1}`}</option>)}
                     </select>
                     <input type="url" value={currentForm.details.socialImage} onChange={(e) => setDetail("socialImage", e.target.value)} placeholder="https://example.com/social-image.jpg" />
                   </label>
@@ -2609,9 +2304,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
             onMouseDown={(event) => event.stopPropagation()}
           >
             <h2 id="unsaved-product-title">Unsaved changes</h2>
-            <p>{hasUnpublishedUpload
-              ? "A newly uploaded image is not attached to the saved live product until you publish. Leaving now may discard that association."
-              : isLive && hasDraft
+            <p>{isLive && hasDraft
               ? "This product has leftover unpublished changes. Publish or discard them, or leave and come back later."
               : isLive
                 ? "You have unpublished edits. Leaving now will lose them unless you publish first."
@@ -2630,7 +2323,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                   Save draft &amp; leave
                 </button>
               )}
-              <button className="admin-button outline admin-button-danger" type="button" onClick={() => navigate(listingPath, { bypassBlocker: true })} disabled={saving}>
+              <button className="admin-button outline admin-button-danger" type="button" onClick={() => navigate(listingPath)} disabled={saving}>
                 Leave without saving
               </button>
               <button className="admin-button ghost" type="button" onClick={() => setShowUnsavedPrompt(false)} disabled={saving}>
@@ -2650,6 +2343,8 @@ export default function Admin() {
   const route = location.split("?")[0];
   const isProducts = route === "/admin/products";
   const isCategories = route === "/admin/products/categories";
+  const isTechSheets = route === "/admin/tech-sheets";
+  const isAdministrators = route === "/admin/administrators";
   const isEditor = route.startsWith("/admin/products/") && route !== "/admin/products/categories";
 
   return (
@@ -2657,8 +2352,8 @@ export default function Admin() {
       {route === "/admin" && <Dashboard />}
       {isProducts && <ProductTable />}
       {isCategories && <AdminCategories />}
-      {(route === "/admin/images" || route.startsWith("/admin/images/")) && <AdminImages />}
-      {route === "/admin/administrators" && <AdminAdministrators />}
+      {isAdministrators && <AdminAdministrators />}
+      {isTechSheets && <AdminTechSheets />}
       {isEditor && (
         <ProductEditor
           isNew={route === "/admin/products/new"}

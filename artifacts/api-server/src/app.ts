@@ -3,9 +3,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import { clerkMiddleware } from "@clerk/express";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { publicRedirectTo } from "./lib/public-redirect";
+import { requireAdmin } from "./middlewares/admin-auth";
 
 const app: Express = express();
 
@@ -45,6 +47,10 @@ app.get("/product/:slug", async (req, res, next): Promise<void> => {
   res.redirect(301, toPath);
 });
 
+if (process.env.NODE_ENV !== "development" && process.env.CLERK_SECRET_KEY) {
+  app.use(clerkMiddleware());
+}
+app.use("/api/admin", requireAdmin);
 app.use("/api", router);
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 

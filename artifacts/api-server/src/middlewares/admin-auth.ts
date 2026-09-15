@@ -37,8 +37,13 @@ export async function getAdminSession(req: Request): Promise<AdminSession | null
 
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    if (isDevelopmentBypass()) {
+      res.locals.admin = await resolveAdmin(req);
+      next();
+      return;
+    }
     const auth = getAuth(req);
-    if (!isDevelopmentBypass() && !auth.userId) {
+    if (!auth.userId) {
       res.status(401).json({ error: "Sign in is required." });
       return;
     }
