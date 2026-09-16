@@ -21,3 +21,8 @@
 
 ## Dismissed categories
 - (None yet)
+
+## Audit record
+
+- The replacement-domain audit dated 16 September 2026 is recorded in [`docs/seo-audit.md`](docs/seo-audit.md).
+- The audit is findings-only; SEO, redirect, catalogue, and legal-content changes remain separate implementation work.
