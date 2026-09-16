@@ -13,3 +13,4 @@
 - [Git reconciliation safety](git-reconciliation-safety.md) — use normal fetch/merge or pull for concurrent GitHub work; never reconstruct overlapping commits through the API.
 - [Migration name collisions](migration-name-collisions.md) — when an applied migration name created a different schema, repair it with a new forward migration rather than editing history.
 - [Catalogue workbook replacement](catalogue-workbook-replacement.md) — imports replace the full product catalogue; require a current export and secure backup before commit.
+- [Empty catalogue is valid](empty-catalogue.md) — an intentional wipe must remain empty until an administrator imports or creates products.

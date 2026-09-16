@@ -76,21 +76,6 @@ function toPublicDetails(value: unknown, packSize: string, name = "") {
   };
 }
 
-const seedProducts = [
-  ["SouWest™ Pasture Mix", "$25.00 per kg", "25 kg bag", "in-stock", "Blended to order, 500 mm+ zones", "Specialty Mixes"],
-  ["Maximix", "$25.00 per kg", "25 kg bag", "in-stock", "Versatile pasture mix for broad-acre sowing", "Specialty Mixes"],
-  ["Silahay™ Mix", "$25.00 per kg", "25 kg bag", "low", "Hay and silage, mid rainfall", "Specialty Mixes"],
-  ["Self Regeneration Pasture Mix", "$25.00 per kg", "25 kg bag", "in-stock", "Built for persistence and recovery", "Specialty Mixes"],
-  ["Ceres PG One50 Ryegrass", "$14.50 per kg", "25 kg bag", "in-stock", "Perennial, 600 mm+ zones", "Ryegrasses"],
-  ["Margurita French Serradella", "$9.80 per kg", "25 kg bag", "low", "Reliable early-season legume", "Serradellas & Medics"],
-  ["SARDI Seven Lucerne", "$18.00 per kg", "25 kg bag", "in-stock", "High quality feed for rotational systems", "Lucerne"],
-  ["Dalkeith Subterranean Clover", "$11.20 per kg", "25 kg bag", "very-low", "Early season, 325–450 mm", "Clovers"],
-] as const;
-
-const createSlug = (name: string) =>
-  name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-
 function toSaleLine(line: typeof saleLinesTable.$inferSelect): SaleLine {
   return {
     stockCode: line.stockCode,
@@ -279,23 +264,6 @@ function getDraftValidationErrors(payload: {
 }
 
 async function ensureProducts() {
-  const existing = await db.select().from(productsTable)
-    .orderBy(desc(productsTable.updatedAt), desc(productsTable.id));
-  if (existing.length > 0) {
-    return existing;
-  }
-  await db.insert(productsTable).values(seedProducts.map(([name, price, packSize, status, note, category]) => ({
-    name,
-    slug: createSlug(name),
-    price,
-    packSize,
-    status,
-    note,
-    category,
-    techSheet: "",
-    publishStatus: "Published",
-    publishedAt: new Date(),
-  }))).onConflictDoNothing({ target: productsTable.name });
   return db.select().from(productsTable)
     .orderBy(desc(productsTable.updatedAt), desc(productsTable.id));
 }
