@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { createServer } from "node:net";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { after, before, test } from "node:test";
 import xlsx from "xlsx";
 
@@ -955,7 +955,13 @@ before(async () => {
   baseUrl = `http://127.0.0.1:${port}`;
   child = spawn(process.execPath, ["--enable-source-maps", "./dist/index.mjs"], {
     cwd: new URL(serverRoot).pathname,
-    env: { ...process.env, NODE_ENV: "test", PORT: String(port), AI_EXTRACT_STUB: "1" },
+    env: {
+      ...process.env,
+      NODE_ENV: "development",
+      PORT: String(port),
+      AI_EXTRACT_STUB: "1",
+      APP_STORAGE_BACKEND: "local",
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let stderr = "";
@@ -972,16 +978,32 @@ before(async () => {
     throw new Error(`${error.message}\n${stderr}`);
   });
 
-  execFileSync("pnpm", ["--filter", "@workspace/web", "run", "build"], {
-    cwd: new URL("../../..", import.meta.url),
-    env: { ...process.env, API_BASE: baseUrl },
-    encoding: "utf8",
-  });
+  const nextEnvPath = new URL("../../web/next-env.d.ts", import.meta.url);
+  const nextEnvBeforeBuild = await readFile(nextEnvPath, "utf8");
+  try {
+    execFileSync("pnpm", ["--filter", "@workspace/web", "run", "build"], {
+      cwd: new URL("../../..", import.meta.url),
+      env: {
+        ...process.env,
+        API_BASE: baseUrl,
+        NEXT_DIST_DIR: ".next-lifecycle",
+        NEXT_TSCONFIG_PATH: "tsconfig.lifecycle.json",
+      },
+      encoding: "utf8",
+    });
+  } finally {
+    await writeFile(nextEnvPath, nextEnvBeforeBuild);
+  }
   const webPort = await freePort();
   webBaseUrl = `http://127.0.0.1:${webPort}`;
   webChild = spawn("pnpm", ["--dir", "artifacts/web", "exec", "next", "start", "-p", String(webPort)], {
     cwd: new URL("../../..", import.meta.url),
-    env: { ...process.env, API_BASE: baseUrl },
+    env: {
+      ...process.env,
+      API_BASE: baseUrl,
+      NEXT_DIST_DIR: ".next-lifecycle",
+      NEXT_TSCONFIG_PATH: "tsconfig.lifecycle.json",
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let webStderr = "";

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
-import { after, before, test } from "node:test";
+import { after, afterEach, before, test } from "node:test";
 
 const serverRoot = new URL("..", import.meta.url);
 const testRunId = `${process.pid}-${Date.now()}`;
@@ -15,7 +15,7 @@ const PNG_1X1 = Buffer.from(
   "base64",
 );
 const PNG_RED_1X1 = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP4z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==",
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==",
   "base64",
 );
 
@@ -127,13 +127,18 @@ before(async () => {
   });
 });
 
-after(async () => {
+afterEach(async () => {
   for (const id of createdProductIds) {
     await request("DELETE", `/products/${id}`).catch(() => {});
   }
+  createdProductIds.length = 0;
   for (const id of createdAssetIds) {
     await request("DELETE", `/admin/media/${id}`, { confirm: true }).catch(() => {});
   }
+  createdAssetIds.length = 0;
+});
+
+after(async () => {
   await stopChild(child);
 });
 

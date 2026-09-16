@@ -629,7 +629,9 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       };
       const resolvedPayload = await applyTaxonomyCategory(
         normalizeEditable(payload),
-        lockedProduct.subcategoryId === null ? new Set() : new Set([lockedProduct.subcategoryId]),
+        lockedProduct.publishStatus === "Published" && lockedProduct.subcategoryId !== null
+          ? new Set([lockedProduct.subcategoryId])
+          : new Set(),
       );
       if (!resolvedPayload) throw new Error("INVALID_CATEGORY");
       const normalizedPayload = resolvedPayload;

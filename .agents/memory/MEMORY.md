@@ -13,3 +13,4 @@
 - [Category URL transitions](category-url-transitions.md) — every formerly public taxonomy path must redirect, including deactivation and cross-parent moves.
 - [Cache freshness regressions](cache-freshness-regressions.md) — prime cached content before a mutation when testing that published changes become visible immediately.
 - [Git reconciliation safety](git-reconciliation-safety.md) — use normal fetch/merge or pull for concurrent GitHub work; never reconstruct overlapping commits through the API.
+- [Migration name collisions](migration-name-collisions.md) — when an applied migration name created a different schema, repair it with a new forward migration rather than editing history.

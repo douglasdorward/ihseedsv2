@@ -176,6 +176,7 @@ router.post("/admin/media/upload-request", async (req, res): Promise<void> => {
     contentType: contentType as "image/jpeg" | "image/png" | "image/webp",
     bytes,
     storageKind: "managed",
+    objectPath: stagingPath,
     stagingPath,
   }).returning();
   res.status(201).json({
