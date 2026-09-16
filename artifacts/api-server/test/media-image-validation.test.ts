@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { downloadedObjectBytes } from "../src/lib/app-storage.ts";
 import { convertToWebp } from "../src/lib/media-image.ts";
 
 const PNG_1X1 = Buffer.from(
@@ -14,4 +15,10 @@ test("convertToWebp turns a PNG into usable WebP bytes", async () => {
   assert.ok(converted.height >= 1);
   assert.equal(converted.bytes.subarray(0, 4).toString(), "RIFF");
   assert.equal(converted.bytes.subarray(8, 12).toString(), "WEBP");
+});
+
+test("Replit Object Storage download tuples expose their file bytes", () => {
+  const downloaded = downloadedObjectBytes([PNG_1X1]);
+  assert.ok(downloaded);
+  assert.deepEqual(downloaded, PNG_1X1);
 });

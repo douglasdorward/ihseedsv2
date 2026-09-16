@@ -62,6 +62,13 @@ const localStore: ObjectStore = {
 let replitStore: ObjectStore | undefined;
 let replitStoreError: Error | undefined;
 
+export function downloadedObjectBytes(value: [Buffer | Uint8Array] | Buffer | Uint8Array) {
+  const contents = Array.isArray(value) ? value[0] : value;
+  if (!contents) return null;
+  const bytes = Buffer.isBuffer(contents) ? contents : Buffer.from(contents);
+  return bytes.length > 1 ? bytes : null;
+}
+
 async function replitObjectStore(): Promise<ObjectStore> {
   if (replitStore) return replitStore;
   if (replitStoreError) throw replitStoreError;
@@ -69,7 +76,7 @@ async function replitObjectStore(): Promise<ObjectStore> {
     const mod = await import("@replit/object-storage") as {
       Client: new () => {
         uploadFromBytes(name: string, contents: Buffer): Promise<{ ok: boolean; error?: unknown }>;
-        downloadAsBytes(name: string): Promise<{ ok: boolean; value?: Buffer | Uint8Array; error?: unknown }>;
+        downloadAsBytes(name: string): Promise<{ ok: boolean; value?: [Buffer | Uint8Array] | Buffer | Uint8Array; error?: unknown }>;
         delete(name: string): Promise<{ ok: boolean }>;
       };
     };
@@ -82,9 +89,8 @@ async function replitObjectStore(): Promise<ObjectStore> {
       async get(key) {
         const result = await client.downloadAsBytes(key);
         if (!result.ok || result.value == null) return null;
-        const value = result.value;
-        const bytes = Buffer.isBuffer(value) ? value : Buffer.from(value);
-        if (bytes.length <= 1) return null;
+        const bytes = downloadedObjectBytes(result.value);
+        if (!bytes) return null;
         return { bytes, contentType: contentTypeFor(key) };
       },
       async remove(key) {

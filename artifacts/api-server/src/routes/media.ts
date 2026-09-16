@@ -206,7 +206,14 @@ router.put("/admin/media/:id/object", async (req, res): Promise<void> => {
     return;
   }
   const stagingPath = asset.stagingPath || mediaObjectPath(id, "original.bin");
-  await putStoredFile(stagingPath, body, asset.contentType || "application/octet-stream");
+  try {
+    await putStoredFile(stagingPath, body, asset.contentType || "application/octet-stream");
+  } catch (error) {
+    await db.delete(mediaAssetsTable).where(eq(mediaAssetsTable.id, id));
+    req.log.error({ err: error, assetId: id }, "Image storage upload failed");
+    res.status(503).json({ error: "Image storage is temporarily unavailable. Please try the upload again." });
+    return;
+  }
   await db.update(mediaAssetsTable).set({
     bytes: body.length,
     stagingPath,
