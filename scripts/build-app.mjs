@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { temporaryBuildApiCommand } from "./build-app-config.mjs";
 
 const workspaceRoot = new URL("../", import.meta.url);
 const supportedArgs = new Set(["--skip-api-build"]);
@@ -57,8 +58,8 @@ if (!skipApiBuild) {
 }
 
 const apiProcess = spawn(
-  "pnpm",
-  ["--filter", "@workspace/api-server", "run", "start"],
+  temporaryBuildApiCommand.command,
+  temporaryBuildApiCommand.args,
   {
     cwd: workspaceRoot,
     detached: true,

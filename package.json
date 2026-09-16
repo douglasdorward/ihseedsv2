@@ -12,6 +12,7 @@
     "setup:database": "pnpm --filter @workspace/db run setup",
     "test:routing": "node scripts/smoke-routed-product.mjs",
     "test:routing:process": "node scripts/check-single-catalogue-server.mjs",
+    "test:build-helper": "node --test scripts/build-app.test.mjs",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
