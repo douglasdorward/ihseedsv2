@@ -10,7 +10,7 @@
     "backfill:media": "tsx ./scripts/backfill-media-library.ts",
     "typecheck": "pnpm --filter @workspace/db exec tsc --build --force && tsc -p tsconfig.json --noEmit",
     "test:auth": "pnpm run build && pnpm --filter @workspace/db run migrate && node --test ./test/admin-auth.test.mjs",
-    "test:lifecycle": "pnpm run build && pnpm --filter @workspace/db run migrate && node --test ../claude-design/test/persist-latest-product.test.mjs && node ./test/products-lifecycle.test.mjs",
+    "test:lifecycle": "node ./scripts/run-lifecycle-tests.mjs",
     "test:media": "tsx --test ./test/media-image-validation.test.ts && node --test ./test/media-library.test.mjs"
   },
   "dependencies": {

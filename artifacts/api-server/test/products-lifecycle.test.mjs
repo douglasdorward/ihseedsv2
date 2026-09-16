@@ -920,6 +920,13 @@ before(async () => {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is required for lifecycle API tests");
   }
+  if (!/^ih_catalogue_test_\d+_\d+$/.test(process.env.CATALOGUE_TEST_DATABASE ?? "")) {
+    throw new Error("Lifecycle API tests must run through the isolated lifecycle-test runner");
+  }
+  const activeDatabase = sql("SELECT current_database()");
+  if (activeDatabase !== process.env.CATALOGUE_TEST_DATABASE) {
+    throw new Error(`Refusing destructive lifecycle tests in database ${activeDatabase}`);
+  }
   const port = await freePort();
   baseUrl = `http://127.0.0.1:${port}`;
   child = spawn(process.execPath, ["--enable-source-maps", "./dist/index.mjs"], {
