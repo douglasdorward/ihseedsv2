@@ -24,7 +24,7 @@ export default async function ProductsIndex() {
       </section>
 
       <section style={{ background: "#FFFFFF" }}>
-        <div className="page-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "48px 40px 64px" }}>
+        <div className="page-content products-page-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "48px 40px 64px" }}>
           <Suspense fallback={<div className="empty-state">Loading products…</div>}>
             <ProductsListing categories={categories} products={products} />
           </Suspense>
