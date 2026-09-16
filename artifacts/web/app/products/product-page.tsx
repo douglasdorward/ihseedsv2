@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { Icon } from "../../components/Icon";
+import { ProductNewStamp } from "../../components/NewStamp";
 import { StatusPill } from "../../components/StatusPill";
 import {
   defaultSaleLine,
@@ -153,7 +154,8 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([productJsonLd, breadcrumbJsonLd, ...(faqJsonLd ? [faqJsonLd] : [])]).replace(/</g, "\\u003c") }} />
-      <section style={{ minHeight: 520, backgroundImage: `linear-gradient(rgba(29,40,28,.55), rgba(29,40,28,.72)), url(${image})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+      <section className="product-hero" style={{ minHeight: 520, backgroundImage: `linear-gradient(rgba(29,40,28,.55), rgba(29,40,28,.72)), url(${image})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+        <ProductNewStamp listingState={product.listingState} size="hero" />
         <div className="product-hero-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "150px 40px 64px", display: "flex", flexDirection: "column", gap: 20 }}>
           <nav aria-label="Breadcrumb" style={{ color: "var(--yellow)", fontSize: 14, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase" }}>
             <Link href={CATALOGUE_INDEX_PATH}>Products</Link> › <Link href={categoryUrl}>{product.category}</Link>
@@ -203,7 +205,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
           </div>
         </section>
       )}
-      {alsoPopular.length > 0 && <section className="also-popular-section" aria-labelledby="also-popular-heading"><div className="also-popular-inner"><div className="also-popular-header"><h2 id="also-popular-heading">Also popular:</h2><Link href={categoryUrl} className="also-popular-category-link">View all {product.category}<Icon name="arrow-right" size={18} /></Link></div><div className="also-popular-grid">{alsoPopular.map((item) => <Link key={item.id} href={productPublicPath(item, categories)} className="also-popular-card"><div className="also-popular-image" role="img" aria-label={item.name} style={{ backgroundImage: `url(${productImage(item)})` }}><StatusPill status={item.status} /></div><div className="also-popular-card-body"><div><h3>{item.name}</h3>{item.details.tagline?.trim() && <p>{item.details.tagline}</p>}</div><span className="also-popular-arrow" aria-hidden="true"><Icon name="arrow-right" size={18} /></span></div></Link>)}</div></div></section>}
+      {alsoPopular.length > 0 && <section className="also-popular-section" aria-labelledby="also-popular-heading"><div className="also-popular-inner"><div className="also-popular-header"><h2 id="also-popular-heading">Also popular:</h2><Link href={categoryUrl} className="also-popular-category-link">View all {product.category}<Icon name="arrow-right" size={18} /></Link></div><div className="also-popular-grid">{alsoPopular.map((item) => <Link key={item.id} href={productPublicPath(item, categories)} className="also-popular-card"><div className="also-popular-image" role="img" aria-label={item.name} style={{ backgroundImage: `url(${productImage(item)})` }}><StatusPill status={item.status} /><ProductNewStamp listingState={item.listingState} /></div><div className="also-popular-card-body"><div><h3>{item.name}</h3>{item.details.tagline?.trim() && <p>{item.details.tagline}</p>}</div><span className="also-popular-arrow" aria-hidden="true"><Icon name="arrow-right" size={18} /></span></div></Link>)}</div></div></section>}
     </>
   );
 }

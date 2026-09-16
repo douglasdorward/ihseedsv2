@@ -24,7 +24,7 @@ Excel workbook
   -> confirmed transactional import
   -> PostgreSQL product and taxonomy records
   -> admin editing or publication
-  -> Published + Active public API
+  -> Published + Active or New public API
   -> category and product pages, SEO and sitemap
 ```
 
@@ -103,16 +103,17 @@ Published writes, publication, archive, restore, and leftover discard operations
 - It must pass current publication checks before going live again.
 - Permanent deletion is a distinct, destructive admin action.
 
-### Active and Legacy are not lifecycle states
+### Active, New and Legacy are not lifecycle states
 
-`Published/Draft/Archived` controls whether a record is eligible to be public. `Active/Legacy` is a manual listing choice within the Published catalogue.
+`Published/Draft/Archived` controls whether a record is eligible to be public. `Active/New/Legacy` is a manual listing choice within the Published catalogue.
 
 - **Active** products can appear in the main public catalogue and may have availability.
+- **New** products appear in the same current catalogue as Active, may have availability, and show a red NEW stamp on public product cards and the product page.
 - **Legacy** products stay published as catalogue history only. They cannot have availability: sale-line stock and availability overrides are treated as Unavailable.
 - Listing state is chosen by the administrator. It is not derived from sale-line availability.
 - Archiving is different: Archive removes the product from the public website entirely while keeping the record. Restoring an Archived product returns it to Draft.
 
-Only **Published + Active** products appear in the main public catalogue and sitemap. Published Legacy products can appear only as names in the category page’s “Also in our catalogue” section. Draft and Archived products never appear there.
+Only **Published + Active or New** products appear in the main public catalogue and sitemap. Published Legacy products can appear only as names in the category page’s “Also in our catalogue” section. Draft and Archived products never appear there.
 
 ## 3. PostgreSQL data model
 
@@ -365,7 +366,7 @@ This is the core row. It supplies identity, taxonomy, lifecycle intent, broad fa
 Important notes:
 
 - `status` means lifecycle: Published, Draft or Archived.
-- `listing_state` is the stored Active/Legacy listing. It is independent of lifecycle and takes precedence over availability. Legacy products cannot have availability.
+- `listing_state` is the stored Active/New/Legacy listing. It is independent of lifecycle and takes precedence over availability. New products appear in the current catalogue with a NEW stamp. Legacy products cannot have availability.
 - `listing_override` is retained only for older workbook compatibility (`Force active` / `Force legacy` / `Active` / `Legacy`). `listing_state` wins when both are present.
 - `stock_codes` and `availability` are compatibility/summary values; `4 Sale lines` is the structured sale-line source.
 - `seo_title` and `seo_description` are present in this approved sheet but are
@@ -598,7 +599,7 @@ The following matrix groups related fields. “Publish required” means require
 | Tech-sheet URL | `tech_sheet_pdf_path` | Content & publishing | No | No | Conditional download link |
 | Photos | `photo_1`, `photo_2`, `photo_3` | Content & publishing | No | No | First nonblank photo is hero; other slots retained |
 | FAQs | `10 Product FAQs` | Content & publishing (Form and Product page) | No | No | Accordion band above Also popular, max ten. Incomplete question/answer cards are hidden. Missing sheet leaves stored FAQs unchanged; a represented product replaces its FAQ set |
-| Also popular | `relatedProducts` slugs | Content & publishing (Form and Product page) | No | No | Chosen Active published products on the Also popular band, max three. A Legacy or missing pick is replaced in that slot with another Active product from the same category. An empty list uses three other same-category Active products |
+| Also popular | `relatedProducts` slugs | Content & publishing (Form and Product page) | No | No | Chosen Active or New published products on the Also popular band, max three. A Legacy or missing pick is replaced in that slot with another current product from the same category. An empty list uses three other same-category Active or New products |
 | Sort order/featured | product fields | Featured on Content & publishing; product `sortOrder` is not in the editor (retained on save/import) | No | No | Featured sorts category grids first. Also popular does not use featured. Product `sortOrder` is stored/admin-only and is not used by the current public pages |
 | Legacy URL | `website_url` / `7 Website SEO.product_url` | Content & publishing | No | No | Admin/compatibility; redirects are separate |
 | SEO title | `7 Website SEO.seo_title` or legacy `menu_label`; `1 Products` cells are currently ignored | SEO | No | **Yes** | Document title and metadata; `™`/`®` are stripped |
@@ -610,7 +611,7 @@ The following matrix groups related fields. “Publish required” means require
 | Category FAQs | taxonomy admin | Categories admin | No | No | Accordion band above “Also in our catalogue”, max twenty. Incomplete question/answer rows are dropped on save. Not in the workbook; overlay import keeps stored FAQs |
 | Redirects | `9 Redirects` | Import/database | No | No | Old path to current path |
 | Lifecycle status | `status` | Product list/import | New defaults Draft | Explicit publication validated | Controls public eligibility |
-| Listing state | listing fields | Basics | Active | No | Manual Active/Legacy listing; public output only shows Active products |
+| Listing state | listing fields | Basics | Active | No | Manual Active/New/Legacy listing; public output shows Active and New products. New renders a NEW stamp |
 
 ## 7. Admin website behavior
 
@@ -669,7 +670,7 @@ Trademark marks belong on the product name. The Basics tab includes a TM button 
 
 ### Product directory
 
-`/products` lists every Published + Active product, with a left sidebar for Category, End-use, Livestock, Tolerance, Rainfall, soil type and sowing-rate context. Filter state is stored in the query string. Category landings stay at `/products/{category}` and are not this listing.
+`/products` lists every Published + Active or New product, with a left sidebar for Category, End-use, Livestock, Tolerance, Rainfall, soil type and sowing-rate context. Filter state is stored in the query string. Category landings stay at `/products/{category}` and are not this listing.
 
 ### Category page
 
@@ -705,7 +706,7 @@ The current public hierarchy is:
 
 “FAQs” is omitted when no stored item has both a question and an answer. Incomplete editor cards stay stored and stay hidden from customers.
 
-“Also popular” shows chosen Active published products (max three). If a stored pick is Legacy or otherwise not public, that slot is filled with another Active product from the same category, shuffled with a slug seed so the substitute is stable across loads. An empty list shows three other Active products in the same category. Featured does not rank this list.
+“Also popular” shows chosen Active or New published products (max three). If a stored pick is Legacy or otherwise not public, that slot is filled with another current product from the same category, shuffled with a slug seed so the substitute is stable across loads. An empty list shows three other Active or New products in the same category. Featured does not rank this list.
 
 ### SEO and structured data
 
@@ -715,7 +716,7 @@ The current public hierarchy is:
 - Product JSON-LD contains the public name, IH Seeds brand, public description, optional real image and selected Quick facts.
 - When a product has complete FAQs, the page also emits FAQPage JSON-LD for those question/answer pairs.
 - When a category page has complete FAQs, it also emits FAQPage JSON-LD for those question/answer pairs.
-- The sitemap contains the same Published + Active product set as the main catalogue.
+- The sitemap contains the same Published + Active or New product set as the main catalogue.
 - Redirect lookup supports valid legacy paths; the application issues permanent redirects for mapped routes.
 
 ### Public redaction
@@ -762,7 +763,7 @@ After that upload, the running implementation was refined further:
 - PostgreSQL-backed Published/Draft/Archived lifecycle with separate snapshots for revisions to live products
 - Transactional row locking around lifecycle writes
 - Published-only public endpoints with no unsafe complete-static-catalogue fallback
-- Independent Active/Legacy listing chosen by the administrator, taking precedence over availability
+- Independent Active/New/Legacy listing chosen by the administrator, taking precedence over availability
 - Separate name-only Legacy section on category pages
 - Immutable product and category slugs, plus database redirects
 - Seven-sheet dry-run/token/commit workbook workflow
@@ -861,7 +862,7 @@ Do not write tests or business logic that expects these exact totals. Normal cat
 7. Confirm import only with the token from the final unchanged file.
 8. Review Published, Draft and Archived lists after commit.
 9. Spot-check affected public category and product pages.
-10. Confirm the sitemap/public catalogue contains only the expected Published + Active products.
+10. Confirm the sitemap/public catalogue contains only the expected Published + Active or New products.
 
 ## 12. Copyable Claude specification for the next workbook
 

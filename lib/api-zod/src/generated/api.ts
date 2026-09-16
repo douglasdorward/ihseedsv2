@@ -171,7 +171,7 @@ export const ListProductsResponseItem = zod.object({
   "subcategoryId": zod.number().multipleOf(listProductsResponseSubcategoryIdMultipleOf).nullable(),
   "techSheet": zod.string(),
   "guideYear": zod.string(),
-  "listingState": zod.enum(['Active']),
+  "listingState": zod.enum(['Active', 'New']).describe('Current-catalogue listing. New products render a NEW stamp on public cards and the product page.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -269,7 +269,7 @@ export const ListProductsResponseItem = zod.object({
   "canonicalUrl": zod.string(),
   "robotsIndex": zod.boolean()
 }).describe('Public-facing agronomy, merchandising, and SEO fields only.')
-}).describe('Published, Active catalogue data. Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.')
+}).describe('Published current-catalogue data (Active or New). Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.')
 export const ListProductsResponse = zod.array(ListProductsResponseItem)
 
 
@@ -429,7 +429,7 @@ export const CreateProductBody = zod.object({
   "category": zod.string().min(1).max(createProductBodyCategoryMax),
   "subcategoryId": zod.number().multipleOf(createProductBodySubcategoryIdMultipleOf).nullish(),
   "techSheet": zod.string().max(createProductBodyTechSheetMax),
-  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp.'),
   "details": zod.object({
   "stockCode": zod.string().max(createProductBodyDetailsStockCodeMax),
   "guideSection": zod.string().max(createProductBodyDetailsGuideSectionMax),
@@ -696,7 +696,7 @@ export const CreateProductResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).describe('Manual Active\/New\/Legacy listing. Independent of Published\/Draft\/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -893,7 +893,7 @@ export const GetProductBySlugResponse = zod.object({
   "subcategoryId": zod.number().multipleOf(getProductBySlugResponseSubcategoryIdMultipleOf).nullable(),
   "techSheet": zod.string(),
   "guideYear": zod.string(),
-  "listingState": zod.enum(['Active']),
+  "listingState": zod.enum(['Active', 'New']).describe('Current-catalogue listing. New products render a NEW stamp on public cards and the product page.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -991,7 +991,7 @@ export const GetProductBySlugResponse = zod.object({
   "canonicalUrl": zod.string(),
   "robotsIndex": zod.boolean()
 }).describe('Public-facing agronomy, merchandising, and SEO fields only.')
-}).describe('Published, Active catalogue data. Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.')
+}).describe('Published current-catalogue data (Active or New). Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.')
 
 
 /**
@@ -1157,7 +1157,7 @@ export const UpdateProductBody = zod.object({
   "descriptionSource": zod.string().max(updateProductBodyDescriptionSourceMax).optional(),
   "websiteUrlLegacy": zod.string().max(updateProductBodyWebsiteUrlLegacyMax).optional(),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(updateProductBodyDetailsStockCodeMax),
   "guideSection": zod.string().max(updateProductBodyDetailsGuideSectionMax),
@@ -1413,7 +1413,7 @@ export const UpdateProductResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).describe('Manual Active\/New\/Legacy listing. Independent of Published\/Draft\/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -1706,7 +1706,7 @@ export const GetAdminSummaryResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).describe('Manual Active\/New\/Legacy listing. Independent of Published\/Draft\/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -2125,7 +2125,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).describe('Manual Active\/New\/Legacy listing. Independent of Published\/Draft\/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -2269,7 +2269,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "descriptionSource": zod.string().max(listAdminProductsResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(listAdminProductsResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -2691,7 +2691,7 @@ export const GetAdminProductResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).describe('Manual Active\/New\/Legacy listing. Independent of Published\/Draft\/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -2835,7 +2835,7 @@ export const GetAdminProductResponse = zod.object({
   "descriptionSource": zod.string().max(getAdminProductResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(getAdminProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -3129,7 +3129,7 @@ export const SaveProductDraftRevisionBody = zod.object({
   "descriptionSource": zod.string().max(saveProductDraftRevisionBodyDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(saveProductDraftRevisionBodyWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(saveProductDraftRevisionBodyDetailsStockCodeMax),
   "guideSection": zod.string().max(saveProductDraftRevisionBodyDetailsGuideSectionMax),
@@ -3539,7 +3539,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).describe('Manual Active\/New\/Legacy listing. Independent of Published\/Draft\/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -3683,7 +3683,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "descriptionSource": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -3977,7 +3977,7 @@ export const PublishProductBody = zod.object({
   "descriptionSource": zod.string().max(publishProductBodyDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(publishProductBodyWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(publishProductBodyDetailsStockCodeMax),
   "guideSection": zod.string().max(publishProductBodyDetailsGuideSectionMax),
@@ -4387,7 +4387,7 @@ export const PublishProductResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).describe('Manual Active\/New\/Legacy listing. Independent of Published\/Draft\/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -4531,7 +4531,7 @@ export const PublishProductResponse = zod.object({
   "descriptionSource": zod.string().max(publishProductResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(publishProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(publishProductResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(publishProductResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -4952,7 +4952,7 @@ export const ArchiveProductResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).describe('Manual Active\/New\/Legacy listing. Independent of Published\/Draft\/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -5096,7 +5096,7 @@ export const ArchiveProductResponse = zod.object({
   "descriptionSource": zod.string().max(archiveProductResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(archiveProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -5517,7 +5517,7 @@ export const RestoreProductResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).describe('Manual Active\/New\/Legacy listing. Independent of Published\/Draft\/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -5661,7 +5661,7 @@ export const RestoreProductResponse = zod.object({
   "descriptionSource": zod.string().max(restoreProductResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(restoreProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -6082,7 +6082,7 @@ export const DiscardProductDraftResponse = zod.object({
   "descriptionSource": zod.string().optional().describe('Admin-only provenance'),
   "websiteUrlLegacy": zod.string().optional().describe('Admin-only legacy URL'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
-  "listingState": zod.enum(['Active', 'Legacy']).describe('Manual Active\/Legacy listing. Independent of Published\/Draft\/Archived. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).describe('Manual Active\/New\/Legacy listing. Independent of Published\/Draft\/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "saleLines": zod.array(zod.object({
   "stockCode": zod.string(),
   "seedForm": zod.string(),
@@ -6226,7 +6226,7 @@ export const DiscardProductDraftResponse = zod.object({
   "descriptionSource": zod.string().max(discardProductDraftResponseTwoDraftOneOneDescriptionSourceMax),
   "websiteUrlLegacy": zod.string().max(discardProductDraftResponseTwoDraftOneOneWebsiteUrlLegacyMax),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
-  "listingState": zod.enum(['Active', 'Legacy']).optional().describe('Manual Active\/Legacy listing. Defaults to Active. Legacy products cannot have availability.'),
+  "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
   "stockCode": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsStockCodeMax),
   "guideSection": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsGuideSectionMax),
@@ -6818,6 +6818,16 @@ export const CompleteMediaUploadResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
+
+
+/**
+ * @summary Upload original JPEG, PNG, or WebP bytes for a pending library asset
+ */
+export const PutMediaObjectParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const PutMediaObjectResponse = zod.void()
 
 
 /**

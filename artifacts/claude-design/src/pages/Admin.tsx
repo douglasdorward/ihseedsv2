@@ -4,12 +4,14 @@ import { AlsoPopularPicker } from "../components/AlsoPopularPicker";
 import { ProductPageEditor } from "../components/ProductPageEditor";
 import { FillFromPdf } from "../components/FillFromPdf";
 import AdminTechSheets from "./AdminTechSheets";
+import AdminImages from "./AdminImages";
 import { fetchTechSheetItem } from "../ai-fill";
 import { isAlsoPopularEligible } from "../also-popular";
 import { navigate, useLocation } from "../router";
 import AdminCategories from "./AdminCategories";
 import AdminAdministrators from "./AdminAdministrators";
 import { persistLatestProductAndPublish } from "../persist-latest-product";
+import { photoDisplaySrc, uploadMediaAsset } from "../upload-image";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListAdminProducts,
@@ -469,9 +471,9 @@ function TabCompleteness({ form, tab }: { form: any, tab: number }) {
 }
 
 function getListingState(product: any): ProductListingState {
-  return product.listingState === "Legacy" || product.listingOverride === "Force legacy" || product.listingOverride === "Legacy"
-    ? "Legacy"
-    : "Active";
+  if (product.listingState === "Legacy" || product.listingOverride === "Force legacy" || product.listingOverride === "Legacy") return "Legacy";
+  if (product.listingState === "New") return "New";
+  return "Active";
 }
 
 function getDerivedAvailability(product: any) {
@@ -566,8 +568,9 @@ function AdminLayout({ children, mobileOpen, setMobileOpen }: { children: ReactN
   const nav = [
     { label: "Dashboard", icon: "dashboard", href: "/admin", enabled: true },
     { label: "Products & mixes", icon: "sprout", href: "/admin/products", enabled: true },
-    { label: "Administrators", icon: "users", href: "/admin/administrators", enabled: true },
+    { label: "Images", icon: "image", href: "/admin/images", enabled: true },
     { label: "Tech sheets", icon: "file-text", href: "/admin/tech-sheets", enabled: true },
+    { label: "Administrators", icon: "users", href: "/admin/administrators", enabled: true },
     { label: "Site settings", icon: "settings", href: "", enabled: false },
   ];
 
@@ -968,7 +971,7 @@ function ProductTable() {
         <div className="admin-table-tools">
           <label className="admin-search"><Icon name="search" size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products" /></label>
           <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} aria-label="Filter by category"><option value="">Category</option>{Array.from(new Set(products.map(p => p.category).filter(Boolean))).map(c => <option key={c} value={c}>{c}</option>)}</select>
-          <select value={listingFilter} onChange={(event) => setListingFilter(event.target.value)} aria-label="Filter by listing"><option value="">Listing</option><option value="Active">Active</option><option value="Legacy">Legacy</option></select>
+          <select value={listingFilter} onChange={(event) => setListingFilter(event.target.value)} aria-label="Filter by listing"><option value="">Listing</option><option value="Active">Active</option><option value="New">New</option><option value="Legacy">Legacy</option></select>
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter by stock level"><option value="">Stock</option>{OPTS.availability.map((level) => <option key={level} value={level}>{level}</option>)}</select>
           <span>{rows.length} product{rows.length === 1 ? "" : "s"}</span>
         </div>
@@ -1143,7 +1146,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
       descriptionSource: item.descriptionSource || "",
       websiteUrlLegacy: item.websiteUrlLegacy || "",
       availabilityOverride: item.availabilityOverride ?? null,
-      listingState: item.listingState === "Legacy" || item.listingOverride === "Force legacy" || item.listingOverride === "Legacy" ? "Legacy" : "Active",
+      listingState: getListingState(item),
       saleLines: item.saleLines || [],
       details: {
         ...blankProduct.details,
@@ -1869,8 +1872,8 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                   </label>
                   <div className={`admin-choice-field wide ${issueFor("details.recordType") ? "admin-field-invalid" : ""}`} role="group" aria-required="true" aria-invalid={Boolean(issueFor("details.recordType"))} aria-label="Record type"><FieldLabel required>Record type</FieldLabel><div>{(["Mix", "Variety", "Commodity / generic"] as RecordKind[]).map((kind) => <button key={kind} type="button" className={currentForm.details.recordType === kind ? "selected" : ""} onClick={() => setDetail("recordType", kind as any)}>{kind}</button>)}</div>{issueFor("details.recordType") && <span className="admin-inline-field-error">{issueFor("details.recordType")!.message}</span>}</div>
                   <div className="admin-choice-field wide" role="group" aria-label="Listing state">
-                    <FieldLabel hint="Active products can appear on the current selling catalogue and may have availability. Legacy products stay published as catalogue history only and cannot have availability. This is different from Archiving, which removes a product from the public website entirely.">Listing state</FieldLabel>
-                    <div>{(["Active", "Legacy"] as ProductListingState[]).map((state) => <button key={state} type="button" className={getListingState(currentForm) === state ? "selected" : ""} onClick={() => setListingState(state)}>{state}</button>)}</div>
+                    <FieldLabel hint="Active and New products can appear on the current selling catalogue and may have availability. New shows a red NEW stamp on public cards and the product page. Legacy products stay published as catalogue history only and cannot have availability. This is different from Archiving, which removes a product from the public website entirely.">Listing state</FieldLabel>
+                    <div>{(["Active", "New", "Legacy"] as ProductListingState[]).map((state) => <button key={state} type="button" className={getListingState(currentForm) === state ? "selected" : ""} onClick={() => setListingState(state)}>{state}</button>)}</div>
                   </div>
                   {!isMix && <label className={aiClass("details.botanicalName")}>Botanical name<input value={currentForm.details.botanicalName} onChange={(event) => setDetail("botanicalName", event.target.value)} placeholder="e.g. Lolium multiflorum"/></label>}
                 </div>
@@ -2147,12 +2150,32 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                   <label>Legacy website URL <AdminOnlyMark /><input value={currentForm.websiteUrlLegacy} onChange={(e) => setField("websiteUrlLegacy", e.target.value)} /></label>
                   
                   <div className="admin-repeat-group wide">
-                    <div className="admin-section-heading"><div><h3>Photos</h3></div></div>
+                    <div className="admin-section-heading"><div><h3>Photos</h3><p>Uploads go to the Images library as WebP. You can still paste an external URL.</p></div></div>
                     <div className="admin-photo-list">
                       {currentForm.details.photos.map((photo: any, index: number) => (
-                        <div className="admin-photo-row" key={photo.slot}>
-                          <div className="admin-photo-thumb">{photo.src ? <img src={photo.src} alt={photo.file}/> : <Icon name="image" size={24}/>}</div>
+                        <div className="admin-photo-row" key={photo.slot || index}>
+                          <div className="admin-photo-thumb">{photoDisplaySrc(photo) ? <img src={photoDisplaySrc(photo)} alt={photo.alt || photo.file}/> : <Icon name="image" size={24}/>}</div>
                           <span><small>{photo.slot}</small><strong>{photo.file || "No file selected"}</strong></span>
+                          {viewMode !== "live" && !isArchived && (
+                            <label className="admin-text-button">
+                              Upload
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                hidden
+                                onChange={async (event) => {
+                                  const file = event.target.files?.[0];
+                                  event.target.value = "";
+                                  if (!file) return;
+                                  try {
+                                    updatePhoto(index, { ...await uploadMediaAsset(file), role: index === 0 ? "hero" : photo.role });
+                                  } catch (caught) {
+                                    setError(caught instanceof Error ? caught.message : "Upload failed.");
+                                  }
+                                }}
+                              />
+                            </label>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -2344,6 +2367,7 @@ export default function Admin() {
   const isProducts = route === "/admin/products";
   const isCategories = route === "/admin/products/categories";
   const isTechSheets = route === "/admin/tech-sheets";
+  const isImages = route === "/admin/images" || route.startsWith("/admin/images/");
   const isAdministrators = route === "/admin/administrators";
   const isEditor = route.startsWith("/admin/products/") && route !== "/admin/products/categories";
 
@@ -2353,6 +2377,7 @@ export default function Admin() {
       {isProducts && <ProductTable />}
       {isCategories && <AdminCategories />}
       {isAdministrators && <AdminAdministrators />}
+      {isImages && <AdminImages />}
       {isTechSheets && <AdminTechSheets />}
       {isEditor && (
         <ProductEditor

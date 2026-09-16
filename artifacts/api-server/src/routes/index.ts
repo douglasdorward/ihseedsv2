@@ -7,6 +7,7 @@ import importRouter from "./import";
 import administratorsRouter from "./administrators";
 import aiIngestRouter from "./ai-ingest";
 import authRouter from "./auth";
+import mediaRouter from "./media";
 
 const router: IRouter = Router();
 
@@ -17,6 +18,7 @@ router.use(enquiriesRouter);
 router.use(categoriesRouter);
 router.use(importRouter);
 router.use(aiIngestRouter);
+router.use(mediaRouter);
 router.use(administratorsRouter);
 
 export default router;

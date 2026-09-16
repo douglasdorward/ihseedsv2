@@ -12,13 +12,28 @@ type ObjectStore = {
   remove(key: string): Promise<void>;
 };
 
-function localDir() {
-  return path.resolve(process.cwd(), "uploads", "tech-sheets");
+export type AppStorageBackend = "local" | "replit";
+
+export function appStorageBackend(): AppStorageBackend {
+  const raw = process.env.APP_STORAGE_BACKEND?.trim().toLowerCase();
+  if (raw === "local" || raw === "replit") return raw;
+  if (raw) {
+    throw new Error(`APP_STORAGE_BACKEND must be "local" or "replit", got "${process.env.APP_STORAGE_BACKEND}".`);
+  }
+  return process.env.REPL_ID ? "replit" : "local";
+}
+
+function uploadsRoot() {
+  return path.resolve(process.cwd(), "uploads");
 }
 
 function localPath(key: string) {
   const safe = key.replace(/[^a-zA-Z0-9/_.=-]+/g, "-").replace(/^\/+/, "");
-  return path.join(localDir(), safe);
+  // Media keys already include the media/ prefix and live next to tech-sheets/.
+  // Tech-sheet keys also include tech-sheets/, but the historical local root is
+  // uploads/tech-sheets, so those files stay at uploads/tech-sheets/tech-sheets/...
+  if (safe.startsWith("media/")) return path.join(uploadsRoot(), safe);
+  return path.join(uploadsRoot(), "tech-sheets", safe);
 }
 
 const localStore: ObjectStore = {
@@ -44,10 +59,12 @@ const localStore: ObjectStore = {
   },
 };
 
-let replitStore: ObjectStore | null | undefined;
+let replitStore: ObjectStore | undefined;
+let replitStoreError: Error | undefined;
 
-async function replitObjectStore(): Promise<ObjectStore | null> {
-  if (replitStore !== undefined) return replitStore;
+async function replitObjectStore(): Promise<ObjectStore> {
+  if (replitStore) return replitStore;
+  if (replitStoreError) throw replitStoreError;
   try {
     const mod = await import("@replit/object-storage") as {
       Client: new () => {
@@ -75,10 +92,17 @@ async function replitObjectStore(): Promise<ObjectStore | null> {
       },
     };
     return replitStore;
-  } catch {
-    replitStore = null;
-    return null;
+  } catch (error) {
+    replitStoreError = new Error(
+      `Replit App Storage is unavailable: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    throw replitStoreError;
   }
+}
+
+async function activeStore(): Promise<ObjectStore> {
+  if (appStorageBackend() === "local") return localStore;
+  return replitObjectStore();
 }
 
 export function contentTypeFor(filename: string) {
@@ -91,39 +115,30 @@ export function contentTypeFor(filename: string) {
 }
 
 export async function putStoredFile(key: string, bytes: Buffer, contentType = contentTypeFor(key)) {
-  const remote = await replitObjectStore();
-  if (remote) {
-    try {
-      await remote.put(key, bytes, contentType);
-      return;
-    } catch {
-      /* fall through to durable local copy when App Storage is unavailable */
-    }
-  }
-  await localStore.put(key, bytes, contentType);
+  await (await activeStore()).put(key, bytes, contentType);
 }
 
 export async function getStoredFile(key: string): Promise<StoredObject | null> {
-  const remote = await replitObjectStore();
-  if (remote) {
-    const stored = await remote.get(key);
-    if (stored) return stored;
-  }
-  return localStore.get(key);
+  return (await activeStore()).get(key);
 }
 
 export async function removeStoredFile(key: string) {
-  const remote = await replitObjectStore();
-  if (remote) {
-    try {
-      await remote.remove(key);
-    } catch {
-      /* continue */
-    }
-  }
-  await localStore.remove(key);
+  await (await activeStore()).remove(key);
 }
 
 export function techSheetPublicPath(id: number) {
   return `/api/admin/tech-sheets/${id}/file`;
+}
+
+export function mediaObjectPath(id: string, filename: string) {
+  const safe = filename.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "image.webp";
+  return `media/${id}/${safe}`;
+}
+
+export function mediaPreviewPath(id: string) {
+  return `/api/admin/media/${id}/preview`;
+}
+
+export function mediaPublicPath(id: string) {
+  return `/api/media/${id}`;
 }

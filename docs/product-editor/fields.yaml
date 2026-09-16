@@ -97,16 +97,16 @@ fields:
     apiPath: listingState
     label: Listing state
     type: enum
-    enumValues: [Active, Legacy]
+    enumValues: [Active, New, Legacy]
     requiredForDraft: false
     requiredForPublish: false
     default: Active
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [main-catalogue-when-Active, also-in-catalogue-names-when-Legacy]
+    customerSurfaces: [main-catalogue-when-Active-or-New, new-stamp-when-New, also-in-catalogue-names-when-Legacy]
     workbook: 1 Products.listing_state
-    fillGuidance: Active may sell. Legacy is history only and cannot have availability. Not the same as Archive.
+    fillGuidance: Active may sell. New may sell and shows a NEW stamp on public cards and the product page. Legacy is history only and cannot have availability. Not the same as Archive.
 
   - id: botanicalName
     tab: 1
@@ -1237,7 +1237,7 @@ fields:
     visibility: customer
     customerSurfaces: [product-hero, related-cards, also-popular, social-fallback]
     workbook: 1 Products.photo_1
-    fillGuidance: First non-blank src is the hero. Product page view can upload or paste a URL onto slot 1. Category grids currently use placeholders.
+    fillGuidance: First non-blank src is the hero. Upload JPEG/PNG/WebP to the Images library (converted to WebP) or paste an external URL. AI never fills photos. Category grids currently use placeholders.
 
   - id: techSheet
     tab: 5
@@ -1312,7 +1312,7 @@ fields:
     visibility: customer
     customerSurfaces: [also-popular]
     workbook: product related slugs
-    fillGuidance: Choose up to three Active published products by name. Empty list uses three other same-category Active products. A Legacy or otherwise ineligible pick is replaced in that slot.
+    fillGuidance: Choose up to three Active or New published products by name. Empty list uses three other same-category current products. A Legacy or otherwise ineligible pick is replaced in that slot.
 
   - id: sortOrder
     tab: 5
@@ -1463,4 +1463,4 @@ fields:
     visibility: customer
     customerSurfaces: [robots-meta]
     workbook: 7 Website SEO.robots_index
-    fillGuidance: Off publishes noindex. Sitemap is still Published + Active.
+    fillGuidance: Off publishes noindex. Sitemap is still Published + Active or New.

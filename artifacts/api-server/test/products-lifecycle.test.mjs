@@ -455,6 +455,16 @@ test("manual listing state takes precedence over sale-line availability", async 
   assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
   assert.equal(includesProduct(await publicProducts(), product.id), true);
 
+  const listedNew = assertStatus(await request("POST", `/admin/products/${product.id}/publish`, draftPayload(product, {
+    listingState: "New",
+    saleLines,
+  })), 200);
+  assert.equal(listedNew.listingState, "New");
+  const publicNew = (await publicProducts()).find((item) => item.id === product.id);
+  assert.ok(publicNew);
+  assert.equal(publicNew.listingState, "New");
+  assert.equal(includesProduct(await availability(), product.id), true);
+
   const legacy = assertStatus(await request("POST", `/admin/products/${product.id}/publish`, draftPayload(product, {
     listingState: "Legacy",
     saleLines: [{ ...saleLines[0], availability: "Good stock" }],

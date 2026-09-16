@@ -22,4 +22,5 @@ export * from "./enquiries";
 export * from "./categories";
 export * from "./ai-ingest";
 export * from "./admin-users";
+export * from "./media";
 

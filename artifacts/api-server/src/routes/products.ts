@@ -19,12 +19,14 @@ import {
   type ProductEditablePayload,
   applyListingAvailability,
   isActiveListing,
+  isNewListing,
   prepareEditablePayload,
   resolveListingState,
 } from "@workspace/db";
 import { insertProductSchema } from "@workspace/db";
 import { publicRedirectTo } from "../lib/public-redirect";
 import { productPublicPath } from "../lib/product-path";
+import { clearProductMediaReferences, syncProductMediaReferences } from "../lib/media-usage";
 
 const router: IRouter = Router();
 const publicSiteBaseUrl = (process.env.PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "");
@@ -60,7 +62,7 @@ async function preserveProductRedirects(
 type PublicProduct = {
   id: number; name: string; slug: string; price: string; packSize: string; status: string;
   note: string; category: string; subcategoryId: number | null; techSheet: string; guideYear: string;
-  listingState: "Active"; saleLines: SaleLine[]; details: ReturnType<typeof toPublicDetails>;
+  listingState: "Active" | "New"; saleLines: SaleLine[]; details: ReturnType<typeof toPublicDetails>;
 };
 
 function toPublicDetails(value: unknown, packSize: string, name = "") {
@@ -134,7 +136,7 @@ function toPublicProduct(product: Product, productLines: SaleLine[]): PublicProd
     id: product.id, name: product.name, slug: product.slug, price: product.price, packSize: product.packSize,
     status: ({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as const)[availability] ?? "unavailable",
     note: product.note, category: product.category, subcategoryId: product.subcategoryId, techSheet: product.techSheet,
-    guideYear: product.guideYear, listingState: "Active", saleLines: productLines,
+    guideYear: product.guideYear, listingState: isNewListing(product) ? "New" : "Active", saleLines: productLines,
     details: toPublicDetails(product.details, product.packSize, product.name),
   };
 }
@@ -471,6 +473,7 @@ router.post("/products", async (req, res): Promise<void> => {
         publishedAt: null,
       }).returning();
       await replaceSaleLines(tx, created.id, saleLines);
+      await syncProductMediaReferences(created, created.details.photos, tx);
       return created;
     });
     req.log.info({ productId: product.id }, "Draft product created");
@@ -559,6 +562,7 @@ router.post("/admin/products/:id/draft", async (req, res): Promise<void> => {
         .set({ ...productFieldsFromEditable(snapshot), publishStatus: "Draft", updatedAt: new Date() })
         .where(eq(productsTable.id, id)).returning();
       await replaceSaleLines(tx, id, snapshot.saleLines);
+      await syncProductMediaReferences(draftProduct, draftProduct.details.photos, tx);
       return draftProduct;
     });
     res.json(await getAdminProduct(updated));
@@ -642,6 +646,7 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       await preserveProductRedirects(tx, lockedProduct, published);
       await replaceSaleLines(tx, id, normalizedPayload.saleLines);
       if (draft) await tx.delete(productDraftsTable).where(eq(productDraftsTable.id, draft.id));
+      await syncProductMediaReferences(published, published.details.photos, tx);
       return published;
     });
     res.json(await getAdminProduct(updated));
@@ -702,6 +707,7 @@ router.post("/admin/products/:id/archive", async (req, res): Promise<void> => {
     const [archived] = await tx.update(productsTable)
       .set({ publishStatus: "Archived", updatedAt: new Date() })
       .where(eq(productsTable.id, id)).returning();
+    await syncProductMediaReferences(archived, archived.details.photos, tx);
     return { kind: "updated" as const, product: archived };
   });
   if (archiveResult.kind === "not-found") {
@@ -761,6 +767,7 @@ router.post("/admin/products/:id/restore", async (req, res): Promise<void> => {
       await replaceSaleLines(tx, id, restoredDraftPayload.saleLines);
     }
     if (draft) await tx.delete(productDraftsTable).where(eq(productDraftsTable.id, draft.id));
+    await syncProductMediaReferences(restored, restored.details.photos, tx);
     return restored;
   }).catch((error: unknown) => {
     if (error instanceof Error && error.message === "PRODUCT_NOT_ARCHIVED") return null;
@@ -870,6 +877,9 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     const [updated] = await tx.update(productsTable)
       .set({ ...changes, updatedAt: new Date() })
       .where(eq(productsTable.id, id)).returning();
+    if (changes.details) {
+      await syncProductMediaReferences(updated, updated.details.photos, tx);
+    }
     if (lockedProduct.publishStatus === "Published" && changes.status) {
       const [draft] = await tx.select().from(productDraftsTable)
         .where(eq(productDraftsTable.productId, id));
@@ -932,6 +942,7 @@ router.delete("/products/:id", async (req, res): Promise<void> => {
     return;
   }
   await db.delete(productsTable).where(eq(productsTable.id, id));
+  await clearProductMediaReferences(id);
   res.sendStatus(204);
 });
 

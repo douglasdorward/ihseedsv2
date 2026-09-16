@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ProductComponent } from './productComponent';
-import type { ProductFaq } from './productFaq';
 import type { ProductPhoto } from './productPhoto';
 import type { ProductSowingRate } from './productSowingRate';
 import type { ProductTolerance } from './productTolerance';
@@ -64,13 +63,10 @@ export interface PublicProductDetails {
   certification: string[];
   description: string;
   components: ProductComponent[];
-  /** @maxItems 10 */
-  faqs: ProductFaq[];
   relatedProducts: string[];
   formulationYear: string;
   photos: ProductPhoto[];
   featured: boolean;
-  h1: string;
   seoTitle: string;
   seoDescription: string;
   socialTitle: string;

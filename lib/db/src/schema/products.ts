@@ -2,6 +2,23 @@ import { boolean, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex
 import { z } from "zod/v4";
 import { catalogueCategoriesTable } from "./categories";
 
+export type ProductPhoto = {
+  slot: string;
+  file: string;
+  rating: string;
+  src: string;
+  assetId?: string;
+  alt?: string;
+  title?: string;
+  role?: "hero" | "gallery" | "detail";
+  width?: number;
+  height?: number;
+  format?: string;
+  objectPath?: string;
+  srcSet?: string;
+  social?: boolean;
+};
+
 export type ProductDetails = {
   stockCode: string;
   guideSection: string;
@@ -56,7 +73,7 @@ export type ProductDetails = {
   components: { productLink: string; speciesName: string; inclusionRate: number | null; unit: string; description: string; note: string }[];
   faqs: { question: string; answer: string }[];
   formulationYear: string;
-  photos: { slot: string; file: string; rating: string; src: string }[];
+  photos: ProductPhoto[];
   inCurrentPrintedGuide: boolean;
   h1: string;
   seoTitle: string;
@@ -91,7 +108,7 @@ export type SaleLine = {
 };
 
 export type ProductLifecycleStatus = "Published" | "Draft" | "Archived";
-export type ProductListingState = "Active" | "Legacy";
+export type ProductListingState = "Active" | "New" | "Legacy";
 export type ProductEditablePayload = {
   name: string;
   price: string;
@@ -111,11 +128,13 @@ export type ProductEditablePayload = {
 };
 
 const LEGACY_LISTING_VALUES = new Set(["Legacy", "Force legacy"]);
+const NEW_LISTING_VALUES = new Set(["New"]);
 const ACTIVE_LISTING_VALUES = new Set(["Active", "Force active"]);
 
 export function resolveListingState(value: unknown, fallback: ProductListingState = "Active"): ProductListingState {
   if (typeof value === "string") {
     if (LEGACY_LISTING_VALUES.has(value)) return "Legacy";
+    if (NEW_LISTING_VALUES.has(value)) return "New";
     if (ACTIVE_LISTING_VALUES.has(value)) return "Active";
     return fallback;
   }
@@ -132,7 +151,11 @@ export function resolveListingState(value: unknown, fallback: ProductListingStat
 }
 
 export function isActiveListing(product: { listingState?: unknown; listingOverride?: unknown }) {
-  return resolveListingState(product) === "Active";
+  return resolveListingState(product) !== "Legacy";
+}
+
+export function isNewListing(product: { listingState?: unknown; listingOverride?: unknown }) {
+  return resolveListingState(product) === "New";
 }
 
 export function applyListingAvailability<T extends {
@@ -332,7 +355,24 @@ export function normalizeProductDetails(value: unknown, packSize = ""): ProductD
         answer: typeof item?.answer === "string" ? item.answer : "",
       }))
       : [],
-    photos: Array.isArray(current.photos) ? current.photos : [],
+    photos: Array.isArray(current.photos)
+      ? current.photos.map((photo) => ({
+        slot: typeof photo?.slot === "string" ? photo.slot : "",
+        file: typeof photo?.file === "string" ? photo.file : "",
+        rating: typeof photo?.rating === "string" ? photo.rating : "",
+        src: typeof photo?.src === "string" ? photo.src : "",
+        ...(typeof photo?.assetId === "string" && photo.assetId ? { assetId: photo.assetId } : {}),
+        ...(typeof photo?.alt === "string" ? { alt: photo.alt } : {}),
+        ...(typeof photo?.title === "string" ? { title: photo.title } : {}),
+        ...(photo?.role === "hero" || photo?.role === "gallery" || photo?.role === "detail" ? { role: photo.role } : {}),
+        ...(typeof photo?.width === "number" && photo.width >= 1 ? { width: photo.width } : {}),
+        ...(typeof photo?.height === "number" && photo.height >= 1 ? { height: photo.height } : {}),
+        ...(typeof photo?.format === "string" ? { format: photo.format } : {}),
+        ...(typeof photo?.objectPath === "string" ? { objectPath: photo.objectPath } : {}),
+        ...(typeof photo?.srcSet === "string" ? { srcSet: photo.srcSet } : {}),
+        ...(typeof photo?.social === "boolean" ? { social: photo.social } : {}),
+      }))
+      : [],
     h1: typeof current.h1 === "string" ? current.h1 : "",
     robotsIndex: current.robotsIndex ?? true,
     relatedProducts: Array.isArray(current.relatedProducts) ? current.relatedProducts : [],
@@ -457,7 +497,22 @@ const productDetailsObjectSchema = z.object({
   components: z.array(z.object({ productLink: z.string().max(180), speciesName: z.string().max(120), inclusionRate: z.number().nullable(), unit: z.string().max(20), description: z.string().max(10000), note: z.string().max(4000) })),
   faqs: z.array(z.object({ question: z.string().max(180), answer: z.string().max(4000) })).max(10).default([]),
   formulationYear: z.string().max(20),
-  photos: z.array(z.object({ slot: z.string().max(40), file: z.string().max(240), rating: z.string().max(80), src: z.string().max(500) })),
+  photos: z.array(z.object({
+    slot: z.string().max(40),
+    file: z.string().max(240),
+    rating: z.string().max(80),
+    src: z.string().max(500),
+    assetId: z.string().max(80).optional(),
+    alt: z.string().max(300).optional(),
+    title: z.string().max(300).optional(),
+    role: z.enum(["hero", "gallery", "detail"]).optional(),
+    width: z.number().int().min(1).optional(),
+    height: z.number().int().min(1).optional(),
+    format: z.string().max(20).optional(),
+    objectPath: z.string().max(500).optional(),
+    srcSet: z.string().max(2000).optional(),
+    social: z.boolean().optional(),
+  })),
   inCurrentPrintedGuide: z.boolean(),
   h1: z.string().max(160),
   seoTitle: z.string().max(180),
@@ -500,7 +555,7 @@ export const insertProductSchema = z.object({
   descriptionSource: z.string().trim().max(240).default(""),
   websiteUrlLegacy: z.string().trim().max(500).default(""),
   availabilityOverride: z.enum(["Good stock", "Low stock", "Very low", "Unavailable"]).nullable().default(null),
-  listingState: z.enum(["Active", "Legacy"]).default("Active"),
+  listingState: z.enum(["Active", "New", "Legacy"]).default("Active"),
   publishStatus: z.enum(["Published", "Draft", "Archived"]),
   details: productDetailsSchema,
 });

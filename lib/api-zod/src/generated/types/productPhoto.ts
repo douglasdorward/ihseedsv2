@@ -5,8 +5,11 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ProductPhotoRole } from './productPhotoRole';
 
 export interface ProductPhoto {
+  /** Immutable shared-library asset identity when selected from Images */
+  assetId?: string;
   /** @maxLength 40 */
   slot: string;
   /** @maxLength 240 */
@@ -15,4 +18,20 @@ export interface ProductPhoto {
   rating: string;
   /** @maxLength 500 */
   src: string;
+  /** @maxLength 300 */
+  alt?: string;
+  /** @maxLength 300 */
+  title?: string;
+  role?: ProductPhotoRole;
+  /** @minimum 1 */
+  width?: number;
+  /** @minimum 1 */
+  height?: number;
+  /** @maxLength 20 */
+  format?: string;
+  /** @maxLength 500 */
+  objectPath?: string;
+  /** @maxLength 2000 */
+  srcSet?: string;
+  social?: boolean;
 }

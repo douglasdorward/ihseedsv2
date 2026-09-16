@@ -29,7 +29,7 @@ export interface Product {
   websiteUrlLegacy?: string;
   /** @nullable */
   availabilityOverride?: ProductAvailabilityOverride;
-  /** Manual Active/Legacy listing. Independent of Published/Draft/Archived. Legacy products cannot have availability. */
+  /** Manual Active/New/Legacy listing. Independent of Published/Draft/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability. */
   listingState: ProductListingState;
   saleLines?: SaleLine[];
   publishStatus: ProductPublishStatus;

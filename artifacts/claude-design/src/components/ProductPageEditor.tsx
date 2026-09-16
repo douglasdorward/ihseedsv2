@@ -2,9 +2,10 @@ import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "r
 import type { CatalogueCategory, ProductComponent, ProductFaq, ProductListingState, ProductPhoto, ProductSowingRate, SaleLine } from "@workspace/api-client-react";
 import { Icon } from "./ui";
 import { AlsoPopularPicker } from "./AlsoPopularPicker";
+import { ProductNewStamp } from "./NewStamp";
 import { intendedAlsoPopularSlugs, isAlsoPopularEligible, resolveAlsoPopular } from "../also-popular";
 import { getEditorQuickFactSlots, type QuickFactSlotId } from "../product-quick-facts";
-import { uploadAdminImage } from "../upload-image";
+import { photoDisplaySrc, uploadMediaAsset } from "../upload-image";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80";
 const PRODUCT_FAQ_LIMIT = 10;
@@ -52,8 +53,9 @@ function rainfallOptions(current: number | null | undefined) {
   return [...RAINFALL_MIN_MM_OPTIONS, current].sort((a, b) => a - b);
 }
 
-function productImage(photos: Array<{ src?: string }> | undefined) {
-  return photos?.find((photo) => photo.src?.trim())?.src || FALLBACK_IMAGE;
+function productImage(photos: Array<{ src?: string; assetId?: string }> | undefined) {
+  const photo = photos?.find((item) => item.src?.trim() || item.assetId);
+  return photoDisplaySrc(photo) || FALLBACK_IMAGE;
 }
 
 function techSheetHref(techSheet: string | undefined) {
@@ -83,9 +85,9 @@ function saleLinePackLabels(saleLines: SaleLine[] | undefined) {
 }
 
 function listingState(product: { listingState?: string; listingOverride?: string }): ProductListingState {
-  return product.listingState === "Legacy" || product.listingOverride === "Force legacy" || product.listingOverride === "Legacy"
-    ? "Legacy"
-    : "Active";
+  if (product.listingState === "Legacy" || product.listingOverride === "Force legacy" || product.listingOverride === "Legacy") return "Legacy";
+  if (product.listingState === "New") return "New";
+  return "Active";
 }
 
 function derivedAvailability(product: any) {
@@ -206,6 +208,7 @@ export function ProductPageEditor(props: ProductPageEditorProps) {
     <div className="ppe">
       <div className="ppe-page">
         <section className="ppe-hero" style={{ minHeight: 520, backgroundImage: `linear-gradient(rgba(29,40,28,.55), rgba(29,40,28,.72)), url(${image})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+          <ProductNewStamp listingState={listingState(form)} size="hero" />
           <div className="product-hero-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "150px 40px 64px", display: "flex", flexDirection: "column", gap: 20 }}>
             <nav aria-label="Breadcrumb" style={{ color: "var(--yellow)", fontSize: 14, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase" }}>
               <span>Products</span> ›{" "}
@@ -505,6 +508,7 @@ export function ProductPageEditor(props: ProductPageEditorProps) {
                   <div key={item.id ?? item.slug} className="also-popular-card">
                     <div className="also-popular-image" role="img" aria-label={item.name} style={{ backgroundImage: `url(${productImage(item.details?.photos)})` }}>
                       <PublicStatusPill status={item.status || "unavailable"} />
+                      <ProductNewStamp listingState={item.listingState} />
                     </div>
                     <div className="also-popular-card-body">
                       <div>
@@ -570,14 +574,22 @@ function HeroUpload({ photos, updatePhoto, readOnly }: { photos: ProductPhoto[];
   if (readOnly) return null;
   const applyUrl = () => {
     const next = url.trim();
-    updatePhoto(0, { src: next, file: next ? (photos[0]?.file || "Hero image") : "" });
+    updatePhoto(0, {
+      src: next,
+      file: next ? (photos[0]?.file || "Hero image") : "",
+      assetId: undefined,
+      format: undefined,
+      objectPath: undefined,
+      width: undefined,
+      height: undefined,
+    });
   };
   return (
     <div className="ppe-hero-upload">
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept="image/jpeg,image/png,image/webp"
         hidden
         onChange={async (event) => {
           const file = event.target.files?.[0];
@@ -586,8 +598,8 @@ function HeroUpload({ photos, updatePhoto, readOnly }: { photos: ProductPhoto[];
           setBusy(true);
           setError("");
           try {
-            const uploaded = await uploadAdminImage(file);
-            updatePhoto(0, uploaded);
+            const uploaded = await uploadMediaAsset(file);
+            updatePhoto(0, { ...uploaded, role: "hero" });
             setUrl(uploaded.src);
           } catch (caught) {
             setError(caught instanceof Error ? caught.message : "Upload failed.");
@@ -772,8 +784,8 @@ function BelowCards(props: ProductPageEditorProps) {
             {props.issueFor("details.recordType") && <span className="admin-inline-field-error">{props.issueFor("details.recordType")!.message}</span>}
           </div>
           <div className="admin-choice-field wide" role="group" aria-label="Listing state">
-            <FieldLabel hint="Active products can appear on the current selling catalogue. Legacy stays published as catalogue history only.">Listing state</FieldLabel>
-            <div>{(["Active", "Legacy"] as ProductListingState[]).map((state) => <button key={state} type="button" className={listingState(form) === state ? "selected" : ""} onClick={() => props.setListingState(state)}>{state}</button>)}</div>
+            <FieldLabel hint="Active and New products can appear on the current selling catalogue. New shows a red NEW stamp on public cards and the product page. Legacy stays published as catalogue history only.">Listing state</FieldLabel>
+            <div>{(["Active", "New", "Legacy"] as ProductListingState[]).map((state) => <button key={state} type="button" className={listingState(form) === state ? "selected" : ""} onClick={() => props.setListingState(state)}>{state}</button>)}</div>
           </div>
         </div>
       </section>
@@ -853,10 +865,38 @@ function BelowCards(props: ProductPageEditorProps) {
           <div className="admin-photo-list">
             {details.photos.map((photo: ProductPhoto, index: number) => (
               <div className="admin-photo-row" key={photo.slot || index}>
-                <div className="admin-photo-thumb">{photo.src ? <img src={photo.src} alt={photo.file} /> : <Icon name="package" size={24} />}</div>
+                <div className="admin-photo-thumb">{photoDisplaySrc(photo) ? <img src={photoDisplaySrc(photo)} alt={photo.file} /> : <Icon name="package" size={24} />}</div>
                 <span><small>{photo.slot}</small><strong>{photo.file || "No file selected"}</strong></span>
                 {index > 0 && (
-                  <input className="ppe-extra-photo-url" type="url" value={photo.src} placeholder="Image URL" onChange={(event) => props.updatePhoto(index, { src: event.target.value, file: event.target.value ? photo.file || `Photo ${index + 1}` : "" })} />
+                  <>
+                    <input
+                      className="ppe-extra-photo-url"
+                      type="url"
+                      value={photo.src?.startsWith("/api/media/") ? "" : photo.src}
+                      placeholder="Image URL"
+                      onChange={(event) => props.updatePhoto(index, {
+                        src: event.target.value,
+                        file: event.target.value ? photo.file || `Photo ${index + 1}` : "",
+                        assetId: undefined,
+                        format: undefined,
+                        objectPath: undefined,
+                      })}
+                    />
+                    <label className="admin-text-button">
+                      Upload
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        hidden
+                        onChange={async (event) => {
+                          const file = event.target.files?.[0];
+                          event.target.value = "";
+                          if (!file) return;
+                          props.updatePhoto(index, await uploadMediaAsset(file));
+                        }}
+                      />
+                    </label>
+                  </>
                 )}
               </div>
             ))}

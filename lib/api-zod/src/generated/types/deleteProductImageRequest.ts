@@ -6,9 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CatalogueCategoryFaq {
-  /** @maxLength 200 */
-  question: string;
-  /** @maxLength 2000 */
-  answer: string;
+export interface DeleteProductImageRequest {
+  objectPath: string;
 }

@@ -2235,6 +2235,78 @@ export const useCompleteMediaUpload = <TError = ErrorType<void>,
       return useMutation(getCompleteMediaUploadMutationOptions(options));
     }
 
+export const getPutMediaObjectUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/media/${id}/object`
+}
+
+/**
+ * @summary Upload original JPEG, PNG, or WebP bytes for a pending library asset
+ */
+export const putMediaObject = async (id: string,
+    putMediaObjectBody: Blob, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getPutMediaObjectUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/octet-stream', ...options?.headers },
+    body: putMediaObjectBody
+  }
+);}
+
+
+
+
+
+export const getPutMediaObjectMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putMediaObject>>, TError,{id: string;data: BodyType<Blob>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof putMediaObject>>, TError,{id: string;data: BodyType<Blob>}, TContext> => {
+
+const mutationKey = ['putMediaObject'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putMediaObject>>, {id: string;data: BodyType<Blob>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  putMediaObject(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutMediaObjectMutationResult = NonNullable<Awaited<ReturnType<typeof putMediaObject>>>
+    export type PutMediaObjectMutationBody = BodyType<Blob>
+    export type PutMediaObjectMutationError = ErrorType<void>
+
+    /**
+ * @summary Upload original JPEG, PNG, or WebP bytes for a pending library asset
+ */
+export const usePutMediaObject = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putMediaObject>>, TError,{id: string;data: BodyType<Blob>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof putMediaObject>>,
+        TError,
+        {id: string;data: BodyType<Blob>},
+        TContext
+      > => {
+      return useMutation(getPutMediaObjectMutationOptions(options));
+    }
+
 export const getPreviewMediaAssetUrl = (id: string,) => {
 
 

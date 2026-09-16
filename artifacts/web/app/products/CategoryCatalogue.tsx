@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "../../components/Icon";
+import { ProductNewStamp } from "../../components/NewStamp";
 import { StatusPill } from "../../components/StatusPill";
 import type { CatalogueCategory, CatalogueProduct } from "../../lib/catalogue";
 import { productPublicPath } from "../../lib/catalogue-paths";
@@ -80,6 +81,7 @@ export function CategoryCatalogue({
                         <div style={{ position: "absolute", top: 12, left: 12 }}>
                           <StatusPill status={product.status} />
                         </div>
+                        <ProductNewStamp listingState={product.listingState} />
                         <div className="icon-button" aria-hidden="true" style={{ position: "absolute", right: 12, bottom: 12, width: 40, height: 40, background: "var(--yellow)", border: "none" }}>
                           <Icon name="arrow-right" size={18} />
                         </div>

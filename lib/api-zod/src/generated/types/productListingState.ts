@@ -7,12 +7,13 @@
  */
 
 /**
- * Manual Active/Legacy listing. Independent of Published/Draft/Archived. Legacy products cannot have availability.
+ * Manual Active/New/Legacy listing. Independent of Published/Draft/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.
  */
 export type ProductListingState = typeof ProductListingState[keyof typeof ProductListingState];
 
 
 export const ProductListingState = {
   Active: 'Active',
+  New: 'New',
   Legacy: 'Legacy',
 } as const;

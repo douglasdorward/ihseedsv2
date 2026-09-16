@@ -111,13 +111,14 @@ export const ProductAvailabilityOverride = {
 } as const;
 
 /**
- * Manual Active/Legacy listing. Independent of Published/Draft/Archived. Legacy products cannot have availability.
+ * Manual Active/New/Legacy listing. Independent of Published/Draft/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.
  */
 export type ProductListingState = typeof ProductListingState[keyof typeof ProductListingState];
 
 
 export const ProductListingState = {
   Active: 'Active',
+  New: 'New',
   Legacy: 'Legacy',
 } as const;
 
@@ -570,7 +571,7 @@ export interface Product {
   websiteUrlLegacy?: string;
   /** @nullable */
   availabilityOverride?: ProductAvailabilityOverride;
-  /** Manual Active/Legacy listing. Independent of Published/Draft/Archived. Legacy products cannot have availability. */
+  /** Manual Active/New/Legacy listing. Independent of Published/Draft/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability. */
   listingState: ProductListingState;
   saleLines?: SaleLine[];
   publishStatus: ProductPublishStatus;
@@ -590,11 +591,15 @@ export const PublicProductStatus = {
   unavailable: 'unavailable',
 } as const;
 
+/**
+ * Current-catalogue listing. New products render a NEW stamp on public cards and the product page.
+ */
 export type PublicProductListingState = typeof PublicProductListingState[keyof typeof PublicProductListingState];
 
 
 export const PublicProductListingState = {
   Active: 'Active',
+  New: 'New',
 } as const;
 
 /**
@@ -664,7 +669,7 @@ export interface PublicProductDetails {
 }
 
 /**
- * Published, Active catalogue data. Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.
+ * Published current-catalogue data (Active or New). Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.
  */
 export interface PublicProduct {
   id: number;
@@ -679,6 +684,7 @@ export interface PublicProduct {
   subcategoryId: number | null;
   techSheet: string;
   guideYear: string;
+  /** Current-catalogue listing. New products render a NEW stamp on public cards and the product page. */
   listingState: PublicProductListingState;
   saleLines: SaleLine[];
   details: PublicProductDetails;
@@ -708,13 +714,14 @@ export const ProductDraftInputAvailabilityOverride = {
 } as const;
 
 /**
- * Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability.
+ * Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.
  */
 export type ProductDraftInputListingState = typeof ProductDraftInputListingState[keyof typeof ProductDraftInputListingState];
 
 
 export const ProductDraftInputListingState = {
   Active: 'Active',
+  New: 'New',
   Legacy: 'Legacy',
 } as const;
 
@@ -744,7 +751,7 @@ export interface ProductDraftInput {
   websiteUrlLegacy: string;
   /** @nullable */
   availabilityOverride: ProductDraftInputAvailabilityOverride;
-  /** Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability. */
+  /** Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability. */
   listingState?: ProductDraftInputListingState;
   details: ProductDetails;
   saleLines?: SaleLine[];
@@ -794,13 +801,14 @@ export const ProductInputAvailabilityOverride = {
 } as const;
 
 /**
- * Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability.
+ * Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.
  */
 export type ProductInputListingState = typeof ProductInputListingState[keyof typeof ProductInputListingState];
 
 
 export const ProductInputListingState = {
   Active: 'Active',
+  New: 'New',
   Legacy: 'Legacy',
 } as const;
 
@@ -845,7 +853,7 @@ export interface ProductInput {
   websiteUrlLegacy: string;
   /** @nullable */
   availabilityOverride: ProductInputAvailabilityOverride;
-  /** Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability. */
+  /** Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability. */
   listingState: ProductInputListingState;
   publishStatus: ProductInputPublishStatus;
   details: ProductDetails;
@@ -862,13 +870,14 @@ export const ProductCreateInputStatus = {
 } as const;
 
 /**
- * Manual Active/Legacy listing. Defaults to Active.
+ * Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp.
  */
 export type ProductCreateInputListingState = typeof ProductCreateInputListingState[keyof typeof ProductCreateInputListingState];
 
 
 export const ProductCreateInputListingState = {
   Active: 'Active',
+  New: 'New',
   Legacy: 'Legacy',
 } as const;
 
@@ -899,7 +908,7 @@ export interface ProductCreateInput {
   subcategoryId?: number | null;
   /** @maxLength 240 */
   techSheet: string;
-  /** Manual Active/Legacy listing. Defaults to Active. */
+  /** Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. */
   listingState?: ProductCreateInputListingState;
   details: ProductDetails;
   saleLines?: SaleLine[];
@@ -929,13 +938,14 @@ export const ProductUpdateAvailabilityOverride = {
 } as const;
 
 /**
- * Manual Active/Legacy listing. Legacy products cannot have availability.
+ * Manual Active/New/Legacy listing. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.
  */
 export type ProductUpdateListingState = typeof ProductUpdateListingState[keyof typeof ProductUpdateListingState];
 
 
 export const ProductUpdateListingState = {
   Active: 'Active',
+  New: 'New',
   Legacy: 'Legacy',
 } as const;
 
@@ -974,7 +984,7 @@ export interface ProductUpdate {
   websiteUrlLegacy?: string;
   /** @nullable */
   availabilityOverride?: ProductUpdateAvailabilityOverride;
-  /** Manual Active/Legacy listing. Legacy products cannot have availability. */
+  /** Manual Active/New/Legacy listing. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability. */
   listingState?: ProductUpdateListingState;
   details?: ProductDetails;
 }

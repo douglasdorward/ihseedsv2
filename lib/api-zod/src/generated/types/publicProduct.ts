@@ -11,7 +11,7 @@ import type { PublicProductStatus } from './publicProductStatus';
 import type { SaleLine } from './saleLine';
 
 /**
- * Published, Active catalogue data. Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.
+ * Published current-catalogue data (Active or New). Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.
  */
 export interface PublicProduct {
   id: number;
@@ -26,6 +26,7 @@ export interface PublicProduct {
   subcategoryId: number | null;
   techSheet: string;
   guideYear: string;
+  /** Current-catalogue listing. New products render a NEW stamp on public cards and the product page. */
   listingState: PublicProductListingState;
   saleLines: SaleLine[];
   details: PublicProductDetails;

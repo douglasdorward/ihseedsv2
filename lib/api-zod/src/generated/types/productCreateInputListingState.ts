@@ -7,12 +7,13 @@
  */
 
 /**
- * Manual Active/Legacy listing. Defaults to Active.
+ * Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp.
  */
 export type ProductCreateInputListingState = typeof ProductCreateInputListingState[keyof typeof ProductCreateInputListingState];
 
 
 export const ProductCreateInputListingState = {
   Active: 'Active',
+  New: 'New',
   Legacy: 'Legacy',
 } as const;

@@ -125,3 +125,115 @@ export function productMatchesFilters(
   }
   return true;
 }
+
+export type CatalogueFilterOptions = {
+  category: string[];
+  endUse: string[];
+  livestock: string[];
+  tolerance: string[];
+  rainfall: number[];
+  soil: string[];
+  sowing: string[];
+};
+
+export type FilterOptionDimension = Exclude<keyof ProductListingFilters, never>;
+
+function keepOrdered<T extends string | number>(
+  canonical: readonly T[],
+  present: ReadonlySet<string | number>,
+): T[] {
+  return canonical.filter((value) => present.has(value));
+}
+
+/** Options that appear on at least one product in the full catalogue (static list). */
+export function catalogueFilterOptions(
+  products: CatalogueProduct[],
+  categories: CatalogueCategory[],
+): CatalogueFilterOptions {
+  const categoryPresent = new Set<string>();
+  const endUsePresent = new Set<string>();
+  const livestockPresent = new Set<string>();
+  const tolerancePresent = new Set<string>();
+  const rainfallPresent = new Set<number>();
+  const soilPresent = new Set<string>();
+  const sowingPresent = new Set<string>();
+
+  for (const product of products) {
+    const root = categories.find((category) => category.parentId === null && category.name === product.category);
+    if (root) categoryPresent.add(root.slug);
+    for (const value of product.details.endUse ?? []) endUsePresent.add(value);
+    for (const value of product.details.livestock ?? []) livestockPresent.add(value);
+    for (const item of product.details.tolerance ?? []) tolerancePresent.add(item.name);
+    const min = product.details.rainfallMinMm;
+    if (min != null) {
+      for (const option of RAINFALL_OPTIONS) {
+        if (min <= option) rainfallPresent.add(option);
+      }
+    }
+    const light = SOIL_RANK[product.details.soilRangeLightest ?? ""];
+    const heavy = SOIL_RANK[product.details.soilRangeHeaviest ?? ""];
+    if (light != null && heavy != null) {
+      for (const option of SOIL_OPTIONS) {
+        const rank = SOIL_RANK[option.value];
+        if (rank != null && rank >= light && rank <= heavy) soilPresent.add(option.value);
+      }
+    }
+    for (const rate of product.details.sowingRates ?? []) {
+      if (rate.context) sowingPresent.add(rate.context);
+    }
+  }
+
+  const rootSlugs = categories
+    .filter((category) => category.parentId === null && category.active)
+    .sort((first, second) => first.sortOrder - second.sortOrder || first.name.localeCompare(second.name))
+    .map((category) => category.slug);
+
+  return {
+    category: keepOrdered(rootSlugs, categoryPresent),
+    endUse: keepOrdered(END_USE_OPTIONS, endUsePresent),
+    livestock: keepOrdered(LIVESTOCK_OPTIONS, livestockPresent),
+    tolerance: keepOrdered(TOLERANCE_OPTIONS, tolerancePresent),
+    rainfall: keepOrdered(RAINFALL_OPTIONS, rainfallPresent),
+    soil: keepOrdered(SOIL_OPTIONS.map((option) => option.value), soilPresent),
+    sowing: keepOrdered(SOWING_CONTEXT_OPTIONS, sowingPresent),
+  };
+}
+
+function withOption(
+  filters: ProductListingFilters,
+  dimension: FilterOptionDimension,
+  value: string | number,
+): ProductListingFilters {
+  if (dimension === "rainfall") {
+    return { ...filters, rainfall: Number(value) };
+  }
+  const current = filters[dimension] as string[];
+  if (current.includes(String(value))) return filters;
+  return { ...filters, [dimension]: [...current, String(value)] };
+}
+
+function optionAlreadySelected(
+  filters: ProductListingFilters,
+  dimension: FilterOptionDimension,
+  value: string | number,
+) {
+  if (dimension === "rainfall") return filters.rainfall === Number(value);
+  return (filters[dimension] as string[]).includes(String(value));
+}
+
+/**
+ * True when selecting this value still leaves at least one matching product,
+ * or when it is already selected (so the user can uncheck it).
+ */
+export function isFilterOptionEnabled(
+  products: CatalogueProduct[],
+  categories: CatalogueCategory[],
+  filters: ProductListingFilters,
+  dimension: FilterOptionDimension,
+  value: string | number,
+) {
+  if (optionAlreadySelected(filters, dimension, value)) return true;
+  if (filtersAreEmpty(filters)) return true;
+  const next = withOption(filters, dimension, value);
+  return products.some((product) => productMatchesFilters(product, next, categories));
+}
