@@ -20,7 +20,7 @@ import {
   type FilterOptionDimension,
   type ProductListingFilters,
 } from "../../lib/product-filters";
-import { getFactChips, productCardImage } from "./product-card-facts";
+import { getFactChips, hasProductPhoto, productCardImage } from "./product-card-facts";
 
 function toggleValue(values: string[], value: string) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
@@ -261,13 +261,14 @@ export function ProductsListing({
           <>
             <h2 className="product-listing-count">{visibleProducts.length} {visibleProducts.length === 1 ? "product" : "products"}</h2>
             <div className="category-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 32 }}>
-            {visibleProducts.map((product, index) => {
+            {visibleProducts.map((product) => {
               const chips = getFactChips(product);
               const tagline = product.details.tagline?.trim();
               return (
                 <Link key={product.id} href={productPublicPath(product, categories)} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 16 }}>
                   <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", minHeight: 220, background: "#C5CCC5", position: "relative" }}>
-                    <div role="img" aria-label={product.name} style={{ display: "block", width: "100%", height: 220, backgroundImage: `url(${productCardImage(product, index)})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                    <div role="img" aria-label={product.name} style={{ display: "block", width: "100%", height: 220, backgroundImage: `url(${productCardImage(product)})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                    {!hasProductPhoto(product) && <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" />}
                     <div style={{ position: "absolute", top: 12, left: 12 }}>
                       <StatusPill status={product.status} />
                     </div>

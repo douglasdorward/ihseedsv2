@@ -1,15 +1,14 @@
 import type { CatalogueProduct } from "../../lib/catalogue";
 
-export const listingImageOptions = [
-  "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1530507629858-e4977d30e9e0?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1499529112087-3cb3b73cec95?auto=format&fit=crop&w=900&q=80",
-];
+export const PRODUCT_FALLBACK_IMAGE = "/product-fallback.svg";
 
-export function productCardImage(product: CatalogueProduct, fallbackIndex = 0) {
+export function hasProductPhoto(product: CatalogueProduct) {
+  return product.details.photos?.some((photo) => photo.src?.trim()) === true;
+}
+
+export function productCardImage(product: CatalogueProduct) {
   const attached = product.details.photos?.find((photo) => photo.src?.trim())?.src?.trim();
-  return attached || listingImageOptions[fallbackIndex % listingImageOptions.length];
+  return attached || PRODUCT_FALLBACK_IMAGE;
 }
 
 export function getFactChips(product: CatalogueProduct, subcategoryName?: string) {

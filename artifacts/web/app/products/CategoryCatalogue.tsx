@@ -8,7 +8,7 @@ import { StatusPill } from "../../components/StatusPill";
 import type { CatalogueCategory, CatalogueProduct } from "../../lib/catalogue";
 import { productPublicPath } from "../../lib/catalogue-paths";
 import { CategoryFilterControls, CategoryViewToggle } from "./CategoryControls";
-import { getFactChips, productCardImage } from "./product-card-facts";
+import { getFactChips, hasProductPhoto, productCardImage } from "./product-card-facts";
 
 export function CategoryCatalogue({
   root,
@@ -65,14 +65,15 @@ export function CategoryCatalogue({
           {visibleProducts.length > 0 ? (
             <>
               <div id="category-products-grid" className="category-card-grid" hidden={viewMode !== "grid"} style={{ display: viewMode === "grid" ? "grid" : "none", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 32 }}>
-                {visibleProducts.map((product, index) => {
+                {visibleProducts.map((product) => {
                   const subcategory = childCategories.find((category) => category.id === product.subcategoryId)?.name;
                   const chips = getFactChips(product, subcategory);
                   const tagline = product.details.tagline?.trim();
                   return (
                     <Link key={product.id} href={productPublicPath(product, categories)} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 16 }}>
                       <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", minHeight: 220, background: "#C5CCC5", position: "relative" }}>
-                        <div role="img" aria-label={product.name} style={{ display: "block", width: "100%", height: 220, backgroundImage: `url(${productCardImage(product, index)})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                        <div role="img" aria-label={product.name} style={{ display: "block", width: "100%", height: 220, backgroundImage: `url(${productCardImage(product)})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                        {!hasProductPhoto(product) && <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" />}
                         <div style={{ position: "absolute", top: 12, left: 12 }}>
                           <StatusPill status={product.status} />
                         </div>

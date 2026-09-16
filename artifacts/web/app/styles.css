@@ -73,6 +73,28 @@ h1 strong { display:block; font-weight:800; }
 .product-card { background:#fff; border-radius:14px; overflow:hidden; transition:transform .2s, box-shadow .2s; }
 .product-card:hover { transform:translateY(-4px); box-shadow:0 12px 28px rgba(29,40,28,.12); }
 .product-image { min-height:260px; background-size:cover; background-position:center; position:relative; }
+.product-fallback-logo {
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:min(42%, 180px);
+  height:auto;
+  transform:translate(-50%, -50%);
+  filter:grayscale(1);
+  opacity:.3;
+  pointer-events:none;
+}
+.product-hero-fallback-logo {
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:min(34vw, 420px);
+  height:auto;
+  transform:translate(-50%, -50%);
+  filter:grayscale(1);
+  opacity:.22;
+  pointer-events:none;
+}
 .product-image .status-pill { position:absolute; left:16px; bottom:16px; }
 .status-pill { display:inline-flex; align-items:center; gap:7px; border-radius:999px; padding:7px 12px; font-size:12px; font-weight:700; white-space:nowrap; }
 .status-pill i { width:7px; height:7px; background:currentColor; border-radius:50%; }
