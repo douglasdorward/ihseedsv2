@@ -7,16 +7,15 @@ import {
   useAuth,
   useClerk,
 } from "@clerk/react";
+import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadesOfPurple } from "@clerk/themes";
 import Admin from "./pages/Admin";
 import { navigate, useLocation } from "./router";
 
-function readClerkPublishableKey() {
-  const key = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-  return typeof key === "string" && /^pk_(test|live)_/.test(key) ? key : "";
-}
-
-const clerkPubKey = readClerkPublishableKey();
+const clerkPubKey = publishableKeyFromHost(
+  window.location.hostname,
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
