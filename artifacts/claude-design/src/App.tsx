@@ -50,6 +50,8 @@ const appearance = {
     headerTitle: { color: "#17351e" },
     headerSubtitle: { color: "#657368" },
     formButtonPrimary: { backgroundColor: "#315b37" },
+    socialButtonsBlockButton: { display: "none" },
+    dividerRow: { display: "none" },
     footerAction: { display: "none" },
     footerActionLink: { color: "#315b37" },
   },
