@@ -1,4 +1,5 @@
 import app from "./app";
+import { appStorageBackend } from "./lib/app-storage";
 import { logger } from "./lib/logger";
 
 const rawPort = process.env["PORT"];
@@ -15,11 +16,13 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+const storageBackend = appStorageBackend();
+
 app.listen(port, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
     process.exit(1);
   }
 
-  logger.info({ port }, "Server listening");
+  logger.info({ port, storageBackend }, "Server listening");
 });

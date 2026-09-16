@@ -45,7 +45,7 @@ export interface ProductUpdate {
   websiteUrlLegacy?: string;
   /** @nullable */
   availabilityOverride?: ProductUpdateAvailabilityOverride;
-  /** Manual Active/Legacy listing. Legacy products cannot have availability. */
+  /** Manual Active/New/Legacy listing. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability. */
   listingState?: ProductUpdateListingState;
   details?: ProductDetails;
 }

@@ -34,10 +34,22 @@ app.use(cors());
 // Catalogue workbooks are posted as base64 JSON for a validation-first import.
 // PDF extract/tech-sheet uploads need a higher bound than the workbook path.
 app.use((req, res, next) => {
-  const large = req.originalUrl.startsWith("/api/admin/ai") || req.originalUrl.startsWith("/api/admin/tech-sheets");
+  const path = req.originalUrl.split("?")[0];
+  if (req.method === "PUT" && /^\/api\/admin\/media\/[^/]+\/object$/.test(path)) {
+    express.raw({ type: "*/*", limit: "12mb" })(req, res, next);
+    return;
+  }
+  const large = path.startsWith("/api/admin/ai") || path.startsWith("/api/admin/tech-sheets");
   express.json({ limit: large ? "25mb" : "10mb" })(req, res, next);
 });
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use((req, res, next) => {
+  const requestPath = req.originalUrl.split("?")[0];
+  if (req.method === "PUT" && /^\/api\/admin\/media\/[^/]+\/object$/.test(requestPath)) {
+    next();
+    return;
+  }
+  express.urlencoded({ extended: true, limit: "10mb" })(req, res, next);
+});
 
 // A real HTTP redirect for legacy public product URLs. When no redirect is
 // registered, control passes to the hosting platform's SPA fallback.

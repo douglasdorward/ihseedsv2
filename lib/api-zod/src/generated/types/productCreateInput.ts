@@ -37,7 +37,7 @@ export interface ProductCreateInput {
   subcategoryId?: number | null;
   /** @maxLength 240 */
   techSheet: string;
-  /** Manual Active/Legacy listing. Defaults to Active. */
+  /** Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. */
   listingState?: ProductCreateInputListingState;
   details: ProductDetails;
   saleLines?: SaleLine[];

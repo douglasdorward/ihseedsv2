@@ -535,6 +535,7 @@ h1 strong { display:block; font-weight:800; }
 .admin-editor-title h1 { color:#174e37; font-size:36px; font-weight:300; letter-spacing:-.035em; }
 .admin-editor-version { margin-top:7px; color:#68716b; font-size:12px; font-weight:750; }
 .admin-dialog-backdrop { position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:24px; background:rgba(13,31,22,.58); }
+.admin-dialog-backdrop + .admin-dialog-backdrop { z-index:110; }
 .admin-dialog { width:min(100%,520px); padding:30px; border-radius:16px; background:#fff; box-shadow:0 24px 70px rgba(13,31,22,.28); }
 .admin-dialog h2 { margin:0; color:#174e37; font-size:28px; }
 .admin-dialog p { margin:12px 0 24px; color:#536059; font-size:16px; line-height:1.6; }

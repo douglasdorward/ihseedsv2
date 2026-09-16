@@ -42,7 +42,7 @@ function isLegacyListing(product: AlsoPopularCandidate) {
   return product.listingState === "Legacy" || product.listingOverride === "Force legacy" || product.listingOverride === "Legacy";
 }
 
-/** Published + Active listing. Public catalogue rows already match this. */
+/** Published current-catalogue listing (Active or New). Public catalogue rows already match this. */
 export function isAlsoPopularEligible(product: AlsoPopularCandidate) {
   const lifecycle = product.lifecycleStatus ?? product.publishStatus;
   if (lifecycle === "Archived" || lifecycle === "Draft") return false;

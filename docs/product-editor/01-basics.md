@@ -42,7 +42,7 @@ Draft save requires Product name, Slug, Category, and Record type from this tab.
 - **Workbook:** `1 Products.category`
 - **Required:** Draft yes / Publish yes
 - **Shown when:** always
-- **Customer website:** Breadcrumb, directory grouping, category page membership, Also popular pool (Active published products in this category).
+- **Customer website:** Breadcrumb, directory grouping, category page membership, Also popular pool (Active or New published products in this category).
 - **Public API:** yes (`category`)
 - **Purpose:** Places the product in the two-level taxonomy. Also decides which Category-specific fields appear.
 - **How to fill:** Choose an active root. Inactive roots remain available only for an existing assignment. Publishing a changed assignment to inactive taxonomy is rejected.
@@ -77,11 +77,11 @@ Draft save requires Product name, Slug, Category, and Record type from this tab.
 - **Workbook:** `1 Products.listing_state` (wins over legacy `listing_override`)
 - **Required:** defaults to Active; not a publish-content check
 - **Shown when:** always
-- **Customer website:** Active products can appear in the main catalogue, availability, and sitemap. Legacy products appear only as names in the category page “Also in our catalogue” list. They are not saleable cards and cannot show stock.
-- **Public API:** public payloads only include Active products, and `listingState` is always `Active` there
+- **Customer website:** Active and New products can appear in the main catalogue, availability, and sitemap. New also shows a red jagged NEW stamp on product cards and the product hero. Legacy products appear only as names in the category page “Also in our catalogue” list. They are not saleable cards and cannot show stock.
+- **Public API:** public payloads include Active and New products. `listingState` is `Active` or `New` there.
 - **Purpose:** Manual current-selling vs catalogue-history choice. Independent of Published/Draft/Archived. Different from Archive, which removes the product from the public website.
-- **How to fill:** Active when the product may be sold or shown as current. Legacy when it should remain as history only. Legacy forces sale-line availability and the availability override to Unavailable.
-- **Constraints:** `Active` or `Legacy`.
+- **How to fill:** Active when the product may be sold or shown as current. New for the same selling catalogue plus a public NEW stamp. Legacy when it should remain as history only. Legacy forces sale-line availability and the availability override to Unavailable.
+- **Constraints:** `Active`, `New`, or `Legacy`.
 
 ## Botanical name
 

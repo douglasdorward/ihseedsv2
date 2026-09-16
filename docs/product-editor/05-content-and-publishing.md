@@ -87,13 +87,13 @@ Public copy, media, FAQs, Also popular, and display flags. Tagline, blurb, at le
 
 ## Photos
 
-- **API path:** `details.photos[]` (`slot`, `file`, `rating`, `src`)
+- **API path:** `details.photos[]` (`slot`, `file`, `rating`, `src`, optional `assetId`, `alt`, `format`, dimensions)
 - **Workbook:** `1 Products.photo_1` (and further slots when present)
 - **Required:** no
 - **Customer website:** First non-blank `src` is the product-page hero and the default social image. Also popular cards use that hero. Category grid cards currently use rotating placeholder images, not these photos.
 - **Public API:** yes
 - **Purpose:** Product photography. The Form tab lists slots. The Product page view uploads or pastes a URL onto the hero (first non-blank `src`).
-- **How to fill:** Keep `src` as a real URL. Empty slots are skipped for the hero. The Product page editor can upload a hero image onto slot 1 (`Photo 1 · Hero`) or paste a URL over the hero. Extra slots can still take URLs in the publishing card under that view.
+- **How to fill:** Upload JPEG, PNG, or WebP from the Product page hero, the Form Photos card, or **Images** at `/admin/images`. Uploads are converted to WebP in the shared library and stored as `src=/api/media/{id}` with an `assetId`. External/WordPress URLs can still be pasted (no `assetId`; they are not converted). AI never fills photos.
 
 ## Tech sheet URL
 
@@ -124,9 +124,9 @@ Public copy, media, FAQs, Also popular, and display flags. Tagline, blurb, at le
 - **Workbook:** related product slug list on the product row
 - **Required:** no
 - **Shown when:** Form Content & publishing, and the Product page Also popular band
-- **Customer website:** “Also popular” cards, max three. The picker only offers Published products with Active listing. If a stored pick is later set to Legacy (or is otherwise not public), that slot is filled with another Active product from the same category using a slug-seeded shuffle that is stable across loads. An empty list still shows three other Active products in the same category. Featured does not rank this list.
+- **Customer website:** “Also popular” cards, max three. The picker only offers Published products with Active or New listing. If a stored pick is later set to Legacy (or is otherwise not public), that slot is filled with another current product from the same category using a slug-seeded shuffle that is stable across loads. An empty list still shows three other Active or New products in the same category. Featured does not rank this list.
 - **Public API:** yes (`relatedProducts`)
-- **How to fill:** Choose up to three Active published products by name. Leave empty for the automatic same-category set.
+- **How to fill:** Choose up to three Active or New published products by name. Leave empty for the automatic same-category set.
 
 ## Sort order
 

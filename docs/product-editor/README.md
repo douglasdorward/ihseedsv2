@@ -62,7 +62,7 @@ Published products cannot be saved as drafts. Editor changes replace the live pa
 ## Listing vs lifecycle
 
 - **Published / Draft / Archived** is lifecycle. Only Published products can be public.
-- **Active / Legacy** is listing state on Basics. Only Published + Active products appear in the main catalogue. Legacy stays published as name-only history and cannot have availability.
+- **Active / New / Legacy** is listing state on Basics. Published + Active or New products appear in the main catalogue. New also shows a red NEW stamp on public cards and the product page. Legacy stays published as name-only history and cannot have availability.
 - **Archive** removes the product from the public website. Restore returns it to Draft.
 
 ## Keep these docs in sync

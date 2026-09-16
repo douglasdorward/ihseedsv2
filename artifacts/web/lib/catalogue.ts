@@ -9,6 +9,7 @@ export type CatalogueProduct = {
   category: string;
   subcategoryId?: number | null;
   techSheet?: string;
+  listingState?: "Active" | "New";
   saleLines?: Array<{
     sortOrder?: number;
     stockCode?: string;

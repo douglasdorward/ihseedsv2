@@ -569,6 +569,39 @@ paths:
         "400": { description: "Missing, corrupt, unsupported, or oversized object" }
         "404": { description: Asset not found }
         "409": { description: Exact duplicate; reuse existing asset }
+  /admin/media/{id}/attach:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: attachMediaAsset
+      tags: [admin]
+      summary: Insert a library image as a product hero and shift existing photos down
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/MediaAttachInput" } } }
+      responses:
+        "200": { description: Attached asset, content: { application/json: { schema: { $ref: "#/components/schemas/MediaAsset" } } } }
+        "400": { description: Missing product }
+        "404": { description: Asset or product not found }
+        "409": { description: Product is archived }
+  /admin/media/{id}/object:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    put:
+      operationId: putMediaObject
+      tags: [admin]
+      summary: Upload original JPEG, PNG, or WebP bytes for a pending library asset
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: { type: string, format: binary }
+      responses:
+        "204": { description: Original bytes stored }
+        "400": { description: Invalid or oversized object }
+        "404": { description: Asset not found }
   /admin/media/{id}/preview:
     get:
       operationId: previewMediaAsset
@@ -952,7 +985,7 @@ components:
         descriptionSource: { type: string, description: Admin-only provenance }
         websiteUrlLegacy: { type: string, description: Admin-only legacy URL }
         availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
-        listingState: { type: string, enum: [Active, Legacy], description: "Manual Active/Legacy listing. Independent of Published/Draft/Archived. Legacy products cannot have availability." }
+        listingState: { type: string, enum: [Active, New, Legacy], description: "Manual Active/New/Legacy listing. Independent of Published/Draft/Archived. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability." }
         saleLines:
           type: array
           items: { $ref: "#/components/schemas/SaleLine" }
@@ -965,7 +998,7 @@ components:
       required: [id, name, slug, price, packSize, status, note, category, techSheet, listingState, publishStatus, details, createdAt, updatedAt]
     PublicProduct:
       type: object
-      description: Published, Active catalogue data. Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.
+      description: Published current-catalogue data (Active or New). Administrative provenance, overrides, lifecycle fields, and internal notes are excluded.
       properties:
         id: { type: number }
         name: { type: string }
@@ -978,7 +1011,7 @@ components:
         subcategoryId: { type: [number, "null"], multipleOf: 1 }
         techSheet: { type: string }
         guideYear: { type: string }
-        listingState: { type: string, enum: [Active] }
+        listingState: { type: string, enum: [Active, New], description: "Current-catalogue listing. New products render a NEW stamp on public cards and the product page." }
         saleLines:
           type: array
           items: { $ref: "#/components/schemas/SaleLine" }
@@ -1069,7 +1102,7 @@ components:
         descriptionSource: { type: string, maxLength: 240 }
         websiteUrlLegacy: { type: string, maxLength: 500 }
         availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
-        listingState: { type: string, enum: [Active, Legacy], description: "Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability." }
+        listingState: { type: string, enum: [Active, New, Legacy], description: "Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability." }
         details:
           $ref: "#/components/schemas/ProductDetails"
         saleLines:
@@ -1112,7 +1145,7 @@ components:
         descriptionSource: { type: string, maxLength: 240 }
         websiteUrlLegacy: { type: string, maxLength: 500 }
         availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
-        listingState: { type: string, enum: [Active, Legacy], description: "Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability." }
+        listingState: { type: string, enum: [Active, New, Legacy], description: "Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability." }
         publishStatus: { type: string, enum: [Published, Draft, Archived] }
         details:
           $ref: "#/components/schemas/ProductDetails"
@@ -1129,7 +1162,7 @@ components:
         category: { type: string, minLength: 1, maxLength: 120 }
         subcategoryId: { type: number, multipleOf: 1, nullable: true }
         techSheet: { type: string, maxLength: 240 }
-        listingState: { type: string, enum: [Active, Legacy], description: "Manual Active/Legacy listing. Defaults to Active." }
+        listingState: { type: string, enum: [Active, New, Legacy], description: "Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp." }
         details:
           $ref: "#/components/schemas/ProductDetails"
         saleLines:
@@ -1151,7 +1184,7 @@ components:
         descriptionSource: { type: string, maxLength: 240 }
         websiteUrlLegacy: { type: string, maxLength: 500 }
         availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
-        listingState: { type: string, enum: [Active, Legacy], description: "Manual Active/Legacy listing. Legacy products cannot have availability." }
+        listingState: { type: string, enum: [Active, New, Legacy], description: "Manual Active/New/Legacy listing. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability." }
         details:
           $ref: "#/components/schemas/ProductDetails"
     ProductDetails:
@@ -1419,6 +1452,11 @@ components:
         contentType: { type: string, enum: [image/jpeg, image/png, image/webp] }
         bytes: { type: number, multipleOf: 1, minimum: 1, maximum: 12582912 }
         sha256: { type: string, pattern: "^[a-fA-F0-9]{64}$" }
+    MediaAttachInput:
+      type: object
+      required: [productId]
+      properties:
+        productId: { type: number, multipleOf: 1, minimum: 1 }
     MediaUploadRequestResult:
       type: object
       required: [duplicate]

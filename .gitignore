@@ -10,6 +10,7 @@ out-tsc
 
 # dependencies
 node_modules
+.pnpm-store/
 
 # IDEs and editors
 /.idea
@@ -53,3 +54,5 @@ artifacts/api-server/uploads/products/*
 !artifacts/api-server/uploads/products/.gitkeep
 artifacts/api-server/uploads/tech-sheets/*
 !artifacts/api-server/uploads/tech-sheets/.gitkeep
+artifacts/api-server/uploads/media/*
+!artifacts/api-server/uploads/media/.gitkeep

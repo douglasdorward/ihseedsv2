@@ -43,7 +43,7 @@ export function AlsoPopularPicker({
         <div className="admin-section-heading">
           <div>
             <h3>Also popular</h3>
-            <p className="admin-field-hint">Choose up to three Active published products by name. Leave empty to show three other products from this category automatically. If a chosen product later becomes Legacy, that slot shows another Active product from this category.</p>
+            <p className="admin-field-hint">Choose up to three Active or New published products by name. Leave empty to show three other products from this category automatically. If a chosen product later becomes Legacy, that slot shows another current product from this category.</p>
           </div>
         </div>
       )}
@@ -73,7 +73,7 @@ export function AlsoPopularPicker({
           const selectedProduct = productsBySlug.get(slug);
           const invalid = !options.some((option) => option.slug === slug);
           return compact ? (
-            <span className={`ppe-also-popular-chip ${invalid ? "is-invalid" : ""}`} key={`${slug}-${index}`} title={invalid ? "Not an Active published product. The website will show another product in this slot." : undefined}>
+            <span className={`ppe-also-popular-chip ${invalid ? "is-invalid" : ""}`} key={`${slug}-${index}`} title={invalid ? "Not a current published product. The website will show another product in this slot." : undefined}>
               <strong>{selectedProduct?.name ?? `Unknown product (${slug})`}</strong>
               {!readOnly && <button type="button" onClick={() => onChange(chosen.filter((_, itemIndex) => itemIndex !== index))} aria-label={`Remove ${selectedProduct?.name ?? slug}`}>×</button>}
             </span>
@@ -81,7 +81,7 @@ export function AlsoPopularPicker({
             <div className={`admin-product-selection ${invalid ? "invalid" : ""}`} key={`${slug}-${index}`}>
               <span>
                 <strong>{selectedProduct?.name ?? "Invalid Also popular reference"}</strong>
-                <small>{invalid ? "Not an Active published product. The website will show another product in this slot." : (selectedProduct?.slug ?? slug)}</small>
+                <small>{invalid ? "Not a current published product. The website will show another product in this slot." : (selectedProduct?.slug ?? slug)}</small>
               </span>
               {!readOnly && <button type="button" onClick={() => onChange(chosen.filter((_, itemIndex) => itemIndex !== index))} aria-label={`Remove ${selectedProduct?.name ?? slug}`}>Remove</button>}
             </div>

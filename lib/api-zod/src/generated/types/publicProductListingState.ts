@@ -6,9 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Current-catalogue listing. New products render a NEW stamp on public cards and the product page.
+ */
 export type PublicProductListingState = typeof PublicProductListingState[keyof typeof PublicProductListingState];
 
 
 export const PublicProductListingState = {
   Active: 'Active',
+  New: 'New',
 } as const;

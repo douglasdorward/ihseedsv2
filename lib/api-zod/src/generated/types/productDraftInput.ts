@@ -37,7 +37,7 @@ export interface ProductDraftInput {
   websiteUrlLegacy: string;
   /** @nullable */
   availabilityOverride: ProductDraftInputAvailabilityOverride;
-  /** Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability. */
+  /** Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability. */
   listingState?: ProductDraftInputListingState;
   details: ProductDetails;
   saleLines?: SaleLine[];

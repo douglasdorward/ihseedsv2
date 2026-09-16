@@ -94,6 +94,7 @@
 .admin-derived-info { font-size: 13px; color: #536059; margin-top: 4px; display: block; }
 .admin-listing-badge { display: inline-flex; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; }
 .admin-listing-badge.active { background: #e4f0e6; color: #0c583c; }
+.admin-listing-badge.new { background: #fde8e8; color: #b42318; }
 .admin-listing-badge.legacy { background: #f3f5f2; color: #536059; }
 
 .admin-category-confirm { position: fixed; inset: 0; background: rgba(23, 78, 55, 0.4); display: flex; align-items: center; justify-content: center; z-index: 100; }

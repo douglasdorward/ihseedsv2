@@ -6,9 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ProductFaq {
-  /** @maxLength 180 */
-  question: string;
-  /** @maxLength 4000 */
-  answer: string;
+export interface ProductImageUploadResponse {
+  uploadURL: string;
+  objectPath: string;
+  publicURL: string;
 }

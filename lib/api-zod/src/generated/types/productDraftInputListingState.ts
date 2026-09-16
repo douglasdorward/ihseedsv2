@@ -7,12 +7,13 @@
  */
 
 /**
- * Manual Active/Legacy listing. Defaults to Active. Legacy products cannot have availability.
+ * Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.
  */
 export type ProductDraftInputListingState = typeof ProductDraftInputListingState[keyof typeof ProductDraftInputListingState];
 
 
 export const ProductDraftInputListingState = {
   Active: 'Active',
+  New: 'New',
   Legacy: 'Legacy',
 } as const;

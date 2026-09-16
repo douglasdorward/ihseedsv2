@@ -4,21 +4,20 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import { Icon } from "../../components/Icon";
+import { ProductNewStamp } from "../../components/NewStamp";
 import { StatusPill } from "../../components/StatusPill";
 import type { CatalogueCategory, CatalogueProduct } from "../../lib/catalogue";
 import { productPublicPath } from "../../lib/catalogue-paths";
 import {
-  END_USE_OPTIONS,
+  catalogueFilterOptions,
   EMPTY_FILTERS,
   filtersAreEmpty,
   filtersFromSearchParams,
-  LIVESTOCK_OPTIONS,
+  isFilterOptionEnabled,
   productMatchesFilters,
-  RAINFALL_OPTIONS,
   searchParamsFromFilters,
   SOIL_OPTIONS,
-  SOWING_CONTEXT_OPTIONS,
-  TOLERANCE_OPTIONS,
+  type FilterOptionDimension,
   type ProductListingFilters,
 } from "../../lib/product-filters";
 import { getFactChips, listingImageOptions } from "./product-card-facts";
@@ -44,16 +43,18 @@ function FilterGroup({
 
 function Checkbox({
   checked,
+  disabled = false,
   label,
   onChange,
 }: {
   checked: boolean;
+  disabled?: boolean;
   label: string;
   onChange: () => void;
 }) {
   return (
-    <label className="product-filter-option">
-      <input type="checkbox" checked={checked} onChange={onChange} />
+    <label className={`product-filter-option${disabled ? " is-disabled" : ""}`}>
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={onChange} />
       <span>{label}</span>
     </label>
   );
@@ -72,9 +73,31 @@ export function ProductsListing({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filters = useMemo(() => filtersFromSearchParams(searchParams), [searchParams]);
 
-  const rootCategories = categories
-    .filter((category) => category.parentId === null && category.active)
-    .sort((first, second) => first.sortOrder - second.sortOrder || first.name.localeCompare(second.name));
+  const rootCategories = useMemo(
+    () => categories
+      .filter((category) => category.parentId === null && category.active)
+      .sort((first, second) => first.sortOrder - second.sortOrder || first.name.localeCompare(second.name)),
+    [categories],
+  );
+
+  const options = useMemo(
+    () => catalogueFilterOptions(products, categories),
+    [products, categories],
+  );
+
+  const categoryBySlug = useMemo(
+    () => new Map(rootCategories.map((category) => [category.slug, category])),
+    [rootCategories],
+  );
+
+  const soilLabelByValue = useMemo(
+    () => new Map<string, string>(SOIL_OPTIONS.map((option) => [option.value, option.label])),
+    [],
+  );
+
+  function optionEnabled(dimension: FilterOptionDimension, value: string | number) {
+    return isFilterOptionEnabled(products, categories, filters, dimension, value);
+  }
 
   const visibleProducts = products
     .filter((product) => productMatchesFilters(product, filters, categories))
@@ -100,85 +123,117 @@ export function ProductsListing({
         )}
       </div>
 
-      <FilterGroup title="Category">
-        {rootCategories.map((category) => (
-          <Checkbox
-            key={category.id}
-            checked={filters.category.includes(category.slug)}
-            label={category.name}
-            onChange={() => apply({ ...filters, category: toggleValue(filters.category, category.slug) })}
-          />
-        ))}
-      </FilterGroup>
+      {options.category.length > 0 && (
+        <FilterGroup title="Category">
+          {options.category.map((slug) => {
+            const category = categoryBySlug.get(slug);
+            if (!category) return null;
+            return (
+              <Checkbox
+                key={slug}
+                checked={filters.category.includes(slug)}
+                disabled={!optionEnabled("category", slug)}
+                label={category.name}
+                onChange={() => apply({ ...filters, category: toggleValue(filters.category, slug) })}
+              />
+            );
+          })}
+        </FilterGroup>
+      )}
 
-      <FilterGroup title="End-use">
-        {END_USE_OPTIONS.map((value) => (
-          <Checkbox
-            key={value}
-            checked={filters.endUse.includes(value)}
-            label={value}
-            onChange={() => apply({ ...filters, endUse: toggleValue(filters.endUse, value) })}
-          />
-        ))}
-      </FilterGroup>
+      {options.endUse.length > 0 && (
+        <FilterGroup title="End-use">
+          {options.endUse.map((value) => (
+            <Checkbox
+              key={value}
+              checked={filters.endUse.includes(value)}
+              disabled={!optionEnabled("endUse", value)}
+              label={value}
+              onChange={() => apply({ ...filters, endUse: toggleValue(filters.endUse, value) })}
+            />
+          ))}
+        </FilterGroup>
+      )}
 
-      <FilterGroup title="Livestock">
-        {LIVESTOCK_OPTIONS.map((value) => (
-          <Checkbox
-            key={value}
-            checked={filters.livestock.includes(value)}
-            label={value}
-            onChange={() => apply({ ...filters, livestock: toggleValue(filters.livestock, value) })}
-          />
-        ))}
-      </FilterGroup>
+      {options.livestock.length > 0 && (
+        <FilterGroup title="Livestock">
+          {options.livestock.map((value) => (
+            <Checkbox
+              key={value}
+              checked={filters.livestock.includes(value)}
+              disabled={!optionEnabled("livestock", value)}
+              label={value}
+              onChange={() => apply({ ...filters, livestock: toggleValue(filters.livestock, value) })}
+            />
+          ))}
+        </FilterGroup>
+      )}
 
-      <FilterGroup title="Tolerance">
-        {TOLERANCE_OPTIONS.map((value) => (
-          <Checkbox
-            key={value}
-            checked={filters.tolerance.includes(value)}
-            label={value}
-            onChange={() => apply({ ...filters, tolerance: toggleValue(filters.tolerance, value) })}
-          />
-        ))}
-      </FilterGroup>
+      {options.tolerance.length > 0 && (
+        <FilterGroup title="Tolerance">
+          {options.tolerance.map((value) => (
+            <Checkbox
+              key={value}
+              checked={filters.tolerance.includes(value)}
+              disabled={!optionEnabled("tolerance", value)}
+              label={value}
+              onChange={() => apply({ ...filters, tolerance: toggleValue(filters.tolerance, value) })}
+            />
+          ))}
+        </FilterGroup>
+      )}
 
-      <FilterGroup title="Rainfall">
-        <label className="product-filter-option">
-          <span>Your annual rainfall</span>
-          <select
-            value={filters.rainfall ?? ""}
-            onChange={(event) => apply({ ...filters, rainfall: event.target.value ? Number(event.target.value) : null })}
-          >
-            <option value="">Any</option>
-            {RAINFALL_OPTIONS.map((value) => (
-              <option key={value} value={value}>{value} mm</option>
-            ))}
-          </select>
-        </label>
-      </FilterGroup>
+      {options.rainfall.length > 0 && (
+        <FilterGroup title="Rainfall">
+          <label className="product-filter-option">
+            <span>Your annual rainfall</span>
+            <select
+              value={filters.rainfall ?? ""}
+              onChange={(event) => apply({ ...filters, rainfall: event.target.value ? Number(event.target.value) : null })}
+            >
+              <option value="">Any</option>
+              {options.rainfall.map((value) => (
+                <option key={value} value={value} disabled={!optionEnabled("rainfall", value)}>
+                  {value} mm
+                </option>
+              ))}
+            </select>
+          </label>
+        </FilterGroup>
+      )}
 
-      <FilterGroup title="Features">
-        <p className="product-filter-subtitle">Soil type</p>
-        {SOIL_OPTIONS.map((option) => (
-          <Checkbox
-            key={option.value}
-            checked={filters.soil.includes(option.value)}
-            label={option.label}
-            onChange={() => apply({ ...filters, soil: toggleValue(filters.soil, option.value) })}
-          />
-        ))}
-        <p className="product-filter-subtitle">Sowing rate</p>
-        {SOWING_CONTEXT_OPTIONS.map((value) => (
-          <Checkbox
-            key={value}
-            checked={filters.sowing.includes(value)}
-            label={value}
-            onChange={() => apply({ ...filters, sowing: toggleValue(filters.sowing, value) })}
-          />
-        ))}
-      </FilterGroup>
+      {(options.soil.length > 0 || options.sowing.length > 0) && (
+        <FilterGroup title="Features">
+          {options.soil.length > 0 && (
+            <>
+              <p className="product-filter-subtitle">Soil type</p>
+              {options.soil.map((value) => (
+                <Checkbox
+                  key={value}
+                  checked={filters.soil.includes(value)}
+                  disabled={!optionEnabled("soil", value)}
+                  label={soilLabelByValue.get(value) ?? value}
+                  onChange={() => apply({ ...filters, soil: toggleValue(filters.soil, value) })}
+                />
+              ))}
+            </>
+          )}
+          {options.sowing.length > 0 && (
+            <>
+              <p className="product-filter-subtitle">Sowing rate</p>
+              {options.sowing.map((value) => (
+                <Checkbox
+                  key={value}
+                  checked={filters.sowing.includes(value)}
+                  disabled={!optionEnabled("sowing", value)}
+                  label={value}
+                  onChange={() => apply({ ...filters, sowing: toggleValue(filters.sowing, value) })}
+                />
+              ))}
+            </>
+          )}
+        </FilterGroup>
+      )}
     </form>
   );
 
@@ -219,6 +274,7 @@ export function ProductsListing({
                     <div style={{ position: "absolute", top: 12, left: 12 }}>
                       <StatusPill status={product.status} />
                     </div>
+                    <ProductNewStamp listingState={product.listingState} />
                     <div className="icon-button" aria-hidden="true" style={{ position: "absolute", right: 12, bottom: 12, width: 40, height: 40, background: "var(--yellow)", border: "none" }}>
                       <Icon name="arrow-right" size={18} />
                     </div>
