@@ -5,7 +5,8 @@ import { Icon } from "../components/ui";
 import { ConfirmDialog, PageHeader } from "./Admin";
 import { downloadImageListCsv, productListingState } from "../image-list-csv";
 import { matchUploadToProduct } from "../match-upload-product";
-import { photoDisplaySrc, uploadMediaAsset } from "../upload-image";
+import { photoDisplaySrc, uploadMediaAsset, type UploadedMediaPhoto, type UploadMediaProgress } from "../upload-image";
+import { runUploadBatch, successfulUploadValues } from "../upload-batch";
 import { uploadCancelCopy } from "../upload-cancel-copy";
 import "../admin-images.css";
 
@@ -38,6 +39,16 @@ type MediaPage = {
 type PendingUploadCancel = {
   assetIds: string[];
   filenames: string[];
+};
+
+type UploadQueueItem = {
+  id: string;
+  file: File;
+  filename: string;
+  status: "queued" | "requesting" | "uploading" | "processing" | "complete" | "failed";
+  percent: number;
+  error: string;
+  photo?: UploadedMediaPhoto;
 };
 
 function assignedProductNames(products: { name?: string; details?: { photos?: Array<{ assetId?: string | null }> } }[], assetId: string) {
@@ -92,6 +103,8 @@ export default function AdminImages() {
   const [matchRows, setMatchRows] = useState<MatchRow[] | null>(null);
   const [pendingCancel, setPendingCancel] = useState<PendingUploadCancel | null>(null);
   const [preview, setPreview] = useState<{ assetId: string; filename: string } | null>(null);
+  const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[] | null>(null);
+  const [uploadFinished, setUploadFinished] = useState(false);
 
   const exportRows = useMemo(
     () => [...products].sort((first, second) => (first.name ?? "").localeCompare(second.name ?? "", undefined, { numeric: true, sensitivity: "base" }) || second.id - first.id),
@@ -115,34 +128,84 @@ export default function AdminImages() {
   }, []);
 
   const uploadFiles = async (files: FileList | File[]) => {
-    const list = [...files].filter((file) => /image\/(jpeg|png|webp)/.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name));
-    if (!list.length) {
-      setError("Upload JPEG, PNG, or WebP images.");
-      return;
-    }
+    const selected = [...files];
+    const queue = selected.map((file, index): UploadQueueItem => {
+      const supported = /image\/(jpeg|png|webp)/.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
+      return {
+        id: `${Date.now()}-${index}-${file.name}`,
+        file,
+        filename: file.name,
+        status: supported ? "queued" : "failed",
+        percent: 0,
+        error: supported ? "" : "Use a JPEG, PNG, or WebP image.",
+      };
+    });
+    const valid = queue.filter((item) => item.status === "queued");
+    setUploadQueue(queue);
+    setUploadFinished(valid.length === 0);
     setBusy(true);
     setError("");
-    try {
-      const uploaded: MatchRow[] = [];
-      for (const file of list) {
-        const photo = await uploadMediaAsset(file);
-        const filename = photo.file || file.name;
-        const guess = matchUploadToProduct(filename, matchProducts);
-        uploaded.push({
-          assetId: photo.assetId,
-          filename,
-          productId: guess.productId,
-          unsure: guess.unsure,
-          error: "",
+    if (!valid.length) {
+      setBusy(false);
+      return;
+    }
+    const updateItem = (id: string, changes: Partial<UploadQueueItem>) => {
+      setUploadQueue((current) => current?.map((item) => item.id === id ? { ...item, ...changes } : item) ?? null);
+    };
+    await runUploadBatch(
+      valid,
+      async (item) => {
+        const photo = await uploadMediaAsset(item.file, {
+          onProgress: (progress: UploadMediaProgress) => updateItem(item.id, {
+            status: progress.stage,
+            percent: progress.percent,
+          }),
         });
-      }
+        return photo;
+      },
+      {
+        concurrency: 3,
+        onSettled: (result) => {
+          if (result.status === "fulfilled") {
+            updateItem(result.item.id, { status: "complete", percent: 100, photo: result.value });
+          } else {
+            updateItem(result.item.id, {
+              status: "failed",
+              error: result.reason instanceof Error ? result.reason.message : "Could not upload this image.",
+            });
+          }
+        },
+      },
+    );
+    try {
       await refresh();
-      if (uploaded.length) setMatchRows(uploaded);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not upload that image.");
+      setError(caught instanceof Error ? caught.message : "Uploads finished, but the image library could not refresh.");
     } finally {
       setBusy(false);
+      setUploadFinished(true);
     }
+  };
+
+  const closeUploadQueue = () => {
+    if (!uploadFinished || !uploadQueue) return;
+    const uploaded = successfulUploadValues(uploadQueue.map((item) => ({
+      status: item.status,
+      value: item.photo ? { photo: item.photo, filename: item.filename } : undefined,
+    }))).map(({ photo, filename: selectedFilename }): MatchRow => {
+      const filename = photo.file || selectedFilename;
+      const guess = matchUploadToProduct(filename, matchProducts);
+      return {
+        assetId: photo.assetId,
+        filename,
+        productId: guess.productId,
+        unsure: guess.unsure,
+        error: "",
+      };
+    });
+    setUploadQueue(null);
+    setUploadFinished(false);
+    if (uploaded.length) setMatchRows(uploaded);
   };
 
   const attachSelected = async () => {
@@ -276,7 +339,7 @@ export default function AdminImages() {
                 event.target.value = "";
               }}
             />
-            <span>{busy ? "Uploading and converting to WebP…" : "Drop images or click to upload"}</span>
+            <span>{busy ? "Uploads in progress…" : "Drop images or click to upload"}</span>
           </label>
           {error && <p className="admin-inline-field-error">{error}</p>}
         </section>
@@ -329,6 +392,51 @@ export default function AdminImages() {
           </div>
         )}
       </div>
+      {uploadQueue && (
+        <div className="admin-dialog-backdrop" role="presentation">
+          <section
+            className="admin-dialog admin-upload-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="upload-progress-title"
+            aria-describedby="upload-progress-summary"
+          >
+            <div className="admin-image-match-header">
+              <h2 id="upload-progress-title">{uploadFinished ? "Uploads finished" : "Uploading images"}</h2>
+            </div>
+            <p id="upload-progress-summary" aria-live="polite">
+              {uploadQueue.filter((item) => item.status === "complete" || item.status === "failed").length} of {uploadQueue.length} complete
+            </p>
+            <div className="admin-upload-list">
+              {uploadQueue.map((item) => (
+                <div className={`admin-upload-row is-${item.status}`} key={item.id}>
+                  <div className="admin-upload-copy">
+                    <strong title={item.filename}>{item.filename}</strong>
+                    <span>
+                      {item.status === "queued" && "Waiting…"}
+                      {item.status === "requesting" && "Preparing upload…"}
+                      {item.status === "uploading" && `Uploading ${item.percent}%`}
+                      {item.status === "processing" && "Converting to WebP…"}
+                      {item.status === "complete" && "Uploaded"}
+                      {item.status === "failed" && item.error}
+                    </span>
+                  </div>
+                  <progress
+                    aria-label={`Upload progress for ${item.filename}`}
+                    max={100}
+                    value={item.status === "processing" || item.status === "complete" ? 100 : item.percent}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="admin-dialog-actions">
+              <button className="admin-button primary" type="button" disabled={!uploadFinished} onClick={closeUploadQueue}>
+                {uploadFinished ? "Continue" : "Uploading…"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
       {matchRows && (
         <div className="admin-dialog-backdrop" role="presentation">
           <section
