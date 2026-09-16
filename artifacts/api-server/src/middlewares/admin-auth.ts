@@ -6,23 +6,9 @@ export type AdminSession = {
   userId: string;
   email: string;
   role: "admin";
-  developmentBypass: boolean;
 };
 
-function isDevelopmentBypass() {
-  return process.env.NODE_ENV === "development";
-}
-
 async function resolveAdmin(req: Request): Promise<AdminSession | null> {
-  if (isDevelopmentBypass()) {
-    return {
-      userId: "development-admin",
-      email: "development@ihseeds.local",
-      role: "admin",
-      developmentBypass: true,
-    };
-  }
-
   const auth = getAuth(req);
   if (!auth.userId) return null;
 
@@ -37,11 +23,6 @@ export async function getAdminSession(req: Request): Promise<AdminSession | null
 
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    if (isDevelopmentBypass()) {
-      res.locals.admin = await resolveAdmin(req);
-      next();
-      return;
-    }
     const auth = getAuth(req);
     if (!auth.userId) {
       res.status(401).json({ error: "Sign in is required." });

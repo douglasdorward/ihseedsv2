@@ -12,7 +12,6 @@ export type StoredAdminSession = {
   userId: string;
   email: string;
   role: "admin";
-  developmentBypass: false;
 };
 
 export function verifiedPrimaryEmail(user: {
@@ -45,7 +44,6 @@ export async function resolveAdminIdentity(
       userId: existing.clerkUserId,
       email: existing.email,
       role: "admin",
-      developmentBypass: false,
     };
   }
 
@@ -62,7 +60,6 @@ export async function resolveAdminIdentity(
         userId: current.clerkUserId,
         email: current.email,
         role: "admin" as const,
-        developmentBypass: false as const,
       };
     }
 
@@ -99,7 +96,6 @@ export async function resolveAdminIdentity(
       userId: created.clerkUserId,
       email: created.email,
       role: "admin" as const,
-      developmentBypass: false as const,
     };
   });
 }

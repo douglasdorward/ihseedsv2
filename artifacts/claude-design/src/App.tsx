@@ -23,7 +23,6 @@ type AdminSession = {
   signedIn: boolean;
   authorized: boolean;
   email?: string;
-  developmentBypass?: boolean;
 };
 
 const appearance = {
@@ -99,57 +98,6 @@ function AccessDenied() {
   );
 }
 
-function DevelopmentAdminGate() {
-  const [session, setSession] = useState<AdminSession | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    document.title = "Admin — IH Seeds";
-    let active = true;
-    fetch("/api/auth/session", { credentials: "include", cache: "no-store" })
-      .then(async (response) => {
-        const body = await response.json().catch(() => ({}));
-        if (active) {
-          setSession({ ...body, authorized: response.ok && body.authorized === true });
-        }
-      })
-      .catch(() => {
-        if (active) setSession({ signedIn: false, authorized: false });
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  if (loading) {
-    return <main className="admin-auth-page"><div className="admin-auth-loading">Checking administrator access…</div></main>;
-  }
-  if (!session?.authorized) {
-    return (
-      <main className="admin-auth-page">
-        <section className="admin-access-card">
-          <h1>Admin API unavailable</h1>
-          <p>Start the local API on port 8080 with NODE_ENV=development, then refresh.</p>
-        </section>
-      </main>
-    );
-  }
-
-  return (
-    <>
-      {session.developmentBypass ? (
-        <div className="admin-development-banner" role="status">
-          Development auto-sign-in · Administrator
-        </div>
-      ) : null}
-      <Admin />
-    </>
-  );
-}
-
 function AdminGate() {
   const [location] = useLocation();
   const { isLoaded, isSignedIn } = useAuth();
@@ -212,19 +160,13 @@ function AdminGate() {
 
   return (
     <>
-      {session.developmentBypass ? (
-        <div className="admin-development-banner" role="status">
-          Development auto-sign-in · Administrator
-        </div>
-      ) : (
-        <button
-          className="admin-global-signout"
-          type="button"
-          onClick={() => signOut({ redirectUrl: `${basePath}/sign-in` })}
-        >
-          Sign out
-        </button>
-      )}
+      <button
+        className="admin-global-signout"
+        type="button"
+        onClick={() => signOut({ redirectUrl: `${basePath}/sign-in` })}
+      >
+        Sign out
+      </button>
       <Admin />
     </>
   );
@@ -232,7 +174,7 @@ function AdminGate() {
 
 export default function App() {
   if (!clerkPubKey) {
-    return <DevelopmentAdminGate />;
+    throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY.");
   }
   return (
     <ClerkProvider

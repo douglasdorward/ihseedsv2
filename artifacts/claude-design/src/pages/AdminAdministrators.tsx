@@ -266,7 +266,7 @@ export default function AdminAdministrators() {
                     <td colSpan={3} style={{ textAlign: "center", color: "var(--text-muted, #6b7280)", padding: "32px 16px" }}>
                       No active administrator accounts found.<br />
                       <small style={{ display: "inline-block", marginTop: "8px" }}>
-                        Development auto-sign-in bypasses access control and does not create an administrator record.
+                        Sign in with a verified Clerk account to manage administrator access.
                       </small>
                     </td>
                   </tr>

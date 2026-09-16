@@ -13,7 +13,6 @@ router.get("/auth/session", async (req, res): Promise<void> => {
     signedIn: true,
     authorized: true,
     email: admin.email,
-    developmentBypass: admin.developmentBypass,
   });
 });
 

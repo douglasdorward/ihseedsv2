@@ -514,7 +514,6 @@ before(async () => {
       ...process.env,
       NODE_ENV: "development",
       PORT: String(apiPort),
-      VITE_ADMIN_DEV_AUTO_SIGN_IN: "1",
     },
     stdio: ["ignore", "ignore", "ignore"],
   });

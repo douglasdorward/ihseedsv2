@@ -1,7 +1,6 @@
 import express, { type Express } from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import cors from "cors";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
@@ -37,7 +36,6 @@ app.use(
   }),
 );
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-app.use(cors({ credentials: true, origin: true }));
 // Catalogue workbooks are posted as base64 JSON for a validation-first import.
 // PDF extract/tech-sheet uploads need a higher bound than the workbook path.
 app.use((req, res, next) => {
@@ -66,16 +64,14 @@ app.get("/product/:slug", async (req, res, next): Promise<void> => {
   res.redirect(301, toPath);
 });
 
-if (process.env.NODE_ENV !== "development" && process.env.CLERK_SECRET_KEY) {
-  app.use(
-    clerkMiddleware((req) => ({
-      publishableKey: publishableKeyFromHost(
-        getClerkProxyHost(req) ?? "",
-        process.env.CLERK_PUBLISHABLE_KEY,
-      ),
-    })),
-  );
-}
+app.use(
+  clerkMiddleware((req) => ({
+    publishableKey: publishableKeyFromHost(
+      getClerkProxyHost(req) ?? "",
+      process.env.CLERK_PUBLISHABLE_KEY,
+    ),
+  })),
+);
 app.use("/api/admin", requireAdmin);
 app.use("/api", router);
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));

@@ -117,7 +117,6 @@ globalThis.require = __testCreateRequire(import.meta.url);`,
     env: {
       ...process.env,
       NODE_ENV: "production",
-      VITE_ADMIN_DEV_AUTO_SIGN_IN: "1",
       PORT: String(port),
     },
     stdio: ["ignore", "pipe", "pipe"],
@@ -226,7 +225,7 @@ test("pending approval is claimed only by the exact verified primary email", asy
     sql(`DELETE FROM ih_admin_revocations WHERE email = '${pendingEmail}'`);
     sql(`DELETE FROM ih_admin_users WHERE clerk_user_id IN ('${actorId}', 'auth-test-pending-${process.pid}')`);
     sql(`INSERT INTO ih_admin_users (clerk_user_id, email, role) VALUES ('${actorId}', '${actorEmail}', 'admin')`);
-    const actor = { userId: actorId, email: actorEmail, role: "admin", developmentBypass: false };
+    const actor = { userId: actorId, email: actorEmail, role: "admin" };
     assert.equal(roleModule.verifiedPrimaryEmail({
       primaryEmailAddressId: "unverified-primary",
       emailAddresses: [
@@ -268,7 +267,7 @@ test("revocation and cancelled approval tombstones block stale bootstrap", async
     sql(`DELETE FROM ih_admin_revocations WHERE email IN ('${bootstrapEmail}', '${cancelledEmail}')`);
     sql(`DELETE FROM ih_admin_users WHERE clerk_user_id IN ('${actorId}', '${bootstrapId}', 'auth-test-cancelled-${process.pid}')`);
     sql(`INSERT INTO ih_admin_users (clerk_user_id, email, role) VALUES ('${actorId}', '${actorEmail}', 'admin')`);
-    const actor = { userId: actorId, email: actorEmail, role: "admin", developmentBypass: false };
+    const actor = { userId: actorId, email: actorEmail, role: "admin" };
     assert.equal((await roleModule.resolveAdminIdentity(bootstrapId, bootstrapEmail))?.userId, bootstrapId);
     assert.deepEqual(await accessModule.revokeAdministratorAccess(actor, bootstrapId), { ok: true });
     assert.equal(await roleModule.resolveAdminIdentity(bootstrapId, bootstrapEmail), null);
@@ -294,8 +293,8 @@ test("concurrent revocations leave an active administrator", async () => {
     sql(`DELETE FROM ih_admin_revocations WHERE email IN ('${emails.join("','")}')`);
     sql(`DELETE FROM ih_admin_users WHERE clerk_user_id IN ('${ids.join("','")}')`);
     sql(`INSERT INTO ih_admin_users (clerk_user_id, email, role) VALUES ('${ids[0]}', '${emails[0]}', 'admin'), ('${ids[1]}', '${emails[1]}', 'admin')`);
-    const actorA = { userId: ids[0], email: emails[0], role: "admin", developmentBypass: false };
-    const actorB = { userId: ids[1], email: emails[1], role: "admin", developmentBypass: false };
+    const actorA = { userId: ids[0], email: emails[0], role: "admin" };
+    const actorB = { userId: ids[1], email: emails[1], role: "admin" };
     const outcomes = await Promise.all([
       accessModule.revokeAdministratorAccess(actorA, ids[1]),
       accessModule.revokeAdministratorAccess(actorB, ids[0]),
@@ -317,7 +316,7 @@ test("public catalogue stays anonymous", async () => {
   assert.equal(response.status, 200);
 });
 
-test("production ignores the development auto-sign-in flag", async () => {
+test("unsigned requests cannot access administrator routes", async () => {
   const session = await fetch(`${baseUrl}/api/auth/session`);
   assert.equal(session.status, 401);
   assert.deepEqual(await session.json(), { signedIn: false, authorized: false });
@@ -334,7 +333,7 @@ test("production ignores the development auto-sign-in flag", async () => {
   const admin = await fetch(`${baseUrl}/api/admin/products`);
   assert.equal(admin.status, 401);
 
-  const mutation = await fetch(`${baseUrl}/api/products`, {
+  const mutation = await fetch(`${baseUrl}/api/admin/categories`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: "{}",

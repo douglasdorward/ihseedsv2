@@ -31,7 +31,6 @@ export async function lockAdminAccess(tx: AdminAccessTx) {
 }
 
 async function activeActor(tx: AdminAccessTx, actor: AdminSession) {
-  if (actor.developmentBypass) return true;
   const [stored] = await tx.select({ role: adminUsersTable.role })
     .from(adminUsersTable)
     .where(eq(adminUsersTable.clerkUserId, actor.userId))

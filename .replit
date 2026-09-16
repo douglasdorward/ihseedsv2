@@ -50,3 +50,6 @@ defaultBucketID = "replit-objstore-78f3e5a4-6315-496a-978a-ebf9a602bfee"
 
 [userenv.production]
 ADMIN_BOOTSTRAP_EMAILS = "douglas@dorwards.net"
+
+[userenv.development]
+ADMIN_BOOTSTRAP_EMAILS = "douglas@dorwards.net"
