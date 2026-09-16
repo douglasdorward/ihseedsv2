@@ -174,7 +174,6 @@ const blankProduct: ProductInput = {
     ecocertApproved: false,
     endUse: [],
     livestock: [],
-    companionSpecies: [],
     diseasePestResistance: "",
     standLifeNotes: "",
     grazingManagementNotes: "",
@@ -207,8 +206,6 @@ const blankProduct: ProductInput = {
     socialImage: "",
     canonicalUrl: "",
     robotsIndex: true,
-    sortOrder: null,
-    featured: false,
     relatedProducts: [],
     headingOffsetDays: null,
     argtResistant: false,
@@ -400,11 +397,11 @@ function mixComponentFieldIssues(
   component: ProductComponent,
   context: { ownSlug: string; knownSlugs: Set<string>; duplicateLink: boolean },
 ) {
-  const issues: Partial<Record<"speciesName" | "productLink" | "inclusionRate" | "unit" | "description" | "note", string>> = {};
+  const issues: Partial<Record<"speciesName" | "productLink" | "inclusionRate" | "unit" | "description", string>> = {};
   const name = component.speciesName.trim();
   const link = component.productLink.trim();
   const unit = component.unit.trim();
-  const hasOtherContent = Boolean(link || component.description.trim() || component.note.trim() || component.inclusionRate != null);
+  const hasOtherContent = Boolean(link || component.description.trim() || component.inclusionRate != null);
   if (!name && hasOtherContent) issues.speciesName = "Add a display name for this component.";
   else if (name.length > 120) issues.speciesName = "Display name must be 120 characters or fewer.";
   if (link) {
@@ -418,7 +415,6 @@ function mixComponentFieldIssues(
   }
   if (unit.length > 20) issues.unit = "Unit must be 20 characters or fewer.";
   if (component.description.length > 10000) issues.description = "Description must be 10,000 characters or fewer.";
-  if (component.note.length > 4000) issues.note = "Internal note must be 4,000 characters or fewer.";
   return issues;
 }
 
@@ -905,13 +901,6 @@ function ProductTable() {
     setMessage("");
     try {
       const selectedIds = [...selected];
-      const beforeRows = selectedIds.map((id) => {
-        const product = products.find((item) => item.id === id);
-        return product ? { id, status: product.status, override: product.availabilityOverride ?? null, saleAvails: (product.saleLines ?? []).map((line) => line.availability), listingState: getListingState(product), derived: getDerivedAvailability(product), hasDraft: product.hasDraft, lifecycle: product.lifecycleStatus } : { id };
-      });
-      // #region agent log
-      fetch('http://127.0.0.1:7761/ingest/6b558af6-c042-43cf-8773-ba4a610de515',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'982dff'},body:JSON.stringify({sessionId:'982dff',runId:'pre-fix',hypothesisId:'A',location:'Admin.tsx:applyBulk:start',message:'Bulk stock apply started',data:{bulkStatus,selectedIds,beforeRows},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       const patchResults = await Promise.all(selectedIds.map(async (id) => {
         try {
           const result = await updateProduct.mutateAsync({ id, data: { status: bulkStatus } });
@@ -920,28 +909,14 @@ function ProductTable() {
           return { id, ok: false, error: error instanceof Error ? error.message : String(error) };
         }
       }));
-      // #region agent log
-      fetch('http://127.0.0.1:7761/ingest/6b558af6-c042-43cf-8773-ba4a610de515',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'982dff'},body:JSON.stringify({sessionId:'982dff',runId:'pre-fix',hypothesisId:'C',location:'Admin.tsx:applyBulk:patches',message:'Bulk PATCH results',data:{bulkStatus,patchResults},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       const failed = patchResults.filter((item) => !item.ok);
       if (failed.length) throw new Error(failed[0]?.error || "Unable to update stock.");
       await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey() });
       await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
-      const refreshed = queryClient.getQueryData(getListAdminProductsQueryKey()) as AdminProduct[] | undefined;
-      const afterRows = selectedIds.map((id) => {
-        const product = refreshed?.find((item) => item.id === id);
-        return product ? { id, status: product.status, override: product.availabilityOverride ?? null, saleAvails: (product.saleLines ?? []).map((line) => line.availability), listingState: getListingState(product), derived: getDerivedAvailability(product), hasDraft: product.hasDraft, lifecycle: product.lifecycleStatus } : { id, missing: true };
-      });
-      // #region agent log
-      fetch('http://127.0.0.1:7761/ingest/6b558af6-c042-43cf-8773-ba4a610de515',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'982dff'},body:JSON.stringify({sessionId:'982dff',runId:'pre-fix',hypothesisId:'B',location:'Admin.tsx:applyBulk:after',message:'List cache after invalidate',data:{bulkStatus,cacheCount:refreshed?.length ?? 0,afterRows,derivedChanged:afterRows.some((row, index) => 'derived' in row && 'derived' in beforeRows[index] && row.derived !== beforeRows[index].derived)},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       setSelected([]);
       setMessageTone("success");
       setMessage("Stock statuses updated.");
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7761/ingest/6b558af6-c042-43cf-8773-ba4a610de515',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'982dff'},body:JSON.stringify({sessionId:'982dff',runId:'pre-fix',hypothesisId:'E',location:'Admin.tsx:applyBulk:error',message:'Bulk stock apply failed',data:{error:error instanceof Error ? error.message : String(error)},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       setMessageTone("error");
       setMessage(error instanceof Error ? stripHttpErrorPrefix(error.message) : "Unable to update stock.");
     } finally {
@@ -1057,6 +1032,10 @@ function ProductTable() {
             onMouseDown={(event) => event.stopPropagation()}
           >
             <h2 id="admin-import-title">Import catalogue</h2>
+            <div className="admin-notice" role="alert">
+              <Icon name="alert-triangle" size={20}/>
+              <p><strong>Back up before importing.</strong> This upload replaces the entire product catalogue. Products and product data omitted from the workbook will be deleted or cleared. Export the current catalogue and securely back up that file before continuing.</p>
+            </div>
             <p>Upload an XLSX file, dry run to review planned changes, then confirm to apply them.</p>
             {!importReport ? (
               <div className="admin-import-file-row">
@@ -1086,7 +1065,9 @@ function ProductTable() {
             <div className="admin-import-actions">
               <button className="admin-button ghost" type="button" onClick={closeImportDialog} disabled={importing}>Cancel</button>
               {importReport && !importReport.error && importReport.issues?.length === 0 && (
-                <button className="admin-button primary" data-testid="commit-import-btn" onClick={handleCommitImport} disabled={importing}>{importing ? "Committing..." : "Confirm import"}</button>
+                <button className="admin-button primary" data-testid="commit-import-btn" onClick={() => {
+                  if (window.confirm("I have exported and securely backed up the current catalogue. I understand this upload replaces the entire product catalogue, and omitted products or data will be deleted or cleared.")) void handleCommitImport();
+                }} disabled={importing}>{importing ? "Committing..." : "Confirm import"}</button>
               )}
             </div>
           </section>
@@ -1122,7 +1103,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     const components = (raw.components ?? []).map((value: any) => "speciesName" in value ? {
       ...value,
       description: value.description ?? "",
-      note: value.note ?? "",
     } : {
       productLink: "",
       speciesName: value.name ?? "",
@@ -1193,7 +1173,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const [showSectionCompletion, setShowSectionCompletion] = useState(false);
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
   const [showPublishPrompt, setShowPublishPrompt] = useState(false);
-  const [companionQuery, setCompanionQuery] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [aiHighlighted, setAiHighlighted] = useState<Set<string>>(new Set());
   const [aiSeed, setAiSeed] = useState<{ suggestions: any[]; warnings: string[] } | null>(null);
@@ -1339,17 +1318,9 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const removeStringItem = (key: string, index: number) =>
     setDetail(key, form.details[key].filter((_: any, itemIndex: number) => itemIndex !== index));
   const addStringItem = (key: string) => setDetail(key, [...form.details[key], ""]);
-  const addCompanion = () => {
-    const candidate = productOptions.find((option) =>
-      option.slug === companionQuery || option.name.toLocaleLowerCase() === companionQuery.trim().toLocaleLowerCase());
-    if (!candidate || form.details.companionSpecies.includes(candidate.slug)) return;
-    setDetail("companionSpecies", [...form.details.companionSpecies, candidate.slug]);
-    setCompanionQuery("");
-  };
-  
   const updateSaleLine = (index: number, patch: Partial<SaleLine>) => setField("saleLines", form.saleLines.map((item: any, itemIndex: number) => itemIndex === index ? { ...item, ...patch } : item));
   const removeSaleLine = (index: number) => setField("saleLines", form.saleLines.filter((_: any, itemIndex: number) => itemIndex !== index));
-  const addSaleLine = () => setField("saleLines", [...form.saleLines, { stockCode: "", seedForm: "", seedGrade: "", packKg: null, packUnit: "kg", availability: getListingState(form) === "Legacy" ? "Unavailable" : "Good stock", priceDisplay: "Contact for pricing", isDefault: form.saleLines.length === 0, sortOrder: form.saleLines.length }]);
+  const addSaleLine = () => setField("saleLines", [...form.saleLines, { stockCode: "", seedForm: "", seedGrade: "", packKg: null, packUnit: "kg", availability: getListingState(form) === "Legacy" ? "Unavailable" : "Good stock", priceDisplay: "Contact for pricing", isDefault: form.saleLines.length === 0, sortOrder: 0 }]);
 
   const updatePackSize = (index: number, patch: Partial<ProductPackSize>) => setDetail("packSizes", form.details.packSizes.map((item: any, itemIndex: number) => itemIndex === index ? { ...item, ...patch } : item));
   const updateSowingRate = (index: number, patch: Partial<ProductSowingRate>) => setDetail("sowingRates", form.details.sowingRates.map((item: any, itemIndex: number) => itemIndex === index ? { ...item, ...patch } : item));
@@ -1397,7 +1368,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const detailsForSave = (editorForm: typeof form) => ({
     ...editorForm.details,
     treatment: editorForm.details.seedTreatment.join(" · "),
-    ecocertApproved: editorForm.category === "Biologicals" && Boolean(editorForm.details.ecocertApproved),
   });
 
   const latestDraftPayload = () => {
@@ -1904,36 +1874,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                     <div className={`admin-choice-field${aiClass("details.endUse")}`}><span>End use</span><div>{["Grazing", "Hay", "Silage", "Cover crop", "Green manure", "Grain", "Stockfeed", "Permanent pasture", "Erosion control / stabilisation", "Break crop", "Biofumigant", "Turf"].map((value) => <button key={value} type="button" className={currentForm.details.endUse.includes(value as any) ? "selected" : ""} onClick={() => toggleList("endUse", value)}>{value}</button>)}</div></div>
                     <div className={`admin-choice-field${aiClass("details.livestock")}`}><span>Livestock</span><div>{["Beef", "Dairy", "Sheep", "Equine", "Goat", "Chicken", "Alpaca", "Weaners", "Lamb finishing"].map((value) => <button key={value} type="button" className={currentForm.details.livestock.includes(value as any) ? "selected" : ""} onClick={() => toggleList("livestock", value)}>{value}</button>)}</div></div>
                     <PersistencyAndAustralianBredFields details={currentForm.details} setDetail={setDetail} />
-                    <div className="admin-repeat-group">
-                      <div className="admin-section-heading"><div><h3>Companion species <AdminOnlyMark /></h3><p className="admin-field-hint">Choose catalogue products here. Put general companion advice in the agronomy notes field. Not shown on the website.</p></div></div>
-                      {viewMode !== "live" && !isArchived && (
-                        <div className="admin-product-selector">
-                          <input
-                            list="companion-product-options"
-                            value={companionQuery}
-                            onChange={(event) => setCompanionQuery(event.target.value)}
-                            onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addCompanion(); } }}
-                            placeholder="Search products by name"
-                            aria-label="Search catalogue products"
-                          />
-                          <datalist id="companion-product-options">
-                            {productOptions.filter((option) => !form.details.companionSpecies.includes(option.slug)).map((option) => <option key={option.id} value={option.name}>{option.slug}</option>)}
-                          </datalist>
-                          <button className="admin-button outline small" type="button" onClick={addCompanion} disabled={!productOptions.some((option) => option.slug === companionQuery || option.name.toLocaleLowerCase() === companionQuery.trim().toLocaleLowerCase())}><Icon name="plus" size={16}/>Add companion</button>
-                        </div>
-                      )}
-                      <div className="admin-product-selections">
-                        {currentForm.details.companionSpecies.map((slug: string, index: number) => {
-                          const selectedProduct = productsBySlug.get(slug);
-                          const invalid = !selectedProduct || selectedProduct.id === productId || selectedProduct.slug === currentForm.slug;
-                          return <div className={`admin-product-selection ${invalid ? "invalid" : ""}`} key={`${slug}-${index}`}>
-                            <span><strong>{selectedProduct?.name ?? "Invalid companion reference"}</strong><small>{invalid ? `“${slug}” does not resolve to another catalogue product.` : slug}</small></span>
-                            {viewMode !== "live" && !isArchived && <button type="button" onClick={() => removeStringItem("companionSpecies", index)} aria-label={`Remove ${selectedProduct?.name ?? slug}`}>Remove</button>}
-                          </div>;
-                        })}
-                        {currentForm.details.companionSpecies.length === 0 && <p className="admin-empty-inline">No companion products selected.</p>}
-                      </div>
-                    </div>
                     <label className={aiClass("details.diseasePestResistance")}>Disease &amp; pest resistance<textarea value={currentForm.details.diseasePestResistance} onChange={(e) => setDetail("diseasePestResistance", e.target.value)} rows={3}/></label>
                     <label className={aiClass("details.standLifeNotes")}>Stand life notes<textarea value={currentForm.details.standLifeNotes} onChange={(e) => setDetail("standLifeNotes", e.target.value)} rows={3}/></label>
                     <label className={aiClass("details.grazingManagementNotes")}>Grazing management notes<textarea value={currentForm.details.grazingManagementNotes} onChange={(e) => setDetail("grazingManagementNotes", e.target.value)} rows={3}/></label>
@@ -2251,7 +2191,6 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                   />
                   
                   <div className="admin-section-heading wide" style={{marginTop: 16}}><h3>Display</h3></div>
-                  <label className="admin-check-row"><input type="checkbox" checked={currentForm.details.featured} onChange={(event) => setDetail("featured", event.target.checked)}/><span><strong>Featured product</strong><span className="admin-field-hint">Pins this product first on category grids. Does not change Also popular.</span></span></label>
                 </div>
                 
                 {!isNew && (

@@ -42,6 +42,7 @@ import type {
   MediaAsset,
   MediaAssetDetail,
   MediaAssetPage,
+  MediaAttachInput,
   MediaBackfillResult,
   MediaDeleteConfirmation,
   MediaInUseError,
@@ -2233,6 +2234,78 @@ export const useCompleteMediaUpload = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getCompleteMediaUploadMutationOptions(options));
+    }
+
+export const getAttachMediaAssetUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/media/${id}/attach`
+}
+
+/**
+ * @summary Insert a library image as a product hero and shift existing photos down
+ */
+export const attachMediaAsset = async (id: string,
+    mediaAttachInput: MediaAttachInput, options?: Parameters<typeof customFetch>[1]): Promise<MediaAsset> => {
+
+  return customFetch<MediaAsset>(getAttachMediaAssetUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(mediaAttachInput)
+  }
+);}
+
+
+
+
+
+export const getAttachMediaAssetMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachMediaAsset>>, TError,{id: string;data: BodyType<MediaAttachInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof attachMediaAsset>>, TError,{id: string;data: BodyType<MediaAttachInput>}, TContext> => {
+
+const mutationKey = ['attachMediaAsset'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof attachMediaAsset>>, {id: string;data: BodyType<MediaAttachInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  attachMediaAsset(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AttachMediaAssetMutationResult = NonNullable<Awaited<ReturnType<typeof attachMediaAsset>>>
+    export type AttachMediaAssetMutationBody = BodyType<MediaAttachInput>
+    export type AttachMediaAssetMutationError = ErrorType<void>
+
+    /**
+ * @summary Insert a library image as a product hero and shift existing photos down
+ */
+export const useAttachMediaAsset = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachMediaAsset>>, TError,{id: string;data: BodyType<MediaAttachInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof attachMediaAsset>>,
+        TError,
+        {id: string;data: BodyType<MediaAttachInput>},
+        TContext
+      > => {
+      return useMutation(getAttachMediaAssetMutationOptions(options));
     }
 
 export const getPutMediaObjectUrl = (id: string,) => {

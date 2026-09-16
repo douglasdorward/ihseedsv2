@@ -40,12 +40,7 @@ export function CategoryCatalogue({
   ];
   const visibleProducts = products
     .filter((product) => activeGroup === "All" || product.subcategoryId === activeGroup)
-    .sort((first, second) => {
-      if (first.details.featured !== second.details.featured) {
-        return first.details.featured ? -1 : 1;
-      }
-      return (first.saleLines?.[0]?.sortOrder ?? 0) - (second.saleLines?.[0]?.sortOrder ?? 0);
-    });
+    .sort((first, second) => first.name.localeCompare(second.name));
   const heading = activeGroup === "All"
     ? `${products.length} ${root.name.toLowerCase() || "lines"}`
     : groups.find((group) => group.id === activeGroup)?.label;

@@ -1,5 +1,4 @@
 # Tab 1 — Basics
-
 Identity, taxonomy, listing state, and origin. Tabs 2–6 stay disabled until a category is chosen.
 
 Draft save requires Product name, Slug, Category, and Record type from this tab.
@@ -30,7 +29,7 @@ Draft save requires Product name, Slug, Category, and Record type from this tab.
 - **Workbook:** `1 Products.slug`
 - **Required:** Draft yes / Publish yes
 - **Shown when:** always; input is disabled after the product exists
-- **Customer website:** Permanent URL `/products/{category-slug}/{slug}`. Used to join Also popular picks, mix components, companions, and redirects. Legacy `/product/{slug}` URLs redirect to this path.
+- **Customer website:** Permanent URL `/products/{category-slug}/{slug}`. Used to join Also popular picks, mix components, and redirects. Legacy `/product/{slug}` URLs redirect to this path.
 - **Public API:** yes (`slug`)
 - **Purpose:** Immutable public identifier.
 - **How to fill:** Lowercase kebab-case matching `^[a-z0-9]+(?:-[a-z0-9]+)*$`. Choose carefully on create; it cannot be edited later.
@@ -94,27 +93,3 @@ Draft save requires Product name, Slug, Category, and Record type from this tab.
 - **Purpose:** Scientific name for a variety or commodity.
 - **How to fill:** e.g. `Lolium multiflorum`. Leave blank if unknown. Mixes do not use this field in the editor.
 - **Constraints:** max 180 characters.
-
-## Bred by / origin
-
-- **API path:** `details.bredByOrigin`
-- **Workbook:** `1 Products.bred_by_origin`
-- **Required:** no
-- **Shown when:** not shown in the product editor
-- **Customer website:** not shown
-- **Public API:** excluded (admin-only)
-- **Purpose:** Private breeder or origin reminder. Deliberately never public.
-- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field. Do not copy this into Description, Blurb, or SEO.
-- **Constraints:** max 2000 characters.
-
-## Also known as
-
-- **API path:** `details.alsoKnownAs[]`
-- **Workbook:** `1 Products.also_known_as`
-- **Required:** no
-- **Shown when:** not shown in the product editor
-- **Customer website:** not shown
-- **Public API:** excluded (admin-only)
-- **Purpose:** Alternative names for provenance. Not a public synonym list.
-- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
-- **Constraints:** each alias max 120 characters.

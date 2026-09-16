@@ -6,8 +6,9 @@ import {
   catalogueCategoriesTable, db, forSearchMetadata, isActiveListing, normalizeProductDetails, productOptionsTable,
   productDraftsTable, productsTable, redirectsTable, resolveListingState, saleLinesTable,
 } from "@workspace/db";
+import { clearProductMediaReferences, syncProductMediaReferences } from "./media-usage.ts";
 
-export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "6 Companions", "7 Website SEO", "8 Categories", "9 Redirects", "10 Product FAQs"] as const;
+export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "7 Website SEO", "9 Redirects", "10 Product FAQs"] as const;
 const PRODUCT_FAQ_SHEET = "10 Product FAQs";
 const PRODUCT_FAQ_LIMIT = 10;
 const PRODUCT_FAQ_QUESTION_MAX = 180;
@@ -21,16 +22,15 @@ export type WorkbookReport = {
 };
 
 const PRODUCT_DETAILS: Record<string, string> = {
-  guide_section: "guideSection", record_type: "recordType", botanical_name: "botanicalName",
-  persistency_type: "persistencyType", bred_by_origin: "bredByOrigin", distributed_by: "distributedBy",
+  record_type: "recordType", botanical_name: "botanicalName",
+  persistency_type: "persistencyType",
   tagline: "tagline", blurb: "blurb", distribution_note: "distributionNote", description: "description",
-  internal_notes: "notes", rainfall_min_mm: "rainfallMinMm",
+  rainfall_min_mm: "rainfallMinMm",
   soil_ph_min: "soilPhMin", soil_ph_scale: "soilPhScale", soil_range_lightest: "soilRangeLightest",
   soil_range_heaviest: "soilRangeHeaviest", sowing_depth_min_cm: "sowingDepthMinCm",
-  sowing_depth_max_cm: "sowingDepthMaxCm", inoculant_group: "inoculantGroup",
+  sowing_depth_max_cm: "sowingDepthMaxCm",
   disease_pest_resistance: "diseasePestResistance", stand_life_notes: "standLifeNotes",
-  grazing_management_notes: "grazingManagementNotes", licence_restriction: "licenceRestriction",
-  supplier_name: "supplierName", sort_order: "sortOrder",
+  grazing_management_notes: "grazingManagementNotes",
   pbr_details: "pbrDetails",
 };
 const SPECIFICS: Record<string, string> = {
@@ -40,26 +40,25 @@ const SPECIFICS: Record<string, string> = {
   bloat_risk: "bloatRisk", flower_colour: "flowerColour", winter_activity: "winterActivity",
   growing_season: "growingSeason", weeks_to_first_grazing: "weeksToFirstGrazing",
   prussic_acid_risk: "prussicAcidRisk", regrowth: "regrowth", flowering_window: "floweringWindow",
-  product_form: "productForm", application_rate: "applicationRate", ecocert_approved: "ecocertApproved",
+  product_form: "productForm", application_rate: "applicationRate",
 };
-const NUMBER_KEYS = new Set(["rainfallMinMm", "soilPhMin", "sowingDepthMinCm", "sowingDepthMaxCm", "sortOrder",
+const NUMBER_KEYS = new Set(["rainfallMinMm", "soilPhMin", "sowingDepthMinCm", "sowingDepthMaxCm",
   "headingOffsetDays", "maturityDays", "winterActivity"]);
-const BOOLEAN_KEYS = new Set(["australianBred", "ecocertApproved", "pbrProtected", "isThirdPartyProduct", "featured", "inCurrentPrintedGuide", "argtResistant"]);
+const BOOLEAN_KEYS = new Set(["australianBred", "pbrProtected", "argtResistant"]);
 const ARRAY_KEYS: Record<string, string> = {
-  also_known_as: "alsoKnownAs", end_use: "endUse", livestock: "livestock", certification: "certification",
+  end_use: "endUse", livestock: "livestock", certification: "certification",
   related_products: "relatedProducts", seed_treatment: "seedTreatment", key_attributes: "keyAttributes",
 };
 const BOOL_COLUMNS: Record<string, string> = {
-  australian_bred: "australianBred", ecocert_approved: "ecocertApproved", pbr_protected: "pbrProtected",
-  is_third_party_product: "isThirdPartyProduct", featured: "featured", in_current_printed_guide: "inCurrentPrintedGuide",
+  australian_bred: "australianBred", pbr_protected: "pbrProtected",
   argt_resistant: "argtResistant",
 };
 const LIFECYCLE_STATUSES = new Set(["Published", "Draft", "Archived"]);
 const OPTION_ALIASES: Record<string, string> = {
   soil_ph_scale: "soil_ph_scale", context: "rate_context", unit: "rate_unit", rate_unit: "rate_unit",
   soil_range_lightest: "soil_code", soil_range_heaviest: "soil_code",
-  is_default: "yes_no", australian_bred: "yes_no", ecocert_approved: "yes_no", pbr_protected: "yes_no",
-  is_third_party_product: "yes_no", featured: "yes_no", in_current_printed_guide: "yes_no", argt_resistant: "yes_no",
+  is_default: "yes_no", australian_bred: "yes_no", pbr_protected: "yes_no",
+  argt_resistant: "yes_no",
   robots_index: "yes_no", active: "yes_no",
 };
 
@@ -84,7 +83,7 @@ const applicableSpecifics: Record<string, Set<string>> = {
   "Sub-Tropical Grasses": new Set(["ploidy", "growth_season"]),
   "Forage & Grain Crops": new Set(["growing_season", "weeks_to_first_grazing", "prussic_acid_risk", "regrowth"]),
   "Mixes": new Set(["flowering_window"]),
-  "Biologicals": new Set(["product_form", "application_rate", "ecocert_approved"]),
+  "Biologicals": new Set(["product_form", "application_rate"]),
 };
 
 function cell(value: unknown) { return value == null ? "" : String(value).trim(); }
@@ -96,14 +95,10 @@ function importedFaqs(rows: Row[], slug: string) {
     .filter((faq) => faq.question || faq.answer);
 }
 function isNull(value: unknown) { return cell(value).toUpperCase() === "NULL"; }
-function importedListingState(row: Row, existing: { listingState?: unknown } | undefined) {
-  if (isNull(row.listing_state) && isNull(row.listing_override)) {
-    return resolveListingState(existing);
-  }
+function importedListingState(row: Row) {
   const state = isNull(row.listing_state) ? "" : cell(row.listing_state);
   const override = isNull(row.listing_override) ? "" : cell(row.listing_override);
-  if (state || override) return resolveListingState({ listingState: state, listingOverride: override });
-  return resolveListingState(existing);
+  return resolveListingState({ listingState: state, listingOverride: override });
 }
 function yn(value: unknown) { const v = cell(value).toUpperCase(); return v === "Y" ? true : v === "N" ? false : undefined; }
 function num(value: unknown) {
@@ -147,8 +142,8 @@ function applySeoRow(details: ReturnType<typeof normalizeProductDetails>, row: R
   if (cell(row.h1) || isNull(row.h1)) {
     details.h1 = isNull(row.h1) ? "" : cell(row.h1);
   }
-  details.seoTitle = forSearchMetadata(cell(row.seo_title) || cell(row.menu_label));
-  details.seoDescription = forSearchMetadata(cell(row.meta_description));
+   details.seoTitle = isNull(row.seo_title) ? "" : forSearchMetadata(cell(row.seo_title));
+   details.seoDescription = isNull(row.meta_description) ? "" : forSearchMetadata(cell(row.meta_description));
   if (cell(row.social_title) || isNull(row.social_title)) {
     details.socialTitle = isNull(row.social_title) ? "" : forSearchMetadata(cell(row.social_title));
   }
@@ -232,9 +227,10 @@ export function readWorkbook(content: Buffer): { book: XLSX.WorkBook; rows: Reco
 
 function lists(book: XLSX.WorkBook) {
   const result = new Map<string, Set<string>>();
+  const retired = new Set(["guide_section", "inoculant_group", "seed_grade", "featured", "is_third_party_product", "in_current_printed_guide", "ecocert_approved"]);
   if (!book.SheetNames.includes("Lists")) return result;
   for (const row of values(book.Sheets.Lists)) for (const [name, raw] of Object.entries(row)) {
-    if (!name || name.startsWith("__") || name === "sub_category options by category") continue;
+    if (!name || name.startsWith("__") || name === "sub_category options by category" || retired.has(name)) continue;
     const value = cell(raw); if (value) (result.get(name) ?? result.set(name, new Set()).get(name)!).add(value);
   }
   return result;
@@ -245,27 +241,16 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
   const { book, rows } = readWorkbook(content);
   const issues: WorkbookReport["issues"] = [], warnings: string[] = [];
   const productSlugs = new Set(rows["1 Products"].map((r) => cell(r.slug)).filter(Boolean));
-  const categoryRootSlugs = new Set(
-    rows["8 Categories"].filter((row) => cell(row.slug) && !cell(row.parent_slug)).map((row) => cell(row.slug)),
-  );
+  const seenProductSlugs = new Set<string>();
   const stocks = new Set<string>(), optionLists = lists(book);
   const sheets: Record<string, SheetReport> = {};
+  for (const retired of ["6 Companions", "8 Categories"]) {
+    if (book.SheetNames.includes(retired)) warnings.push(`Sheet ${retired} is no longer imported`);
+  }
   for (const name of importSheetNames) {
     let skipped = 0; const reasons: string[] = [];
     rows[name].forEach((row, i) => {
-      const rowNo = i + 2, slugKey = name === "5 Mix components" ? "mix_slug" : ["2 Sowing rates", "3 Category specifics", "6 Companions", PRODUCT_FAQ_SHEET].includes(name) ? "slug" : "";
-      if (name === "8 Categories") {
-        const slug = cell(row.slug);
-        const parentSlug = cell(row.parent_slug);
-        if (!slug && Object.values(row).some((value) => cell(value))) {
-          issues.push({ sheet: name, row: rowNo, column: "slug", problem: "Category slug is required" });
-        } else if (slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-          issues.push({ sheet: name, row: rowNo, column: "slug", problem: `Invalid category slug "${slug}"` });
-        }
-        if (slug && parentSlug && !categoryRootSlugs.has(parentSlug)) {
-          issues.push({ sheet: name, row: rowNo, column: "parent_slug", problem: `Unknown parent slug "${parentSlug}"` });
-        }
-      }
+      const rowNo = i + 2, slugKey = name === "5 Mix components" ? "mix_slug" : ["2 Sowing rates", "3 Category specifics", PRODUCT_FAQ_SHEET].includes(name) ? "slug" : "";
       if (name === "9 Redirects") {
         const fromPath = cell(row.from_path), toPath = cell(row.to_path);
         if (!fromPath && !toPath) { skipped++; reasons.push(`row ${rowNo}: blank redirect`); }
@@ -291,14 +276,26 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
         }
       }
       if (name === "1 Products") {
+        const rowHasContent = Object.values(row).some((value) => cell(value));
+        if (rowHasContent) {
+          for (const column of ["slug", "product_name", "category", "record_type"]) {
+            if (!cell(row[column])) {
+              issues.push({ sheet: name, row: rowNo, column, problem: "Required for every product row" });
+            }
+          }
+          const slug = cell(row.slug);
+          if (slug && seenProductSlugs.has(slug)) {
+            issues.push({ sheet: name, row: rowNo, column: "slug", problem: `Duplicate product slug "${slug}"` });
+          }
+          if (slug) seenProductSlugs.add(slug);
+        }
         const lifecycle = cell(row.status);
         if (lifecycle && !LIFECYCLE_STATUSES.has(lifecycle)) {
           issues.push({ sheet: name, row: rowNo, column: "status", problem: `Invalid lifecycle status "${lifecycle}"` });
         } else if (lifecycle === "Published") {
           const details = normalizeProductDetails({});
           applyProductRow(details as unknown as Record<string, unknown>, row);
-          applySeoRow(details, rows["7 Website SEO"].find((seoRow) =>
-            (cell(seoRow.product_slug) || cell(seoRow.website_slug)) === cell(row.slug)));
+          applySeoRow(details, rows["7 Website SEO"].find((seoRow) => cell(seoRow.product_slug) === cell(row.slug)));
           const missing = publishContentErrors({
             name: cell(row.product_name), slug: cell(row.slug), category: cell(row.category), details,
           });
@@ -311,8 +308,13 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
       if (name === "4 Sale lines" && !cell(row.slug)) { skipped++; reasons.push(`row ${rowNo}: blank slug (not in catalogue)`); }
       if (slugKey && cell(row[slugKey]) && !productSlugs.has(cell(row[slugKey]))) issues.push({ sheet: name, row: rowNo, column: slugKey, problem: "Unresolved product slug" });
       if (name === "4 Sale lines") { const code = cell(row.stock_code); if (code && stocks.has(code)) issues.push({ sheet: name, row: rowNo, column: "stock_code", problem: "Duplicate stock code" }); if (code) stocks.add(code); }
-      for (const reference of name === "5 Mix components" ? ["component_slug"] : name === "6 Companions" ? ["companion_slug"] : []) {
+      for (const reference of name === "5 Mix components" ? ["component_slug"] : []) {
         if (cell(row[reference]) && !productSlugs.has(cell(row[reference]))) issues.push({ sheet: name, row: rowNo, column: reference, problem: "Unresolved product reference" });
+      }
+      if (name === "1 Products" && cell(row.related_products)) {
+        for (const related of pipe(row.related_products)) {
+          if (!productSlugs.has(related)) issues.push({ sheet: name, row: rowNo, column: "related_products", problem: `Unresolved product reference "${related}"` });
+        }
       }
       for (const [column, raw] of Object.entries(row)) {
         const value = cell(raw), list = optionLists.get(OPTION_ALIASES[column] ?? column);
@@ -357,7 +359,6 @@ function applyProductRow(details: Record<string, unknown>, row: Row) {
   }
   for (const [column, key] of Object.entries(ARRAY_KEYS)) if (cell(row[column]) || isNull(row[column])) details[key] = isNull(row[column]) ? [] : pipe(row[column]);
   for (const [column, key] of Object.entries(BOOL_COLUMNS)) if (yn(row[column]) !== undefined || isNull(row[column])) details[key] = isNull(row[column]) ? false : yn(row[column]);
-  if (cell(row.category) !== "Biologicals") details.ecocertApproved = false;
   if (cell(row.tolerance) || isNull(row.tolerance)) details.tolerance = isNull(row.tolerance) ? [] : pipe(row.tolerance).flatMap((v) => {
     const mild = /^mild\s+/i.test(v), name = v.replace(/^mild\s+/i, "");
     return ["Low pH", "Waterlogging", "Salinity", "Drought", "Frost"].includes(name) ? [{ name, mild }] : [];
@@ -366,23 +367,19 @@ function applyProductRow(details: Record<string, unknown>, row: Row) {
   if (cell(row.formulation_year) || isNull(row.formulation_year)) details.formulationYear = isNull(row.formulation_year) ? "" : cell(row.formulation_year);
 }
 
-function redirectFromNote(row: Row) {
-  const note = cell(row.redirect_note);
-  const websiteSlug = cell(row.website_slug);
-  let from = websiteSlug ? `/product/${websiteSlug}` : "";
-  if (!from && cell(row.product_url)) {
-    try {
-      from = new URL(cell(row.product_url)).pathname.replace(/\/+$/, "");
-    } catch {
-      from = cell(row.product_url).replace(/\/+$/, "");
-    }
-  }
-  const parsedTarget = note.match(/(\/(?:product|products)\/[^\s,.)]+)/i)?.[1];
-  const target = parsedTarget
-    ?.replace(/^\/products\/ryegrasses(?=\/|#|$)/, "/products/ryegrass")
-    .replace(/#catalogue$/, "")
-    .replace(/\/products\/categories$/, "/products");
-  return from && target ? { from, to: target } : null;
+// Retired workbook fields remain in stored JSON for backwards compatibility,
+// but are deliberately not part of the replacement payload.
+const PRESERVED_DETAIL_KEYS = [
+  "guideSection", "guideYear", "alsoKnownAs", "bredByOrigin", "distributedBy",
+  "inoculantGroup", "licenceRestriction", "isThirdPartyProduct", "supplierName",
+  "inCurrentPrintedGuide", "descriptionSource", "notes", "ecocertApproved",
+  "sortOrder", "featured", "companionSpecies",
+];
+
+function replacementDetails(existing: unknown, packSize: string) {
+  const old = existing && typeof existing === "object" && !Array.isArray(existing) ? existing as Record<string, unknown> : {};
+  const preserved = Object.fromEntries(PRESERVED_DETAIL_KEYS.filter((key) => key in old).map((key) => [key, old[key]]));
+  return { ...normalizeProductDetails({}, packSize), ...preserved } as unknown as Record<string, unknown>;
 }
 
 export async function commitWorkbook(content: Buffer, token: string) {
@@ -391,6 +388,17 @@ export async function commitWorkbook(content: Buffer, token: string) {
   if (report.issues.length) throw new Error("IMPORT_VALIDATION_FAILED");
   const { book, rows } = readWorkbook(content);
   await db.transaction(async (tx) => {
+    const importedSlugs = new Set(rows["1 Products"].map((row) => cell(row.slug)).filter(Boolean));
+    const existingProducts = await tx.select().from(productsTable);
+    const componentsBeforeReplacement = new Map(existingProducts.map((product) => [
+      product.slug,
+      normalizeProductDetails(product.details, product.packSize).components,
+    ]));
+    for (const product of existingProducts) {
+      if (importedSlugs.has(product.slug)) continue;
+      await clearProductMediaReferences(product.id, tx);
+      await tx.delete(productsTable).where(eq(productsTable.id, product.id));
+    }
     // A deployment may predate the v2 taxonomy and therefore only have roots.
     // Build the workbook taxonomy inside this transaction. Existing slugs stay
     // immutable while workbook names become the canonical display labels.
@@ -445,49 +453,15 @@ export async function commitWorkbook(content: Buffer, token: string) {
       const child = categories.find((item) => item.parentId === root?.id && normal(item.name) === normal(subcategory));
       return { id: child?.id ?? (root && !subcategory ? root.id : null), category: root?.name ?? category };
     };
-    for (const row of orderedCategoryRows(rows["8 Categories"])) {
-      const slug = cell(row.slug);
-      const parentSlug = cell(row.parent_slug);
-      const parent = parentSlug ? categories.find((category) => category.parentId === null && category.slug === parentSlug) : null;
-      if (parentSlug && !parent) throw new Error(`UNRESOLVED_CATEGORY_PARENT:${parentSlug}`);
-      const match = parent
-        ? categories.find((category) => category.parentId === parent.id && (category.slug === slug || category.slug === childTaxonomySlug(parent.slug, slug)))
-        : categories.find((category) => category.parentId === null && category.slug === slug);
-      const fields = {
-        name: isNull(row.name) ? match?.name ?? slug : cell(row.name) || match?.name || slug,
-        groupLabel: isNull(row.group_label) ? match?.groupLabel ?? (parent?.name || "Products") : cell(row.group_label) || match?.groupLabel || parent?.name || "Products",
-        lead: isNull(row.lead) ? "" : cell(row.lead) || match?.lead || "",
-        pageHeading: isNull(row.page_heading) ? "" : cell(row.page_heading) || match?.pageHeading || "",
-        seoTitle: isNull(row.seo_title) ? "" : forSearchMetadata(cell(row.seo_title) || match?.seoTitle || ""),
-        seoDescription: isNull(row.seo_description) ? "" : forSearchMetadata(cell(row.seo_description) || match?.seoDescription || ""),
-        rainfall: isNull(row.rainfall) ? "" : cell(row.rainfall) || match?.rainfall || "",
-        image: isNull(row.image) ? "" : cell(row.image) || match?.image || "",
-        sortOrder: isNull(row.sort_order) ? 0 : num(row.sort_order) ?? match?.sortOrder ?? 0,
-        active: yn(row.active) ?? match?.active ?? true,
-      };
-      if (match) {
-        const [updated] = await tx.update(catalogueCategoriesTable).set({ ...fields, updatedAt: new Date() })
-          .where(eq(catalogueCategoriesTable.id, match.id)).returning();
-        if (updated) categories = categories.map((category) => category.id === updated.id ? updated : category);
-      } else {
-        const [inserted] = await tx.insert(catalogueCategoriesTable).values({
-          parentId: parent?.id ?? null,
-          slug: parent ? childTaxonomySlug(parent.slug, slug) : slug,
-          ...fields,
-        }).returning();
-        if (inserted) categories = [...categories, inserted];
-      }
-    }
     for (const [listName, valuesSet] of lists(book)) {
       let order = 0; for (const value of valuesSet) await tx.insert(productOptionsTable).values({ listName, value, sortOrder: order++ }).onConflictDoUpdate({ target: [productOptionsTable.listName, productOptionsTable.value], set: { sortOrder: order - 1 } });
     }
     for (const row of rows["1 Products"]) {
       const slug = cell(row.slug); if (!slug) continue;
       const [existing] = await tx.select().from(productsTable).where(eq(productsTable.slug, slug));
-      const details = normalizeProductDetails(existing?.details ?? {}, existing?.packSize ?? "") as unknown as Record<string, unknown>;
+      const details = replacementDetails(existing?.details, existing?.packSize ?? "");
       applyProductRow(details, row);
-      const seoRow = rows["7 Website SEO"].find((candidate) =>
-        (cell(candidate.product_slug) || cell(candidate.website_slug)) === slug);
+      const seoRow = rows["7 Website SEO"].find((candidate) => cell(candidate.product_slug) === slug);
       applySeoRow(details as ReturnType<typeof normalizeProductDetails>, seoRow);
       const categoryName = cell(row.category);
       details.maturityMeasure = categoryName === "Ryegrasses" || categoryName === "Fescues & Other Grasses" ? "Heading date"
@@ -495,23 +469,22 @@ export async function commitWorkbook(content: Buffer, token: string) {
           : categoryName === "Lucerne" ? "Winter activity rating"
             : categoryName === "Mixes" ? "Time of flowering" : "";
       const requestedLifecycle = cell(row.status);
-      const lifecycle = requestedLifecycle || existing?.publishStatus || "Draft";
+      const lifecycle = requestedLifecycle || "Draft";
       if (!LIFECYCLE_STATUSES.has(lifecycle)) throw new Error(`INVALID_LIFECYCLE_STATUS:${slug}`);
       const taxonomy = resolveSubcategory(cell(row.category), cell(row.sub_category));
-      const subcategoryId = taxonomy.id ?? existing?.subcategoryId ?? null;
+      const subcategoryId = taxonomy.id ?? null;
       if (cell(row.sub_category) && !taxonomy.id) throw new Error(`UNRESOLVED_TAXONOMY:${slug}`);
       const payload = {
-        name: cell(row.product_name) || existing?.name || slug, category: taxonomy.category || existing?.category || "Other", subcategoryId,
+        name: cell(row.product_name) || slug, category: taxonomy.category || "Other", subcategoryId,
         price: existing?.price ?? "", packSize: existing?.packSize ?? "",
-        status: ({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as Record<string, "in-stock" | "low" | "very-low" | "unavailable">)[cell(row.availability)] ?? existing?.status ?? "unavailable", note: existing?.note ?? "",
-        techSheet: isNull(row.tech_sheet_pdf_path) ? "" : cell(row.tech_sheet_pdf_path) || existing?.techSheet || "",
-        guideYear: isNull(row.guide_year) ? "" : cell(row.guide_year) || existing?.guideYear || "",
-        descriptionSource: isNull(row.description_source) ? "" : cell(row.description_source) || existing?.descriptionSource || "",
-        websiteUrlLegacy: isNull(row.website_url) ? ""
-          : cell(row.website_url) || cell(seoRow?.product_url) || existing?.websiteUrlLegacy || "",
-        listingState: importedListingState(row, existing),
+        status: ({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" } as Record<string, "in-stock" | "low" | "very-low" | "unavailable">)[cell(row.availability)] ?? "unavailable", note: "",
+        techSheet: isNull(row.tech_sheet_pdf_path) ? "" : cell(row.tech_sheet_pdf_path),
+        guideYear: "",
+        descriptionSource: "",
+        websiteUrlLegacy: isNull(row.website_url) ? "" : cell(row.website_url),
+        listingState: importedListingState(row),
         availabilityOverride: isNull(row.availability_override) ? null
-          : (cell(row.availability_override) as "Good stock" | "Low stock" | "Very low" | "Unavailable") || existing?.availabilityOverride || null,
+          : (cell(row.availability_override) as "Good stock" | "Low stock" | "Very low" | "Unavailable") || null,
         publishStatus: lifecycle, publishedAt: lifecycle === "Published" ? existing?.publishedAt ?? new Date() : null,
         details: normalizeProductDetails(details, existing?.packSize ?? ""), updatedAt: new Date(),
       };
@@ -549,6 +522,21 @@ export async function commitWorkbook(content: Buffer, token: string) {
       await tx.update(productsTable).set({ details: d as ReturnType<typeof normalizeProductDetails>, updatedAt: new Date() }).where(eq(productsTable.id, product.id));
       productBySlug.set(slug, { ...product, details: d as ReturnType<typeof normalizeProductDetails> });
     };
+    // These keyed sheets are authoritative: a missing row means the value is
+    // empty for products represented by the uploaded workbook.
+    const workbookProducts = productRows.filter((product) => rows["1 Products"].some((row) => cell(row.slug) === product.slug));
+    for (const product of workbookProducts) {
+      const details = normalizeProductDetails(product.details, product.packSize) as unknown as Record<string, unknown>;
+      details.sowingRates = [];
+      details.components = [];
+      details.faqs = [];
+      for (const key of Object.values(SPECIFICS)) {
+        details[key] = NUMBER_KEYS.has(key) ? null : BOOLEAN_KEYS.has(key) ? false : "";
+      }
+      await tx.update(productsTable).set({ details: details as ReturnType<typeof normalizeProductDetails>, updatedAt: new Date() })
+        .where(eq(productsTable.id, product.id));
+      productBySlug.set(product.slug, { ...product, details: details as ReturnType<typeof normalizeProductDetails> });
+    }
     for (const slug of new Set(rows["2 Sowing rates"].map((r) => cell(r.slug)).filter(Boolean))) await updateDetails(slug, (d) => {
       d.sowingRates = rows["2 Sowing rates"].filter((r) => cell(r.slug) === slug).map((r) => ({ context: cell(r.context), min: num(r.min), max: num(r.max), unit: cell(r.unit) || "kg/ha" }));
     });
@@ -559,20 +547,43 @@ export async function commitWorkbook(content: Buffer, token: string) {
         d[key] = isNull(row[column]) ? (NUMBER_KEYS.has(key) ? null : BOOLEAN_KEYS.has(key) ? false : "") : NUMBER_KEYS.has(key) ? num(row[column]) : BOOLEAN_KEYS.has(key) ? yn(row[column]) : cell(row[column]);
       }
     });
-    for (const slug of new Set(rows["5 Mix components"].map((r) => cell(r.mix_slug)).filter(Boolean))) await updateDetails(slug, (d) => { d.components = rows["5 Mix components"].filter((r) => cell(r.mix_slug) === slug).map((r) => ({ productLink: cell(r.component_slug), speciesName: cell(r.component_name), inclusionRate: num(r.inclusion_rate), unit: cell(r.rate_unit) || "%", description: cell(r.component_description), note: cell(r.note) })); });
-    for (const slug of new Set(rows["6 Companions"].map((r) => cell(r.slug)).filter(Boolean))) await updateDetails(slug, (d) => { d.companionSpecies = rows["6 Companions"].filter((r) => cell(r.slug) === slug).map((r) => cell(r.companion_slug) || cell(r.companion_text)).filter(Boolean); });
+    for (const slug of new Set(rows["5 Mix components"].map((r) => cell(r.mix_slug)).filter(Boolean))) await updateDetails(slug, (d) => {
+      const existingComponents = (componentsBeforeReplacement.get(slug) ?? []) as Record<string, unknown>[];
+      const matchedExisting = new Set<number>();
+      d.components = rows["5 Mix components"].filter((r) => cell(r.mix_slug) === slug).map((r, index) => {
+        const productLink = cell(r.component_slug);
+        const speciesName = cell(r.component_name);
+        const existingIndex = existingComponents.findIndex((component, componentIndex) =>
+          !matchedExisting.has(componentIndex) && (
+            productLink
+              ? component.productLink === productLink
+              : !component.productLink && speciesName && component.speciesName === speciesName
+          )
+        );
+        if (existingIndex >= 0) matchedExisting.add(existingIndex);
+        const existing = existingIndex >= 0 ? existingComponents[existingIndex] : undefined;
+        return {
+          productLink,
+          speciesName,
+          inclusionRate: num(r.inclusion_rate),
+          unit: cell(r.rate_unit) || "%",
+          description: cell(r.component_description),
+          note: typeof existing?.note === "string" ? existing.note : "",
+        };
+      });
+    });
     for (const slug of new Set(rows[PRODUCT_FAQ_SHEET].map((r) => cell(r.slug)).filter(Boolean))) {
       await updateDetails(slug, (d) => { d.faqs = importedFaqs(rows[PRODUCT_FAQ_SHEET], slug).slice(0, PRODUCT_FAQ_LIMIT); });
     }
     for (const row of rows["7 Website SEO"]) {
-      const slug = cell(row.product_slug) || cell(row.website_slug);
+      const slug = cell(row.product_slug);
       await updateDetails(slug, (d) => {
-        const seoTitle = forSearchMetadata(cell(row.seo_title) || cell(row.menu_label));
+        const seoTitle = isNull(row.seo_title) ? "" : forSearchMetadata(cell(row.seo_title));
         if (cell(row.meta_description)) d.seoDescription = forSearchMetadata(cell(row.meta_description));
-        if (seoTitle) d.seoTitle = seoTitle;
+        else if (isNull(row.meta_description)) d.seoDescription = "";
+        d.seoTitle = seoTitle;
         if (cell(row.h1) || isNull(row.h1)) d.h1 = isNull(row.h1) ? "" : cell(row.h1);
       });
-      const redirect = redirectFromNote(row); if (redirect) await tx.insert(redirectsTable).values({ fromPath: redirect.from, toPath: redirect.to }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath: redirect.to, updatedAt: new Date() } });
     }
     for (const redirect of [{ from: "/product/souwest-pasture-mix-2", to: "/products/mixes/souwest-pasture-mix" }, { from: "/product/icon-lucerne", to: "/products/lucerne" }]) await tx.insert(redirectsTable).values({ fromPath: redirect.from, toPath: redirect.to }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath: redirect.to, updatedAt: new Date() } });
     for (const row of rows["9 Redirects"]) {
@@ -580,17 +591,20 @@ export async function commitWorkbook(content: Buffer, token: string) {
       if (!isCataloguePath(fromPath) || !isCataloguePath(toPath)) continue;
       await tx.insert(redirectsTable).values({ fromPath, toPath }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath, updatedAt: new Date() } });
     }
-    // Sale lines are the one keyed sheet with replacement semantics: a price
-    // list is authoritative for every workbook product, but products omitted
-    // from the workbook are never touched.
-    for (const slug of new Set(rows["4 Sale lines"].map((row) => cell(row.slug)).filter(Boolean))) {
+    // The sale-line sheet is authoritative for every imported product.
+    for (const slug of importedSlugs) {
       const product = productBySlug.get(slug);
       if (product) await tx.delete(saleLinesTable).where(eq(saleLinesTable.productId, product.id));
     }
     for (const row of rows["4 Sale lines"]) {
       const product = productBySlug.get(cell(row.slug)), stockCode = cell(row.stock_code); if (!product || !stockCode) continue;
-      const line = { productId: product.id, stockCode, seedForm: cell(row.seed_form), seedGrade: cell(row.seed_grade), packKg: num(row.pack_kg)?.toString() ?? null, packUnit: cell(row.pack_unit) || "kg", availability: isActiveListing(product) ? (cell(row.availability) || null) : "Unavailable", priceDisplay: cell(row.price_display) || "Contact for pricing", isDefault: yn(row.is_default) ?? false, sortOrder: num(row.sort_order) ?? 0 };
+      const line = { productId: product.id, stockCode, seedForm: cell(row.seed_form), seedGrade: "", packKg: num(row.pack_kg)?.toString() ?? null, packUnit: cell(row.pack_unit) || "kg", availability: isActiveListing(product) ? (cell(row.availability) || null) : "Unavailable", priceDisplay: cell(row.price_display) || "Contact for pricing", isDefault: yn(row.is_default) ?? false, sortOrder: 0 };
       await tx.insert(saleLinesTable).values(line).onConflictDoUpdate({ target: saleLinesTable.stockCode, set: line });
+    }
+    for (const slug of importedSlugs) {
+      const product = productBySlug.get(slug);
+      if (!product) continue;
+      await syncProductMediaReferences(product, normalizeProductDetails(product.details, product.packSize).photos, tx);
     }
   });
   return report;
@@ -601,10 +615,11 @@ export async function exportWorkbook() {
   const categories = await db.select().from(catalogueCategoriesTable);
   const redirects = await db.select().from(redirectsTable);
   const taxonomy = new Map(categories.map((category) => [category.id, category.name]));
-  const categoryById = new Map(categories.map((category) => [category.id, category]));
   const options = await db.select().from(productOptionsTable);
   const optionLists = new Map<string, Set<string>>();
+  const retiredListNames = new Set(["guide_section", "inoculant_group", "seed_grade", "featured", "is_third_party_product", "in_current_printed_guide", "ecocert_approved"]);
   for (const option of options.sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id)) {
+    if (retiredListNames.has(option.listName)) continue;
     (optionLists.get(option.listName) ?? optionLists.set(option.listName, new Set()).get(option.listName)!).add(option.value);
   }
   const categoryOptions = optionLists.get("category") ?? optionLists.set("category", new Set()).get("category")!;
@@ -614,7 +629,11 @@ export async function exportWorkbook() {
   // self-contained without changing the office-managed option records.
   (optionLists.get("rate_unit") ?? optionLists.set("rate_unit", new Set()).get("rate_unit")!).add("%");
   const d = (p: typeof products[number]) => normalizeProductDetails(p.details, p.packSize);
-  const append = (name: string, data: object[]) => XLSX.utils.book_append_sheet(book, XLSX.utils.json_to_sheet(data), name);
+  const append = (name: string, data: object[], headers?: string[]) => {
+    const sheet = XLSX.utils.json_to_sheet(data);
+    if (!data.length && headers) XLSX.utils.sheet_add_aoa(sheet, [headers], { origin: "A1" });
+    XLSX.utils.book_append_sheet(book, sheet, name);
+  };
   const listed = (column: string, value: string) => listedValue(optionLists, column, value);
   const listedPipe = (column: string, values: string[]) => values.map((value) => listed(column, value)).join("|");
   append("1 Products", products.map((p) => {
@@ -622,81 +641,62 @@ export async function exportWorkbook() {
     return {
       slug: p.slug, product_name: p.name, category: p.category,
       sub_category: p.subcategoryId ? taxonomy.get(p.subcategoryId) ?? "" : "",
-      guide_year: p.guideYear, guide_section: details.guideSection, record_type: listed("record_type", details.recordType),
-      botanical_name: details.botanicalName, also_known_as: details.alsoKnownAs.join("|"),
-      persistency_type: listed("persistency_type", details.persistencyType), bred_by_origin: details.bredByOrigin,
-       australian_bred: details.australianBred ? "Y" : "N", distributed_by: details.distributedBy,
+       record_type: listed("record_type", details.recordType), botanical_name: details.botanicalName,
+       persistency_type: listed("persistency_type", details.persistencyType),
+        australian_bred: details.australianBred ? "Y" : "N",
        tagline: details.tagline, blurb: details.blurb, key_attributes: details.keyAttributes.join("|"),
-       description: details.description, description_source: p.descriptionSource,
-      internal_notes: details.notes, rainfall_min_mm: details.rainfallMinMm, soil_ph_min: details.soilPhMin,
+        description: details.description, distribution_note: details.distributionNote,
+       rainfall_min_mm: details.rainfallMinMm, soil_ph_min: details.soilPhMin,
       soil_ph_scale: listed("soil_ph_scale", details.soilPhScale),
       soil_range_lightest: listed("soil_range_lightest", details.soilRangeLightest),
       soil_range_heaviest: listed("soil_range_heaviest", details.soilRangeHeaviest),
       sowing_depth_min_cm: details.sowingDepthMinCm, sowing_depth_max_cm: details.sowingDepthMaxCm,
       tolerance: listedPipe("tolerance", details.tolerance.map((x) => `${x.mild ? "Mild " : ""}${x.name}`)),
-      inoculant_group: listed("inoculant_group", details.inoculantGroup),
-      seed_treatment: listedPipe("seed_treatment", details.seedTreatment),
-      ecocert_approved: p.category === "Biologicals" && details.ecocertApproved ? "Y" : "N", end_use: listedPipe("end_use", details.endUse),
+       end_use: listedPipe("end_use", details.endUse),
       livestock: listedPipe("livestock", details.livestock), disease_pest_resistance: details.diseasePestResistance,
       stand_life_notes: details.standLifeNotes, grazing_management_notes: details.grazingManagementNotes,
       pbr_protected: details.pbrProtected ? "Y" : "N", pbr_details: details.pbrDetails,
-      licence_restriction: details.licenceRestriction, certification: listedPipe("certification", details.certification),
-      is_third_party_product: details.isThirdPartyProduct ? "Y" : "N", supplier_name: details.supplierName,
-      formulation_year: details.formulationYear,
-      photo_1: photoValue(details, 0), photo_2: photoValue(details, 1), photo_3: photoValue(details, 2),
-      in_current_printed_guide: details.inCurrentPrintedGuide ? "Y" : "N", featured: details.featured ? "Y" : "N",
-      related_products: details.relatedProducts.join("|"), sort_order: details.sortOrder,
-      listing_state: p.listingState, listing_override: "", availability_override: p.availabilityOverride ?? "",
+       certification: listedPipe("certification", details.certification), formulation_year: details.formulationYear,
+       related_products: details.relatedProducts.join("|"), photo_1: photoValue(details, 0),
+       tech_sheet_pdf_path: p.techSheet, website_url: p.websiteUrlLegacy,
+       listing_state: p.listingState, listing_override: "",
+       availability: ({ "in-stock": "Good stock", low: "Low stock", "very-low": "Very low", unavailable: "Unavailable" } as Record<string, string>)[p.status] ?? "Unavailable",
        status: p.publishStatus === "Published" && publishContentErrors({
          name: p.name, slug: p.slug, category: p.category, details,
        }).length ? "" : p.publishStatus,
-       tech_sheet_pdf_path: p.techSheet, website_url: p.websiteUrlLegacy,
-       distribution_note: details.distributionNote,
     };
-  }));
+   }), ["slug", "product_name", "category", "sub_category", "record_type", "botanical_name", "persistency_type", "australian_bred", "tagline", "blurb", "key_attributes", "description", "distribution_note", "rainfall_min_mm", "soil_ph_min", "soil_ph_scale", "soil_range_lightest", "soil_range_heaviest", "sowing_depth_min_cm", "sowing_depth_max_cm", "tolerance", "end_use", "livestock", "disease_pest_resistance", "stand_life_notes", "grazing_management_notes", "pbr_protected", "pbr_details", "certification", "formulation_year", "related_products", "photo_1", "tech_sheet_pdf_path", "website_url", "listing_state", "listing_override", "availability", "status"]);
   append("2 Sowing rates", products.flatMap((p) => d(p).sowingRates.map((r) => ({
     slug: p.slug, context: listed("context", r.context), min: r.min, max: r.max, unit: listed("unit", r.unit),
-  }))));
+  }))), ["slug", "context", "min", "max", "unit"]);
   append("3 Category specifics", products.map((p) => ({ slug: p.slug, category: p.category, ...Object.fromEntries(Object.entries(SPECIFICS).map(([column, key]) => {
     const value = (d(p) as unknown as Record<string, unknown>)[key];
-    if (column === "ecocert_approved") return [column, p.category === "Biologicals" && value ? "Y" : "N"];
     return [column, typeof value === "string" ? listed(column, value) : typeof value === "boolean" ? (value ? "Y" : "N") : value];
-  })) })));
-  append("4 Sale lines", lines.map((x) => ({ slug: products.find((p) => p.id === x.productId)?.slug ?? "", stock_code: x.stockCode, seed_form: x.seedForm, seed_grade: x.seedGrade, pack_kg: x.packKg, pack_unit: x.packUnit, availability: x.availability, price_display: x.priceDisplay, is_default: x.isDefault ? "Y" : "N", sort_order: x.sortOrder })));
-  append("5 Mix components", products.flatMap((p) => d(p).components.map((x) => ({ mix_slug: p.slug, component_slug: x.productLink, component_name: x.speciesName, inclusion_rate: x.inclusionRate, rate_unit: x.unit, component_description: x.description, note: x.note }))));
-  const productSlugs = new Set(products.map((product) => product.slug));
-  append("6 Companions", products.flatMap((p) => d(p).companionSpecies.map((x) => ({
-    slug: p.slug, companion_slug: productSlugs.has(x) ? x : "", companion_text: productSlugs.has(x) ? "" : x,
-  }))));
+  })) })), ["slug", "category", ...Object.keys(SPECIFICS)]);
+  append("4 Sale lines", lines.map((x) => ({ slug: products.find((p) => p.id === x.productId)?.slug ?? "", stock_code: x.stockCode, seed_form: x.seedForm, pack_kg: x.packKg, pack_unit: x.packUnit, availability: x.availability, price_display: x.priceDisplay, is_default: x.isDefault ? "Y" : "N" })), ["slug", "stock_code", "seed_form", "pack_kg", "pack_unit", "availability", "price_display", "is_default"]);
+  append("5 Mix components", products.flatMap((p) => d(p).components.map((x) => ({ mix_slug: p.slug, component_slug: x.productLink, component_name: x.speciesName, inclusion_rate: x.inclusionRate, rate_unit: x.unit, component_description: x.description }))), ["mix_slug", "component_slug", "component_name", "inclusion_rate", "rate_unit", "component_description"]);
   append("7 Website SEO", products.map((p) => {
     const details = d(p);
     return {
-      website_slug: p.slug, product_slug: p.slug, product_url: p.websiteUrlLegacy,
+      product_slug: p.slug,
       h1: details.h1, seo_title: details.seoTitle, meta_description: details.seoDescription,
       social_title: details.socialTitle, social_description: details.socialDescription,
       social_image: details.socialImage, canonical_url: details.canonicalUrl,
       robots_index: details.robotsIndex ? "Y" : "N",
     };
-  }));
-  append("8 Categories", [...categories].sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id).map((category) => ({
-    parent_slug: category.parentId ? categoryById.get(category.parentId)?.slug ?? "" : "",
-    slug: category.slug, name: category.name, group_label: category.groupLabel,
-    lead: category.lead, page_heading: category.pageHeading, seo_title: category.seoTitle,
-    seo_description: category.seoDescription, rainfall: category.rainfall, image: category.image,
-    sort_order: category.sortOrder, active: category.active ? "Y" : "N",
-  })));
+  }), ["product_slug", "h1", "seo_title", "meta_description", "social_title", "social_description", "social_image", "canonical_url", "robots_index"]);
   append("9 Redirects", redirects.length
     ? redirects.map((redirect) => ({ from_path: redirect.fromPath, to_path: redirect.toPath }))
-    : [{ from_path: "", to_path: "" }]);
+    : [{ from_path: "", to_path: "" }], ["from_path", "to_path"]);
   const faqRows = products.flatMap((p) => d(p).faqs.map((faq) => ({
     slug: p.slug, product_name: p.name, question: faq.question, answer: faq.answer,
   })));
-  append(PRODUCT_FAQ_SHEET, faqRows.length ? faqRows : [{ slug: "", product_name: "", question: "", answer: "" }]);
+  append(PRODUCT_FAQ_SHEET, faqRows.length ? faqRows : [{ slug: "", product_name: "", question: "", answer: "" }], ["slug", "product_name", "question", "answer"]);
   const listNames = [...optionLists.keys()];
   const listRows = Array.from({ length: Math.max(0, ...[...optionLists.values()].map((values) => values.size)) }, (_, index) =>
     Object.fromEntries(listNames.map((name) => [name, [...(optionLists.get(name) ?? [])][index] ?? ""])));
   append("Lists", listRows);
   book.Workbook = book.Workbook ?? {};
-  book.Workbook.Sheets = book.SheetNames.map((name) => ({ Hidden: name === "Lists" ? 1 : 0 }));
+  book.Workbook.Sheets = book.SheetNames.map(() => ({ Hidden: 0 }));
   return XLSX.write(book, { type: "buffer", bookType: "xlsx" });
 }

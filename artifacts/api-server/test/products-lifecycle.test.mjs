@@ -242,24 +242,6 @@ test("redirect lookup returns JSON while the legacy public route emits the HTTP 
   assert.equal(redirect.status, 301);
   assert.equal(redirect.headers.get("location"), "/products/mixes/souwest-pasture-mix");
 
-  assert.equal(Number(sql(`
-    SELECT COUNT(*)
-    FROM ih_products
-    WHERE (slug, website_url_legacy) IN (
-      ('souwest-pasture-mix', 'https://irwinhunter.com.au/product/souwest-pasture-mix-2/'),
-      ('avalon-persistent-perennial-ryegrass', 'https://irwinhunter.com.au/product/avalon-persistent-perennial-ryegrass/'),
-      ('hard-seeded-persian-clover', 'https://irwinhunter.com.au/product/hard-seeded-persian-clover/'),
-      ('icon-lucerne', 'https://irwinhunter.com.au/product/icon-lucerne/'),
-      ('anywhere-tall-fescue', 'https://irwinhunter.com.au/product/anywhere-tall-fescue/'),
-      ('nemnuke-biofumigant', 'https://irwinhunter.com.au/product/nemnuke-biofumigant/'),
-      ('parafield-peas', 'https://irwinhunter.com.au/product/parafield-peas/')
-    )
-  `)), 7);
-  assert.ok(Number(sql(`
-    SELECT COUNT(*)
-    FROM ih_products
-    WHERE website_url_legacy LIKE 'https://irwinhunter.com.au/product/%'
-  `)) >= 77);
 });
 
 test("sitemap contains only canonical Active Published product paths", async () => {
@@ -371,6 +353,41 @@ test("draft saves persist sale lines without making the product public", async (
   const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
   assert.equal(published.saleLines[0].stockCode, saleLines[0].stockCode);
   assert.equal((await publicProducts()).find((item) => item.id === product.id).saleLines[0].stockCode, saleLines[0].stockCode);
+});
+
+test("public sale lines use default, positive pack size, stock code, then stable order", async () => {
+  const product = await createProduct("sale-line-order");
+  const line = (stockCode, packKg, isDefault = false) => ({
+    stockCode: `${stockCode}-${testRunId}`,
+    seedForm: "",
+    seedGrade: "",
+    packKg,
+    packUnit: "kg",
+    availability: "Good stock",
+    priceDisplay: "Contact for pricing",
+    isDefault,
+    sortOrder: 999,
+  });
+  const saleLines = [
+    line("z-null", null),
+    line("b-zero", 0),
+    line("c-25", 25),
+    line("a-10", 10),
+    line("default-50", 50, true),
+  ];
+  assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+    saleLines,
+  })), 200);
+  assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  const publicProduct = (await publicProducts()).find((item) => item.id === product.id);
+  assert.ok(publicProduct);
+  assert.deepEqual(publicProduct.saleLines.map((item) => item.stockCode), [
+    `default-50-${testRunId}`,
+    `a-10-${testRunId}`,
+    `c-25-${testRunId}`,
+    `b-zero-${testRunId}`,
+    `z-null-${testRunId}`,
+  ]);
 });
 
 test("leftover drafts that omit sale lines keep live pack sizes on publish and restore", async () => {
@@ -1165,102 +1182,38 @@ test("catalogue lifecycle transition matrix protects public content", async () =
   assertStatus(await request("GET", "/admin/products/999999999"), 404);
 });
 
-test("source workbook reports publish gaps while exported legacy records round-trip safely", async () => {
-  const source = await readFile(new URL("../../../attached_assets/0_IH_Seeds_-_Product_Data_Workbook_(pre-filled)_-_description_1788757020628.xlsx", import.meta.url));
-  const sourceBook = xlsx.read(source);
-  const sourceProducts = xlsx.utils.sheet_to_json(sourceBook.Sheets["1 Products"], { defval: "", raw: false });
-  const sourceHeaders = Object.keys(sourceProducts[0]);
-  assert.equal(sourceHeaders.length, 65);
-  assert.deepEqual(sourceHeaders.slice(sourceHeaders.indexOf("tagline"), sourceHeaders.indexOf("description") + 1), [
-    "tagline", "blurb", "key_attributes", "description",
-  ]);
-  assert.equal(sourceHeaders.at(-1), "distribution_note");
-  assert.equal(new Set(sourceProducts.map((row) => row.slug)).size, sourceProducts.length);
-  assert.equal(sourceProducts.every((row) => ["Published", "Draft", "Archived"].includes(row.status)), true);
-  const describedProduct = sourceProducts.find((row) => String(row.description).includes("\n"));
-  assert.ok(describedProduct, "Expected revised source workbook to contain a multiline product description");
-  assert.ok(String(describedProduct.tagline).trim());
-  assert.ok(String(describedProduct.blurb).trim());
-  assert.ok(String(describedProduct.key_attributes).split("|").some((attribute) => attribute.trim()));
-  const sourceComponents = xlsx.utils.sheet_to_json(sourceBook.Sheets["5 Mix components"], { defval: "", raw: false });
-  assert.equal(Object.keys(sourceComponents[0]).includes("component_description"), true);
-  assert.equal(sourceComponents.filter((row) => String(row.component_description).trim()).length, 121);
-  const sourceReport = assertStatus(await request("POST", "/admin/import/dry-run", {
-    workbookBase64: source.toString("base64"),
-  }), 200);
-  assert.equal(sourceReport.issues.some((issue) => issue.column === "status" &&
-    /Published products require:.*SEO (title|description)/.test(issue.problem)), true);
-  assert.equal(sourceReport.issues.some((issue) => issue.column === "status" &&
-    /Invalid lifecycle status/.test(issue.problem)), false);
-  assert.deepEqual(Object.fromEntries(Object.entries(sourceReport.sheets).slice(0, 7).map(([name, report]) => [name, report.rows])), {
-    "1 Products": 150,
-    "2 Sowing rates": 242,
-    "3 Category specifics": 150,
-    "4 Sale lines": 112,
-    "5 Mix components": 125,
-    "6 Companions": 229,
-    "7 Website SEO": 79,
-  });
-  assert.deepEqual(Object.fromEntries(Object.entries(sourceReport.sheets).slice(0, 7).map(([name, report]) => [name, {
-    accepted: report.accepted, skipped: report.skipped,
-  }])), {
-    "1 Products": { accepted: 150, skipped: 0 },
-    "2 Sowing rates": { accepted: 242, skipped: 0 },
-    "3 Category specifics": { accepted: 150, skipped: 0 },
-    "4 Sale lines": { accepted: 102, skipped: 10 },
-    "5 Mix components": { accepted: 125, skipped: 0 },
-    "6 Companions": { accepted: 229, skipped: 0 },
-    "7 Website SEO": { accepted: 79, skipped: 0 },
-  });
-
+test("export workbook matches the authoritative contract and round-trips cleanly", async () => {
   const exportResponse = await fetch(`${baseUrl}/api/admin/import/export`);
   assert.equal(exportResponse.status, 200);
   const exported = Buffer.from(await exportResponse.arrayBuffer());
   const book = xlsx.read(exported, { type: "buffer" });
-  assert.deepEqual(book.SheetNames, [
-    "1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines",
-    "5 Mix components", "6 Companions", "7 Website SEO", "8 Categories", "9 Redirects",
-    "10 Product FAQs", "Lists",
-  ]);
+  assert.deepEqual(book.SheetNames, ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines",
+    "5 Mix components", "7 Website SEO", "9 Redirects", "10 Product FAQs", "Lists"]);
   const listsIndex = book.SheetNames.indexOf("Lists");
-  assert.equal(book.Workbook?.Sheets?.[listsIndex]?.Hidden, 1);
-   const exportedProducts = xlsx.utils.sheet_to_json(book.Sheets["1 Products"], {
-     header: 1,
-     defval: "",
-     raw: false,
-   });
-   const productHeaders = exportedProducts[0];
-   assert.equal(productHeaders.includes("summary"), false);
-   assert.deepEqual(productHeaders.slice(productHeaders.indexOf("tagline"), productHeaders.indexOf("description") + 1), [
-     "tagline", "blurb", "key_attributes", "description",
-   ]);
-   assert.equal(productHeaders.at(-1), "distribution_note");
-    const exportedComponents = xlsx.utils.sheet_to_json(book.Sheets["5 Mix components"], {
-      header: 1,
-      defval: "",
-      raw: false,
-    });
-    assert.equal(exportedComponents[0].includes("component_description"), true);
-  const exportedSeo = xlsx.utils.sheet_to_json(book.Sheets["7 Website SEO"], { header: 1, defval: "", raw: false });
-  assert.equal(["social_title", "social_description", "social_image", "canonical_url", "robots_index"]
-    .every((column) => exportedSeo[0].includes(column)), true);
-  const exportedCategories = xlsx.utils.sheet_to_json(book.Sheets["8 Categories"], { header: 1, defval: "", raw: false });
-  assert.equal(["parent_slug", "slug", "page_heading", "seo_title", "seo_description", "lead", "rainfall", "image", "active"]
-    .every((column) => exportedCategories[0].includes(column)), true);
-  const exportedRedirects = xlsx.utils.sheet_to_json(book.Sheets["9 Redirects"], { header: 1, defval: "", raw: false });
-  assert.equal(["from_path", "to_path"].every((column) => exportedRedirects[0].includes(column)), true);
-  const exportedFaqs = xlsx.utils.sheet_to_json(book.Sheets["10 Product FAQs"], { header: 1, defval: "", raw: false });
-  assert.equal(["slug", "product_name", "question", "answer"].every((column) => exportedFaqs[0].includes(column)), true);
-  assert.equal(["photo_1", "photo_2", "photo_3"].every((column) => productHeaders.includes(column)), true);
+  assert.equal(book.Workbook?.Sheets?.[listsIndex]?.Hidden ?? 0, 0);
+  const headers = (name) => xlsx.utils.sheet_to_json(book.Sheets[name], { header: 1, defval: "", raw: false })[0];
+  assert.deepEqual(headers("1 Products"), ["slug", "product_name", "category", "sub_category", "record_type", "botanical_name", "persistency_type", "australian_bred", "tagline", "blurb", "key_attributes", "description", "distribution_note", "rainfall_min_mm", "soil_ph_min", "soil_ph_scale", "soil_range_lightest", "soil_range_heaviest", "sowing_depth_min_cm", "sowing_depth_max_cm", "tolerance", "end_use", "livestock", "disease_pest_resistance", "stand_life_notes", "grazing_management_notes", "pbr_protected", "pbr_details", "certification", "formulation_year", "related_products", "photo_1", "tech_sheet_pdf_path", "website_url", "listing_state", "listing_override", "availability", "status"]);
+  assert.deepEqual(headers("2 Sowing rates"), ["slug", "context", "min", "max", "unit"]);
+  assert.deepEqual(headers("3 Category specifics"), ["slug", "category", "ploidy", "heading_date", "heading_offset_days", "argt_resistant", "endophyte", "growth_season", "maturity_days", "hard_seed_level", "oestrogen_level", "bloat_risk", "flower_colour", "winter_activity", "growing_season", "weeks_to_first_grazing", "prussic_acid_risk", "regrowth", "flowering_window", "product_form", "application_rate"]);
+  assert.deepEqual(headers("4 Sale lines"), ["slug", "stock_code", "seed_form", "pack_kg", "pack_unit", "availability", "price_display", "is_default"]);
+  assert.deepEqual(headers("5 Mix components"), ["mix_slug", "component_slug", "component_name", "inclusion_rate", "rate_unit", "component_description"]);
+  assert.deepEqual(headers("7 Website SEO"), ["product_slug", "h1", "seo_title", "meta_description", "social_title", "social_description", "social_image", "canonical_url", "robots_index"]);
+  assert.deepEqual(headers("9 Redirects"), ["from_path", "to_path"]);
+  assert.deepEqual(headers("10 Product FAQs"), ["slug", "product_name", "question", "answer"]);
+  assert.equal(headers("Lists").includes("seed_grade"), false);
+  assert.equal(headers("Lists").includes("guide_section"), false);
+  assert.equal(headers("1 Products").includes("photo_2"), false);
+  assert.equal(headers("1 Products").includes("featured"), false);
 
   const exportReport = assertStatus(await request("POST", "/admin/import/dry-run", {
     workbookBase64: exported.toString("base64"),
   }), 200);
   assert.deepEqual(exportReport.issues, []);
+  assert.deepEqual(exportReport.warnings, []);
   assert.equal(exportReport.sheets["1 Products"].rows > 0, true);
 });
 
-test("product FAQs export, replace, overlay, and validate through the workbook", async () => {
+test("product FAQs export, replace, clear, and validate through the workbook", async () => {
   const categories = assertStatus(await request("GET", "/categories"), 200);
   const other = categories.find((category) => category.slug === "other");
   assert.ok(other, "Expected the seeded Other category");
@@ -1318,9 +1271,7 @@ test("product FAQs export, replace, overlay, and validate through the workbook",
   ]);
 
   await commitWorkbookFile(makeFaqWorkbook({ faqRows: [], includeFaqSheet: false }));
-  assert.deepEqual((await adminProduct(product.id)).details.faqs, [
-    { question: "Is it drought tolerant?", answer: "It suits medium-rainfall country." },
-  ]);
+  assert.deepEqual((await adminProduct(product.id)).details.faqs, []);
 
   await commitWorkbookFile(makeFaqWorkbook({
     faqRows: [{ slug: product.slug, product_name: product.name, question: "", answer: "" }],
@@ -1344,12 +1295,94 @@ test("product FAQs export, replace, overlay, and validate through the workbook",
   assert.equal(tooLong.issues.some((issue) => issue.sheet === "10 Product FAQs" && issue.column === "question"), true);
 });
 
-test("published workbook rows enforce content fields and retain products absent from an upsert", async () => {
+test("malformed and duplicate product identities cannot trigger catalogue replacement", async () => {
+  const sentinel = await createProduct("workbook-identity-sentinel");
+  const makeIdentityWorkbook = (productRows) => {
+    const book = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet(productRows), "1 Products");
+    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{
+      category: "Other",
+      record_type: "Variety",
+    }]), "Lists");
+    return xlsx.write(book, { type: "buffer", bookType: "xlsx" });
+  };
+  const complete = {
+    slug: `identity-${testRunId}`,
+    product_name: "Identity validation fixture",
+    category: "Other",
+    record_type: "Variety",
+    status: "Draft",
+  };
+  for (const required of ["slug", "product_name", "category", "record_type"]) {
+    const workbook = makeIdentityWorkbook([{ ...complete, [required]: "" }]);
+    const report = assertStatus(await request("POST", "/admin/import/dry-run", {
+      workbookBase64: workbook.toString("base64"),
+    }), 200);
+    assert.equal(report.issues.some((issue) => issue.sheet === "1 Products" && issue.column === required), true);
+    const blocked = await request("POST", "/admin/import/commit", {
+      workbookBase64: workbook.toString("base64"),
+      token: report.token,
+    });
+    assert.equal(blocked.response.status, 400);
+    assert.equal((await request("GET", `/admin/products/${sentinel.id}`)).response.status, 200);
+  }
+  const duplicateWorkbook = makeIdentityWorkbook([
+    complete,
+    { ...complete, product_name: "Duplicate identity fixture" },
+  ]);
+  const duplicateReport = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: duplicateWorkbook.toString("base64"),
+  }), 200);
+  assert.equal(duplicateReport.issues.some((issue) => issue.column === "slug" && /Duplicate product slug/.test(issue.problem)), true);
+  const blockedDuplicate = await request("POST", "/admin/import/commit", {
+    workbookBase64: duplicateWorkbook.toString("base64"),
+    token: duplicateReport.token,
+  });
+  assert.equal(blockedDuplicate.response.status, 400);
+  assert.equal((await request("GET", `/admin/products/${sentinel.id}`)).response.status, 200);
+});
+
+test("published workbook rows enforce content fields and delete products absent from an upsert", async () => {
   const categories = assertStatus(await request("GET", "/categories"), 200);
   const other = categories.find((category) => category.slug === "other");
   assert.ok(other, "Expected the seeded Other category");
   const imported = await createProduct("workbook-upsert", { category: other.name, subcategoryId: other.id });
   const absent = await createProduct("workbook-absent", { category: other.name, subcategoryId: other.id });
+  const oldAssetId = `workbook-old-photo-${testRunId}`;
+  sql(`
+    INSERT INTO ih_media_assets (id, status, original_filename, storage_kind, object_path)
+    VALUES ('${oldAssetId}', 'Ready', 'old-photo.jpg', 'legacy', '/legacy/old-photo.jpg');
+    UPDATE ih_products
+    SET listing_override = 'Legacy',
+        details = jsonb_set(
+          jsonb_set(
+            jsonb_set(
+              jsonb_set(details, '{bredByOrigin}', '"Preserved legacy value"'),
+              '{supplierName}',
+              '"Preserved supplier"'
+            ),
+            '{photos}',
+            '[{"slot":"Photo 1 · Hero","file":"old-photo.jpg","rating":"","src":"","role":"hero","assetId":"${oldAssetId}"}]'::jsonb
+          ),
+          '{components}',
+          '[
+            {"productLink":"","speciesName":"Legacy component","inclusionRate":25,"unit":"%","description":"Old description","note":"Preserved component note"},
+            {"productLink":"","speciesName":"Removed component","inclusionRate":15,"unit":"%","description":"Removed description","note":"Must not transfer"}
+          ]'::jsonb
+        )
+    WHERE id = ${imported.id};
+    INSERT INTO ih_media_references (asset_id, owner_type, owner_id, owner_name, field, role, usage_state)
+    VALUES (
+      '${oldAssetId}',
+      'product',
+      '${imported.id}',
+      '${imported.name.replaceAll("'", "''")}',
+      'details.photos[0]',
+      'hero',
+      'Draft'
+    );
+  `);
+  insertLeftoverDraft(imported, { name: `Stale pre-import draft ${testRunId}` });
   const sourceDescription = "First editorial paragraph.\n\nSecond editorial paragraph.";
   const legacyWebsiteUrl = `https://irwinhunter.com.au/product/${imported.slug}/`;
   const productRow = {
@@ -1362,6 +1395,7 @@ test("published workbook rows enforce content fields and retain products absent 
     blurb: "Workbook published blurb",
     key_attributes: "First attribute| Second attribute ",
     description: sourceDescription,
+    website_url: legacyWebsiteUrl,
     status: "Published",
     distribution_note: "Workbook distribution note",
   };
@@ -1371,7 +1405,8 @@ test("published workbook rows enforce content fields and retain products absent 
     if (row.status === "Published") {
       xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{
         product_slug: row.slug,
-        product_url: legacyWebsiteUrl,
+         product_url: "https://legacy.example/ignored",
+         menu_label: "Legacy menu label must not become SEO",
         seo_title: "Workbook SEO title",
         meta_description: "Workbook SEO description.",
         social_title: "Workbook social title",
@@ -1381,6 +1416,24 @@ test("published workbook rows enforce content fields and retain products absent 
         robots_index: "N",
       }]), "7 Website SEO");
     }
+    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([
+      {
+        mix_slug: row.slug,
+        component_slug: "",
+        component_name: "Replacement component",
+        inclusion_rate: 10,
+        rate_unit: "%",
+        component_description: "New component",
+      },
+      {
+        mix_slug: row.slug,
+        component_slug: "",
+        component_name: "Legacy component",
+        inclusion_rate: 30,
+        rate_unit: "%",
+        component_description: "Updated description",
+      },
+    ]), "5 Mix components");
     xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ category: other.name, record_type: "Mix" }]), "Lists");
     return xlsx.write(book, { type: "buffer", bookType: "xlsx" });
   };
@@ -1410,15 +1463,25 @@ test("published workbook rows enforce content fields and retain products absent 
   assert.deepEqual(published.details.keyAttributes, ["First attribute", "Second attribute"]);
   assert.equal(published.details.distributionNote, productRow.distribution_note);
   assert.equal(published.details.description, sourceDescription);
-  assert.equal("bredByOrigin" in published.details, false);
-  assert.equal("supplierName" in published.details, false);
-  assert.equal((await adminProduct(imported.id)).websiteUrlLegacy, legacyWebsiteUrl);
+  const importedAdmin = await adminProduct(imported.id);
+  assert.equal(importedAdmin.details.bredByOrigin, "Preserved legacy value");
+  assert.equal(importedAdmin.details.supplierName, "Preserved supplier");
+  assert.equal(importedAdmin.details.components[0].note, "");
+  assert.equal(importedAdmin.details.components[1].note, "Preserved component note");
+  assert.equal(importedAdmin.details.components[1].description, "Updated description");
+  assert.equal(importedAdmin.listingState, "Active");
+  assert.equal(importedAdmin.hasDraft, false);
+  assert.equal(importedAdmin.draft, null);
+  assert.equal(sql(`SELECT count(*) FROM ih_media_references WHERE owner_type = 'product' AND owner_id = '${imported.id}'`), "0");
+  assert.equal(importedAdmin.websiteUrlLegacy, legacyWebsiteUrl);
+  assert.equal(importedAdmin.details.seoTitle, "Workbook SEO title");
   assert.equal((await adminProduct(imported.id)).details.socialTitle, "Workbook social title");
   assert.equal((await adminProduct(imported.id)).details.socialDescription, "Workbook social description.");
   assert.equal((await adminProduct(imported.id)).details.socialImage, "https://example.com/share.jpg");
   assert.equal((await adminProduct(imported.id)).details.canonicalUrl, "https://example.com/product/canonical");
   assert.equal((await adminProduct(imported.id)).details.robotsIndex, false);
-  assert.equal((await adminProduct(absent.id)).id, absent.id, "Absent workbook products must be retained");
+  assert.equal((await request("GET", `/admin/products/${absent.id}`)).response.status, 404,
+    "Products absent from the authoritative workbook are deleted");
 
   const exported = Buffer.from(await (await fetch(`${baseUrl}/api/admin/import/export`)).arrayBuffer());
   const exportedBook = xlsx.read(exported);
@@ -1436,85 +1499,42 @@ test("published workbook rows enforce content fields and retain products absent 
   assert.equal(exportedSeoRow.social_title, "Workbook social title");
   assert.equal(exportedSeoRow.canonical_url, "https://example.com/product/canonical");
   assert.equal(exportedSeoRow.robots_index, "N");
-  const exportedCategoryRow = xlsx.utils.sheet_to_json(exportedBook.Sheets["8 Categories"], { defval: "", raw: false })
-    .find((row) => row.slug === other.slug);
-  assert.ok(exportedCategoryRow);
-  assert.equal(exportedCategoryRow.name, other.name);
   const reimport = assertStatus(await request("POST", "/admin/import/dry-run", {
     workbookBase64: exported.toString("base64"),
   }), 200);
   assert.deepEqual(reimport.issues, []);
 
-  const legacy = await createProduct("workbook-legacy", { category: other.name, subcategoryId: other.id });
-  assertStatus(await request("POST", `/admin/products/${legacy.id}/publish`), 200);
-  // Simulate an old Published JSON payload that predates blurb. This record is
-  // test-owned, so the compatibility check never mutates catalogue fixtures.
-  sql(`UPDATE ih_products SET details = details - 'blurb' WHERE id = ${legacy.id}`);
-  const legacyExport = Buffer.from(await (await fetch(`${baseUrl}/api/admin/import/export`)).arrayBuffer());
-  const legacyRow = xlsx.utils.sheet_to_json(xlsx.read(legacyExport).Sheets["1 Products"], { defval: "", raw: false })
-    .find((row) => row.slug === legacy.slug);
-  assert.equal(legacyRow.status, "", "Invalid legacy Published content exports as preserve-status");
-
-  const preserveWorkbook = makeWorkbook({ slug: legacy.slug, status: "" });
-  const preserveReport = assertStatus(await request("POST", "/admin/import/dry-run", {
-    workbookBase64: preserveWorkbook.toString("base64"),
-  }), 200);
-  assertStatus(await request("POST", "/admin/import/commit", {
-    workbookBase64: preserveWorkbook.toString("base64"), token: preserveReport.token,
-  }), 200);
-  const degradedWorkbook = makeWorkbook({ slug: legacy.slug, status: "", key_attributes: " | " });
-  const degradedReport = assertStatus(await request("POST", "/admin/import/dry-run", {
-    workbookBase64: degradedWorkbook.toString("base64"),
-  }), 200);
-  assertStatus(await request("POST", "/admin/import/commit", {
-    workbookBase64: degradedWorkbook.toString("base64"), token: degradedReport.token,
-  }), 400);
 });
 
-test("category workbook import keeps child rows listed before their parent and reports unknown parents", async () => {
-  const suffix = `cat-order-${testRunId}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-  const parentSlug = `${suffix}-root`;
-  const childSlug = `${suffix}-child`;
-  const orphanSlug = `${suffix}-orphan`;
-  const makeWorkbook = (rows) => {
-    const book = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet(rows), "8 Categories");
-    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ category: "Automated tests", record_type: "Mix" }]), "Lists");
-    return xlsx.write(book, { type: "buffer", bookType: "xlsx" });
-  };
-  const unknownParent = makeWorkbook([{
-    parent_slug: `${suffix}-missing`, slug: orphanSlug, name: `Orphan ${testRunId}`, active: "Y",
-  }]);
-  const unknownReport = assertStatus(await request("POST", "/admin/import/dry-run", {
-    workbookBase64: unknownParent.toString("base64"),
-  }), 200);
-  assert.equal(unknownReport.issues.some((issue) => issue.column === "parent_slug"), true);
-
-  const childFirst = makeWorkbook([
-    { parent_slug: parentSlug, slug: childSlug, name: `Child ${testRunId}`, active: "Y" },
-    { parent_slug: "", slug: parentSlug, name: `Root ${testRunId}`, active: "Y" },
-  ]);
+test("legacy companion and category sheets are ignored with exact warnings", async () => {
+  const book = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{
+    slug: `ignored-sheets-${testRunId}`, product_name: "Ignored sheets fixture",
+    category: "Other", record_type: "Variety", status: "Draft",
+  }]), "1 Products");
+  xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ slug: "ignored", companion_slug: "missing" }]), "6 Companions");
+  xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ slug: "ignored-category", name: "Ignored" }]), "8 Categories");
+  xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ category: "Other", record_type: "Variety" }]), "Lists");
+  const workbook = xlsx.write(book, { type: "buffer", bookType: "xlsx" });
   const report = assertStatus(await request("POST", "/admin/import/dry-run", {
-    workbookBase64: childFirst.toString("base64"),
+    workbookBase64: workbook.toString("base64"),
   }), 200);
   assert.deepEqual(report.issues, []);
-  let parent;
-  let child;
-  try {
-    assertStatus(await request("POST", "/admin/import/commit", {
-      workbookBase64: childFirst.toString("base64"),
-      token: report.token,
-    }), 200);
-    const categories = assertStatus(await request("GET", "/admin/categories"), 200);
-    parent = categories.find((category) => category.slug === parentSlug);
-    child = categories.find((category) => category.parentId === parent?.id && category.slug === childSlug);
-    assert.ok(parent, "Expected the workbook root category to be created");
-    assert.ok(child, "Expected the child category listed before its parent to be created");
-    assert.equal(child.name, `Child ${testRunId}`);
-  } finally {
-    if (child) await request("DELETE", `/admin/categories/${child.id}`);
-    if (parent) await request("DELETE", `/admin/categories/${parent.id}`);
-  }
+  assert.deepEqual(report.warnings, ["Sheet 6 Companions is no longer imported", "Sheet 8 Categories is no longer imported"]);
+});
+
+test("related product references must resolve within the uploaded workbook", async () => {
+  const book = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{
+    slug: `related-invalid-${testRunId}`, product_name: "Related invalid fixture",
+    category: "Other", record_type: "Variety", related_products: "missing-related-product",
+  }]), "1 Products");
+  xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ category: "Other", record_type: "Variety" }]), "Lists");
+  const report = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: xlsx.write(book, { type: "buffer", bookType: "xlsx" }).toString("base64"),
+  }), 200);
+  assert.equal(report.issues.some((issue) => issue.column === "related_products" &&
+    /Unresolved product reference/.test(issue.problem)), true);
 });
 
 test("taxonomy assignment on a draft stays private until publish, and published edits go live immediately", async () => {
@@ -1581,67 +1601,12 @@ test("generic updates cannot race publish or archive into live content", async (
   assert.equal(includesProduct(await availability(), archivePublished.id), false);
 });
 
-test("companion products save by slug while self and unknown references identify the companion field", async () => {
+test("companion references are no longer validated by product publishing", async () => {
   const product = await createProduct("companion-owner");
-  const companion = await createProduct("companion-target");
-  const longSlug = `long-companion-${testRunId}-${"x".repeat(125)}`;
-  const longSlugCompanion = assertStatus(await request("POST", "/products", {
-    name: `Long slug companion ${testRunId}`,
-    slug: longSlug,
-    price: "",
-    packSize: "",
-    status: "in-stock",
-    note: "",
-    category: "Automated tests",
-    subcategoryId: null,
-    techSheet: "",
-    details: { recordType: "Variety" },
-  }), 201);
-  createdProductIds.push(longSlugCompanion.id);
-
-  const validDraft = assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
-    details: { ...product.details, companionSpecies: [companion.slug] },
+  const result = assertStatus(await request("POST", `/admin/products/${product.id}/publish`, draftPayload(product, {
+    details: { ...product.details, companionSpecies: [`unknown-companion-${testRunId}`] },
   })), 200);
-  assert.deepEqual(validDraft.details.companionSpecies, [companion.slug]);
-  assert.equal(validDraft.draft, null);
-  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
-  assert.deepEqual(published.details.companionSpecies, [companion.slug]);
-
-  const longSlugPublish = assertStatus(await request("POST", `/admin/products/${product.id}/publish`, draftPayload(published, {
-    details: { ...published.details, companionSpecies: [longSlug] },
-  })), 200);
-  assert.deepEqual(longSlugPublish.details.companionSpecies, [longSlug]);
-
-  for (const invalidSlug of [product.slug, `unknown-companion-${testRunId}`]) {
-    const result = await request("POST", `/admin/products/${product.id}/publish`, draftPayload(published, {
-      details: { ...published.details, companionSpecies: [invalidSlug] },
-    }));
-    assertStatus(result, 400);
-    assert.match(result.data.error, /Companion species/);
-    assert.deepEqual(result.data.issues, [{
-      field: "details.companionSpecies",
-      label: "Companion species",
-      values: [invalidSlug],
-    }]);
-  }
-
-  const selfCreateSlug = `self-companion-${testRunId}`;
-  const selfCreate = await request("POST", "/products", {
-    name: `Self companion ${testRunId}`, slug: selfCreateSlug, price: "", packSize: "",
-    status: "in-stock", note: "", category: "Automated tests", subcategoryId: null, techSheet: "",
-    details: { recordType: "Variety", companionSpecies: [selfCreateSlug] },
-  });
-  assertStatus(selfCreate, 400);
-  assert.equal(selfCreate.data.issues[0].field, "details.companionSpecies");
-
-  sql(`
-    UPDATE ih_products
-    SET details = jsonb_set(details, '{companionSpecies}', '["unknown-legacy-companion"]'::jsonb)
-    WHERE id = ${product.id}
-  `);
-  const legacyPublish = await request("POST", `/admin/products/${product.id}/publish`);
-  assertStatus(legacyPublish, 400);
-  assert.equal(legacyPublish.data.issues[0].field, "details.companionSpecies");
+  assert.deepEqual(result.details.companionSpecies, [`unknown-companion-${testRunId}`]);
 });
 
 function textPdfBase64(text) {

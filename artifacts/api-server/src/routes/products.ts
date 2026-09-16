@@ -80,12 +80,12 @@ function toPublicDetails(value: unknown, packSize: string, name = "") {
     hardSeedLevel: d.hardSeedLevel, oestrogenLevel: d.oestrogenLevel, bloatRisk: d.bloatRisk,
     growingSeason: d.growingSeason, weeksToFirstGrazing: d.weeksToFirstGrazing,
     prussicAcidRisk: d.prussicAcidRisk, regrowth: d.regrowth, productForm: d.productForm,
+    floweringWindow: d.floweringWindow,
     applicationRate: d.applicationRate, diseasePestResistance: d.diseasePestResistance,
     standLifeNotes: d.standLifeNotes, grazingManagementNotes: d.grazingManagementNotes,
     pbrProtected: d.pbrProtected, pbrDetails: d.pbrDetails, certification: d.certification,
     description: d.description, components: d.components, faqs: d.faqs,
     relatedProducts: d.relatedProducts, formulationYear: d.formulationYear, photos: d.photos,
-    featured: d.featured,
     h1: resolveProductH1(name, d.h1),
     seoTitle: forSearchMetadata(d.seoTitle),
     seoDescription: forSearchMetadata(d.seoDescription || d.blurb),
@@ -122,9 +122,28 @@ function toSaleLine(line: typeof saleLinesTable.$inferSelect): SaleLine {
   };
 }
 
+function compareSaleLines(
+  a: typeof saleLinesTable.$inferSelect,
+  b: typeof saleLinesTable.$inferSelect,
+) {
+  const defaultOrder = Number(b.isDefault) - Number(a.isDefault);
+  if (defaultOrder) return defaultOrder;
+  const packOrder = (value: string | null) => {
+    if (value === null) return null;
+    const packKg = Number(value);
+    return Number.isFinite(packKg) && packKg > 0 ? packKg : null;
+  };
+  const aPack = packOrder(a.packKg), bPack = packOrder(b.packKg);
+  if (aPack !== null && bPack !== null && aPack !== bPack) return aPack - bPack;
+  if (aPack !== null && bPack === null) return -1;
+  if (aPack === null && bPack !== null) return 1;
+  const stockOrder = a.stockCode.localeCompare(b.stockCode, undefined, { sensitivity: "base" });
+  return stockOrder || a.id - b.id;
+}
+
 async function liveSaleLines(productId: number): Promise<SaleLine[]> {
   return (await db.select().from(saleLinesTable).where(eq(saleLinesTable.productId, productId)))
-    .sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.sortOrder - b.sortOrder || a.id - b.id).map(toSaleLine);
+    .sort(compareSaleLines).map(toSaleLine);
 }
 
 function toPublicProduct(product: Product, productLines: SaleLine[]): PublicProduct {
@@ -301,14 +320,13 @@ async function ensureProducts() {
 }
 
 type ProductReferenceIssue = {
-  field: "details.companionSpecies" | "details.relatedProducts" | "details.components";
+  field: "details.relatedProducts" | "details.components";
   label: string;
   values: string[];
 };
 
 async function findProductReferenceIssues(details: InsertProduct["details"], ownSlug?: string): Promise<ProductReferenceIssue[]> {
   const referencesByField = [
-    { field: "details.companionSpecies", label: "Companion species", values: details.companionSpecies.filter(Boolean) },
     { field: "details.relatedProducts", label: "Also popular", values: details.relatedProducts.filter(Boolean) },
     { field: "details.components", label: "Component links", values: details.components.map((component) => component.productLink).filter(Boolean) },
   ] as const;
@@ -318,7 +336,7 @@ async function findProductReferenceIssues(details: InsertProduct["details"], own
     .where(inArray(productsTable.slug, references));
   const known = new Set(existing.map((product) => product.slug));
   return referencesByField.flatMap(({ field, label, values }) => {
-    const invalid = [...new Set(values.filter((slug) => !known.has(slug) || (field === "details.companionSpecies" && slug === ownSlug)))];
+    const invalid = [...new Set(values.filter((slug) => !known.has(slug) || slug === ownSlug))];
     return invalid.length ? [{ field, label, values: invalid }] : [];
   });
 }
@@ -361,7 +379,9 @@ router.get("/products", async (req, res): Promise<void> => {
   res.set("Cache-Control", "no-store");
   const lines = await db.select().from(saleLinesTable);
   const linesByProduct = new Map<number, SaleLine[]>();
-  for (const line of lines) linesByProduct.set(line.productId, [...(linesByProduct.get(line.productId) ?? []), toSaleLine(line)]);
+  for (const line of lines.sort(compareSaleLines)) {
+    linesByProduct.set(line.productId, [...(linesByProduct.get(line.productId) ?? []), toSaleLine(line)]);
+  }
   res.json(products.filter((product) => {
     if (product.publishStatus !== "Published") return false;
     return isActiveListing(product);
@@ -620,7 +640,7 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       const [draft] = await tx.select().from(productDraftsTable)
         .where(eq(productDraftsTable.productId, id));
       const liveLines = (await tx.select().from(saleLinesTable).where(eq(saleLinesTable.productId, id)))
-        .sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.sortOrder - b.sortOrder || a.id - b.id)
+        .sort(compareSaleLines)
         .map(toSaleLine);
       const source = bodyPayload ? req.body : draft?.snapshot;
       const payload = {
@@ -842,10 +862,6 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     changes.availabilityOverride = null;
     changes.status = "unavailable";
   }
-  // #region agent log
-  const currentLines = await liveSaleLines(id);
-  fetch('http://127.0.0.1:7761/ingest/6b558af6-c042-43cf-8773-ba4a610de515',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'982dff'},body:JSON.stringify({sessionId:'982dff',runId:'pre-fix',hypothesisId:'A',location:'products.ts:PATCH',message:'Product PATCH stock fields',data:{id,bodyKeys:Object.keys(req.body ?? {}),bodyStatus:req.body?.status,parsedKeys:Object.keys(parsed.data),changeKeys:Object.keys(changes),publishStatus:currentProduct.publishStatus,listingState:resolveListingState(currentProduct),currentStatus:currentProduct.status,availabilityOverride:currentProduct.availabilityOverride,saleAvails:currentLines.map((line) => line.availability),legacyForced:resolveListingState({ ...currentProduct, ...changes }) === "Legacy"},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
   if (publishStatus) {
     res.status(409).json({ error: "Use the lifecycle actions to change publication status." });
     return;
@@ -894,8 +910,6 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     return { kind: "updated" as const, product: updated };
   });
   // #region agent log
-  fetch('http://127.0.0.1:7761/ingest/6b558af6-c042-43cf-8773-ba4a610de515',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'982dff'},body:JSON.stringify({sessionId:'982dff',runId:'pre-fix',hypothesisId:'C',location:'products.ts:PATCH:result',message:'Product PATCH result',data:{id,kind:updateResult.kind,writtenStatus:updateResult.kind === "updated" ? updateResult.product.status : null,writtenOverride:updateResult.kind === "updated" ? updateResult.product.availabilityOverride : null,changeKeys:Object.keys(changes)},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
   if (updateResult.kind === "not-found") {
     res.status(404).json({ error: "Product not found." });
     return;
@@ -928,14 +942,12 @@ router.delete("/products/:id", async (req, res): Promise<void> => {
     if (product.id === id) return false;
     const details = normalizeProductDetails(product.details, product.packSize);
     return details.relatedProducts.includes(target.slug) ||
-      details.companionSpecies.includes(target.slug) ||
       details.components.some((component) => component.productLink === target.slug);
   });
   const draftReferences = drafts.filter((draft) => {
     if (draft.productId === id) return false;
     const details = normalizeProductDetails(draft.snapshot.details, draft.snapshot.packSize);
     return details.relatedProducts.includes(target.slug) ||
-      details.companionSpecies.includes(target.slug) ||
       details.components.some((component) => component.productLink === target.slug);
   });
   if (referencedBy.length > 0 || draftReferences.length > 0) {

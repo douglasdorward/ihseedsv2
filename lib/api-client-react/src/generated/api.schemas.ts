@@ -633,6 +633,7 @@ export interface PublicProductDetails {
   headingDate: string;
   /** @nullable */
   headingOffsetDays: number | null;
+  floweringWindow: string;
   /** @nullable */
   winterActivity: number | null;
   argtResistant: boolean;
@@ -658,7 +659,6 @@ export interface PublicProductDetails {
   relatedProducts: string[];
   formulationYear: string;
   photos: ProductPhoto[];
-  featured: boolean;
   seoTitle: string;
   seoDescription: string;
   socialTitle: string;
@@ -1184,6 +1184,11 @@ export interface MediaUploadInput {
   bytes: number;
   /** @pattern ^[a-fA-F0-9]{64}$ */
   sha256?: string;
+}
+
+export interface MediaAttachInput {
+  /** @minimum 1 */
+  productId: number;
 }
 
 export interface MediaUploadRequestResult {

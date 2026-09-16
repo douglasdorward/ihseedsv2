@@ -27,7 +27,6 @@ export type CatalogueProduct = {
     blurb?: string;
     keyAttributes?: string[];
     distributionNote?: string;
-    featured?: boolean;
     ploidy?: string;
     headingDate?: string;
     rainfallMinMm?: number | null;

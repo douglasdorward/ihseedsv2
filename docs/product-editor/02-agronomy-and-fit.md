@@ -1,5 +1,4 @@
 # Tab 2 — Agronomy & fit
-
 Sowing, soils, tolerances, use, livestock, and management notes. Disabled until a category is selected.
 
 Biologicals use a shorter form (application notes plus persistency / Australian bred). Other categories use sowing rates and the full agronomy grid.
@@ -118,29 +117,6 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **Public API:** excluded (admin-only)
 - **Purpose:** Internal origin flag. Do not treat as a public claim until a public design exists.
 
-## Companion species
-
-- **API path:** `details.companionSpecies[]` (product slugs)
-- **Workbook:** `6 Companions`
-- **Required:** no
-- **Shown when:** category is not Biologicals
-- **Customer website:** not shown
-- **Public API:** excluded (admin-only)
-- **Purpose:** Links to other catalogue products that fit with this one. Not a public companions list.
-- **How to fill:** Search and add real catalogue products. Do not add this product. Put general companion *advice* in grazing/agronomy notes, not here.
-- **Constraints:** each entry is a slug; must resolve to another product.
-
-## Inoculant group
-
-- **API path:** `details.inoculantGroup`
-- **Workbook:** `1 Products.inoculant_group`
-- **Required:** no
-- **Shown when:** not shown in the product editor
-- **Customer website:** not shown
-- **Public API:** excluded (admin-only)
-- **Purpose:** Rhizobium group for staff.
-- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
-
 ## Disease & pest resistance
 
 - **API path:** `details.diseasePestResistance`
@@ -151,7 +127,6 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **Public API:** yes
 - **Purpose:** Public resistance notes. Keep out of the main Description.
 - **Constraints:** max 3000 characters.
-
 ## Stand life notes
 
 - **API path:** `details.standLifeNotes`
@@ -162,7 +137,6 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **Public API:** yes
 - **Purpose:** Persistence and replacement guidance.
 - **Constraints:** max 3000 characters.
-
 ## Grazing management notes
 
 - **API path:** `details.grazingManagementNotes`
@@ -174,14 +148,5 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **Purpose:** How to plant and graze. Do not repeat Quick facts.
 - **Constraints:** max 3000 characters.
 
-## Application notes (Biologicals)
+Workbook imports replace this tab's supported values for every imported product; export and back up the current catalogue before importing.
 
-- **API path:** `details.notes`
-- **Workbook:** `1 Products.internal_notes`
-- **Required:** no
-- **Shown when:** not shown in the product editor
-- **Customer website:** not shown
-- **Public API:** excluded (admin-only)
-- **Purpose:** Same storage as Content & publishing → Internal notes. Staff application reminders. Customers never see it.
-- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field. Do not put public application rates here; that is Category-specific → Application rate.
-- **Constraints:** max 2000 characters.

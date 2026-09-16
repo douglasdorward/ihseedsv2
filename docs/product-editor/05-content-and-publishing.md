@@ -52,17 +52,6 @@ Public copy, media, FAQs, Also popular, and display flags. Tagline, blurb, at le
 - **Public API:** yes
 - **Purpose:** Optional availability or distribution callout. Leave blank on most products.
 
-## Description source
-
-- **API path:** `descriptionSource`
-- **Workbook:** `1 Products.description_source`
-- **Required:** no
-- **Shown when:** not shown in the product editor
-- **Customer website:** not shown
-- **Public API:** excluded (admin-only)
-- **Purpose:** Provenance of the copy. Max 240 characters.
-- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
-
 ## Legacy website URL
 
 - **API path:** `websiteUrlLegacy`
@@ -72,18 +61,6 @@ Public copy, media, FAQs, Also popular, and display flags. Tagline, blurb, at le
 - **Public API:** excluded (admin-only)
 - **Purpose:** Canonical old-site URL for this product. Extra historical paths belong in redirects.
 - **Constraints:** max 500 characters.
-
-## Internal notes
-
-- **API path:** `details.notes`
-- **Workbook:** `1 Products.internal_notes`
-- **Required:** no
-- **Shown when:** not shown in the product editor
-- **Customer website:** not shown
-- **Public API:** excluded (admin-only)
-- **Purpose:** Staff reminders. Same field as the former Agronomy → Application notes on Biologicals.
-- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
-- **Constraints:** max 2000 characters.
 
 ## Photos
 
@@ -127,27 +104,6 @@ Public copy, media, FAQs, Also popular, and display flags. Tagline, blurb, at le
 - **Customer website:** “Also popular” cards, max three. The picker only offers Published products with Active or New listing. If a stored pick is later set to Legacy (or is otherwise not public), that slot is filled with another current product from the same category using a slug-seeded shuffle that is stable across loads. An empty list still shows three other Active or New products in the same category. Featured does not rank this list.
 - **Public API:** yes (`relatedProducts`)
 - **How to fill:** Choose up to three Active or New published products by name. Leave empty for the automatic same-category set.
-
-## Sort order
-
-- **API path:** `details.sortOrder`
-- **Workbook:** `1 Products.sort_order`
-- **Required:** no
-- **Shown when:** not shown in the product editor
-- **Customer website:** not used by the current public pages (category grids prefer featured, then the first sale line’s sort order)
-- **Public API:** excluded (admin-only)
-- **Purpose:** Stored catalogue ordering hint for workbook import. Do not assume it sorts the website.
-- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field. Use Featured to pin products on category grids.
-- **Constraints:** integer ≥ 0 or blank.
-
-## Featured product
-
-- **API path:** `details.featured`
-- **Workbook:** `1 Products.featured`
-- **Required:** no
-- **Customer website:** Featured products sort first on category grids. Also popular does not use this flag.
-- **Public API:** yes
-- **How to fill:** Check sparingly. This is a merchandising flag, not a lifecycle state.
 
 ## Permanent delete
 

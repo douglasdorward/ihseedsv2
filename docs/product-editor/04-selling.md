@@ -36,16 +36,6 @@ One card per warehouse stock code. Legacy listing state disables availability on
 - **Public API:** yes
 - **How to fill:** Bare / de-hulled, Podded, Coated, Coated + Gaucho, BioNPK-S coated, Goldstrike coated, Scarified, Lime coated.
 
-### Seed grade
-
-- **API path:** `saleLines[].seedGrade`
-- **Workbook:** `4 Sale lines.seed_grade`
-- **Required:** no
-- **Shown when:** not shown in the product editor
-- **Customer website:** not shown (removed from the sales table on purpose)
-- **Public API:** yes (public API, not shown)
-- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
-
 ### Pack weight / Pack unit
 
 - **API path:** `saleLines[].packKg`, `saleLines[].packUnit`
@@ -73,15 +63,6 @@ One card per warehouse stock code. Legacy listing state disables availability on
 - **Public API:** yes
 - **How to fill:** Customer-facing price string, not internal list prices. Workbook price-list columns are import-only and never public.
 
-### Sale-line sort order
-
-- **API path:** `saleLines[].sortOrder`
-- **Workbook:** `4 Sale lines.sort_order`
-- **Required:** no (set automatically as lines are added)
-- **Customer website:** Category grids currently sort non-featured products by the first sale line’s `sortOrder`. “How it’s sold” follows API line order (default first, then this sort).
-- **Public API:** yes
-- **How to fill:** Usually leave the editor order. Do not confuse with Content & publishing → Sort order on the product.
-
 ## Availability override
 
 - **API path:** `availabilityOverride`
@@ -102,18 +83,6 @@ One card per warehouse stock code. Legacy listing state disables availability on
 - **Public API:** yes
 - **How to fill:** Check only for plant-breeder’s-rights varieties. Details e.g. variety code. Max 300 characters on details.
 
-## Licence restriction
-
-- **API path:** `details.licenceRestriction`
-- **Workbook:** `1 Products.licence_restriction`
-- **Required:** no
-- **Shown when:** not shown in the product editor
-- **Customer website:** not shown
-- **Public API:** excluded (admin-only)
-- **Purpose:** Private production or resale restriction.
-- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
-- **Constraints:** max 1000 characters.
-
 ## Certification
 
 - **API path:** `details.certification[]`
@@ -122,15 +91,3 @@ One card per warehouse stock code. Legacy listing state disables availability on
 - **Customer website:** Sidebar `Certification: …` when any values are set.
 - **Public API:** yes
 - **How to fill:** Multi-select ASF Code of Practice, Certified Quality Assured Seed, Certified seed, Licensed production.
-
-## Third-party product / Supplier name
-
-- **API path:** `details.isThirdPartyProduct`, `details.supplierName`
-- **Workbook:** `1 Products.is_third_party_product`, `supplier_name`
-- **Required:** no
-- **Shown when:** not shown in the product editor
-- **Customer website:** not shown
-- **Public API:** excluded (admin-only)
-- **Purpose:** Private sourcing. Never copy supplier names into public copy.
-- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes these fields.
-- **Constraints:** supplier name max 180 characters.

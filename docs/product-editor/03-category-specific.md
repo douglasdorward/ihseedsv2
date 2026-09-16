@@ -1,5 +1,4 @@
 # Tab 3 — Category-specific
-
 Fields appear only for the selected root category. Herbs have no extra fields.
 
 Quick facts on the product page also filter by category, so filling a field that is hidden for this category will not show it to customers.
@@ -175,7 +174,7 @@ Ploidy is offered for Mixes in the editor but Quick facts only print ploidy for 
 - **API path:** `details.floweringWindow`
 - **Workbook:** `3 Category specifics.flowering_window`
 - **Required:** no
-- **Customer website:** Mix category cards are written to chip this value, but the public API currently omits `floweringWindow`, so customers will not see it until that whitelist includes it. Not a product-page Quick fact.
+- **Customer website:** Mix category cards show this as a flowering-window chip.
 - **Public API:** excluded today
 - **How to fill:** Short season text such as `Aug-Nov`.
 - **Constraints:** max 80 characters.
@@ -231,17 +230,6 @@ Each card is one public ingredient row. Do not substitute the linked product’s
 - **Public API:** yes
 - **Constraints:** max 10,000 characters.
 
-#### Internal note
-
-- **API path:** `details.components[].note`
-- **Workbook:** `5 Mix components.formulation_note`
-- **Required:** no
-- **Shown when:** not shown in the product editor
-- **Customer website:** not shown
-- **Public API:** currently included on the shared `ProductComponent` object (not shown on the site). Treat as staff-only copy; do not put customer wording here.
-- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field.
-- **Constraints:** max 4,000 characters.
-
 ## Biologicals
 
 ### Product form
@@ -262,13 +250,3 @@ Each card is one public ingredient row. Do not substitute the linked product’s
 - **Customer website:** Quick facts “Application rate”. Biologicals cards chip it.
 - **Public API:** yes
 - **How to fill:** Public rate text. Not the stored Application notes field (that field is not shown in the editor).
-
-### ECOCERT approved
-
-- **API path:** `details.ecocertApproved`
-- **Workbook:** `1 Products.ecocert_approved` / `3 Category specifics.ecocert_approved` (Biologicals only on import)
-- **Required:** no
-- **Shown when:** not shown in the product editor
-- **Customer website:** not shown as its own badge. Public certification uses the Selling → Certification list, not this checkbox.
-- **Public API:** excluded (admin-only)
-- **How to fill:** Not editable in the Form or Product page views. Existing values are retained on save. Workbook import still writes this field. Add a public certification on the Selling tab if customers should see a claim.

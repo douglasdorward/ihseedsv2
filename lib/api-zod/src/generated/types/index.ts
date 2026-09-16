@@ -39,6 +39,7 @@ export * from './mediaAssetDetail';
 export * from './mediaAssetPage';
 export * from './mediaAssetStatus';
 export * from './mediaAssetStorageKind';
+export * from './mediaAttachInput';
 export * from './mediaBackfillResult';
 export * from './mediaDeleteConfirmation';
 export * from './mediaInUseError';

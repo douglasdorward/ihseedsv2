@@ -123,38 +123,6 @@ fields:
     workbook: 1 Products.botanical_name
     fillGuidance: Scientific name, e.g. Lolium multiflorum.
 
-  - id: bredByOrigin
-    tab: 1
-    apiPath: details.bredByOrigin
-    label: Bred by / origin
-    type: string
-    maxLength: 2000
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: not-in-editor
-    publicApi: false
-    visibility: adminOnly
-    editorVisible: false
-    customerSurfaces: []
-    workbook: 1 Products.bred_by_origin
-    fillGuidance: Not shown in the product editor. Retained on save and workbook import. Never copy into public copy.
-
-  - id: alsoKnownAs
-    tab: 1
-    apiPath: details.alsoKnownAs
-    label: Also known as
-    type: string[]
-    itemMaxLength: 120
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: not-in-editor
-    publicApi: false
-    visibility: adminOnly
-    editorVisible: false
-    customerSurfaces: []
-    workbook: 1 Products.also_known_as
-    fillGuidance: Not shown in the product editor. Retained on save and workbook import.
-
   - id: sowingRates
     tab: 2
     apiPath: details.sowingRates
@@ -353,37 +321,6 @@ fields:
     workbook: 1 Products.australian_bred
     fillGuidance: Internal flag. Not a public claim.
 
-  - id: companionSpecies
-    tab: 2
-    apiPath: details.companionSpecies
-    label: Companion species
-    type: slug[]
-    itemMaxLength: 180
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: category-not-Biologicals
-    publicApi: false
-    visibility: adminOnly
-    customerSurfaces: []
-    workbook: 6 Companions
-    fillGuidance: Other catalogue product slugs. Put general advice in grazing notes.
-
-  - id: inoculantGroup
-    tab: 2
-    apiPath: details.inoculantGroup
-    label: Inoculant group
-    type: enum
-    enumValues: [None, C, "G/S", G, S, AL, AM, B, BS, E, "F/E", I]
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: not-in-editor
-    publicApi: false
-    visibility: adminOnly
-    editorVisible: false
-    customerSurfaces: []
-    workbook: 1 Products.inoculant_group
-    fillGuidance: Not shown in the product editor. Retained on save and workbook import.
-
   - id: diseasePestResistance
     tab: 2
     apiPath: details.diseasePestResistance
@@ -428,23 +365,6 @@ fields:
     customerSurfaces: [accordion]
     workbook: 1 Products.grazing_management_notes
     fillGuidance: Planting and grazing advice. Do not repeat Quick facts.
-
-  - id: notes
-    tab: 5
-    apiPath: details.notes
-    label: Internal notes
-    alsoLabelled: formerly Application notes on Biologicals tab 2
-    type: string
-    maxLength: 2000
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: not-in-editor
-    publicApi: false
-    visibility: adminOnly
-    editorVisible: false
-    customerSurfaces: []
-    workbook: 1 Products.internal_notes
-    fillGuidance: Not shown in the product editor. Retained on save and workbook import.
 
   - id: ploidy
     tab: 3
@@ -696,12 +616,11 @@ fields:
     requiredForDraft: false
     requiredForPublish: false
     visibleWhen: Mixes
-    publicApi: false
-    visibility: adminOnly
-    customerSurfaces: []
-    note: Category cards would chip this if the public API included it. toPublicDetails currently omits it.
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [mix-category-card-chip]
     workbook: 3 Category specifics.flowering_window
-    fillGuidance: Short season text such as Aug-Nov. Not currently public.
+    fillGuidance: Short season text such as Aug-Nov.
 
   - id: formulationYear
     tab: 3
@@ -808,22 +727,6 @@ fields:
     workbook: 5 Mix components.component_description
     fillGuidance: Mix-specific copy. Blank means no description.
 
-  - id: components.note
-    tab: 3
-    apiPath: details.components[].note
-    label: Internal note
-    type: string
-    maxLength: 4000
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: not-in-editor
-    publicApi: true
-    visibility: publicApi
-    editorVisible: false
-    customerSurfaces: []
-    workbook: 5 Mix components.formulation_note
-    fillGuidance: Not shown in the product editor. Retained on save and workbook import. Staff only.
-
   - id: productForm
     tab: 3
     apiPath: details.productForm
@@ -852,21 +755,6 @@ fields:
     customerSurfaces: [quick-facts, biologicals-chips]
     workbook: 3 Category specifics.application_rate
     fillGuidance: Public rate text, not internal notes.
-
-  - id: ecocertApproved
-    tab: 3
-    apiPath: details.ecocertApproved
-    label: ECOCERT approved
-    type: boolean
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: not-in-editor
-    publicApi: false
-    visibility: adminOnly
-    editorVisible: false
-    customerSurfaces: []
-    workbook: 3 Category specifics.ecocert_approved
-    fillGuidance: Not shown in the product editor. Retained on save and workbook import. Public claims use certification on Selling.
 
   - id: saleLines
     tab: 4
@@ -924,22 +812,6 @@ fields:
     customerSurfaces: [how-its-sold, some-category-chips]
     workbook: 4 Sale lines.seed_form
     fillGuidance: Public form. Blank displays as Bare.
-
-  - id: saleLines.seedGrade
-    tab: 4
-    apiPath: saleLines[].seedGrade
-    label: Seed grade
-    type: enum
-    enumValues: ["", Certified, Tested, "Certified & Tested", VNS]
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: not-in-editor
-    publicApi: true
-    visibility: publicApi
-    editorVisible: false
-    customerSurfaces: []
-    workbook: 4 Sale lines.seed_grade
-    fillGuidance: Not shown in the product editor. Retained on save and workbook import. Not in How it's sold.
 
   - id: saleLines.packKg
     tab: 4
@@ -1001,20 +873,6 @@ fields:
     workbook: 4 Sale lines.price_display
     fillGuidance: Customer-facing string. Not a How it's sold column.
 
-  - id: saleLines.sortOrder
-    tab: 4
-    apiPath: saleLines[].sortOrder
-    label: Sale-line sort order
-    type: integer
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: editor-assigns-on-add
-    publicApi: true
-    visibility: customer
-    customerSurfaces: [category-grid-after-featured, how-its-sold-order]
-    workbook: 4 Sale lines.sort_order
-    fillGuidance: Not the product details.sortOrder field.
-
   - id: availabilityOverride
     tab: 4
     apiPath: availabilityOverride
@@ -1060,22 +918,6 @@ fields:
     workbook: product details
     fillGuidance: Shown as PBR text when protected; otherwise the page says Protected.
 
-  - id: licenceRestriction
-    tab: 4
-    apiPath: details.licenceRestriction
-    label: Licence restriction
-    type: string
-    maxLength: 1000
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: not-in-editor
-    publicApi: false
-    visibility: adminOnly
-    editorVisible: false
-    customerSurfaces: []
-    workbook: 1 Products.licence_restriction
-    fillGuidance: Not shown in the product editor. Retained on save and workbook import.
-
   - id: certification
     tab: 4
     apiPath: details.certification
@@ -1090,37 +932,6 @@ fields:
     customerSurfaces: [sidebar-certification]
     workbook: 1 Products.certification
     fillGuidance: Public certification list.
-
-  - id: isThirdPartyProduct
-    tab: 4
-    apiPath: details.isThirdPartyProduct
-    label: Third-party product
-    type: boolean
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: not-in-editor
-    publicApi: false
-    visibility: adminOnly
-    editorVisible: false
-    customerSurfaces: []
-    workbook: 1 Products.is_third_party_product
-    fillGuidance: Not shown in the product editor. Retained on save and workbook import.
-
-  - id: supplierName
-    tab: 4
-    apiPath: details.supplierName
-    label: Supplier name
-    type: string
-    maxLength: 180
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: not-in-editor
-    publicApi: false
-    visibility: adminOnly
-    editorVisible: false
-    customerSurfaces: []
-    workbook: 1 Products.supplier_name
-    fillGuidance: Not shown in the product editor. Retained on save and workbook import. Never copy into public copy.
 
   - id: tagline
     tab: 5
@@ -1193,22 +1004,6 @@ fields:
     customerSurfaces: [highlighted-aside]
     workbook: 1 Products.distribution_note
     fillGuidance: Optional. Leave blank on most products.
-
-  - id: descriptionSource
-    tab: 5
-    apiPath: descriptionSource
-    label: Description source
-    type: string
-    maxLength: 240
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: not-in-editor
-    publicApi: false
-    visibility: adminOnly
-    editorVisible: false
-    customerSurfaces: []
-    workbook: 1 Products.description_source
-    fillGuidance: Not shown in the product editor. Retained on save and workbook import.
 
   - id: websiteUrlLegacy
     tab: 5
@@ -1313,37 +1108,6 @@ fields:
     customerSurfaces: [also-popular]
     workbook: product related slugs
     fillGuidance: Choose up to three Active or New published products by name. Empty list uses three other same-category current products. A Legacy or otherwise ineligible pick is replaced in that slot.
-
-  - id: sortOrder
-    tab: 5
-    apiPath: details.sortOrder
-    label: Sort order
-    type: integer
-    nullable: true
-    minimum: 0
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: not-in-editor
-    publicApi: false
-    visibility: adminOnly
-    editorVisible: false
-    customerSurfaces: []
-    workbook: 1 Products.sort_order
-    fillGuidance: Not shown in the product editor. Retained on save and workbook import. Current public pages do not sort by this.
-
-  - id: featured
-    tab: 5
-    apiPath: details.featured
-    label: Featured product
-    type: boolean
-    requiredForDraft: false
-    requiredForPublish: false
-    visibleWhen: always
-    publicApi: true
-    visibility: customer
-    customerSurfaces: [category-grid-first]
-    workbook: 1 Products.featured
-    fillGuidance: Merchandising flag. Use sparingly.
 
   - id: h1
     tab: 6

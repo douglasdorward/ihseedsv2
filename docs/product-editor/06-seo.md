@@ -16,7 +16,7 @@ Search and sharing metadata. SEO title and SEO description are required to publi
 ## SEO title
 
 - **API path:** `details.seoTitle`
-- **Workbook:** `7 Website SEO` (`menu_label` may supply a legacy title). Cells on `1 Products` are not imported.
+- **Workbook:** `7 Website SEO` (`seo_title` is the only title source). Cells on `1 Products` are not imported.
 - **Required:** Draft no / Publish yes
 - **Customer website:** Document title and browser tab. JSON-LD uses the visible product name, not this field. `™` / `®` are stripped.
 - **Public API:** yes (already stripped)

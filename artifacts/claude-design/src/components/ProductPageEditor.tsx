@@ -851,7 +851,6 @@ function BelowCards(props: ProductPageEditorProps) {
         <div className="admin-form-grid">
           <label className="wide">Tech sheet URL<input value={form.techSheet} onChange={(event) => props.setField("techSheet", event.target.value)} /></label>
           <label>Legacy website URL <AdminOnlyMark /><input value={form.websiteUrlLegacy} onChange={(event) => props.setField("websiteUrlLegacy", event.target.value)} /></label>
-          <label className="admin-check-row"><input type="checkbox" checked={details.featured} onChange={(event) => props.setDetail("featured", event.target.checked)} /><span><strong>Featured product</strong></span></label>
           {!isBio && (
             <>
               <label>Minimum sowing depth (cm) <AdminOnlyMark /><input type="number" min="0" step="0.1" value={details.sowingDepthMinCm ?? ""} onChange={(event) => props.setNumberDetail("sowingDepthMinCm", event.target.value)} /></label>

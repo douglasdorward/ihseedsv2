@@ -214,6 +214,7 @@ export const ListProductsResponseItem = zod.object({
   "maturityDays": zod.number().nullable(),
   "headingDate": zod.string(),
   "headingOffsetDays": zod.number().nullable(),
+  "floweringWindow": zod.string(),
   "winterActivity": zod.number().nullable(),
   "argtResistant": zod.boolean(),
   "endophyte": zod.string(),
@@ -260,7 +261,6 @@ export const ListProductsResponseItem = zod.object({
   "srcSet": zod.string().max(listProductsResponseDetailsPhotosItemSrcSetMax).optional(),
   "social": zod.boolean().optional()
 })),
-  "featured": zod.boolean(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
   "socialTitle": zod.string(),
@@ -936,6 +936,7 @@ export const GetProductBySlugResponse = zod.object({
   "maturityDays": zod.number().nullable(),
   "headingDate": zod.string(),
   "headingOffsetDays": zod.number().nullable(),
+  "floweringWindow": zod.string(),
   "winterActivity": zod.number().nullable(),
   "argtResistant": zod.boolean(),
   "endophyte": zod.string(),
@@ -982,7 +983,6 @@ export const GetProductBySlugResponse = zod.object({
   "srcSet": zod.string().max(getProductBySlugResponseDetailsPhotosItemSrcSetMax).optional(),
   "social": zod.boolean().optional()
 })),
-  "featured": zod.boolean(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
   "socialTitle": zod.string(),
@@ -6814,6 +6814,80 @@ export const CompleteMediaUploadResponse = zod.object({
   "product": zod.number().min(completeMediaUploadResponseUsageSummaryProductMin).multipleOf(completeMediaUploadResponseUsageSummaryProductMultipleOf),
   "category": zod.number().min(completeMediaUploadResponseUsageSummaryCategoryMin).multipleOf(completeMediaUploadResponseUsageSummaryCategoryMultipleOf),
   "static": zod.number().min(completeMediaUploadResponseUsageSummaryStaticMin).multipleOf(completeMediaUploadResponseUsageSummaryStaticMultipleOf)
+}),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Insert a library image as a product hero and shift existing photos down
+ */
+export const AttachMediaAssetParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const attachMediaAssetBodyProductIdMultipleOf = 1;
+
+
+
+export const AttachMediaAssetBody = zod.object({
+  "productId": zod.number().min(1).multipleOf(attachMediaAssetBodyProductIdMultipleOf)
+})
+
+export const attachMediaAssetResponseBytesMultipleOf = 1;
+
+export const attachMediaAssetResponseWidthMultipleOf = 1;
+
+export const attachMediaAssetResponseHeightMultipleOf = 1;
+
+export const attachMediaAssetResponseDefaultAltMax = 300;
+
+export const attachMediaAssetResponseDefaultCaptionMax = 300;
+
+export const attachMediaAssetResponseUsageSummaryTotalMin = 0;
+export const attachMediaAssetResponseUsageSummaryTotalMultipleOf = 1;
+
+export const attachMediaAssetResponseUsageSummaryDraftMin = 0;
+export const attachMediaAssetResponseUsageSummaryDraftMultipleOf = 1;
+
+export const attachMediaAssetResponseUsageSummaryPublishedMin = 0;
+export const attachMediaAssetResponseUsageSummaryPublishedMultipleOf = 1;
+
+export const attachMediaAssetResponseUsageSummaryProductMin = 0;
+export const attachMediaAssetResponseUsageSummaryProductMultipleOf = 1;
+
+export const attachMediaAssetResponseUsageSummaryCategoryMin = 0;
+export const attachMediaAssetResponseUsageSummaryCategoryMultipleOf = 1;
+
+export const attachMediaAssetResponseUsageSummaryStaticMin = 0;
+export const attachMediaAssetResponseUsageSummaryStaticMultipleOf = 1;
+
+
+
+export const AttachMediaAssetResponse = zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['Pending', 'Ready', 'Failed']),
+  "originalFilename": zod.string(),
+  "contentType": zod.union([zod.literal('image/jpeg'),zod.literal('image/png'),zod.literal('image/webp'),zod.literal(null)]).nullish(),
+  "bytes": zod.number().min(1).multipleOf(attachMediaAssetResponseBytesMultipleOf).nullish(),
+  "width": zod.number().min(1).multipleOf(attachMediaAssetResponseWidthMultipleOf).nullish(),
+  "height": zod.number().min(1).multipleOf(attachMediaAssetResponseHeightMultipleOf).nullish(),
+  "sha256": zod.string().nullish(),
+  "defaultAlt": zod.string().max(attachMediaAssetResponseDefaultAltMax),
+  "defaultCaption": zod.string().max(attachMediaAssetResponseDefaultCaptionMax),
+  "failureReason": zod.string().nullish(),
+  "storageKind": zod.enum(['managed', 'legacy', 'external']),
+  "objectPath": zod.string().nullish(),
+  "previewURL": zod.string().nullish(),
+  "publicURL": zod.string().nullish(),
+  "usageSummary": zod.object({
+  "total": zod.number().min(attachMediaAssetResponseUsageSummaryTotalMin).multipleOf(attachMediaAssetResponseUsageSummaryTotalMultipleOf),
+  "draft": zod.number().min(attachMediaAssetResponseUsageSummaryDraftMin).multipleOf(attachMediaAssetResponseUsageSummaryDraftMultipleOf),
+  "published": zod.number().min(attachMediaAssetResponseUsageSummaryPublishedMin).multipleOf(attachMediaAssetResponseUsageSummaryPublishedMultipleOf),
+  "product": zod.number().min(attachMediaAssetResponseUsageSummaryProductMin).multipleOf(attachMediaAssetResponseUsageSummaryProductMultipleOf),
+  "category": zod.number().min(attachMediaAssetResponseUsageSummaryCategoryMin).multipleOf(attachMediaAssetResponseUsageSummaryCategoryMultipleOf),
+  "static": zod.number().min(attachMediaAssetResponseUsageSummaryStaticMin).multipleOf(attachMediaAssetResponseUsageSummaryStaticMultipleOf)
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()

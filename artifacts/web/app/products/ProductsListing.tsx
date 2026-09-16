@@ -76,7 +76,7 @@ export function ProductsListing({
   const rootCategories = useMemo(
     () => categories
       .filter((category) => category.parentId === null && category.active)
-      .sort((first, second) => first.sortOrder - second.sortOrder || first.name.localeCompare(second.name)),
+      .sort((first, second) => first.name.localeCompare(second.name)),
     [categories],
   );
 
@@ -101,10 +101,7 @@ export function ProductsListing({
 
   const visibleProducts = products
     .filter((product) => productMatchesFilters(product, filters, categories))
-    .sort((first, second) => {
-      if (first.details.featured !== second.details.featured) return first.details.featured ? -1 : 1;
-      return first.name.localeCompare(second.name);
-    });
+    .sort((first, second) => first.name.localeCompare(second.name));
 
   function apply(next: ProductListingFilters) {
     const params = searchParamsFromFilters(next);

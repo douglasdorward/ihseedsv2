@@ -185,7 +185,7 @@ export function catalogueFilterOptions(
 
   const rootSlugs = categories
     .filter((category) => category.parentId === null && category.active)
-    .sort((first, second) => first.sortOrder - second.sortOrder || first.name.localeCompare(second.name))
+    .sort((first, second) => first.name.localeCompare(second.name))
     .map((category) => category.slug);
 
   return {

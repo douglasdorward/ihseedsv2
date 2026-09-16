@@ -5,7 +5,6 @@
 - [Catalogue data backfills](catalogue-data-backfills.md) — corrective backfills must be persisted one-time migrations, never request-time reconciliation.
 - [Catalogue taxonomy draft integrity](catalogue-taxonomy-drafts.md) — taxonomy lifecycle rules must account for assignments stored inside pending product snapshots.
 - [Workbook and editor parity](workbook-editor-parity.md) — an accepted import is incomplete until every imported record also passes the admin editor schema unchanged.
-- [Legacy published workbook round-trip](workbook-legacy-published-roundtrip.md) — unchanged live records predating new required fields must round-trip without weakening new publish rules.
 - [Mix component descriptions](mix-component-descriptions.md) — public Mix copy must come from each workbook component row, never the linked product Blurb.
 - [SEO port admin delivery](seo-port-admin-delivery.md) — keep public pages in Next.js while Express serves the unchanged compiled Vite admin at /admin.
 - [Artifact command working directory](artifact-command-working-directory.md) — managed artifact commands start inside the artifact directory; workspace scripts need an explicit root directory.
@@ -14,3 +13,4 @@
 - [Cache freshness regressions](cache-freshness-regressions.md) — prime cached content before a mutation when testing that published changes become visible immediately.
 - [Git reconciliation safety](git-reconciliation-safety.md) — use normal fetch/merge or pull for concurrent GitHub work; never reconstruct overlapping commits through the API.
 - [Migration name collisions](migration-name-collisions.md) — when an applied migration name created a different schema, repair it with a new forward migration rather than editing history.
+- [Catalogue workbook replacement](catalogue-workbook-replacement.md) — imports replace the full product catalogue; require a current export and secure backup before commit.
