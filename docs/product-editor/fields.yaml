@@ -1018,7 +1018,7 @@ fields:
     visibility: adminOnly
     customerSurfaces: []
     workbook: 1 Products.website_url
-    fillGuidance: Canonical old URL. Extra aliases belong in redirects.
+    fillGuidance: Current www.irwinhunter.com.au product URL. Import redirects its path to the product's calculated category-and-slug URL.
 
   - id: photos
     tab: 5

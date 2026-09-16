@@ -9,7 +9,6 @@ import {
   productDraftSchema,
   productDraftsTable,
   productsTable,
-  redirectsTable,
   saleLineSchema,
   saleLinesTable,
   type SaleLine,
@@ -39,24 +38,6 @@ function escapeXml(value: string) {
 function canonicalProductUrl(slug: string, categorySlug: string) {
   const path = `/products/${encodeURIComponent(categorySlug)}/${encodeURIComponent(slug)}`;
   return publicSiteBaseUrl ? `${publicSiteBaseUrl}${path}` : path;
-}
-
-async function preserveProductRedirects(
-  tx: any,
-  before: { slug: string; category: string },
-  after: { slug: string; category: string },
-) {
-  const categories = await tx.select({
-    parentId: catalogueCategoriesTable.parentId,
-    slug: catalogueCategoriesTable.slug,
-    name: catalogueCategoriesTable.name,
-  }).from(catalogueCategoriesTable);
-  const fromPath = productPublicPath(before.slug, before.category, categories);
-  const toPath = productPublicPath(after.slug, after.category, categories);
-  if (fromPath && toPath && fromPath !== toPath) {
-    await tx.insert(redirectsTable).values({ fromPath, toPath })
-      .onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath, updatedAt: new Date() } });
-  }
 }
 
 type PublicProduct = {
@@ -665,7 +646,6 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
         publishedAt: new Date(),
         updatedAt: new Date(),
       }).where(eq(productsTable.id, id)).returning();
-      await preserveProductRedirects(tx, lockedProduct, published);
       await replaceSaleLines(tx, id, normalizedPayload.saleLines);
       if (draft) await tx.delete(productDraftsTable).where(eq(productDraftsTable.id, draft.id));
       await syncProductMediaReferences(published, published.details.photos, tx);

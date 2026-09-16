@@ -1,14 +1,15 @@
 import { createHash } from "node:crypto";
 import * as XLSX from "xlsx";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import {
   applyListingAvailability,
   catalogueCategoriesTable, db, forSearchMetadata, isActiveListing, normalizeProductDetails, productOptionsTable,
   productDraftsTable, productsTable, redirectsTable, resolveListingState, saleLinesTable,
 } from "@workspace/db";
 import { clearProductMediaReferences, syncProductMediaReferences } from "./media-usage.ts";
+import { normalizePublicPath, productPublicPath } from "./product-path.ts";
 
-export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "7 Website SEO", "9 Redirects", "10 Product FAQs"] as const;
+export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "7 Website SEO", "10 Product FAQs"] as const;
 const PRODUCT_FAQ_SHEET = "10 Product FAQs";
 const PRODUCT_FAQ_LIMIT = 10;
 const PRODUCT_FAQ_QUESTION_MAX = 180;
@@ -113,6 +114,19 @@ function pipe(value: unknown) { return cell(value).split("|").map((v) => v.trim(
 function values(sheet: XLSX.WorkSheet) { return XLSX.utils.sheet_to_json<Row>(sheet, { defval: "", raw: false }); }
 function isReview(value: unknown) { return /^stated\s*[–-]\s*review$/i.test(cell(value)); }
 function normal(value: string) { return value.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, ""); }
+function legacyWebsitePath(value: unknown) {
+  const raw = cell(value);
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+    if (!["http:", "https:"].includes(url.protocol) || hostname !== "irwinhunter.com.au" ||
+      url.username || url.password || url.search || url.hash) return null;
+    return normalizePublicPath(url.pathname);
+  } catch {
+    return null;
+  }
+}
 function taxonomySlug(value: string) {
   return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
     .replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "catalogue";
@@ -183,9 +197,6 @@ function applyPhotoColumns(details: Record<string, unknown>, row: Row) {
 
 type ProductPhotoRow = { slot: string; file: string; rating: string; src: string };
 
-function isCataloguePath(value: string) {
-  return value.startsWith("/") && !value.includes("://") && !/\s/.test(value);
-}
 function requiredPublishContentFingerprint(payload: { name: string; slug: string; category: string; details: ReturnType<typeof normalizeProductDetails> }) {
   const { details } = payload;
   return JSON.stringify({
@@ -242,23 +253,16 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
   const issues: WorkbookReport["issues"] = [], warnings: string[] = [];
   const productSlugs = new Set(rows["1 Products"].map((r) => cell(r.slug)).filter(Boolean));
   const seenProductSlugs = new Set<string>();
+  const seenLegacyPaths = new Set<string>();
   const stocks = new Set<string>(), optionLists = lists(book);
   const sheets: Record<string, SheetReport> = {};
-  for (const retired of ["6 Companions", "8 Categories"]) {
+  for (const retired of ["6 Companions", "8 Categories", "9 Redirects"]) {
     if (book.SheetNames.includes(retired)) warnings.push(`Sheet ${retired} is no longer imported`);
   }
   for (const name of importSheetNames) {
     let skipped = 0; const reasons: string[] = [];
     rows[name].forEach((row, i) => {
       const rowNo = i + 2, slugKey = name === "5 Mix components" ? "mix_slug" : ["2 Sowing rates", "3 Category specifics", PRODUCT_FAQ_SHEET].includes(name) ? "slug" : "";
-      if (name === "9 Redirects") {
-        const fromPath = cell(row.from_path), toPath = cell(row.to_path);
-        if (!fromPath && !toPath) { skipped++; reasons.push(`row ${rowNo}: blank redirect`); }
-        else {
-          if (!isCataloguePath(fromPath)) issues.push({ sheet: name, row: rowNo, column: "from_path", problem: "Redirect source must be a path starting with /" });
-          if (!isCataloguePath(toPath)) issues.push({ sheet: name, row: rowNo, column: "to_path", problem: "Redirect target must be a path starting with /" });
-        }
-      }
       if (name === PRODUCT_FAQ_SHEET) {
         const question = cell(row.question);
         const answer = faqAnswer(row.answer);
@@ -288,6 +292,36 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
             issues.push({ sheet: name, row: rowNo, column: "slug", problem: `Duplicate product slug "${slug}"` });
           }
           if (slug) seenProductSlugs.add(slug);
+          const rawLegacyUrl = cell(row.website_url);
+          if (rawLegacyUrl) {
+            const fromPath = legacyWebsitePath(rawLegacyUrl);
+            if (!fromPath) {
+              issues.push({
+                sheet: name,
+                row: rowNo,
+                column: "website_url",
+                problem: "Legacy website URL must be an http(s) URL on www.irwinhunter.com.au without a query or fragment",
+              });
+            } else if (seenLegacyPaths.has(fromPath)) {
+              issues.push({
+                sheet: name,
+                row: rowNo,
+                column: "website_url",
+                problem: `Duplicate legacy website path "${fromPath}"`,
+              });
+            } else {
+              seenLegacyPaths.add(fromPath);
+              const approximateDestination = `/products/${taxonomySlug(cell(row.category))}/${slug}`;
+              if (fromPath === approximateDestination) {
+                issues.push({
+                  sheet: name,
+                  row: rowNo,
+                  column: "website_url",
+                  problem: "Legacy website URL cannot already be the product's new canonical path",
+                });
+              }
+            }
+          }
         }
         const lifecycle = cell(row.status);
         if (lifecycle && !LIFECYCLE_STATUSES.has(lifecycle)) {
@@ -388,6 +422,7 @@ export async function commitWorkbook(content: Buffer, token: string) {
   if (report.issues.length) throw new Error("IMPORT_VALIDATION_FAILED");
   const { book, rows } = readWorkbook(content);
   await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('ih_catalogue_import'))`);
     const importedSlugs = new Set(rows["1 Products"].map((row) => cell(row.slug)).filter(Boolean));
     const existingProducts = await tx.select().from(productsTable);
     const componentsBeforeReplacement = new Map(existingProducts.map((product) => [
@@ -585,11 +620,14 @@ export async function commitWorkbook(content: Buffer, token: string) {
         if (cell(row.h1) || isNull(row.h1)) d.h1 = isNull(row.h1) ? "" : cell(row.h1);
       });
     }
-    for (const redirect of [{ from: "/product/souwest-pasture-mix-2", to: "/products/mixes/souwest-pasture-mix" }, { from: "/product/icon-lucerne", to: "/products/lucerne" }]) await tx.insert(redirectsTable).values({ fromPath: redirect.from, toPath: redirect.to }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath: redirect.to, updatedAt: new Date() } });
-    for (const row of rows["9 Redirects"]) {
-      const fromPath = cell(row.from_path), toPath = cell(row.to_path);
-      if (!isCataloguePath(fromPath) || !isCataloguePath(toPath)) continue;
-      await tx.insert(redirectsTable).values({ fromPath, toPath }).onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath, updatedAt: new Date() } });
+    await tx.delete(redirectsTable);
+    for (const row of rows["1 Products"]) {
+      const product = productBySlug.get(cell(row.slug));
+      const fromPath = legacyWebsitePath(row.website_url);
+      if (!product || !fromPath) continue;
+      const toPath = productPublicPath(product.slug, product.category, categories);
+      if (fromPath === toPath) throw new Error(`SELF_REDIRECT:${product.slug}`);
+      await tx.insert(redirectsTable).values({ fromPath, toPath });
     }
     // The sale-line sheet is authoritative for every imported product.
     for (const slug of importedSlugs) {
@@ -613,7 +651,6 @@ export async function commitWorkbook(content: Buffer, token: string) {
 export async function exportWorkbook() {
   const book = XLSX.utils.book_new(), products = await db.select().from(productsTable), lines = await db.select().from(saleLinesTable);
   const categories = await db.select().from(catalogueCategoriesTable);
-  const redirects = await db.select().from(redirectsTable);
   const taxonomy = new Map(categories.map((category) => [category.id, category.name]));
   const options = await db.select().from(productOptionsTable);
   const optionLists = new Map<string, Set<string>>();
@@ -685,9 +722,6 @@ export async function exportWorkbook() {
       robots_index: details.robotsIndex ? "Y" : "N",
     };
   }), ["product_slug", "h1", "seo_title", "meta_description", "social_title", "social_description", "social_image", "canonical_url", "robots_index"]);
-  append("9 Redirects", redirects.length
-    ? redirects.map((redirect) => ({ from_path: redirect.fromPath, to_path: redirect.toPath }))
-    : [{ from_path: "", to_path: "" }], ["from_path", "to_path"]);
   const faqRows = products.flatMap((p) => d(p).faqs.map((faq) => ({
     slug: p.slug, product_name: p.name, question: faq.question, answer: faq.answer,
   })));

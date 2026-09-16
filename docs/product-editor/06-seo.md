@@ -72,7 +72,7 @@ Search and sharing metadata. SEO title and SEO description are required to publi
 - **Required:** no
 - **Customer website:** `<link rel="canonical">` and Open Graph URL. Blank uses the normal `/products/{category}/{slug}` URL.
 - **Public API:** yes
-- **How to fill:** Leave blank unless this page must point at a different public URL. Do not use this as a substitute for the redirect table.
+- **How to fill:** Leave blank unless this page must point at a different public URL. Redirect sources belong in `1 Products.website_url`.
 - **Constraints:** max 500 characters; URL.
 
 ## Allow search engines to index this product

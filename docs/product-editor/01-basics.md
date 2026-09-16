@@ -29,7 +29,7 @@ Draft save requires Product name, Slug, Category, and Record type from this tab.
 - **Workbook:** `1 Products.slug`
 - **Required:** Draft yes / Publish yes
 - **Shown when:** always; input is disabled after the product exists
-- **Customer website:** Permanent URL `/products/{category-slug}/{slug}`. Used to join Also popular picks, mix components, and redirects. Legacy `/product/{slug}` URLs redirect to this path.
+- **Customer website:** Permanent URL `/products/{category-slug}/{slug}`. Used to join Also popular picks and mix components. A Legacy website URL redirects here only when supplied for this product in the workbook.
 - **Public API:** yes (`slug`)
 - **Purpose:** Immutable public identifier.
 - **How to fill:** Lowercase kebab-case matching `^[a-z0-9]+(?:-[a-z0-9]+)*$`. Choose carefully on create; it cannot be edited later.

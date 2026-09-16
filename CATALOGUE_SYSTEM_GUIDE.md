@@ -164,9 +164,9 @@ Workbook imports may create missing root or child categories. Existing display n
 
 ### Redirects
 
-Redirect records map a unique old path to a target path. They support legacy `/product/...` and `/products/...` addresses and are checked when a requested product path is not found.
+Redirect records map the path from each product's current `www.irwinhunter.com.au` URL to its new canonical product path.
 
-Redirects are imported only from `9 Redirects`. Generated workbook exports include the current redirect table on that sheet. Omission from an import does not delete existing redirects; listed rows are upserted by source path. The two built-in SouWest and Icon Lucerne redirects remain enforced.
+`1 Products.website_url` is the only redirect input. Import validates that it is an HTTP(S) URL on `www.irwinhunter.com.au` (the apex host is also accepted), extracts its path, and derives the destination from the resolved category slug and product slug. Each catalogue import replaces the entire redirect table. No built-in, historical, category-change, or product-change redirects are added automatically.
 
 ### Product options
 
@@ -186,12 +186,11 @@ The approved file contains:
 | `4 Sale lines` | repeatable | 8 | Saleable pack/stock records |
 | `5 Mix components` | repeatable | 6 | Components of Mix products |
 | `7 Website SEO` | one row per product | 9 | SEO and social metadata |
-| `9 Redirects` | generated | 2 | Canonical redirect table |
 | `10 Product FAQs` | generated | 4 | Optional product question/answer rows |
 | `Lists` | generated | validation columns | Visible validation and option values |
 | `Review` | optional | variable | Optional warnings/work list; not catalogue content |
 
-The importer recognizes sheets `1`–`5`, `7`, `9`, and `10`; `Lists` is required and visible. Sheets `6 Companions` and `8 Categories` are no longer imported or exported; if present in an upload they are ignored with warnings. `Review` is optional and its rows become warnings.
+The importer recognizes sheets `1`–`5`, `7`, and `10`; `Lists` is required and visible. Sheets `6 Companions`, `8 Categories`, and `9 Redirects` are no longer imported or exported; if present in an upload they are ignored with warnings. `Review` is optional and its rows become warnings.
 
 ### Joins and stable keys
 
@@ -204,7 +203,7 @@ The importer recognizes sheets `1`–`5`, `7`, `9`, and `10`; `Lists` is require
 | Mix to product | `5 Mix components.mix_slug` |
 | Linked mix component | `5 Mix components.component_slug` |
 | SEO row to product | `7 Website SEO.product_slug` |
-| Redirect | `9 Redirects.from_path` |
+| Redirect source | `1 Products.website_url` |
 | Product FAQ | `10 Product FAQs.slug` |
 | Category | `1 Products.category` + optional `sub_category` |
 
@@ -295,11 +294,9 @@ For imports:
   before storage. Put the mark on `product_name` or `h1`, not in SEO title or
   social fields.
 
-### Redirect import
+### Legacy URL redirect import
 
-Legacy website URLs remain on `1 Products.website_url`; redirects are supplied only by `9 Redirects`.
-
-Because older workbooks may omit `9 Redirects`, do not treat a historic spreadsheet as the complete redirect register. Current admin exports do include it.
+Each nonblank `1 Products.website_url` is the old source URL. The importer extracts its path and sends it to the product's new `/products/{category-slug}/{product-slug}` path. Blank means that product has no redirect. Because the workbook replaces the complete catalogue, it also replaces the complete redirect set.
 
 ### Export behavior
 
@@ -313,9 +310,9 @@ The admin export writes the numbered import sheets and a visible `Lists` sheet:
 - Only `photo_1` is exported. The importer still accepts `photo_2` and `photo_3` when supplied.
 - Categories are managed in the back office and are not workbook sheets.
 - Product FAQs are exported on `10 Product FAQs`. Omitting FAQ rows clears the imported product's FAQs.
-- Redirects are exported on `9 Redirects`.
+- Each product's redirect source is exported in `1 Products.website_url`; the destination is calculated during import.
 
-The export is designed to dry-run and re-import cleanly. Keep the sheet names and headers stable. Older `6 Companions` and `8 Categories` sheets are ignored with warnings.
+The export is designed to dry-run and re-import cleanly. Keep the sheet names and headers stable. Older `6 Companions`, `8 Categories`, and `9 Redirects` sheets are ignored with warnings.
 
 ### Legacy Published compatibility
 
@@ -340,7 +337,6 @@ The authoritative export headers, in order, are:
 4 Sale lines: slug, stock_code, seed_form, pack_kg, pack_unit, availability, price_display, is_default
 5 Mix components: mix_slug, component_slug, component_name, inclusion_rate, rate_unit, component_description
 7 Website SEO: product_slug, h1, seo_title, meta_description, social_title, social_description, social_image, canonical_url, robots_index
-9 Redirects: from_path, to_path
 10 Product FAQs: slug, product_name, question, answer
 Lists: visible validation columns
 ```
@@ -393,19 +389,9 @@ Current import uses this sheet to merge SEO, sharing and legacy-address informat
 - `meta_description` supplies SEO description.
 - `h1` is an optional product-page heading override. Blank cells leave the stored override; `NULL` clears it so the public H1 follows the product name again.
 - `social_title`, `social_description`, `social_image`, `canonical_url` and `robots_index` store the admin SEO extras. Blank cells leave existing values; `NULL` clears them (`robots_index` NULL restores the default of indexed).
-- Redirects are supplied only by `9 Redirects`.
+- `1 Products.website_url` is the only redirect source; the destination is calculated from the imported category and slug.
 
-Generated exports write one SEO row per product with the current H1 override, title, description, social fields, canonical URL, index flag and legacy product URL.
-
-### `9 Redirects`
-
-Headers:
-
-```text
-from_path, to_path
-```
-
-Each row is one stored redirect. Import upserts by `from_path`. Omitted redirects are retained.
+Generated exports write one SEO row per product with the current H1 override, title, description, social fields, canonical URL and index flag.
 
 ### `10 Product FAQs`
 
@@ -491,7 +477,7 @@ The following matrix groups related fields. “Publish required” means require
 | Photos | `photo_1` exported; `photo_2` and `photo_3` import-only | Content & publishing | No | No | The first nonblank photo is the hero; extra stored slots remain available in the editor |
 | FAQs | `10 Product FAQs` | Content & publishing (Form and Product page) | No | No | Accordion band above Also popular, max ten. Incomplete question/answer cards are hidden. Imported products receive exactly the FAQ rows supplied |
 | Also popular | `relatedProducts` slugs | Content & publishing (Form and Product page) | No | No | Chosen Active or New published products on the Also popular band, max three. A Legacy or missing pick is replaced in that slot with another current product from the same category. An empty list uses three other same-category Active or New products |
-| Legacy URL | `website_url` | Content & publishing | No | No | Admin/compatibility; redirects are separate |
+| Legacy URL | `website_url` | Content & publishing | No | No | Old current-site URL; its path redirects to the imported category-and-slug product path |
 | SEO title | `7 Website SEO.seo_title` | SEO | No | **Yes** | Document title and metadata; `™`/`®` are stripped |
 | SEO description | `7 Website SEO.meta_description`; `1 Products` cells are currently ignored | SEO | No | **Yes** | Meta description and structured-data fallback; `™`/`®` are stripped |
 | Social sharing | `social_title`, `social_description`, `social_image` | SEO | No | No | Optional; blank falls back to the product SEO/hero on the public site |
@@ -499,7 +485,6 @@ The following matrix groups related fields. “Publish required” means require
 | Search indexing | `robots_index` | SEO | No | No | `N` publishes with noindex |
 | Category metadata | back office | Categories admin | No | No | Managed outside the workbook |
 | Category FAQs | taxonomy admin | Categories admin | No | No | Accordion band above “Also in our catalogue” |
-| Redirects | `9 Redirects` | Import/database | No | No | Old path to current path |
 | Lifecycle status | `status` | Product list/import | New defaults Draft | Explicit publication validated | Controls public eligibility |
 | Listing state | listing fields | Basics | Active | No | Manual Active/New/Legacy listing; public output shows Active and New products. New renders a NEW stamp |
 
@@ -602,7 +587,7 @@ The current public hierarchy is:
 
 - Document title and meta description use the stored SEO fields with safe content fallbacks.
 - `™` and `®` stay on the visible product name (cards, JSON-LD Product `name`) and on the page H1 (product name, or the SEO H1 override). They are stripped from document title, meta description, Open Graph title/description, and JSON-LD description.
-- Canonical product paths use `/products/{category}/{slug}`. Legacy `/product/{slug}` addresses permanently redirect there.
+- Canonical product paths use `/products/{category}/{slug}`. A legacy address redirects there only when that exact current-site URL is supplied in `1 Products.website_url`.
 - Product JSON-LD contains the public name, IH Seeds brand, public description, optional real image and selected Quick facts.
 - When a product has complete FAQs, the page also emits FAQPage JSON-LD for those question/answer pairs.
 - When a category page has complete FAQs, it also emits FAQPage JSON-LD for those question/answer pairs.
@@ -654,7 +639,7 @@ After that upload, the running implementation was refined further:
 - Published-only public endpoints with no unsafe complete-static-catalogue fallback
 - Independent Active/New/Legacy listing chosen by the administrator, taking precedence over availability
 - Separate name-only Legacy section on category pages
-- Immutable product and category slugs, plus database redirects
+- Immutable product and category slugs, plus redirects derived from imported Legacy website URLs
 - Authoritative replacement workbook with dry-run/token/commit workflow
 - Replacement product and sale-line data; omitted products are deleted and omitted imported values are cleared
 - Taxonomy creation and controlled-value validation through `Lists`

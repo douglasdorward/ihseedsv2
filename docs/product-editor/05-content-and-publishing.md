@@ -55,12 +55,12 @@ Public copy, media, FAQs, Also popular, and display flags. Tagline, blurb, at le
 ## Legacy website URL
 
 - **API path:** `websiteUrlLegacy`
-- **Workbook:** `1 Products.website_url` / SEO sheet product URL
+- **Workbook:** `1 Products.website_url`
 - **Required:** no
-- **Customer website:** not shown as a link. Redirects live in the redirect table, not this field.
+- **Customer website:** not shown as a link. Its old path redirects to this product's calculated `/products/{category-slug}/{slug}` path after workbook import.
 - **Public API:** excluded (admin-only)
-- **Purpose:** Canonical old-site URL for this product. Extra historical paths belong in redirects.
-- **Constraints:** max 500 characters.
+- **Purpose:** Sole source of the product's redirect from the current Irwin Hunter website.
+- **Constraints:** max 500 characters; HTTP(S) URL on `www.irwinhunter.com.au` (or the apex host), without a query or fragment; unique old path.
 
 ## Photos
 

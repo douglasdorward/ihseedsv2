@@ -207,41 +207,19 @@ test("committed workbook products keep valid lifecycle boundaries and drafts rem
   assert.equal((await publicProducts()).some((product) => draftIds.has(product.id)), false);
 });
 
-test("redirect lookup returns JSON while the legacy public route emits the HTTP redirect", async () => {
-  const expectedRedirects = new Map([
-    ["/product/souwest-pasture-mix-2", "/products/mixes/souwest-pasture-mix"],
-    ["/product/avalon-persistent-perennial-ryegrass", "/products/ryegrass"],
-    ["/product/hard-seeded-persian-clover", "/products/clovers"],
-    ["/product/soft-seeded-persian-clover", "/products/clovers"],
-    ["/product/icon-lucerne", "/products/lucerne"],
-    ["/product/anywhere-tall-fescue", "/products/fescues-other-grasses"],
-    ["/product/nemnuke-biofumigant", "/products/forage-grain-crops"],
-    ["/product/parafield-peas", "/products/forage-grain-crops"],
-  ]);
-  const categories = assertStatus(await request("GET", "/categories"), 200);
-  const rootByName = new Map(categories.filter((category) => category.parentId === null).map((category) => [category.name, category.slug]));
-  for (const [fromPath, toPath] of expectedRedirects) {
-    const slug = fromPath.slice("/product/".length);
-    const live = sql(`
-      SELECT category
-      FROM ih_products
-      WHERE slug = '${slug.replaceAll("'", "''")}'
-        AND publish_status = 'Published'
-        AND listing_override = 'Active'
-    `).trim();
-    const lookup = assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 200);
-    if (live) {
-      assert.deepEqual(lookup, { toPath: `/products/${rootByName.get(live)}/${slug}` });
-      continue;
-    }
-    assert.deepEqual(lookup, { toPath });
-  }
+test("only registered redirect paths resolve through lookup and the legacy HTTP route", async () => {
+  const fromPath = `/product/registered-${testRunId}`;
+  const toPath = `/products/other/registered-${testRunId}`;
+  sql(`INSERT INTO ih_redirects (from_path, to_path) VALUES ('${fromPath}', '${toPath}')`);
+  assert.deepEqual(
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 200),
+    { toPath },
+  );
   assertStatus(await request("GET", "/redirects/lookup?fromPath=%2Fproduct%2Fnot-registered"), 404);
-
-  const redirect = await fetch(`${baseUrl}/product/souwest-pasture-mix-2`, { redirect: "manual" });
+  const redirect = await fetch(`${baseUrl}${fromPath}`, { redirect: "manual" });
   assert.equal(redirect.status, 301);
-  assert.equal(redirect.headers.get("location"), "/products/mixes/souwest-pasture-mix");
-
+  assert.equal(redirect.headers.get("location"), toPath);
+  sql(`DELETE FROM ih_redirects WHERE from_path = '${fromPath}'`);
 });
 
 test("sitemap contains only canonical Active Published product paths", async () => {
@@ -427,7 +405,7 @@ test("leftover drafts that omit sale lines keep live pack sizes on publish and r
   assert.equal(restored.saleLines[0].stockCode, saleLines[0].stockCode);
 });
 
-test("leftover catalogue redirects do not hide a restored Active product page", async () => {
+test("redirect lookup follows only the registered table entry", async () => {
   const product = await createProduct("legacy-redirect");
   const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
   const fromPath = `/product/${published.slug}`;
@@ -437,9 +415,10 @@ test("leftover catalogue redirects do not hide a restored Active product page", 
     VALUES ('${fromPath.replaceAll("'", "''")}', '${toPath}')
     ON CONFLICT (from_path) DO UPDATE SET to_path = EXCLUDED.to_path, updated_at = now()
   `);
-  const liveLookup = assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 200);
-  assert.equal(liveLookup.toPath.startsWith("/products/"), true);
-  assert.equal(liveLookup.toPath.endsWith(`/${published.slug}`), true);
+  assert.deepEqual(
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), 200),
+    { toPath },
+  );
   assert.equal((await publicProducts()).some((item) => item.slug === published.slug), true);
 
   assertStatus(await request("POST", `/admin/products/${published.id}/publish`, draftPayload(published, {
@@ -806,10 +785,7 @@ test("category administration enforces nesting, activation, and deletion protect
       { question: "Can I buy seed direct?", answer: "We supply through rural resellers." },
       { question: "Is the seed tested?", answer: "Every line is germination and purity tested." },
     ]);
-    assert.deepEqual(
-      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${parent.slug}`)}`), 200),
-      { toPath: `/products/${updatedSlug}` },
-    );
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${parent.slug}`)}`), 404);
     const unrelatedUpdate = assertStatus(await request("PATCH", `/admin/categories/${parent.id}`, { active: false }), 200);
     assert.equal(unrelatedUpdate.pageHeading, "Automated Category Seed");
     assert.equal(unrelatedUpdate.seoTitle, "Automated Category Seed | IH Seeds");
@@ -843,7 +819,7 @@ test("category administration enforces nesting, activation, and deletion protect
   }
 });
 
-test("taxonomy deactivation redirects removed paths and moving a child updates live and draft root labels", async () => {
+test("taxonomy changes do not create redirects and moving a child updates live and draft root labels", async () => {
   const suffix = `taxonomy-routing-${testRunId}`;
   const categoryInput = (slug, name, parentId = null) => ({
     parentId, slug, name, groupLabel: "Automated tests", lead: "", rainfall: "", image: "",
@@ -864,42 +840,27 @@ test("taxonomy deactivation redirects removed paths and moving a child updates l
   const product = await createProduct("taxonomy-move", { subcategoryId: movedChild.id });
   try {
     assertStatus(await request("PATCH", `/admin/categories/${removedChild.id}`, { active: false }), 200);
-    assert.deepEqual(
-      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${redirectRoot.slug}/${removedChild.slug}`)}`), 200),
-      { toPath: `/products/${redirectRoot.slug}` },
-    );
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${redirectRoot.slug}/${removedChild.slug}`)}`), 404);
     assert.equal((await request("GET", "/categories")).data.some((category) => category.id === removedChild.id), false);
 
     assertStatus(await request("PATCH", `/admin/categories/${redirectRoot.id}`, { active: false }), 200);
-    assert.deepEqual(
-      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${redirectRoot.slug}`)}`), 200),
-      { toPath: "/products" },
-    );
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${redirectRoot.slug}`)}`), 404);
 
     assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
     assertStatus(await request("PATCH", `/admin/categories/${movedChild.id}`, { parentId: destinationRoot.id }), 200);
     const categories = assertStatus(await request("GET", "/categories"), 200);
     assert.equal(categories.find((category) => category.id === movedChild.id)?.parentId, destinationRoot.id);
-    assert.deepEqual(
-      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${sourceRoot.slug}/${movedChild.slug}`)}`), 200),
-      { toPath: `/products/${destinationRoot.slug}` },
-    );
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${sourceRoot.slug}/${movedChild.slug}`)}`), 404);
     assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${sourceRoot.slug}`)}`), 404);
     const movedProduct = await adminProduct(product.id);
     assert.equal(movedProduct.category, destinationRoot.name);
     assert.equal(movedProduct.draft, null);
-    assert.deepEqual(
-      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${sourceRoot.slug}/${movedProduct.slug}`)}`), 200),
-      { toPath: `/products/${destinationRoot.slug}/${movedProduct.slug}` },
-    );
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${sourceRoot.slug}/${movedProduct.slug}`)}`), 404);
 
     assertStatus(await request("PATCH", `/admin/categories/${movedChild.id}`, { parentId: null }), 200);
     const promotedCategories = assertStatus(await request("GET", "/categories"), 200);
     assert.equal(promotedCategories.find((category) => category.id === movedChild.id)?.parentId, null);
-    assert.deepEqual(
-      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${destinationRoot.slug}/${movedChild.slug}`)}`), 200),
-      { toPath: `/products/${movedChild.slug}` },
-    );
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${destinationRoot.slug}/${movedChild.slug}`)}`), 404);
     assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${destinationRoot.slug}`)}`), 404);
     const promotedProduct = await adminProduct(product.id);
     assert.equal(promotedProduct.category, movedChild.name);
@@ -912,7 +873,7 @@ test("taxonomy deactivation redirects removed paths and moving a child updates l
   }
 });
 
-test("deleting taxonomy preserves removed and sibling canonical paths", async () => {
+test("deleting taxonomy does not create redirect records", async () => {
   const suffix = `taxonomy-delete-${testRunId}`;
   const categoryInput = (slug, name, parentId = null) => ({
     parentId, slug, name, groupLabel: "Automated tests", lead: "", rainfall: "", image: "",
@@ -926,21 +887,12 @@ test("deleting taxonomy preserves removed and sibling canonical paths", async ()
     categoryInput(`${suffix}-surviving`, "Surviving child", root.id)), 201);
   try {
     assertStatus(await request("DELETE", `/admin/categories/${deletedChild.id}`), 204);
-    assert.deepEqual(
-      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${root.slug}/${deletedChild.slug}`)}`), 200),
-      { toPath: `/products/${root.slug}` },
-    );
-    assert.deepEqual(
-      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${root.slug}/${survivingChild.slug}`)}`), 200),
-      { toPath: `/products/${root.slug}` },
-    );
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${root.slug}/${deletedChild.slug}`)}`), 404);
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${root.slug}/${survivingChild.slug}`)}`), 404);
 
     assertStatus(await request("DELETE", `/admin/categories/${survivingChild.id}`), 204);
     assertStatus(await request("DELETE", `/admin/categories/${root.id}`), 204);
-    assert.deepEqual(
-      assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${root.slug}`)}`), 200),
-      { toPath: "/products" },
-    );
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(`/products/${root.slug}`)}`), 404);
   } finally {
     await request("DELETE", `/admin/categories/${deletedChild.id}`);
     await request("DELETE", `/admin/categories/${survivingChild.id}`);
@@ -1092,7 +1044,9 @@ test("catalogue lifecycle transition matrix protects public content", async () =
    assert.deepEqual(publicProduct.details.keyAttributes, ["Lifecycle tested"]);
    assert.equal(publicProduct.details.distributionNote, "Distributed for lifecycle tests.");
   assert.equal(includesProduct(await availability(), product.id), true);
-  const originalRenderedPage = await fetch(`${webBaseUrl}/product/${product.slug}`);
+  const unregisteredLegacyPage = await fetch(`${webBaseUrl}/product/${product.slug}`);
+  assert.equal(unregisteredLegacyPage.status, 404);
+  const originalRenderedPage = await fetch(`${webBaseUrl}/products/automated-tests/${product.slug}`);
   assert.equal(originalRenderedPage.status, 200);
   assert.match(await originalRenderedPage.text(), /Lifecycle test blurb/);
 
@@ -1145,7 +1099,7 @@ test("catalogue lifecycle transition matrix protects public content", async () =
   assert.equal(publicDetailResponse.status, 200);
   assert.equal(publicDetailResponse.headers.get("cache-control"), "no-store");
   assert.equal((await publicDetailResponse.json()).details.blurb, revisionBlurb);
-  const renderedProductPage = await fetch(`${webBaseUrl}/product/${product.slug}`);
+  const renderedProductPage = await fetch(`${webBaseUrl}/products/automated-tests/${product.slug}`);
   assert.equal(renderedProductPage.status, 200);
   const renderedProductHtml = await renderedProductPage.text();
   assert.match(renderedProductHtml, new RegExp(revisionBlurb));
@@ -1188,7 +1142,7 @@ test("export workbook matches the authoritative contract and round-trips cleanly
   const exported = Buffer.from(await exportResponse.arrayBuffer());
   const book = xlsx.read(exported, { type: "buffer" });
   assert.deepEqual(book.SheetNames, ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines",
-    "5 Mix components", "7 Website SEO", "9 Redirects", "10 Product FAQs", "Lists"]);
+    "5 Mix components", "7 Website SEO", "10 Product FAQs", "Lists"]);
   const listsIndex = book.SheetNames.indexOf("Lists");
   assert.equal(book.Workbook?.Sheets?.[listsIndex]?.Hidden ?? 0, 0);
   const headers = (name) => xlsx.utils.sheet_to_json(book.Sheets[name], { header: 1, defval: "", raw: false })[0];
@@ -1198,7 +1152,6 @@ test("export workbook matches the authoritative contract and round-trips cleanly
   assert.deepEqual(headers("4 Sale lines"), ["slug", "stock_code", "seed_form", "pack_kg", "pack_unit", "availability", "price_display", "is_default"]);
   assert.deepEqual(headers("5 Mix components"), ["mix_slug", "component_slug", "component_name", "inclusion_rate", "rate_unit", "component_description"]);
   assert.deepEqual(headers("7 Website SEO"), ["product_slug", "h1", "seo_title", "meta_description", "social_title", "social_description", "social_image", "canonical_url", "robots_index"]);
-  assert.deepEqual(headers("9 Redirects"), ["from_path", "to_path"]);
   assert.deepEqual(headers("10 Product FAQs"), ["slug", "product_name", "question", "answer"]);
   assert.equal(headers("Lists").includes("seed_grade"), false);
   assert.equal(headers("Lists").includes("guide_section"), false);
@@ -1295,7 +1248,7 @@ test("product FAQs export, replace, clear, and validate through the workbook", a
   assert.equal(tooLong.issues.some((issue) => issue.sheet === "10 Product FAQs" && issue.column === "question"), true);
 });
 
-test("malformed and duplicate product identities cannot trigger catalogue replacement", async () => {
+test("malformed product identities and legacy URLs cannot trigger catalogue replacement", async () => {
   const sentinel = await createProduct("workbook-identity-sentinel");
   const makeIdentityWorkbook = (productRows) => {
     const book = xlsx.utils.book_new();
@@ -1340,6 +1293,35 @@ test("malformed and duplicate product identities cannot trigger catalogue replac
   });
   assert.equal(blockedDuplicate.response.status, 400);
   assert.equal((await request("GET", `/admin/products/${sentinel.id}`)).response.status, 200);
+
+  for (const websiteUrl of [
+    "https://example.com/product/not-current-site",
+    `https://www.irwinhunter.com.au/products/other/${complete.slug}`,
+    "not a URL",
+  ]) {
+    const workbook = makeIdentityWorkbook([{ ...complete, website_url: websiteUrl }]);
+    const report = assertStatus(await request("POST", "/admin/import/dry-run", {
+      workbookBase64: workbook.toString("base64"),
+    }), 200);
+    assert.equal(report.issues.some((issue) => issue.column === "website_url"), true);
+    const blocked = await request("POST", "/admin/import/commit", {
+      workbookBase64: workbook.toString("base64"),
+      token: report.token,
+    });
+    assert.equal(blocked.response.status, 400);
+    assert.equal((await request("GET", `/admin/products/${sentinel.id}`)).response.status, 200);
+  }
+
+  const duplicateLegacyUrl = "https://www.irwinhunter.com.au/product/shared-old-path/";
+  const duplicateUrlWorkbook = makeIdentityWorkbook([
+    { ...complete, website_url: duplicateLegacyUrl },
+    { ...complete, slug: `${complete.slug}-second`, website_url: duplicateLegacyUrl },
+  ]);
+  const duplicateUrlReport = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: duplicateUrlWorkbook.toString("base64"),
+  }), 200);
+  assert.equal(duplicateUrlReport.issues.some((issue) => issue.column === "website_url" &&
+    /Duplicate legacy website path/.test(issue.problem)), true);
 });
 
 test("published workbook rows enforce content fields and delete products absent from an upsert", async () => {
@@ -1385,6 +1367,8 @@ test("published workbook rows enforce content fields and delete products absent 
   insertLeftoverDraft(imported, { name: `Stale pre-import draft ${testRunId}` });
   const sourceDescription = "First editorial paragraph.\n\nSecond editorial paragraph.";
   const legacyWebsiteUrl = `https://irwinhunter.com.au/product/${imported.slug}/`;
+  const staleRedirectPath = `/product/stale-${testRunId}`;
+  sql(`INSERT INTO ih_redirects (from_path, to_path) VALUES ('${staleRedirectPath}', '/products/other/stale')`);
   const productRow = {
     slug: imported.slug,
     product_name: imported.name,
@@ -1474,6 +1458,10 @@ test("published workbook rows enforce content fields and delete products absent 
   assert.equal(importedAdmin.draft, null);
   assert.equal(sql(`SELECT count(*) FROM ih_media_references WHERE owner_type = 'product' AND owner_id = '${imported.id}'`), "0");
   assert.equal(importedAdmin.websiteUrlLegacy, legacyWebsiteUrl);
+  assert.equal(sql("SELECT count(*) FROM ih_redirects"), "1");
+  assert.equal(sql(`SELECT to_path FROM ih_redirects WHERE from_path = '/product/${imported.slug}'`),
+    `/products/${other.slug}/${imported.slug}`);
+  assert.equal(sql(`SELECT count(*) FROM ih_redirects WHERE from_path = '${staleRedirectPath}'`), "0");
   assert.equal(importedAdmin.details.seoTitle, "Workbook SEO title");
   assert.equal((await adminProduct(imported.id)).details.socialTitle, "Workbook social title");
   assert.equal((await adminProduct(imported.id)).details.socialDescription, "Workbook social description.");
@@ -1506,7 +1494,7 @@ test("published workbook rows enforce content fields and delete products absent 
 
 });
 
-test("legacy companion and category sheets are ignored with exact warnings", async () => {
+test("retired companion, category, and redirect sheets are ignored with exact warnings", async () => {
   const book = xlsx.utils.book_new();
   xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{
     slug: `ignored-sheets-${testRunId}`, product_name: "Ignored sheets fixture",
@@ -1514,13 +1502,18 @@ test("legacy companion and category sheets are ignored with exact warnings", asy
   }]), "1 Products");
   xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ slug: "ignored", companion_slug: "missing" }]), "6 Companions");
   xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ slug: "ignored-category", name: "Ignored" }]), "8 Categories");
+  xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ from_path: "/old", to_path: "/new" }]), "9 Redirects");
   xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ category: "Other", record_type: "Variety" }]), "Lists");
   const workbook = xlsx.write(book, { type: "buffer", bookType: "xlsx" });
   const report = assertStatus(await request("POST", "/admin/import/dry-run", {
     workbookBase64: workbook.toString("base64"),
   }), 200);
   assert.deepEqual(report.issues, []);
-  assert.deepEqual(report.warnings, ["Sheet 6 Companions is no longer imported", "Sheet 8 Categories is no longer imported"]);
+  assert.deepEqual(report.warnings, [
+    "Sheet 6 Companions is no longer imported",
+    "Sheet 8 Categories is no longer imported",
+    "Sheet 9 Redirects is no longer imported",
+  ]);
 });
 
 test("related product references must resolve within the uploaded workbook", async () => {

@@ -8,11 +8,9 @@ import {
   isActiveListing,
   productDraftsTable,
   productsTable,
-  redirectsTable,
   reorderCatalogueCategoriesSchema,
   updateCatalogueCategorySchema,
 } from "@workspace/db";
-import { CATALOGUE_INDEX_PATH, productPublicPath } from "../lib/product-path";
 
 const router: IRouter = Router();
 const RESERVED_ROOT_SLUGS = new Set(["categories"]);
@@ -38,29 +36,6 @@ function normalizedChildSlug(parentSlug: string, slug: string) {
   return slug.startsWith(prefix) ? slug.slice(prefix.length) : slug;
 }
 
-function categoryPath(category: CategoryRow, categories: CategoryRow[]) {
-  if (!category.active) return null;
-  if (category.parentId === null) return `/products/${category.slug}`;
-  const parent = categories.find((item) => item.id === category.parentId);
-  if (!parent?.active) return null;
-  return `/products/${parent.slug}`;
-}
-
-function nestedChildPath(category: CategoryRow, categories: CategoryRow[]) {
-  if (category.parentId === null) return null;
-  const parent = categories.find((item) => item.id === category.parentId);
-  if (!parent) return null;
-  return `/products/${parent.slug}/${category.slug}`;
-}
-
-function categoryRedirectFallback(category: CategoryRow, categories: CategoryRow[]) {
-  if (category.parentId !== null) {
-    const parent = categories.find((item) => item.id === category.parentId);
-    if (parent?.active) return `/products/${parent.slug}`;
-  }
-  return CATALOGUE_INDEX_PATH;
-}
-
 function reservedRootSlugError(parentId: number | null, slug: string) {
   if (parentId === null && RESERVED_ROOT_SLUGS.has(slug)) {
     return `"${slug}" is reserved for the catalogue index.`;
@@ -74,31 +49,6 @@ function withPlainSearchMetadata<T extends { seoTitle?: string; seoDescription?:
     ...(typeof data.seoTitle === "string" ? { seoTitle: forSearchMetadata(data.seoTitle) } : {}),
     ...(typeof data.seoDescription === "string" ? { seoDescription: forSearchMetadata(data.seoDescription) } : {}),
   };
-}
-
-async function preserveCategoryRedirects(
-  tx: any,
-  before: CategoryRow[],
-  after: CategoryRow[],
-) {
-  for (const oldCategory of before) {
-    const newCategory = after.find((category) => category.id === oldCategory.id);
-    const toPath = newCategory
-      ? categoryPath(newCategory, after) ?? categoryRedirectFallback(newCategory, after)
-      : categoryRedirectFallback(oldCategory, after);
-    if (oldCategory.parentId === null) {
-      const fromPath = categoryPath(oldCategory, before);
-      if (fromPath && toPath && fromPath !== toPath) {
-        await tx.insert(redirectsTable).values({ fromPath, toPath })
-          .onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath, updatedAt: new Date() } });
-      }
-    }
-    const nestedFrom = nestedChildPath(oldCategory, before);
-    if (nestedFrom && toPath && nestedFrom !== toPath) {
-      await tx.insert(redirectsTable).values({ fromPath: nestedFrom, toPath })
-        .onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath, updatedAt: new Date() } });
-    }
-  }
 }
 
 async function orderedCategories() {
@@ -229,7 +179,6 @@ router.patch("/admin/categories/:id", async (req, res): Promise<void> => {
         .where(eq(catalogueCategoriesTable.id, id)).returning();
       if (!updated) throw new Error("CATEGORY_NOT_FOUND");
       const after = before.map((category) => category.id === id ? updated : category);
-      await preserveCategoryRedirects(tx, before, after);
       // A root name is the legacy-compatible product category label for itself
       // and for all of its children. Keep live records and pending snapshots aligned.
       if (existing.parentId === null && parsed.data.name && parsed.data.name !== existing.name) {
@@ -258,18 +207,8 @@ router.patch("/admin/categories/:id", async (req, res): Promise<void> => {
           ? updated
           : after.find((category) => category.id === updated.parentId);
         if (!destinationRoot) throw new Error("PARENT_CATEGORY_NOT_FOUND");
-        const assignedProducts = await tx.select().from(productsTable)
-          .where(eq(productsTable.subcategoryId, id));
         await tx.update(productsTable).set({ category: destinationRoot.name, updatedAt: new Date() })
           .where(eq(productsTable.subcategoryId, id));
-        for (const product of assignedProducts) {
-          const fromPath = productPublicPath(product.slug, product.category, before);
-          const toPath = productPublicPath(product.slug, destinationRoot.name, after);
-          if (fromPath !== toPath) {
-            await tx.insert(redirectsTable).values({ fromPath, toPath })
-              .onConflictDoUpdate({ target: redirectsTable.fromPath, set: { toPath, updatedAt: new Date() } });
-          }
-        }
         const drafts = await tx.select().from(productDraftsTable);
         await Promise.all(drafts
           .filter((draft) => draft.snapshot.subcategoryId === id)
@@ -336,9 +275,7 @@ router.delete("/admin/categories/:id", async (req, res): Promise<void> => {
     const drafts = await tx.select({ snapshot: productDraftsTable.snapshot }).from(productDraftsTable);
     const draftUsesCategory = drafts.some((draft) => draft.snapshot.subcategoryId === id);
     if (child || product || draftUsesCategory) return "in-use" as const;
-    const before = await tx.select().from(catalogueCategoriesTable);
     await tx.delete(catalogueCategoriesTable).where(eq(catalogueCategoriesTable.id, id));
-    await preserveCategoryRedirects(tx, before, before.filter((item) => item.id !== id));
     return "deleted" as const;
   });
   if (result === "not-found") {
