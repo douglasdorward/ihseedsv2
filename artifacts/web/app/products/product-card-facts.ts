@@ -7,6 +7,11 @@ export const listingImageOptions = [
   "https://images.unsplash.com/photo-1499529112087-3cb3b73cec95?auto=format&fit=crop&w=900&q=80",
 ];
 
+export function productCardImage(product: CatalogueProduct, fallbackIndex = 0) {
+  const attached = product.details.photos?.find((photo) => photo.src?.trim())?.src?.trim();
+  return attached || listingImageOptions[fallbackIndex % listingImageOptions.length];
+}
+
 export function getFactChips(product: CatalogueProduct, subcategoryName?: string) {
   const category = product.category;
   const details = product.details;

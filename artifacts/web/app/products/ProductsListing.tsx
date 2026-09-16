@@ -20,7 +20,7 @@ import {
   type FilterOptionDimension,
   type ProductListingFilters,
 } from "../../lib/product-filters";
-import { getFactChips, listingImageOptions } from "./product-card-facts";
+import { getFactChips, productCardImage } from "./product-card-facts";
 
 function toggleValue(values: string[], value: string) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
@@ -267,7 +267,7 @@ export function ProductsListing({
               return (
                 <Link key={product.id} href={productPublicPath(product, categories)} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 16 }}>
                   <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", minHeight: 220, background: "#C5CCC5", position: "relative" }}>
-                    <div role="img" aria-label={product.name} style={{ display: "block", width: "100%", height: 220, backgroundImage: `url(${listingImageOptions[index % listingImageOptions.length]})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                    <div role="img" aria-label={product.name} style={{ display: "block", width: "100%", height: 220, backgroundImage: `url(${productCardImage(product, index)})`, backgroundSize: "cover", backgroundPosition: "center" }} />
                     <div style={{ position: "absolute", top: 12, left: 12 }}>
                       <StatusPill status={product.status} />
                     </div>

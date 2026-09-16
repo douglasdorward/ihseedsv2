@@ -5,6 +5,7 @@ import { ProductNewStamp } from "../components/NewStamp";
 import { StatusPill } from "../components/StatusPill";
 import { getCategories, getProducts, saleLinePriceDisplay } from "../lib/catalogue";
 import { CATALOGUE_INDEX_PATH, productPublicPath } from "../lib/catalogue-paths";
+import { productCardImage } from "./products/product-card-facts";
 
 export const metadata: Metadata = {
   title: "IH Seeds | Western Australia's Pasture Seed Specialists",
@@ -57,7 +58,7 @@ export default async function Home() {
             <div className="product-grid">
               {visibleProducts.map((product, index) => (
                 <Link href={productPublicPath(product, categories)} className="product-card" style={{ textDecoration: "none", color: "inherit" }} key={product.id} data-testid={`card-product-${product.id}`}>
-                  <div className="product-image" style={{ backgroundImage: `linear-gradient(180deg, transparent, rgba(29,40,28,.72)), url(${imageOptions[index % imageOptions.length]})` }}>
+                  <div className="product-image" style={{ backgroundImage: `linear-gradient(180deg, transparent, rgba(29,40,28,.72)), url(${productCardImage(product, index)})` }}>
                     <StatusPill status={product.status} />
                     <ProductNewStamp listingState={product.listingState} />
                   </div>
