@@ -48,6 +48,7 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+artifacts/web/.next-lifecycle/
 
 # Admin product photo uploads
 artifacts/api-server/uploads/products/*
