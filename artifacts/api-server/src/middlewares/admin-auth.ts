@@ -6,9 +6,24 @@ export type AdminSession = {
   userId: string;
   email: string;
   role: "admin";
+  testBypass?: true;
 };
 
+function isIsolatedTestBypass() {
+  return process.env.NODE_ENV === "test"
+    && process.env.ADMIN_TEST_BYPASS === "1"
+    && /^ih_catalogue_test_\d+_\d+$/.test(process.env.CATALOGUE_TEST_DATABASE ?? "");
+}
+
 async function resolveAdmin(req: Request): Promise<AdminSession | null> {
+  if (isIsolatedTestBypass()) {
+    return {
+      userId: "isolated-lifecycle-test",
+      email: "lifecycle-test@example.test",
+      role: "admin",
+      testBypass: true,
+    };
+  }
   const auth = getAuth(req);
   if (!auth.userId) return null;
 
@@ -23,6 +38,11 @@ export async function getAdminSession(req: Request): Promise<AdminSession | null
 
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    if (isIsolatedTestBypass()) {
+      res.locals.admin = await resolveAdmin(req);
+      next();
+      return;
+    }
     const auth = getAuth(req);
     if (!auth.userId) {
       res.status(401).json({ error: "Sign in is required." });

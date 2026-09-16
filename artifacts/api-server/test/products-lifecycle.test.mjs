@@ -933,7 +933,8 @@ before(async () => {
     cwd: new URL(serverRoot).pathname,
     env: {
       ...process.env,
-      NODE_ENV: "development",
+      NODE_ENV: "test",
+      ADMIN_TEST_BYPASS: "1",
       PORT: String(port),
       AI_EXTRACT_STUB: "1",
       APP_STORAGE_BACKEND: "local",

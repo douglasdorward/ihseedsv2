@@ -83,6 +83,9 @@ const adminDistDir = fileURLToPath(
 );
 const sendAdminIndex = (_req: express.Request, res: express.Response) =>
   res.sendFile("index.html", { root: adminDistDir });
+app.use("/admin/sign-up", (_req, res) => {
+  res.redirect(302, "/admin/sign-in");
+});
 app.get("/admin", sendAdminIndex);
 app.use(
   "/admin",
