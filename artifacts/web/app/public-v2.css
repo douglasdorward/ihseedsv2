@@ -1061,97 +1061,145 @@
 }
 
 @media (max-width: 600px) {
+  .products-intro {
+    gap: 18px !important;
+    padding: 36px 20px 32px !important;
+  }
+  .products-intro h1 {
+    font-size: 38px !important;
+    line-height: 1.16 !important;
+    font-weight: 400 !important;
+  }
+  .products-intro p {
+    max-width: none !important;
+    font-size: 17px !important;
+    line-height: 1.6 !important;
+    color: var(--green) !important;
+  }
   .products-page-content {
     padding: 32px 20px 56px !important;
   }
   .product-listing-layout {
-    gap: 18px;
+    gap: 24px;
+  }
+  .product-filter-toggle {
+    min-height: 48px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 700;
   }
   .product-listing-count {
-    margin-bottom: 18px;
-    font-size: 20px;
+    margin-bottom: 22px;
+    font-size: 24px;
+    line-height: 1.25;
   }
   .category-card-grid {
-    gap: 20px !important;
+    gap: 32px !important;
   }
   .catalogue-product-card {
-    grid-template-areas:
-      "media details"
-      "facts facts";
-    grid-template-columns: 124px minmax(0, 1fr);
-    display: grid;
-    gap: 12px 14px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--line);
-  }
-  .catalogue-product-card:last-child {
-    padding-bottom: 0;
-    border-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
   }
   .catalogue-product-media {
-    grid-area: media;
-    min-height: 0;
-    height: 142px;
-    border-radius: 12px;
+    width: 100%;
+    min-height: 220px;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    border-radius: 16px;
   }
   .catalogue-product-image {
     height: 100%;
   }
   .catalogue-product-card.is-photo-missing .product-fallback-logo {
-    width: 64%;
-    opacity: 0.42;
+    width: min(58%, 180px);
+    opacity: 0.5;
   }
   .catalogue-product-media .status-pill {
-    padding: 5px 8px;
-    font-size: 10px;
+    padding: 7px 11px;
+    font-size: 12px;
   }
   .catalogue-product-media .product-new-stamp {
-    top: 7px;
-    right: 7px;
-    width: 48px;
-    height: 48px;
+    top: 10px;
+    right: 10px;
+    width: 64px;
+    height: 64px;
   }
   .catalogue-product-arrow {
-    right: 8px;
-    bottom: 8px;
-    width: 32px;
-    height: 32px;
+    right: 12px;
+    bottom: 12px;
+    width: 44px;
+    height: 44px;
   }
   .catalogue-product-details {
-    grid-area: details;
-    align-self: center;
-    gap: 5px;
+    gap: 7px;
     min-width: 0;
   }
   .catalogue-product-name {
-    font-size: 18px;
+    font-size: 22px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
   }
   .catalogue-product-category {
-    font-size: 13px;
+    color: #55584f;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
   }
   .product-card-tagline {
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-line-clamp: 3;
   }
   .catalogue-product-facts {
-    grid-area: facts;
-    gap: 6px;
+    gap: 8px;
   }
   .catalogue-product-facts .fact-chip {
-    padding: 3px 9px;
-    font-size: 12px;
+    min-height: 32px;
+    padding: 6px 11px;
+    font-size: 14px;
+    font-weight: 650;
+  }
+  .product-filter-drawer-panel {
+    width: min(380px, 94vw);
+    padding: 24px 20px;
+  }
+  .product-filter-drawer-panel > .button {
+    min-height: 48px;
+    font-size: 16px;
+  }
+  .product-filter-clear {
+    min-height: 44px;
+    padding: 8px;
+    font-size: 15px;
+  }
+  .product-filter-option {
+    min-height: 40px;
+    font-size: 16px;
+  }
+  .product-filter-option input {
+    width: 20px;
+    height: 20px;
+  }
+  .product-filter-option select {
+    min-height: 46px;
+    font-size: 16px;
   }
 }
 
 @media (max-width: 360px) {
-  .catalogue-product-card {
-    grid-template-columns: 108px minmax(0, 1fr);
-    gap: 10px 12px;
+  .products-intro h1 {
+    font-size: 34px !important;
+  }
+  .products-page-content {
+    padding-inline: 16px !important;
   }
   .catalogue-product-media {
-    height: 132px;
+    min-height: 200px;
+    aspect-ratio: 4 / 3;
   }
   .catalogue-product-name {
-    font-size: 17px;
+    font-size: 21px;
   }
 }
