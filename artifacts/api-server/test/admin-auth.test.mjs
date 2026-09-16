@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync, spawn } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { createServer as createHttpServer } from "node:http";
 import { createServer } from "node:net";
 import { rm } from "node:fs/promises";
@@ -7,7 +7,6 @@ import { join } from "node:path";
 import { after, before, test } from "node:test";
 import { build } from "esbuild";
 
-let child;
 let baseUrl;
 let roleModule;
 let accessModule;
@@ -46,17 +45,6 @@ async function freePort() {
   await new Promise((resolve) => server.close(resolve));
   assert.ok(port);
   return port;
-}
-
-async function waitForServer() {
-  for (let attempt = 0; attempt < 60; attempt += 1) {
-    try {
-      const response = await fetch(`${baseUrl}/api/healthz`);
-      if (response.ok) return;
-    } catch {}
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  throw new Error("Production-mode API did not start.");
 }
 
 before(async () => {
@@ -99,6 +87,9 @@ globalThis.require = __testCreateRequire(import.meta.url);`,
         buildContext.onResolve({ filter: /^@clerk\/express$/ }, () => ({
           path: new URL("./clerk-express-mock.ts", import.meta.url).pathname,
         }));
+        buildContext.onResolve({ filter: /^sharp$/ }, () => ({
+          path: new URL("./sharp-mock.ts", import.meta.url).pathname,
+        }));
       },
     }],
   });
@@ -110,18 +101,7 @@ globalThis.require = __testCreateRequire(import.meta.url);`,
     httpServer.once("error", reject);
     httpServer.listen(httpPort, "127.0.0.1", resolve);
   });
-  const port = await freePort();
-  baseUrl = `http://127.0.0.1:${port}`;
-  child = spawn(process.execPath, ["./dist/index.mjs"], {
-    cwd: new URL("..", import.meta.url),
-    env: {
-      ...process.env,
-      NODE_ENV: "production",
-      PORT: String(port),
-    },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  await waitForServer();
+  baseUrl = httpBaseUrl;
 });
 
 after(async () => {
@@ -129,12 +109,10 @@ after(async () => {
   await rm(accessBundle, { force: true });
   await rm(httpHarnessBundle, { force: true });
   httpHarness?.setTestClerkIdentity(null);
+  httpHarness?.resetTestClerkOperations();
   if (httpServer) await new Promise((resolve) => httpServer.close(resolve));
   if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
   else process.env.NODE_ENV = originalNodeEnv;
-  if (!child || child.exitCode !== null) return;
-  child.kill("SIGTERM");
-  await new Promise((resolve) => child.once("exit", resolve));
 });
 
 function httpRequest(method, path, body) {
@@ -197,7 +175,9 @@ test("admin bootstrap requires an explicitly allowed verified email", async () =
     assert.equal(bootstrapped.email, email);
 
     delete process.env.ADMIN_BOOTSTRAP_EMAILS;
-    const persisted = await roleModule.resolveAdminIdentity(id, null);
+    assert.equal(await roleModule.resolveAdminIdentity(id, null), null);
+    assert.equal(await roleModule.resolveAdminIdentity(id, "changed@example.test"), null);
+    const persisted = await roleModule.resolveAdminIdentity(id, email);
     assert.equal(persisted.role, "admin");
 
     await sql(`DELETE FROM ih_admin_users WHERE clerk_user_id = '${id}'`);
@@ -396,6 +376,7 @@ test("production HTTP administrator management rechecks Clerk primary email and 
   const allIds = [actorId, targetId, claimId];
   const previous = process.env.ADMIN_BOOTSTRAP_EMAILS;
   try {
+    httpHarness.resetTestClerkOperations();
     process.env.ADMIN_BOOTSTRAP_EMAILS = "";
     sql(`DELETE FROM ih_admin_access_audit WHERE actor_email IN ('${allEmails.join("','")}') OR target_email IN ('${allEmails.join("','")}')`);
     sql(`DELETE FROM ih_admin_pending_approvals WHERE email IN ('${allEmails.join("','")}')`);
@@ -417,9 +398,17 @@ test("production HTTP administrator management rechecks Clerk primary email and 
     const approval = await httpRequest("POST", "/api/admin/administrators/approvals", { email: pendingEmail });
     assert.equal(approval.status, 200);
     assert.deepEqual(await approval.json(), { success: true });
+    let clerkOperations = httpHarness.getTestClerkOperations();
+    assert.ok(clerkOperations.allowlistIdentifiers.some((entry) => entry.identifier === pendingEmail));
+    assert.ok(clerkOperations.invitations.some((invitation) =>
+      invitation.emailAddress === pendingEmail && invitation.status === "pending"));
     const cancellation = await httpRequest("DELETE", "/api/admin/administrators/approvals", { email: pendingEmail });
     assert.equal(cancellation.status, 200);
     assert.deepEqual(await cancellation.json(), { success: true });
+    clerkOperations = httpHarness.getTestClerkOperations();
+    assert.ok(!clerkOperations.allowlistIdentifiers.some((entry) => entry.identifier === pendingEmail));
+    assert.ok(clerkOperations.invitations.some((invitation) =>
+      invitation.emailAddress === pendingEmail && invitation.status === "revoked"));
     const revoke = await httpRequest("DELETE", "/api/admin/administrators/access", { clerkUserId: targetId });
     assert.equal(revoke.status, 200);
     assert.deepEqual(await revoke.json(), { success: true });

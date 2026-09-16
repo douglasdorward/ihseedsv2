@@ -3,6 +3,7 @@ import {
   ClerkLoaded,
   ClerkProvider,
   SignIn,
+  SignUp,
   useAuth,
   useClerk,
 } from "@clerk/react";
@@ -49,6 +50,7 @@ const appearance = {
     card: { boxShadow: "none" },
     headerTitle: { color: "#17351e" },
     headerSubtitle: { color: "#657368" },
+    header: { display: "none" },
     formButtonPrimary: { backgroundColor: "#315b37" },
     socialButtonsBlockButton: { display: "none" },
     dividerRow: { display: "none" },
@@ -62,12 +64,47 @@ function AuthScreen() {
     <main className="admin-auth-page">
       <div className="admin-auth-context">
         <img src={`${basePath}/ih-seeds-logo.png`} alt="IH Seeds" />
-        <p>Secure catalogue administration</p>
+        <h1>Authorized personnel only</h1>
+        <p>Sign in with an approved administrator email.</p>
       </div>
       <SignIn
         routing="path"
         path={`${basePath}/sign-in`}
         signUpUrl={`${basePath}/sign-in`}
+        forceRedirectUrl={basePath}
+      />
+    </main>
+  );
+}
+
+function InvitationScreen() {
+  const hasTicket = new URLSearchParams(window.location.search).has("__clerk_ticket");
+  if (!hasTicket) {
+    return (
+      <main className="admin-auth-page">
+        <section className="admin-access-card">
+          <img src={`${basePath}/ih-seeds-logo.png`} alt="IH Seeds" />
+          <p className="admin-auth-eyebrow">Private administration</p>
+          <h1>Invitation required</h1>
+          <p>Administrator accounts can only be created from an invitation sent by an existing administrator.</p>
+          <button type="button" onClick={() => navigate(`${basePath}/sign-in`)}>
+            Return to sign in
+          </button>
+        </section>
+      </main>
+    );
+  }
+  return (
+    <main className="admin-auth-page">
+      <div className="admin-auth-context">
+        <img src={`${basePath}/ih-seeds-logo.png`} alt="IH Seeds" />
+        <h1>Accept administrator invitation</h1>
+        <p>Create credentials for the invited email address.</p>
+      </div>
+      <SignUp
+        routing="path"
+        path={`${basePath}/invitation`}
+        signInUrl={`${basePath}/sign-in`}
         forceRedirectUrl={basePath}
       />
     </main>
@@ -141,6 +178,7 @@ function AdminGate() {
   }, [isLoaded, isSignedIn]);
 
   if (location.startsWith(`${basePath}/sign-in`)) return <AuthScreen />;
+  if (location.startsWith(`${basePath}/invitation`)) return <InvitationScreen />;
   if (!isLoaded || loading) {
     return <main className="admin-auth-page"><div className="admin-auth-loading">Checking administrator access…</div></main>;
   }
@@ -175,7 +213,7 @@ export default function App() {
       appearance={appearance}
       signInUrl={`${basePath}/sign-in`}
       localization={{
-        signIn: { start: { title: "IH Seeds administration", subtitle: "Sign in to manage the catalogue" } },
+        signIn: { start: { title: "Authorized personnel only", subtitle: "Sign in with an approved administrator email" } },
       }}
       routerPush={(to) => navigate(to)}
       routerReplace={(to) => navigate(to, { replace: true })}

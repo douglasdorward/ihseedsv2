@@ -78,6 +78,7 @@ export async function listAdministratorAccess(): Promise<AdministratorList> {
 export async function createAdministratorApproval(
   actor: AdminSession,
   email: string,
+  provision?: () => Promise<void>,
 ): Promise<AccessWriteResult> {
   return db.transaction(async (tx) => {
     await lockAdminAccess(tx);
@@ -92,6 +93,7 @@ export async function createAdministratorApproval(
     // that may clear a previous revocation tombstone.
     await tx.delete(adminRevocationsTable).where(eq(adminRevocationsTable.email, email));
     await tx.insert(adminPendingApprovalsTable).values({ email });
+    await provision?.();
     await audit(tx, actor, email, "approval_created");
     return { ok: true };
   });
@@ -100,13 +102,16 @@ export async function createAdministratorApproval(
 export async function cancelAdministratorApproval(
   actor: AdminSession,
   email: string,
+  deprovision?: () => Promise<void>,
 ): Promise<AccessWriteResult> {
   return db.transaction(async (tx) => {
     await lockAdminAccess(tx);
     if (!await activeActor(tx, actor)) return { ok: false, reason: "actor-revoked" };
-    const [deleted] = await tx.delete(adminPendingApprovalsTable)
-      .where(eq(adminPendingApprovalsTable.email, email)).returning({ email: adminPendingApprovalsTable.email });
-    if (!deleted) return { ok: false, reason: "not-pending" };
+    const [pending] = await tx.select({ email: adminPendingApprovalsTable.email })
+      .from(adminPendingApprovalsTable).where(eq(adminPendingApprovalsTable.email, email)).for("update");
+    if (!pending) return { ok: false, reason: "not-pending" };
+    await deprovision?.();
+    await tx.delete(adminPendingApprovalsTable).where(eq(adminPendingApprovalsTable.email, email));
     // Cancelling an approval is an explicit denial too. This keeps an old
     // bootstrap allowlist from authorizing the cancelled address.
     await tx.insert(adminRevocationsTable).values({ email, clerkUserId: null, createdAt: new Date() })

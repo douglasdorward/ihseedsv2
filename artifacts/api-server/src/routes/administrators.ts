@@ -6,6 +6,12 @@ import {
   revokeAdministratorAccess,
 } from "../lib/admin-access";
 import {
+  ensureAllowedAdminEmail,
+  removeAllowedAdminEmail,
+  revokeAdministratorInvitations,
+  sendAdministratorInvitation,
+} from "../lib/admin-invitations";
+import {
   CreateAdministratorApprovalBody,
   CreateAdministratorApprovalResponse,
   DeleteAdministratorApprovalBody,
@@ -53,12 +59,28 @@ router.post("/admin/administrators/approvals", async (req, res): Promise<void> =
     res.status(400).json({ error: "Provide a valid email address." });
     return;
   }
-  const result = await createAdministratorApproval(res.locals.admin, email);
-  if (!result.ok) {
-    writeError(res, result.reason);
-    return;
+  let allowlistEntry: { id: string; created: boolean } | null = null;
+  try {
+    const result = await createAdministratorApproval(res.locals.admin, email, async () => {
+      allowlistEntry = await ensureAllowedAdminEmail(email);
+      try {
+        await sendAdministratorInvitation(email);
+      } catch (error) {
+        if (allowlistEntry?.created) {
+          await removeAllowedAdminEmail(email).catch(() => undefined);
+        }
+        throw error;
+      }
+    });
+    if (!result.ok) {
+      writeError(res, result.reason);
+      return;
+    }
+    res.json(CreateAdministratorApprovalResponse.parse({ success: true }));
+  } catch (error) {
+    req.log.error({ error, email }, "Unable to send administrator invitation");
+    res.status(502).json({ error: "The administrator invitation could not be sent. No access was granted." });
   }
-  res.json(CreateAdministratorApprovalResponse.parse({ success: true }));
 });
 
 router.delete("/admin/administrators/approvals", async (req, res): Promise<void> => {
@@ -68,9 +90,18 @@ router.delete("/admin/administrators/approvals", async (req, res): Promise<void>
     res.status(400).json({ error: "Provide a valid email address." });
     return;
   }
-  const result = await cancelAdministratorApproval(res.locals.admin, email);
-  if (!result.ok) {
-    writeError(res, result.reason);
+  try {
+    const result = await cancelAdministratorApproval(res.locals.admin, email, async () => {
+      await revokeAdministratorInvitations(email);
+      await removeAllowedAdminEmail(email);
+    });
+    if (!result.ok) {
+      writeError(res, result.reason);
+      return;
+    }
+  } catch (error) {
+    req.log.error({ error, email }, "Unable to revoke administrator invitation");
+    res.status(502).json({ error: "The invitation could not be cancelled. Try again." });
     return;
   }
   res.json(DeleteAdministratorApprovalResponse.parse({ success: true }));

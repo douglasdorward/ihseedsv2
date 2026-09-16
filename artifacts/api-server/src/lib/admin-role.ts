@@ -40,6 +40,7 @@ export async function resolveAdminIdentity(
   const [existing] = await db.select().from(adminUsersTable)
     .where(eq(adminUsersTable.clerkUserId, userId));
   if (existing?.role === "admin") {
+    if (!verifiedEmail || normalizeAdminEmail(verifiedEmail) !== existing.email) return null;
     return {
       userId: existing.clerkUserId,
       email: existing.email,
@@ -56,6 +57,7 @@ export async function resolveAdminIdentity(
     const [current] = await tx.select().from(adminUsersTable)
       .where(eq(adminUsersTable.clerkUserId, userId)).for("update");
     if (current?.role === "admin") {
+      if (!verifiedEmail || normalizeAdminEmail(verifiedEmail) !== current.email) return null;
       return {
         userId: current.clerkUserId,
         email: current.email,

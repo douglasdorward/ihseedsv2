@@ -14,3 +14,4 @@
 - [Migration name collisions](migration-name-collisions.md) — when an applied migration name created a different schema, repair it with a new forward migration rather than editing history.
 - [Catalogue workbook replacement](catalogue-workbook-replacement.md) — imports replace the full product catalogue; require a current export and secure backup before commit.
 - [Empty catalogue is valid](empty-catalogue.md) — an intentional wipe must remain empty until an administrator imports or creates products.
+- [Invitation-only admin access](invitation-only-admin-access.md) — Clerk registration restrictions and the app role ledger must fail closed and remain synchronized.

@@ -75,6 +75,7 @@ const formatAction = (action: string) => {
   const map: Record<string, string> = {
     bootstrap_claimed: "Claimed initial setup",
     approval_created: "Approved email",
+    approval_claimed: "Accepted invitation",
     approval_cancelled: "Cancelled approval",
     access_granted: "Granted access",
     access_revoked: "Revoked access"
@@ -185,10 +186,10 @@ export default function AdminAdministrators() {
         <section>
           <div className="admin-section-header">
             <h2>Add an administrator</h2>
-            <p>Approve a team member's email to manage the catalogue.</p>
+            <p>Invite a team member to manage the catalogue.</p>
           </div>
           <div className="admin-instruction-text">
-            <strong>Note:</strong> Approving an email creates no Clerk account and sends no email. The recipient must manually sign up or sign in to the published site using a verified primary email that exactly matches this approval.
+            <strong>Private access:</strong> The recipient receives a one-time invitation. Administrator accounts cannot be created from the public login page.
           </div>
           
           <form className="admin-add-approval-card admin-add-approval-form" onSubmit={handleAdd}>
@@ -204,7 +205,7 @@ export default function AdminAdministrators() {
               />
             </label>
             <button className="admin-button primary" type="submit" disabled={addMut.isPending || !newEmail.trim()}>
-              {addMut.isPending ? "Approving..." : "Approve access"}
+              {addMut.isPending ? "Sending invitation..." : "Send invitation"}
             </button>
           </form>
           {errorMsg && <div className="admin-error-text" style={{ color: "var(--text-danger)", marginTop: "-16px", marginBottom: "32px", fontSize: "0.875rem" }}>{errorMsg}</div>}
@@ -213,15 +214,15 @@ export default function AdminAdministrators() {
         {data.pendingApprovals.length > 0 && (
           <section>
             <div className="admin-section-header">
-              <h2>Pending approvals</h2>
-              <p>These emails are approved but haven't signed in yet.</p>
+              <h2>Pending invitations</h2>
+              <p>These invited administrators have not accepted yet.</p>
             </div>
             <div className="admin-list-card">
               <table className="admin-list-table">
                 <thead>
                   <tr>
                     <th>Email</th>
-                    <th>Approved on</th>
+                    <th>Invited on</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -235,7 +236,7 @@ export default function AdminAdministrators() {
                           className="admin-action-button" 
                           onClick={() => setConfirmCancel(p.email)}
                         >
-                          Cancel approval
+                          Cancel invitation
                         </button>
                       </td>
                     </tr>
@@ -322,9 +323,9 @@ export default function AdminAdministrators() {
 
       {confirmCancel && (
         <ConfirmDialog
-          title="Cancel approval?"
-          body={`Are you sure you want to cancel the pending approval for ${confirmCancel}? They will not be able to sign in as an administrator.`}
-          confirmLabel="Cancel approval"
+          title="Cancel invitation?"
+          body={`Are you sure you want to cancel the invitation for ${confirmCancel}? Its invitation link will stop working.`}
+          confirmLabel="Cancel invitation"
           busyLabel="Cancelling..."
           busy={cancelMut.isPending}
           onCancel={() => setConfirmCancel(null)}
