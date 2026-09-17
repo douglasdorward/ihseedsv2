@@ -134,6 +134,16 @@ function AdminGate() {
   const { signOut } = useClerk();
   const [session, setSession] = useState<AdminSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const isAuthRoute =
+    location.startsWith(`${basePath}/sign-in`) ||
+    location.startsWith(`${basePath}/invitation`);
+  const shouldRedirectToSignIn =
+    !isAuthRoute &&
+    isLoaded &&
+    !loading &&
+    !session?.authorized &&
+    !session?.signedIn &&
+    !isSignedIn;
 
   useEffect(() => {
     document.title = "Admin — IH Seeds";
@@ -177,15 +187,23 @@ function AdminGate() {
     };
   }, [isLoaded, isSignedIn]);
 
+  useEffect(() => {
+    if (shouldRedirectToSignIn) {
+      navigate(`${basePath}/sign-in`, { replace: true });
+    }
+  }, [shouldRedirectToSignIn]);
+
   if (location.startsWith(`${basePath}/sign-in`)) return <AuthScreen />;
   if (location.startsWith(`${basePath}/invitation`)) return <InvitationScreen />;
   if (!isLoaded || loading) {
     return <main className="admin-auth-page"><div className="admin-auth-loading">Checking administrator access…</div></main>;
   }
+  if (shouldRedirectToSignIn) {
+    return <main className="admin-auth-page"><div className="admin-auth-loading">Opening administrator sign in…</div></main>;
+  }
   if (!session?.authorized) {
     if (session?.signedIn || isSignedIn) return <AccessDenied />;
-    navigate(`${basePath}/sign-in`, { replace: true });
-    return null;
+    return <AuthScreen />;
   }
 
   return (
