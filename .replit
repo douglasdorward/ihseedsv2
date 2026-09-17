@@ -53,3 +53,6 @@ ADMIN_BOOTSTRAP_EMAILS = "douglas@dorwards.net"
 
 [userenv.development]
 ADMIN_BOOTSTRAP_EMAILS = "douglas@dorwards.net"
+
+[userenv.shared]
+ADMIN_SUPERADMIN_EMAIL = "douglas@dorwards.net"
