@@ -10,9 +10,14 @@ type MockIdentity = {
   userId: string;
   primaryEmailAddressId: string | null;
   emailAddresses: MockEmailAddress[];
+  passwordEnabled?: boolean;
+  updatedAt?: number;
+  raw?: { password_last_updated_at?: number | null } | null;
+  passwordForVerification?: string;
 };
 
 let currentIdentity: MockIdentity | null = null;
+let currentSession: { id: string; userId: string; status: string; createdAt: number } | null = null;
 let nextId = 1;
 const invitations: { id: string; emailAddress: string; status: "pending" | "revoked" }[] = [];
 const allowlistIdentifiers: { id: string; identifier: string }[] = [];
@@ -33,6 +38,10 @@ export function setTestClerkIdentity(identity: MockIdentity | null) {
   currentIdentity = identity;
 }
 
+export function setTestClerkSession(session: typeof currentSession) {
+  currentSession = session;
+}
+
 export function getTestClerkOperations() {
   return {
     invitations: invitations.map((invitation) => ({ ...invitation })),
@@ -50,10 +59,11 @@ export function resetTestClerkOperations() {
   userUpdates.splice(0);
   allowlistEnabled = false;
   nextId = 1;
+  currentSession = null;
 }
 
 export function getAuth() {
-  return { userId: currentIdentity?.userId ?? null };
+  return { userId: currentIdentity?.userId ?? null, sessionId: currentSession?.id ?? null };
 }
 
 export const clerkClient = {
@@ -94,7 +104,13 @@ export const clerkClient = {
       return user;
     },
     async verifyPassword({ userId, password }: { userId: string; password: string }) {
-      if (currentIdentity?.userId !== userId || !password) throw new Error("Password verification failed.");
+      if (
+        currentIdentity?.userId !== userId
+        || !password
+        || (currentIdentity.passwordForVerification && currentIdentity.passwordForVerification !== password)
+      ) {
+        throw new Error("Password verification failed.");
+      }
       return { verified: true as const };
     },
     async deleteUser(userId: string) {
@@ -112,6 +128,12 @@ export const clerkClient = {
       if (!user) throw new Error("Mock Clerk user was not found.");
       user.banned = false;
       return user;
+    },
+  },
+  sessions: {
+    async getSession(sessionId: string) {
+      if (!currentSession || currentSession.id !== sessionId) throw new Error("Mock Clerk session was not configured.");
+      return currentSession;
     },
   },
   invitations: {

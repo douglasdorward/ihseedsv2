@@ -25,3 +25,24 @@ type ModernCreateParams = Parameters<
 const modernPasswordSignIn: ModernCreateParams = passwordSignIn;
 
 void modernPasswordSignIn;
+
+const passwordRecoveryStart: SignInCreateParams = {
+  identifier,
+};
+const passwordRecoveryPrepare: Parameters<LoadedSignIn["signIn"]["prepareFirstFactor"]>[0] = {
+  strategy: "reset_password_email_code",
+  emailAddressId: "email_address_id",
+};
+const passwordRecoveryAttempt: Parameters<LoadedSignIn["signIn"]["attemptFirstFactor"]>[0] = {
+  strategy: "reset_password_email_code",
+  code: "000000",
+};
+const passwordRecoverySubmit: Parameters<LoadedSignIn["signIn"]["resetPassword"]>[0] = {
+  password,
+  signOutOfOtherSessions: true,
+};
+
+void passwordRecoveryStart;
+void passwordRecoveryPrepare;
+void passwordRecoveryAttempt;
+void passwordRecoverySubmit;

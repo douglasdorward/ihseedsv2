@@ -11,4 +11,5 @@ export {
   getTestClerkOperations,
   resetTestClerkOperations,
   setTestClerkIdentity,
+  setTestClerkSession,
 } from "./clerk-express-mock";

@@ -67,6 +67,14 @@ export interface AdministratorPasswordInput {
   newPassword: string;
 }
 
+export interface AdministratorRecoveryPasswordInput {
+  /**
+     * @minLength 15
+     * @maxLength 128
+     */
+  newPassword: string;
+}
+
 export interface TemporaryPasswordResponse {
   success: true;
   /** @minLength 8 */

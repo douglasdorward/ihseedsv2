@@ -9,6 +9,7 @@ import { useSignIn } from "@clerk/react/legacy";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadesOfPurple } from "@clerk/themes";
 import Admin from "./pages/Admin";
+import { completePasswordRecovery } from "./password-recovery";
 import { navigate, useLocation } from "./router";
 
 const clerkPubKey = publishableKeyFromHost(
@@ -62,12 +63,46 @@ const appearance = {
 
 function AuthScreen() {
   const { isLoaded, signIn, setActive } = useSignIn();
+  const [authMode, setAuthMode] = useState<"login" | "recovery-email" | "recovery-code" | "recovery-password">("login");
   const [email, setEmail] = useState("");
+  const [recoveryEmailAddressId, setRecoveryEmailAddressId] = useState("");
   const [password, setPassword] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [recoveryProviderCompleted, setRecoveryProviderCompleted] = useState(false);
   const [clientTrustRequired, setClientTrustRequired] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (!resendCooldown) return;
+    const timer = window.setInterval(() => {
+      setResendCooldown((remaining) => Math.max(0, remaining - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resendCooldown]);
+
+  const showError = (caught: any, fallback: string) => {
+    setError(
+      caught?.errors?.[0]?.longMessage ||
+      caught?.errors?.[0]?.message ||
+      caught?.message ||
+      fallback,
+    );
+  };
+
+  const returnToLogin = () => {
+    setAuthMode("login");
+    setVerificationCode("");
+    setRecoveryEmailAddressId("");
+    setNewPassword("");
+    setPasswordConfirmation("");
+    setRecoveryProviderCompleted(false);
+    setError("");
+    setResendCooldown(0);
+  };
 
   const activateCompletedSignIn = async (result: any) => {
     if (!setActive) throw new Error("Authentication is still loading.");
@@ -103,12 +138,112 @@ function AuthScreen() {
       }
       await activateCompletedSignIn(result);
     } catch (caught: any) {
-      setError(
-        caught?.errors?.[0]?.longMessage ||
-        caught?.errors?.[0]?.message ||
-        caught?.message ||
-        "Email or password is incorrect.",
-      );
+      showError(caught, "Email or password is incorrect.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const requestPasswordReset = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!isLoaded || !email.trim()) return;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await signIn.create({ identifier: email.trim() });
+      const factor = result.supportedFirstFactors?.find(
+        (candidate: any) => candidate.strategy === "reset_password_email_code",
+      ) as { emailAddressId?: string } | undefined;
+      if (!factor?.emailAddressId) throw new Error("This account does not have a recoverable email address.");
+      setRecoveryEmailAddressId(factor.emailAddressId);
+      await signIn.prepareFirstFactor({
+        strategy: "reset_password_email_code",
+        emailAddressId: factor.emailAddressId,
+      });
+      setVerificationCode("");
+      setRecoveryProviderCompleted(false);
+      setResendCooldown(30);
+      setAuthMode("recovery-code");
+    } catch (caught: any) {
+      showError(caught, "We could not start password recovery. Check the email address and try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resendPasswordResetCode = async () => {
+    if (!isLoaded || busy || resendCooldown > 0) return;
+    setBusy(true);
+    setError("");
+    try {
+      if (!recoveryEmailAddressId) throw new Error("Start password recovery again.");
+      await signIn.prepareFirstFactor({
+        strategy: "reset_password_email_code",
+        emailAddressId: recoveryEmailAddressId,
+      });
+      setResendCooldown(30);
+    } catch (caught: any) {
+      showError(caught, "We could not resend the code. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const verifyPasswordResetCode = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!isLoaded || !verificationCode.trim()) return;
+    setBusy(true);
+    setError("");
+    try {
+      await signIn.attemptFirstFactor({
+        strategy: "reset_password_email_code",
+        code: verificationCode.trim(),
+      });
+      setRecoveryProviderCompleted(false);
+      setAuthMode("recovery-password");
+    } catch (caught: any) {
+      showError(caught, "That code is incorrect or has expired. Request a new code and try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitNewPassword = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!isLoaded || newPassword !== passwordConfirmation) {
+      setError("The new passwords do not match.");
+      return;
+    }
+    if (newPassword.length < 15 || newPassword.length > 128) {
+      setError("Choose a new password between 15 and 128 characters.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      if (!setActive) throw new Error("Authentication is still loading.");
+      await completePasswordRecovery({
+        password: newPassword,
+        providerCompleted: recoveryProviderCompleted,
+        resetPassword: (params) => signIn.resetPassword(params),
+        setActive: (params) => setActive(params),
+        onProviderCompleted: () => setRecoveryProviderCompleted(true),
+        reconcile: async () => {
+          const response = await fetch("/api/auth/recovery/complete", {
+            method: "POST",
+            credentials: "include",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ newPassword }),
+          });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(body.error || "Your password changed, but administrator access could not be confirmed.");
+          }
+        },
+      });
+      navigate(basePath, { replace: true });
+    } catch (caught: any) {
+      showError(caught, "We could not confirm administrator access. Retry to finish recovery, or sign in with your new password.");
     } finally {
       setBusy(false);
     }
@@ -141,8 +276,37 @@ function AuthScreen() {
     <main className="admin-auth-page">
       <section className="admin-simple-login">
         <img src={`${basePath}/ih-seeds-logo.png`} alt="IH Seeds" />
-        <h1>{clientTrustRequired ? "Verify your sign-in" : "Administrator login"}</h1>
-        <form onSubmit={clientTrustRequired ? verifyClientTrust : submit}>
+        <h1>
+          {clientTrustRequired
+            ? "Verify your sign-in"
+            : authMode === "recovery-email"
+              ? "Reset your password"
+              : authMode === "recovery-code"
+                ? "Check your email"
+                : authMode === "recovery-password"
+                  ? "Choose a new password"
+                  : "Administrator login"}
+        </h1>
+        {authMode === "recovery-email" && <p>Enter your administrator email and we’ll send a verification code.</p>}
+        {authMode === "recovery-code" && <p>Enter the code sent to <strong>{email}</strong>.</p>}
+        {authMode === "recovery-password" && (
+          <p>
+            {recoveryProviderCompleted
+              ? "Your password changed. Finish confirming administrator access."
+              : "Choose a new password of at least 15 characters."}
+          </p>
+        )}
+        <form onSubmit={
+          clientTrustRequired
+            ? verifyClientTrust
+            : authMode === "recovery-email"
+              ? requestPasswordReset
+              : authMode === "recovery-code"
+                ? verifyPasswordResetCode
+                : authMode === "recovery-password"
+                  ? submitNewPassword
+                  : submit
+        }>
           {clientTrustRequired ? (
             <label>
               Verification code
@@ -156,6 +320,16 @@ function AuthScreen() {
                 autoFocus
               />
             </label>
+          ) : authMode === "recovery-code" ? (
+            <label>
+              Verification code
+              <input type="text" inputMode="numeric" autoComplete="one-time-code" value={verificationCode} onChange={(event) => setVerificationCode(event.target.value)} required autoFocus />
+            </label>
+          ) : authMode === "recovery-password" ? (
+            <>
+              <label>New password<input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={15} maxLength={128} required autoFocus /></label>
+              <label>Confirm new password<input type="password" autoComplete="new-password" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} minLength={15} maxLength={128} required /></label>
+            </>
           ) : (
             <>
               <label>
@@ -169,7 +343,7 @@ function AuthScreen() {
                   autoFocus
                 />
               </label>
-              <label>
+              {authMode === "login" && <label>
                 Password
                 <input
                   type="password"
@@ -178,14 +352,37 @@ function AuthScreen() {
                   onChange={(event) => setPassword(event.target.value)}
                   required
                 />
-              </label>
+              </label>}
             </>
           )}
           {error && <p className="admin-auth-error" role="alert">{error}</p>}
           <button type="submit" disabled={!isLoaded || busy}>
-            {busy ? (clientTrustRequired ? "Verifying…" : "Logging in…") : clientTrustRequired ? "Verify sign-in" : "Log in"}
+            {busy
+              ? "Working…"
+              : clientTrustRequired
+                ? "Verify sign-in"
+                : authMode === "recovery-email"
+                  ? "Send recovery code"
+                  : authMode === "recovery-code"
+                    ? "Verify code"
+                    : authMode === "recovery-password"
+                      ? recoveryProviderCompleted ? "Finish recovery" : "Set new password"
+                      : "Log in"}
           </button>
         </form>
+        {authMode === "login" && !clientTrustRequired && (
+          <button className="admin-auth-link" type="button" onClick={() => { setAuthMode("recovery-email"); setError(""); }}>
+            Forgot password?
+          </button>
+        )}
+        {authMode === "recovery-code" && (
+          <button className="admin-auth-link" type="button" disabled={busy || resendCooldown > 0} onClick={resendPasswordResetCode}>
+            {resendCooldown ? `Resend code in ${resendCooldown}s` : "Resend code"}
+          </button>
+        )}
+        {authMode !== "login" && !clientTrustRequired && (
+          <button className="admin-auth-link" type="button" onClick={returnToLogin}>Back to login</button>
+        )}
       </section>
     </main>
   );

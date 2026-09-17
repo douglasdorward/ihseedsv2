@@ -227,6 +227,64 @@ export async function completeOwnPasswordChange(
   });
 }
 
+/**
+ * Complete a Clerk email-code password recovery without accepting a
+ * client-provided "recovery complete" flag. Clerk exposes the authoritative
+ * password_last_updated_at field in the raw User resource; we require that
+ * field and a fresh session created by the same provider operation. Holding
+ * the row lock keeps this from clearing a mandatory change while a Superadmin
+ * reset is active.
+ */
+export async function completePasswordRecovery(
+  actor: AdminSession,
+  sessionId: string,
+  newPassword: string,
+) {
+  await db.transaction(async (tx) => {
+    await lockAdminAccess(tx);
+    const [stored] = await tx.select().from(adminUsersTable)
+      .where(eq(adminUsersTable.clerkUserId, actor.userId)).for("update");
+    if (!stored || stored.disabledAt) throw new Error("Administrator access is unavailable.");
+    // Recovery completion is intentionally idempotent for an already
+    // reconciled administrator. It still cannot revive a disabled account
+    // because that check is above.
+    if (!stored.mustChangePassword) return;
+    if (stored.passwordOperationId) throw new Error("A temporary password reset is in progress.");
+
+    const providerUser = await clerkClient.users.getUser(actor.userId);
+    const providerSession = await clerkClient.sessions.getSession(sessionId);
+    const passwordUpdatedAt = providerUser.raw?.password_last_updated_at ?? null;
+    if (
+      providerSession.userId !== actor.userId
+      || providerSession.status !== "active"
+      || !providerUser.passwordEnabled
+      || passwordUpdatedAt === null
+      || passwordUpdatedAt <= stored.updatedAt.getTime()
+      || providerSession.createdAt + 5_000 < passwordUpdatedAt
+    ) {
+      throw new Error("Clerk password recovery evidence is stale.");
+    }
+    // This is a provider-side password check, not application credential
+    // storage. It binds the request body to the password that Clerk accepted
+    // during recovery, while the raw timestamp/session checks bind it to the
+    // current email-code recovery session.
+    await clerkClient.users.verifyPassword({
+      userId: actor.userId,
+      password: newPassword,
+    });
+    await tx.update(adminUsersTable).set({
+      mustChangePassword: false,
+      updatedAt: new Date(),
+    }).where(eq(adminUsersTable.clerkUserId, actor.userId));
+    await tx.insert(adminAccessAuditTable).values({
+      actorClerkUserId: actor.userId,
+      actorEmail: actor.email,
+      targetEmail: stored.email,
+      action: "password_recovered",
+    });
+  });
+}
+
 async function allAllowlistEntries() {
   const entries = [];
   let offset = 0;

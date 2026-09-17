@@ -25,6 +25,7 @@ import type {
   AdminSummary,
   AdministratorAccessList,
   AdministratorPasswordInput,
+  AdministratorRecoveryPasswordInput,
   AdministratorStatusInput,
   ApiError,
   AvailabilityRow,
@@ -610,6 +611,77 @@ export const useChangeAdministratorPassword = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getChangeAdministratorPasswordMutationOptions(options));
+    }
+
+export const getCompleteAdministratorPasswordRecoveryUrl = () => {
+
+
+
+
+  return `/api/auth/recovery/complete`
+}
+
+/**
+ * @summary Reconcile a completed Clerk email-code password recovery
+ */
+export const completeAdministratorPasswordRecovery = async (administratorRecoveryPasswordInput: AdministratorRecoveryPasswordInput, options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getCompleteAdministratorPasswordRecoveryUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(administratorRecoveryPasswordInput)
+  }
+);}
+
+
+
+
+
+export const getCompleteAdministratorPasswordRecoveryMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeAdministratorPasswordRecovery>>, TError,{data: BodyType<AdministratorRecoveryPasswordInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeAdministratorPasswordRecovery>>, TError,{data: BodyType<AdministratorRecoveryPasswordInput>}, TContext> => {
+
+const mutationKey = ['completeAdministratorPasswordRecovery'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeAdministratorPasswordRecovery>>, {data: BodyType<AdministratorRecoveryPasswordInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  completeAdministratorPasswordRecovery(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteAdministratorPasswordRecoveryMutationResult = NonNullable<Awaited<ReturnType<typeof completeAdministratorPasswordRecovery>>>
+    export type CompleteAdministratorPasswordRecoveryMutationBody = BodyType<AdministratorRecoveryPasswordInput>
+    export type CompleteAdministratorPasswordRecoveryMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Reconcile a completed Clerk email-code password recovery
+ */
+export const useCompleteAdministratorPasswordRecovery = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeAdministratorPasswordRecovery>>, TError,{data: BodyType<AdministratorRecoveryPasswordInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeAdministratorPasswordRecovery>>,
+        TError,
+        {data: BodyType<AdministratorRecoveryPasswordInput>},
+        TContext
+      > => {
+      return useMutation(getCompleteAdministratorPasswordRecoveryMutationOptions(options));
     }
 
 export const getListProductsUrl = () => {

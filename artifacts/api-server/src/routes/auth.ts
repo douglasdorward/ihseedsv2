@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
+import { getAuth } from "@clerk/express";
 import { getAdminSession } from "../middlewares/admin-auth";
-import { completeOwnPasswordChange } from "../lib/admin-accounts";
+import { completeOwnPasswordChange, completePasswordRecovery } from "../lib/admin-accounts";
 
 const router: IRouter = Router();
 
@@ -42,6 +43,27 @@ router.post("/auth/password", async (req, res): Promise<void> => {
   } catch (error) {
     req.log.warn({ error, userId: admin.userId }, "Administrator password change failed");
     res.status(400).json({ error: "Choose a stronger password and try again." });
+  }
+});
+
+router.post("/auth/recovery/complete", async (req, res): Promise<void> => {
+  const admin = await getAdminSession(req);
+  const sessionId = getAuth(req).sessionId;
+  if (!admin || !sessionId) {
+    res.status(401).json({ error: "Sign in is required." });
+    return;
+  }
+  const newPassword = typeof req.body?.newPassword === "string" ? req.body.newPassword : "";
+  if (newPassword.length < 15 || newPassword.length > 128) {
+    res.status(400).json({ error: "Choose a new password between 15 and 128 characters." });
+    return;
+  }
+  try {
+    await completePasswordRecovery(admin, sessionId, newPassword);
+    res.set("Cache-Control", "no-store").json({ success: true });
+  } catch (error) {
+    req.log.warn({ error, userId: admin.userId }, "Administrator password recovery completion failed");
+    res.status(409).json({ error: "Password recovery could not be verified. Sign in again or request another recovery email." });
   }
 });
 

@@ -251,3 +251,51 @@ test("Superadmin creates, disables, restores, and resets an administrator", asyn
     }
   }
 });
+
+test("password recovery requires a fresh Clerk session and provider password evidence", async () => {
+  const id = `auth-recovery-${process.pid}`;
+  const email = `recovery-${process.pid}@example.test`;
+  const updatedAt = Date.now();
+  try {
+    cleanup([id], [email]);
+    sql(`INSERT INTO ih_admin_users (clerk_user_id, email, role, must_change_password, updated_at) VALUES ('${id}', '${email}', 'admin', true, to_timestamp(${updatedAt / 1000}))`);
+    httpHarness.setTestClerkIdentity({
+      ...identity(id, email),
+      passwordEnabled: true,
+      raw: { password_last_updated_at: updatedAt + 10_000 },
+      passwordForVerification: "A-recovered-password-123!",
+    });
+    httpHarness.setTestClerkSession({
+      id: `session-${id}`,
+      userId: id,
+      status: "active",
+      createdAt: updatedAt + 10_000,
+    });
+    assert.equal((await request("POST", "/api/auth/recovery/complete", { newPassword: "A-recovered-password-123!" })).status, 200);
+    assert.equal(sql(`SELECT must_change_password FROM ih_admin_users WHERE clerk_user_id = '${id}'`), "f");
+    assert.equal((await request("POST", "/api/auth/recovery/complete", { newPassword: "A-recovered-password-123!" })).status, 200);
+
+    sql(`UPDATE ih_admin_users SET must_change_password = true, password_operation_id = null, updated_at = to_timestamp(${updatedAt / 1000}) WHERE clerk_user_id = '${id}'`);
+    assert.equal((await request("POST", "/api/auth/recovery/complete", { newPassword: "A-different-password-123!" })).status, 409);
+    assert.equal(sql(`SELECT must_change_password FROM ih_admin_users WHERE clerk_user_id = '${id}'`), "t");
+
+    sql(`UPDATE ih_admin_users SET must_change_password = true, password_operation_id = 'reset-in-progress' WHERE clerk_user_id = '${id}'`);
+    assert.equal((await request("POST", "/api/auth/recovery/complete", { newPassword: "A-recovered-password-123!" })).status, 409);
+    sql(`UPDATE ih_admin_users SET password_operation_id = null, updated_at = now() WHERE clerk_user_id = '${id}'`);
+    httpHarness.setTestClerkSession({
+      id: `old-session-${id}`,
+      userId: id,
+      status: "active",
+      createdAt: updatedAt - 10_000,
+    });
+    assert.equal((await request("POST", "/api/auth/recovery/complete", { newPassword: "A-recovered-password-123!" })).status, 409);
+    assert.equal(sql(`SELECT must_change_password FROM ih_admin_users WHERE clerk_user_id = '${id}'`), "t");
+    sql(`UPDATE ih_admin_users SET must_change_password = false, password_operation_id = null, disabled_at = now() WHERE clerk_user_id = '${id}'`);
+    assert.equal((await request("POST", "/api/auth/recovery/complete", { newPassword: "A-recovered-password-123!" })).status, 401);
+    assert.equal(sql(`SELECT must_change_password FROM ih_admin_users WHERE clerk_user_id = '${id}'`), "f");
+  } finally {
+    httpHarness.setTestClerkSession(null);
+    httpHarness.setTestClerkIdentity(null);
+    cleanup([id], [email]);
+  }
+});

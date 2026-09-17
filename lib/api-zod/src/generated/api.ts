@@ -142,6 +142,23 @@ export const ChangeAdministratorPasswordResponse = zod.object({
 
 
 /**
+ * @summary Reconcile a completed Clerk email-code password recovery
+ */
+export const completeAdministratorPasswordRecoveryBodyNewPasswordMin = 15;
+export const completeAdministratorPasswordRecoveryBodyNewPasswordMax = 128;
+
+
+
+export const CompleteAdministratorPasswordRecoveryBody = zod.object({
+  "newPassword": zod.string().min(completeAdministratorPasswordRecoveryBodyNewPasswordMin).max(completeAdministratorPasswordRecoveryBodyNewPasswordMax)
+})
+
+export const CompleteAdministratorPasswordRecoveryResponse = zod.object({
+  "success": zod.literal(true)
+})
+
+
+/**
  * @summary List pasture seed products
  */
 export const listProductsResponseSubcategoryIdMultipleOf = 1;

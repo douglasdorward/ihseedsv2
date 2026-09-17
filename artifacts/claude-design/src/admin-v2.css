@@ -349,6 +349,11 @@ select.ppe-ghost {
   box-shadow: 0 24px 70px rgba(18, 49, 26, .16);
 }
 .admin-auth-eyebrow { margin: 0; color: #657368; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; font-weight: 800; }
+.admin-simple-login > p { margin: -4px 0 8px; color: #657368; font-size: 13px; line-height: 1.5; text-align: center; }
+.admin-simple-login .admin-auth-link { min-height: 0; border: 0; padding: 8px 4px; background: transparent; color: #0c583c; font: inherit; font-size: 13px; font-weight: 800; text-decoration: underline; cursor: pointer; }
+.admin-simple-login .admin-auth-link:hover { background: transparent; color: #083d2b; }
+.admin-auth-link:focus-visible { outline: 2px solid #f9b617; outline-offset: 3px; border-radius: 3px; }
+.admin-auth-link:disabled { color: #7b827d; cursor: wait; text-decoration: none; }
 .admin-techsheet-drop { display: flex; align-items: center; justify-content: center; min-height: 140px; border: 2px dashed #c5d0c6; border-radius: 16px; background: #f7f9f6; cursor: pointer; font-weight: 700; color: #0c583c; }
 .admin-techsheet-drop input { display: none; }
 .admin-button.small { min-height: 34px; padding: 0 12px; font-size: 13px; }

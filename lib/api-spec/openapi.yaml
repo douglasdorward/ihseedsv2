@@ -146,6 +146,24 @@ paths:
           description: Password change completed
           content: { application/json: { schema: { $ref: "#/components/schemas/SuccessResponse" } } }
         "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /auth/recovery/complete:
+    post:
+      operationId: completeAdministratorPasswordRecovery
+      tags: [admin]
+      summary: Reconcile a completed Clerk email-code password recovery
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdministratorRecoveryPasswordInput" }
+      responses:
+        "200":
+          description: Password recovery completed
+          content: { application/json: { schema: { $ref: "#/components/schemas/SuccessResponse" } } }
+        "400": { description: Invalid password input, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Provider recovery evidence is unavailable or a temporary reset is in progress, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
   /products:
     get:
       operationId: listProducts
@@ -938,6 +956,11 @@ components:
       required: [currentPassword, newPassword]
       properties:
         currentPassword: { type: string, minLength: 1, maxLength: 128 }
+        newPassword: { type: string, minLength: 15, maxLength: 128 }
+    AdministratorRecoveryPasswordInput:
+      type: object
+      required: [newPassword]
+      properties:
         newPassword: { type: string, minLength: 15, maxLength: 128 }
     TemporaryPasswordResponse:
       type: object
