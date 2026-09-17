@@ -641,10 +641,11 @@ function QuickFactValue({
   if (slotId === "soilPh") {
     return (
       <span className="ppe-fact-cluster">
+        <span>Soil range:</span>
         <select className={`ppe-ghost ${details.soilRangeLightest ? "" : "is-empty"}`} value={details.soilRangeLightest} onChange={(event) => setDetail("soilRangeLightest", event.target.value)} aria-label="Lightest soil"><option value="">Lightest</option>{SOIL_OPTIONS.map((soil) => <option key={soil.code} value={soil.code}>{soil.label}</option>)}</select>
-        <span>–</span>
+        <span>to</span>
         <select className={`ppe-ghost ${details.soilRangeHeaviest ? "" : "is-empty"}`} value={details.soilRangeHeaviest} onChange={(event) => setDetail("soilRangeHeaviest", event.target.value)} aria-label="Heaviest soil"><option value="">Heaviest</option>{SOIL_OPTIONS.map((soil) => <option key={soil.code} value={soil.code}>{soil.label}</option>)}</select>
-        <span>pH</span>
+        <span>· pH</span>
         <input className={`ppe-ghost ppe-inline-field ${details.soilPhMin != null ? "" : "is-empty"}`} type="number" min="0" step="0.1" value={details.soilPhMin ?? ""} placeholder="min" aria-label="Minimum soil pH" onChange={(event) => setNumberDetail("soilPhMin", event.target.value)} />
         <select className="ppe-ghost" value={details.soilPhScale} onChange={(event) => setDetail("soilPhScale", event.target.value)} aria-label="Soil pH scale"><option>CaCl₂</option><option>water</option></select>
       </span>

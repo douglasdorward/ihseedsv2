@@ -168,7 +168,7 @@ fields:
     visibility: customer
     customerSurfaces: [quick-facts-when-soils-complete, comparison-table]
     workbook: 1 Products.soil_ph_min
-    fillGuidance: Lowest suitable pH.
+    fillGuidance: Lowest suitable pH. Quick facts pair it with the expanded soil range as “Soil range: Sand to Heavy · pH 5+ (CaCl₂)”.
 
   - id: soilPhScale
     tab: 2
@@ -198,7 +198,7 @@ fields:
     visibility: customer
     customerSurfaces: [quick-facts-when-pH-complete, comparison-table]
     workbook: 1 Products.soil_range_lightest
-    fillGuidance: LS light sand, S sand, L loam, H heavy.
+    fillGuidance: Stored/workbook codes remain LS, S, L, H. Quick facts expand them to Light sand, Sand, Loam, Heavy and explicitly label the range; equal endpoints show one name.
 
   - id: soilRangeHeaviest
     tab: 2
@@ -213,7 +213,7 @@ fields:
     visibility: customer
     customerSurfaces: [quick-facts-when-pH-complete, comparison-table]
     workbook: 1 Products.soil_range_heaviest
-    fillGuidance: Must be as heavy or heavier than lightest soil.
+    fillGuidance: Must be as heavy or heavier than lightest soil. Quick facts use “to” between distinct expanded endpoint names.
 
   - id: sowingDepthMinCm
     tab: 2

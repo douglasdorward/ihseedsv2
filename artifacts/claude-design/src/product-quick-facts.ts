@@ -35,6 +35,13 @@ export type EditorQuickFactSlot = {
 type SowingRate = { min?: number | null; max?: number | null; unit?: string; context?: string };
 type Tolerance = { name: string; mild?: boolean };
 
+export const SOIL_LABELS: Record<string, string> = {
+  LS: "Light sand",
+  S: "Sand",
+  L: "Loam",
+  H: "Heavy",
+};
+
 export type QuickFactDetails = {
   persistencyType?: string;
   rainfallMinMm?: number | null;
@@ -82,9 +89,12 @@ function formattedTolerances(tolerance: Tolerance[] | undefined) {
   return (tolerance ?? []).map((item) => item.mild ? `Mild ${item.name}` : item.name).join(", ");
 }
 
-function formattedSoil(details: QuickFactDetails) {
-  if (!details.soilRangeLightest || !details.soilRangeHeaviest || details.soilPhMin == null || !details.soilPhScale) return "";
-  return `${details.soilRangeLightest}–${details.soilRangeHeaviest}, pH ${details.soilPhMin}+ (${details.soilPhScale})`;
+export function formatSoilAndPh(details: QuickFactDetails) {
+  const lightest = details.soilRangeLightest ? SOIL_LABELS[details.soilRangeLightest] : undefined;
+  const heaviest = details.soilRangeHeaviest ? SOIL_LABELS[details.soilRangeHeaviest] : undefined;
+  if (!lightest || !heaviest || details.soilPhMin == null || !details.soilPhScale) return "";
+  const soilRange = lightest === heaviest ? lightest : `${lightest} to ${heaviest}`;
+  return `Soil range: ${soilRange} · pH ${details.soilPhMin}+ (${details.soilPhScale})`;
 }
 
 /** Category-gated slots in public Quick-facts order, including empty placeholders. */
@@ -92,7 +102,7 @@ export function getEditorQuickFactSlots(category: string, details: QuickFactDeta
   const slots: EditorQuickFactSlot[] = [
     { id: "persistencyType", label: "Type & persistency", icon: "leaf", formatted: details.persistencyType?.trim() || "" },
     { id: "rainfallMinMm", label: "Min rainfall", icon: "cloud-rain", formatted: details.rainfallMinMm ? `${details.rainfallMinMm} mm+` : "" },
-    { id: "soilPh", label: "Soil & pH", icon: "layers", formatted: formattedSoil(details) },
+    { id: "soilPh", label: "Soil & pH", icon: "layers", formatted: formatSoilAndPh(details) },
     { id: "sowingRates", label: "Sowing rate", icon: "scale", formatted: formattedSowingRates(details.sowingRates) },
     { id: "tolerance", label: "Tolerances", icon: "shield", formatted: formattedTolerances(details.tolerance) },
     { id: "endUse", label: "End use", icon: "target", formatted: (details.endUse ?? []).join(", ") },

@@ -1,4 +1,5 @@
 import type { CatalogueProduct } from "./catalogue";
+import { SOIL_OPTIONS } from "./product-filters";
 
 export type ProductQuickFact = { label: string; value: string | number; icon: string };
 
@@ -12,6 +13,21 @@ function formatSowingRate(rate: SowingRate) {
   return [range, rate.unit, rate.context].filter((part) => Boolean(part && String(part).trim())).join(" ");
 }
 
+const SOIL_LABELS = Object.fromEntries(SOIL_OPTIONS.map(({ value, label }) => [value, label])) as Record<string, string>;
+
+type SoilAndPhDetails = Pick<
+  CatalogueProduct["details"],
+  "soilRangeLightest" | "soilRangeHeaviest" | "soilPhMin" | "soilPhScale"
+>;
+
+export function formatSoilAndPh(details: SoilAndPhDetails) {
+  const lightest = details.soilRangeLightest ? SOIL_LABELS[details.soilRangeLightest] : undefined;
+  const heaviest = details.soilRangeHeaviest ? SOIL_LABELS[details.soilRangeHeaviest] : undefined;
+  if (!lightest || !heaviest || details.soilPhMin == null || !details.soilPhScale) return null;
+  const soilRange = lightest === heaviest ? lightest : `${lightest} to ${heaviest}`;
+  return `Soil range: ${soilRange} · pH ${details.soilPhMin}+ (${details.soilPhScale})`;
+}
+
 // Preserves the historical ProductDetail fact order and values exactly.
 export function getProductQuickFacts(product: CatalogueProduct): ProductQuickFact[] {
   const d = product.details;
@@ -19,7 +35,8 @@ export function getProductQuickFacts(product: CatalogueProduct): ProductQuickFac
   const sowingRate = (d.sowingRates ?? []).map(formatSowingRate).filter((value): value is string => Boolean(value)).join(", ");
   if (d.persistencyType) quickFacts.push({ label: "Type & persistency", value: d.persistencyType, icon: "leaf" });
   if (d.rainfallMinMm) quickFacts.push({ label: "Min rainfall", value: `${d.rainfallMinMm} mm+`, icon: "cloud-rain" });
-  if (d.soilRangeLightest && d.soilRangeHeaviest && d.soilPhMin && d.soilPhScale) quickFacts.push({ label: "Soil & pH", value: `${d.soilRangeLightest}–${d.soilRangeHeaviest}, pH ${d.soilPhMin}+ (${d.soilPhScale})`, icon: "layers" });
+  const soilAndPh = formatSoilAndPh(d);
+  if (soilAndPh) quickFacts.push({ label: "Soil & pH", value: soilAndPh, icon: "layers" });
   if (sowingRate) quickFacts.push({ label: "Sowing rate", value: sowingRate, icon: "scale" });
   if (d.tolerance?.length) quickFacts.push({ label: "Tolerances", value: d.tolerance.map((tolerance) => tolerance.mild ? `Mild ${tolerance.name}` : tolerance.name).join(", "), icon: "shield" });
   if (d.endUse?.length) quickFacts.push({ label: "End use", value: d.endUse.join(", "), icon: "target" });

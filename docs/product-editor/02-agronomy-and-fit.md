@@ -33,7 +33,7 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **Workbook:** `1 Products.soil_ph_min`, `soil_ph_scale`
 - **Required:** no
 - **Shown when:** category is not Biologicals
-- **Customer website:** Quick facts “Soil & pH” only when lightest soil, heaviest soil, min pH, **and** scale are all set. Comparison table shows pH even if soils are missing.
+- **Customer website:** Quick facts “Soil & pH” only when lightest soil, heaviest soil, min pH, **and** scale are all set. It explicitly labels the soil range and expands the stored soil codes, for example `Soil range: Sand to Heavy · pH 5+ (CaCl₂)`. Equal endpoints show one soil name, for example `Soil range: Loam · pH 5.5+ (CaCl₂)`. Comparison table shows pH even if soils are missing.
 - **Public API:** yes
 - **Purpose:** Lowest suitable pH and which lab scale it uses.
 - **How to fill:** pH number (e.g. `5.5`). Scale `CaCl₂` or `water`. Prefer CaCl₂ for Australian agronomy unless the source is water-based.
@@ -45,10 +45,10 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **Workbook:** `1 Products.soil_range_lightest`, `soil_range_heaviest`
 - **Required:** no
 - **Shown when:** category is not Biologicals
-- **Customer website:** Quick facts “Soil & pH” when paired with pH as above. Comparison table “Soil Range”.
+- **Customer website:** Quick facts “Soil & pH” when paired with pH as above. The Quick fact expands codes to `Light sand`, `Sand`, `Loam`, or `Heavy` and identifies distinct endpoints as a range. Comparison table “Soil Range” is unchanged.
 - **Public API:** yes
 - **Purpose:** Texture band the product suits.
-- **How to fill:** `LS` light sand, `S` sand, `L` loam, `H` heavy. Lightest should not be heavier than heaviest.
+- **How to fill:** Stored and workbook values remain abbreviated: `LS` light sand, `S` sand, `L` loam, `H` heavy. Lightest should not be heavier than heaviest.
 - **Constraints:** closed enum including blank.
 
 ## Minimum / Maximum sowing depth (cm)
