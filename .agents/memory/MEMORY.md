@@ -15,3 +15,4 @@
 - [Catalogue workbook replacement](catalogue-workbook-replacement.md) — imports replace the full product catalogue; require a current export and secure backup before commit.
 - [Empty catalogue is valid](empty-catalogue.md) — an intentional wipe must remain empty until an administrator imports or creates products.
 - [Invitation-only admin access](invitation-only-admin-access.md) — Clerk registration restrictions and the app role ledger must fail closed and remain synchronized.
+- [Admin bootstrap availability](admin-bootstrap-availability.md) — authentication bootstrap failure must fail admin access closed without taking down the public catalogue API.

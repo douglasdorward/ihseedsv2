@@ -19,7 +19,14 @@ if (Number.isNaN(port) || port <= 0) {
 
 const storageBackend = appStorageBackend();
 
-await configureSimpleAdminAccounts();
+try {
+  await configureSimpleAdminAccounts();
+} catch (err) {
+  logger.error(
+    { err },
+    "Administrator account bootstrap failed; public API will continue without administrator access",
+  );
+}
 
 app.listen(port, (err) => {
   if (err) {
