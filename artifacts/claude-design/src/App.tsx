@@ -4,8 +4,8 @@ import {
   ClerkProvider,
   useAuth,
   useClerk,
-  useSignIn,
 } from "@clerk/react";
+import { useSignIn } from "@clerk/react/legacy";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadesOfPurple } from "@clerk/themes";
 import Admin from "./pages/Admin";
@@ -64,8 +64,19 @@ function AuthScreen() {
   const { isLoaded, signIn, setActive } = useSignIn();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [clientTrustRequired, setClientTrustRequired] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const activateCompletedSignIn = async (result: any) => {
+    if (!setActive) throw new Error("Authentication is still loading.");
+    if (result.status !== "complete" || !result.createdSessionId) {
+      throw new Error("This account requires an unsupported sign-in step.");
+    }
+    await setActive({ session: result.createdSessionId });
+    navigate(basePath, { replace: true });
+  };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -78,11 +89,19 @@ function AuthScreen() {
         identifier: email.trim(),
         password,
       });
-      if (result.status !== "complete" || !result.createdSessionId) {
-        throw new Error("This account requires an unsupported sign-in step.");
+      if (result.status === "needs_client_trust") {
+        const emailFactor = result.supportedSecondFactors?.find(
+          (factor: any) => factor.strategy === "email_code",
+        );
+        if (!emailFactor) {
+          throw new Error("This account requires an unsupported sign-in step.");
+        }
+        await signIn.prepareSecondFactor({ strategy: "email_code" });
+        setVerificationCode("");
+        setClientTrustRequired(true);
+        return;
       }
-      await setActive({ session: result.createdSessionId });
-      navigate(basePath, { replace: true });
+      await activateCompletedSignIn(result);
     } catch (caught: any) {
       setError(
         caught?.errors?.[0]?.longMessage ||
@@ -95,36 +114,76 @@ function AuthScreen() {
     }
   };
 
+  const verifyClientTrust = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!isLoaded) return;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await signIn.attemptSecondFactor({
+        strategy: "email_code",
+        code: verificationCode.trim(),
+      });
+      await activateCompletedSignIn(result);
+    } catch (caught: any) {
+      setError(
+        caught?.errors?.[0]?.longMessage ||
+        caught?.errors?.[0]?.message ||
+        caught?.message ||
+        "The verification code is incorrect.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <main className="admin-auth-page">
       <section className="admin-simple-login">
         <img src={`${basePath}/ih-seeds-logo.png`} alt="IH Seeds" />
-        <h1>Administrator login</h1>
-        <form onSubmit={submit}>
-          <label>
-            Email
-            <input
-              type="email"
-              autoComplete="username"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              autoFocus
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
-          </label>
+        <h1>{clientTrustRequired ? "Verify your sign-in" : "Administrator login"}</h1>
+        <form onSubmit={clientTrustRequired ? verifyClientTrust : submit}>
+          {clientTrustRequired ? (
+            <label>
+              Verification code
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={verificationCode}
+                onChange={(event) => setVerificationCode(event.target.value)}
+                required
+                autoFocus
+              />
+            </label>
+          ) : (
+            <>
+              <label>
+                Email
+                <input
+                  type="email"
+                  autoComplete="username"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  autoFocus
+                />
+              </label>
+              <label>
+                Password
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+              </label>
+            </>
+          )}
           {error && <p className="admin-auth-error" role="alert">{error}</p>}
           <button type="submit" disabled={!isLoaded || busy}>
-            {busy ? "Logging in…" : "Log in"}
+            {busy ? (clientTrustRequired ? "Verifying…" : "Logging in…") : clientTrustRequired ? "Verify sign-in" : "Log in"}
           </button>
         </form>
       </section>
