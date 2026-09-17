@@ -13,5 +13,6 @@ export interface AdminSession {
   userId?: string;
   email?: string;
   role?: AdminSessionRole;
+  mustChangePassword?: boolean;
   developmentBypass?: boolean;
 }

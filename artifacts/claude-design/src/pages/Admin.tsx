@@ -552,7 +552,7 @@ function AdminNavIcon({ name }: { name: string }) {
   return <Icon name={name} size={19} />;
 }
 
-function AdminLayout({ children, mobileOpen, setMobileOpen }: { children: ReactNode; mobileOpen: boolean; setMobileOpen: (open: boolean) => void; }) {
+function AdminLayout({ children, mobileOpen, setMobileOpen, role }: { children: ReactNode; mobileOpen: boolean; setMobileOpen: (open: boolean) => void; role: "admin" | "superadmin"; }) {
   const [location] = useLocation();
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -566,7 +566,9 @@ function AdminLayout({ children, mobileOpen, setMobileOpen }: { children: ReactN
     { label: "Products & mixes", icon: "sprout", href: "/admin/products", enabled: true },
     { label: "Images", icon: "image", href: "/admin/images", enabled: true },
     { label: "Tech sheets", icon: "file-text", href: "/admin/tech-sheets", enabled: true },
-    { label: "Administrators", icon: "users", href: "/admin/administrators", enabled: true },
+    ...(role === "superadmin"
+      ? [{ label: "Administrators", icon: "users", href: "/admin/administrators", enabled: true }]
+      : []),
     { label: "Site settings", icon: "settings", href: "", enabled: false },
   ];
 
@@ -2299,7 +2301,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   );
 }
 
-export default function Admin() {
+export default function Admin({ role }: { role: "admin" | "superadmin" }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [location] = useLocation();
   const route = location.split("?")[0];
@@ -2310,12 +2312,16 @@ export default function Admin() {
   const isAdministrators = route === "/admin/administrators";
   const isEditor = route.startsWith("/admin/products/") && route !== "/admin/products/categories";
 
+  useEffect(() => {
+    if (isAdministrators && role !== "superadmin") navigate("/admin", { replace: true });
+  }, [isAdministrators, role]);
+
   return (
-    <AdminLayout mobileOpen={mobileOpen} setMobileOpen={setMobileOpen}>
+    <AdminLayout mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} role={role}>
       {route === "/admin" && <Dashboard />}
       {isProducts && <ProductTable />}
       {isCategories && <AdminCategories />}
-      {isAdministrators && <AdminAdministrators />}
+      {isAdministrators && role === "superadmin" && <AdminAdministrators />}
       {isImages && <AdminImages />}
       {isTechSheets && <AdminTechSheets />}
       {isEditor && (

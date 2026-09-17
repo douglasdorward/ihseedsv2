@@ -5,9 +5,14 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AdministratorAccessListAdministratorsItemRole } from './administratorAccessListAdministratorsItemRole';
 
 export type AdministratorAccessListAdministratorsItem = {
   clerkUserId: string;
   email: string;
+  role: AdministratorAccessListAdministratorsItemRole;
+  /** @nullable */
+  disabledAt?: Date | null;
+  mustChangePassword: boolean;
   createdAt: Date;
 };

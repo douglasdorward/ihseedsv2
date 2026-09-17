@@ -10,6 +10,7 @@ export type AdminSessionRole = typeof AdminSessionRole[keyof typeof AdminSession
 
 export const AdminSessionRole = {
   admin: 'admin',
+  superadmin: 'superadmin',
 } as const;
 
 export interface AdminSession {
@@ -18,6 +19,7 @@ export interface AdminSession {
   userId?: string;
   email?: string;
   role?: AdminSessionRole;
+  mustChangePassword?: boolean;
   developmentBypass?: boolean;
 }
 
@@ -40,7 +42,7 @@ export const SuccessResponseValue = {
 } as const;
 export type SuccessResponse = typeof SuccessResponseValue;
 
-export interface AdministratorApprovalInput {
+export interface CreateAdministratorInput {
   /**
      * @minLength 3
      * @maxLength 320
@@ -48,22 +50,31 @@ export interface AdministratorApprovalInput {
   email: string;
 }
 
-export interface AdministratorAccessRevocationInput {
-  /**
-     * @minLength 1
-     * @maxLength 255
-     */
-  clerkUserId: string;
+export interface AdministratorStatusInput {
+  disabled: boolean;
 }
+
+export interface TemporaryPasswordResponse {
+  success: true;
+  /** @minLength 8 */
+  temporaryPassword: string;
+}
+
+export type AdministratorAccessListAdministratorsItemRole = typeof AdministratorAccessListAdministratorsItemRole[keyof typeof AdministratorAccessListAdministratorsItemRole];
+
+
+export const AdministratorAccessListAdministratorsItemRole = {
+  admin: 'admin',
+  superadmin: 'superadmin',
+} as const;
 
 export type AdministratorAccessListAdministratorsItem = {
   clerkUserId: string;
   email: string;
-  createdAt: string;
-};
-
-export type AdministratorAccessListPendingApprovalsItem = {
-  email: string;
+  role: AdministratorAccessListAdministratorsItemRole;
+  /** @nullable */
+  disabledAt?: string | null;
+  mustChangePassword: boolean;
   createdAt: string;
 };
 
@@ -77,7 +88,6 @@ export type AdministratorAccessListAuditItem = {
 
 export interface AdministratorAccessList {
   administrators: AdministratorAccessListAdministratorsItem[];
-  pendingApprovals: AdministratorAccessListPendingApprovalsItem[];
   audit: AdministratorAccessListAuditItem[];
   currentUserId: string;
 }

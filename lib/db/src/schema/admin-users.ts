@@ -1,13 +1,20 @@
-import { index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { boolean, check, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const adminUsersTable = pgTable("ih_admin_users", {
   clerkUserId: text("clerk_user_id").primaryKey(),
   email: text("email").notNull(),
   role: text("role").notNull().default("admin"),
+  disabledAt: timestamp("disabled_at", { withTimezone: true }),
+  mustChangePassword: boolean("must_change_password").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   uniqueIndex("ih_admin_users_email_unique").on(table.email),
+  uniqueIndex("ih_admin_users_one_superadmin")
+    .on(table.role)
+    .where(sql`${table.role} = 'superadmin'`),
+  check("ih_admin_users_role_check", sql`${table.role} IN ('admin', 'superadmin')`),
 ]);
 
 /** An exact email authorization waiting for its verified Clerk primary email to claim it. */

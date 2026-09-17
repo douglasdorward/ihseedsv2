@@ -6,10 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface AdministratorApprovalInput {
-  /**
-     * @minLength 3
-     * @maxLength 320
-     */
-  email: string;
+export interface TemporaryPasswordResponse {
+  success: true;
+  /** @minLength 8 */
+  temporaryPassword: string;
 }

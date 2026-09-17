@@ -25,13 +25,14 @@ export const GetAdminSessionResponse = zod.object({
   "authorized": zod.boolean(),
   "userId": zod.string().optional(),
   "email": zod.string().optional(),
-  "role": zod.enum(['admin']).optional(),
+  "role": zod.enum(['admin', 'superadmin']).optional(),
+  "mustChangePassword": zod.boolean().optional(),
   "developmentBypass": zod.boolean().optional()
 })
 
 
 /**
- * @summary List active administrators, pending approvals, and access audit history
+ * @summary List administrator accounts and access audit history
  */
 export const getAdministratorsResponseAuditItemIdMultipleOf = 1;
 
@@ -41,10 +42,9 @@ export const GetAdministratorsResponse = zod.object({
   "administrators": zod.array(zod.object({
   "clerkUserId": zod.string(),
   "email": zod.string(),
-  "createdAt": zod.coerce.date()
-})),
-  "pendingApprovals": zod.array(zod.object({
-  "email": zod.string(),
+  "role": zod.enum(['admin', 'superadmin']),
+  "disabledAt": zod.coerce.date().nullish(),
+  "mustChangePassword": zod.boolean(),
   "createdAt": zod.coerce.date()
 })),
   "audit": zod.array(zod.object({
@@ -59,51 +59,72 @@ export const GetAdministratorsResponse = zod.object({
 
 
 /**
- * @summary Approve one exact email to claim administrator access
+ * @summary Create an administrator with a one-time temporary password
  */
-export const createAdministratorApprovalBodyEmailMin = 3;
-export const createAdministratorApprovalBodyEmailMax = 320;
+export const createAdministratorBodyEmailMin = 3;
+export const createAdministratorBodyEmailMax = 320;
 
 
 
-export const CreateAdministratorApprovalBody = zod.object({
-  "email": zod.string().min(createAdministratorApprovalBodyEmailMin).max(createAdministratorApprovalBodyEmailMax)
+export const CreateAdministratorBody = zod.object({
+  "email": zod.string().min(createAdministratorBodyEmailMin).max(createAdministratorBodyEmailMax)
 })
 
-export const CreateAdministratorApprovalResponse = zod.object({
+export const createAdministratorResponseTemporaryPasswordMin = 8;
+
+
+
+export const CreateAdministratorResponse = zod.object({
+  "success": zod.literal(true),
+  "temporaryPassword": zod.string().min(createAdministratorResponseTemporaryPasswordMin)
+})
+
+
+/**
+ * @summary Disable or restore an administrator account
+ */
+export const setAdministratorStatusPathClerkUserIdMax = 255;
+
+
+
+export const SetAdministratorStatusParams = zod.object({
+  "clerkUserId": zod.coerce.string().min(1).max(setAdministratorStatusPathClerkUserIdMax)
+})
+
+export const SetAdministratorStatusBody = zod.object({
+  "disabled": zod.boolean()
+})
+
+export const SetAdministratorStatusResponse = zod.object({
   "success": zod.literal(true)
 })
 
 
 /**
- * @summary Cancel one pending administrator email approval
+ * @summary Issue a new one-time temporary administrator password
  */
-export const deleteAdministratorApprovalBodyEmailMin = 3;
-export const deleteAdministratorApprovalBodyEmailMax = 320;
+export const resetAdministratorTemporaryPasswordPathClerkUserIdMax = 255;
 
 
 
-export const DeleteAdministratorApprovalBody = zod.object({
-  "email": zod.string().min(deleteAdministratorApprovalBodyEmailMin).max(deleteAdministratorApprovalBodyEmailMax)
+export const ResetAdministratorTemporaryPasswordParams = zod.object({
+  "clerkUserId": zod.coerce.string().min(1).max(resetAdministratorTemporaryPasswordPathClerkUserIdMax)
 })
 
-export const DeleteAdministratorApprovalResponse = zod.object({
-  "success": zod.literal(true)
+export const resetAdministratorTemporaryPasswordResponseTemporaryPasswordMin = 8;
+
+
+
+export const ResetAdministratorTemporaryPasswordResponse = zod.object({
+  "success": zod.literal(true),
+  "temporaryPassword": zod.string().min(resetAdministratorTemporaryPasswordResponseTemporaryPasswordMin)
 })
 
 
 /**
- * @summary Revoke an administrator, preserving the final active administrator
+ * @summary Mark the current administrator temporary password as replaced
  */
-export const revokeAdministratorAccessBodyClerkUserIdMax = 255;
-
-
-
-export const RevokeAdministratorAccessBody = zod.object({
-  "clerkUserId": zod.string().min(1).max(revokeAdministratorAccessBodyClerkUserIdMax)
-})
-
-export const RevokeAdministratorAccessResponse = zod.object({
+export const CompleteAdministratorPasswordChangeResponse = zod.object({
   "success": zod.literal(true)
 })
 

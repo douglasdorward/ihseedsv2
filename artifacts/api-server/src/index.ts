@@ -1,7 +1,7 @@
 import app from "./app";
 import { appStorageBackend } from "./lib/app-storage";
 import { logger } from "./lib/logger";
-import { configureInvitationOnlyClerk } from "./lib/admin-invitations";
+import { configureSimpleAdminAccounts } from "./lib/admin-accounts";
 
 const rawPort = process.env["PORT"];
 
@@ -19,7 +19,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 const storageBackend = appStorageBackend();
 
-await configureInvitationOnlyClerk();
+await configureSimpleAdminAccounts();
 
 app.listen(port, (err) => {
   if (err) {

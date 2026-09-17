@@ -5,7 +5,8 @@ import { resolveAdminIdentity, verifiedPrimaryEmail } from "../lib/admin-role";
 export type AdminSession = {
   userId: string;
   email: string;
-  role: "admin";
+  role: "admin" | "superadmin";
+  mustChangePassword: boolean;
   testBypass?: true;
 };
 
@@ -21,6 +22,7 @@ async function resolveAdmin(req: Request): Promise<AdminSession | null> {
       userId: "isolated-lifecycle-test",
       email: "lifecycle-test@example.test",
       role: "admin",
+      mustChangePassword: false,
       testBypass: true,
     };
   }
@@ -53,10 +55,25 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
       res.status(403).json({ error: "Administrator access is required." });
       return;
     }
+    if (admin.mustChangePassword) {
+      res.status(428).json({ error: "Change your temporary password before continuing." });
+      return;
+    }
     res.locals.admin = admin;
     next();
   } catch (error) {
     req.log.error({ error }, "Admin authorization failed");
     res.status(500).json({ error: "Unable to verify administrator access." });
   }
+}
+
+export async function requireSuperadmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+  await requireAdmin(req, res, () => {
+    const admin = res.locals.admin as AdminSession | undefined;
+    if (admin?.role !== "superadmin") {
+      res.status(403).json({ error: "Superadmin access is required." });
+      return;
+    }
+    next();
+  });
 }

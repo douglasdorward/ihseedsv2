@@ -60,7 +60,7 @@ paths:
     get:
       operationId: getAdministrators
       tags: [admin]
-      summary: List active administrators, pending approvals, and access audit history
+      summary: List administrator accounts and access audit history
       security: [{ clerkSession: [] }]
       responses:
         "200":
@@ -69,63 +69,78 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AdministratorAccessList" }
         "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-        "403": { description: Administrator access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-  /admin/administrators/approvals:
+        "403": { description: Superadmin access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
     post:
-      operationId: createAdministratorApproval
+      operationId: createAdministrator
       tags: [admin]
-      summary: Approve one exact email to claim administrator access
+      summary: Create an administrator with a one-time temporary password
       security: [{ clerkSession: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/AdministratorApprovalInput" }
+            schema: { $ref: "#/components/schemas/CreateAdministratorInput" }
       responses:
-        "200":
-          description: Approval created
-          content: { application/json: { schema: { $ref: "#/components/schemas/SuccessResponse" } } }
+        "201":
+          description: Administrator account created
+          content: { application/json: { schema: { $ref: "#/components/schemas/TemporaryPasswordResponse" } } }
         "400": { description: Invalid email address, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
         "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-        "403": { description: Administrator access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-        "409": { description: Email is already active or pending, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-    delete:
-      operationId: deleteAdministratorApproval
+        "403": { description: Superadmin access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Email already belongs to an account, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/administrators/{clerkUserId}/status:
+    patch:
+      operationId: setAdministratorStatus
       tags: [admin]
-      summary: Cancel one pending administrator email approval
+      summary: Disable or restore an administrator account
       security: [{ clerkSession: [] }]
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 255 }
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/AdministratorApprovalInput" }
+            schema: { $ref: "#/components/schemas/AdministratorStatusInput" }
       responses:
         "200":
-          description: Pending approval cancelled
+          description: Account status changed
           content: { application/json: { schema: { $ref: "#/components/schemas/SuccessResponse" } } }
-        "400": { description: Invalid email address, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "400": { description: Invalid account status, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
         "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-        "403": { description: Administrator access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-        "409": { description: Email has no pending approval, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-  /admin/administrators/access:
-    delete:
-      operationId: revokeAdministratorAccess
+        "403": { description: Superadmin access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Superadmin is protected or account is unavailable, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/administrators/{clerkUserId}/temporary-password:
+    post:
+      operationId: resetAdministratorTemporaryPassword
       tags: [admin]
-      summary: Revoke an administrator, preserving the final active administrator
+      summary: Issue a new one-time temporary administrator password
       security: [{ clerkSession: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/AdministratorAccessRevocationInput" }
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 255 }
       responses:
         "200":
-          description: Administrator access revoked
-          content: { application/json: { schema: { $ref: "#/components/schemas/SuccessResponse" } } }
-        "400": { description: Invalid administrator id, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+          description: Temporary password issued
+          content: { application/json: { schema: { $ref: "#/components/schemas/TemporaryPasswordResponse" } } }
         "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-        "403": { description: Administrator access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-        "409": { description: Cannot revoke the final administrator or an unavailable account, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "403": { description: Superadmin access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Superadmin is protected or account is unavailable, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /auth/password-changed:
+    post:
+      operationId: completeAdministratorPasswordChange
+      tags: [admin]
+      summary: Mark the current administrator temporary password as replaced
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Password change completed
+          content: { application/json: { schema: { $ref: "#/components/schemas/SuccessResponse" } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
   /products:
     get:
       operationId: listProducts
@@ -874,7 +889,8 @@ components:
         authorized: { type: boolean }
         userId: { type: string }
         email: { type: string }
-        role: { type: string, enum: [admin] }
+        role: { type: string, enum: [admin, superadmin] }
+        mustChangePassword: { type: boolean }
         developmentBypass: { type: boolean }
     PublishValidationError:
       type: object
@@ -902,36 +918,37 @@ components:
       required: [success]
       properties:
         success: { type: boolean, const: true }
-    AdministratorApprovalInput:
+    CreateAdministratorInput:
       type: object
       required: [email]
       properties:
         email: { type: string, minLength: 3, maxLength: 320 }
-    AdministratorAccessRevocationInput:
+    AdministratorStatusInput:
       type: object
-      required: [clerkUserId]
+      required: [disabled]
       properties:
-        clerkUserId: { type: string, minLength: 1, maxLength: 255 }
+        disabled: { type: boolean }
+    TemporaryPasswordResponse:
+      type: object
+      required: [success, temporaryPassword]
+      properties:
+        success: { type: boolean, const: true }
+        temporaryPassword: { type: string, minLength: 8 }
     AdministratorAccessList:
       type: object
-      required: [administrators, pendingApprovals, audit, currentUserId]
+      required: [administrators, audit, currentUserId]
       properties:
         administrators:
           type: array
           items:
             type: object
-            required: [clerkUserId, email, createdAt]
+            required: [clerkUserId, email, role, mustChangePassword, createdAt]
             properties:
               clerkUserId: { type: string }
               email: { type: string }
-              createdAt: { type: string, format: date-time }
-        pendingApprovals:
-          type: array
-          items:
-            type: object
-            required: [email, createdAt]
-            properties:
-              email: { type: string }
+              role: { type: string, enum: [admin, superadmin] }
+              disabledAt: { type: [string, "null"], format: date-time }
+              mustChangePassword: { type: boolean }
               createdAt: { type: string, format: date-time }
         audit:
           type: array

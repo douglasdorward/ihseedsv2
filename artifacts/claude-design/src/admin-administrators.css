@@ -4,6 +4,26 @@
   flex-direction: column;
   gap: 32px;
 }
+
+.admin-account-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.admin-temporary-password code {
+  display: block;
+  overflow-wrap: anywhere;
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid var(--border-subtle, #dfe5dc);
+  border-radius: 8px;
+  background: #f4f6f2;
+  color: #17351e;
+  font-size: 1rem;
+  user-select: all;
+}
 .admin-section-header {
   margin-bottom: 16px;
 }

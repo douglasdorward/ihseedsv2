@@ -8,10 +8,9 @@
 
 export * from './administratorAccessList';
 export * from './administratorAccessListAdministratorsItem';
+export * from './administratorAccessListAdministratorsItemRole';
 export * from './administratorAccessListAuditItem';
-export * from './administratorAccessListPendingApprovalsItem';
-export * from './administratorAccessRevocationInput';
-export * from './administratorApprovalInput';
+export * from './administratorStatusInput';
 export * from './adminProduct';
 export * from './adminProductLifecycleStatus';
 export * from './adminSession';
@@ -24,6 +23,7 @@ export * from './catalogueCategoryInput';
 export * from './catalogueCategoryReorder';
 export * from './catalogueCategoryReorderItemsItem';
 export * from './catalogueCategoryUpdate';
+export * from './createAdministratorInput';
 export * from './deleteProductImageRequest';
 export * from './enquiryCreated';
 export * from './enquiryInput';
@@ -113,6 +113,7 @@ export * from './redirectLookup';
 export * from './saleLine';
 export * from './saleLineAvailability';
 export * from './successResponse';
+export * from './temporaryPasswordResponse';
 export * from './workbookCommit';
 export * from './workbookIssue';
 export * from './workbookReport';

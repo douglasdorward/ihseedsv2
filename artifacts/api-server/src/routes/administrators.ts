@@ -1,26 +1,11 @@
-import {
-  cancelAdministratorApproval,
-  createAdministratorApproval,
-  listAdministratorAccess,
-  normalizeAdminEmail,
-  revokeAdministratorAccess,
-} from "../lib/admin-access";
-import {
-  ensureAllowedAdminEmail,
-  removeAllowedAdminEmail,
-  revokeAdministratorInvitations,
-  sendAdministratorInvitation,
-} from "../lib/admin-invitations";
-import {
-  CreateAdministratorApprovalBody,
-  CreateAdministratorApprovalResponse,
-  DeleteAdministratorApprovalBody,
-  DeleteAdministratorApprovalResponse,
-  GetAdministratorsResponse,
-  RevokeAdministratorAccessBody,
-  RevokeAdministratorAccessResponse,
-} from "@workspace/api-zod";
 import { Router, type IRouter, type Response } from "express";
+import {
+  createAdminAccount,
+  listAdminAccounts,
+  resetAdminTemporaryPassword,
+  setAdminDisabled,
+} from "../lib/admin-accounts";
+import { normalizeAdminEmail } from "../lib/admin-access";
 
 const router: IRouter = Router();
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,95 +16,91 @@ function requestedEmail(value: unknown) {
   return email.length <= 320 && EMAIL_PATTERN.test(email) ? email : null;
 }
 
-function writeError(res: Response, reason: string) {
-  if (reason === "actor-revoked") {
-    res.status(403).json({ error: "Administrator access was revoked." });
-    return;
-  }
-  const message = {
-    "already-active": "That email already has administrator access.",
-    "already-pending": "That email already has a pending approval.",
-    "not-pending": "That email does not have a pending approval.",
-    "target-not-found": "Administrator access was not found.",
-    "last-admin": "The final active administrator cannot be revoked.",
-  }[reason] ?? "Unable to change administrator access.";
-  res.status(409).json({ error: message });
+function requestedUserId(value: unknown) {
+  return typeof value === "string" && value.trim().length <= 255 ? value.trim() : null;
 }
 
-router.get("/admin/administrators", async (req, res): Promise<void> => {
-  const access = await listAdministratorAccess();
-  const response = GetAdministratorsResponse.parse({ ...access, currentUserId: res.locals.admin.userId });
-  res.set("Cache-Control", "no-store").json(response);
+function writeError(res: Response, reason: string) {
+  const status = reason === "actor-revoked" ? 403 : 409;
+  const message = {
+    "actor-revoked": "Superadmin access is required.",
+    "already-active": "That email already has an administrator account.",
+    "identity-exists": "That email already belongs to an existing sign-in account.",
+    "target-not-found": "Administrator account was not found.",
+    "protected-superadmin": "The Superadmin account cannot be changed here.",
+  }[reason] ?? "Unable to change the administrator account.";
+  res.status(status).json({ error: message });
+}
+
+router.get("/admin/administrators", async (_req, res): Promise<void> => {
+  const access = await listAdminAccounts();
+  res.set("Cache-Control", "no-store").json({
+    ...access,
+    currentUserId: res.locals.admin.userId,
+  });
 });
 
-router.post("/admin/administrators/approvals", async (req, res): Promise<void> => {
-  const parsed = CreateAdministratorApprovalBody.safeParse(req.body);
-  const email = parsed.success ? requestedEmail(parsed.data.email) : null;
-  if (!email) {
-    res.status(400).json({ error: "Provide a valid email address." });
-    return;
-  }
-  let allowlistEntry: { id: string; created: boolean } | null = null;
-  try {
-    const result = await createAdministratorApproval(res.locals.admin, email, async () => {
-      allowlistEntry = await ensureAllowedAdminEmail(email);
-      try {
-        await sendAdministratorInvitation(email);
-      } catch (error) {
-        if (allowlistEntry?.created) {
-          await removeAllowedAdminEmail(email).catch(() => undefined);
-        }
-        throw error;
-      }
-    });
-    if (!result.ok) {
-      writeError(res, result.reason);
-      return;
-    }
-    res.json(CreateAdministratorApprovalResponse.parse({ success: true }));
-  } catch (error) {
-    req.log.error({ error, email }, "Unable to send administrator invitation");
-    res.status(502).json({ error: "The administrator invitation could not be sent. No access was granted." });
-  }
-});
-
-router.delete("/admin/administrators/approvals", async (req, res): Promise<void> => {
-  const parsed = DeleteAdministratorApprovalBody.safeParse(req.body);
-  const email = parsed.success ? requestedEmail(parsed.data.email) : null;
+router.post("/admin/administrators", async (req, res): Promise<void> => {
+  const email = requestedEmail(req.body?.email);
   if (!email) {
     res.status(400).json({ error: "Provide a valid email address." });
     return;
   }
   try {
-    const result = await cancelAdministratorApproval(res.locals.admin, email, async () => {
-      await revokeAdministratorInvitations(email);
-      await removeAllowedAdminEmail(email);
-    });
+    const result = await createAdminAccount(res.locals.admin, email);
     if (!result.ok) {
       writeError(res, result.reason);
       return;
     }
+    res.status(201).set("Cache-Control", "no-store").json({
+      success: true,
+      temporaryPassword: result.password,
+    });
   } catch (error) {
-    req.log.error({ error, email }, "Unable to revoke administrator invitation");
-    res.status(502).json({ error: "The invitation could not be cancelled. Try again." });
-    return;
+    req.log.error({ error, email }, "Unable to create administrator account");
+    res.status(502).json({ error: "The administrator account could not be created." });
   }
-  res.json(DeleteAdministratorApprovalResponse.parse({ success: true }));
 });
 
-router.delete("/admin/administrators/access", async (req, res): Promise<void> => {
-  const parsed = RevokeAdministratorAccessBody.safeParse(req.body);
-  const clerkUserId = parsed.success ? parsed.data.clerkUserId.trim() : "";
+router.patch("/admin/administrators/:clerkUserId/status", async (req, res): Promise<void> => {
+  const clerkUserId = requestedUserId(req.params.clerkUserId);
+  if (!clerkUserId || typeof req.body?.disabled !== "boolean") {
+    res.status(400).json({ error: "Provide a valid administrator and status." });
+    return;
+  }
+  try {
+    const result = await setAdminDisabled(res.locals.admin, clerkUserId, req.body.disabled);
+    if (!result.ok) {
+      writeError(res, result.reason);
+      return;
+    }
+    res.json({ success: true });
+  } catch (error) {
+    req.log.error({ error, clerkUserId }, "Unable to change administrator status");
+    res.status(502).json({ error: "The administrator status could not be changed." });
+  }
+});
+
+router.post("/admin/administrators/:clerkUserId/temporary-password", async (req, res): Promise<void> => {
+  const clerkUserId = requestedUserId(req.params.clerkUserId);
   if (!clerkUserId) {
-    res.status(400).json({ error: "Provide a valid administrator id." });
+    res.status(400).json({ error: "Provide a valid administrator." });
     return;
   }
-  const result = await revokeAdministratorAccess(res.locals.admin, clerkUserId);
-  if (!result.ok) {
-    writeError(res, result.reason);
-    return;
+  try {
+    const result = await resetAdminTemporaryPassword(res.locals.admin, clerkUserId);
+    if (!result.ok) {
+      writeError(res, result.reason);
+      return;
+    }
+    res.set("Cache-Control", "no-store").json({
+      success: true,
+      temporaryPassword: result.password,
+    });
+  } catch (error) {
+    req.log.error({ error, clerkUserId }, "Unable to reset administrator password");
+    res.status(502).json({ error: "A temporary password could not be issued." });
   }
-  res.json(RevokeAdministratorAccessResponse.parse({ success: true }));
 });
 
 export default router;

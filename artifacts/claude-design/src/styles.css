@@ -10,6 +10,17 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 button,input,select,textarea { font:inherit; }
 button { cursor:pointer; }
 button:disabled { cursor:not-allowed; opacity:.45; }
+
+.admin-simple-login { width:min(440px,calc(100% - 32px)); padding:38px; border-radius:18px; background:#fff; box-shadow:0 24px 70px rgba(18,49,26,.16); }
+.admin-simple-login > img { display:block; width:92px; height:auto; margin:0 auto 24px; }
+.admin-simple-login h1 { color:var(--green); font-size:36px; font-weight:700; letter-spacing:-.03em; text-align:center; }
+.admin-simple-login > p { margin:10px 0 24px; color:var(--muted); line-height:1.5; text-align:center; }
+.admin-simple-login form { display:grid; gap:18px; margin-top:26px; }
+.admin-simple-login label { display:grid; gap:7px; color:var(--black-green); font-size:14px; font-weight:700; }
+.admin-simple-login input { width:100%; min-height:48px; padding:11px 13px; border:1px solid #ccd6ca; border-radius:10px; background:#f4f6f2; color:var(--black-green); }
+.admin-simple-login button { min-height:48px; border:0; border-radius:10px; background:var(--green); color:#fff; font-weight:700; }
+.admin-simple-login button:hover:not(:disabled) { background:#06763c; }
+.admin-auth-error { color:#9c372d!important; text-align:left!important; font-size:14px; line-height:1.45; }
 .site-shell { overflow:hidden; }
 .site-header { min-height:140px; padding:0 max(40px, calc((100vw - 1360px)/2)); display:flex; align-items:center; justify-content:space-between; background:#fff; }
 .logo { border:0; background:none; position:relative; padding:0; line-height:1; display:block; width:82px; }

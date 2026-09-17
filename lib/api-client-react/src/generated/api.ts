@@ -24,14 +24,14 @@ import type {
   AdminSession,
   AdminSummary,
   AdministratorAccessList,
-  AdministratorAccessRevocationInput,
-  AdministratorApprovalInput,
+  AdministratorStatusInput,
   ApiError,
   AvailabilityRow,
   CatalogueCategory,
   CatalogueCategoryInput,
   CatalogueCategoryReorder,
   CatalogueCategoryUpdate,
+  CreateAdministratorInput,
   DeleteProductImageRequest,
   EnquiryCreated,
   EnquiryInput,
@@ -61,6 +61,7 @@ import type {
   PublishValidationError,
   RedirectLookup,
   SuccessResponse,
+  TemporaryPasswordResponse,
   WorkbookCommit,
   WorkbookReport,
   WorkbookUpload
@@ -257,7 +258,7 @@ export const getGetAdministratorsUrl = () => {
 }
 
 /**
- * @summary List active administrators, pending approvals, and access audit history
+ * @summary List administrator accounts and access audit history
  */
 export const getAdministrators = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdministratorAccessList> => {
 
@@ -304,7 +305,7 @@ export type GetAdministratorsQueryError = ErrorType<ApiError>
 
 
 /**
- * @summary List active administrators, pending approvals, and access audit history
+ * @summary List administrator accounts and access audit history
  */
 
 export function useGetAdministrators<TData = Awaited<ReturnType<typeof getAdministrators>>, TError = ErrorType<ApiError>>(
@@ -325,25 +326,25 @@ export function useGetAdministrators<TData = Awaited<ReturnType<typeof getAdmini
 
 
 
-export const getCreateAdministratorApprovalUrl = () => {
+export const getCreateAdministratorUrl = () => {
 
 
 
 
-  return `/api/admin/administrators/approvals`
+  return `/api/admin/administrators`
 }
 
 /**
- * @summary Approve one exact email to claim administrator access
+ * @summary Create an administrator with a one-time temporary password
  */
-export const createAdministratorApproval = async (administratorApprovalInput: AdministratorApprovalInput, options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
+export const createAdministrator = async (createAdministratorInput: CreateAdministratorInput, options?: Parameters<typeof customFetch>[1]): Promise<TemporaryPasswordResponse> => {
 
-  return customFetch<SuccessResponse>(getCreateAdministratorApprovalUrl(),
+  return customFetch<TemporaryPasswordResponse>(getCreateAdministratorUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(administratorApprovalInput)
+    body: JSON.stringify(createAdministratorInput)
   }
 );}
 
@@ -351,11 +352,11 @@ export const createAdministratorApproval = async (administratorApprovalInput: Ad
 
 
 
-export const getCreateAdministratorApprovalMutationOptions = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdministratorApproval>>, TError,{data: BodyType<AdministratorApprovalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createAdministratorApproval>>, TError,{data: BodyType<AdministratorApprovalInput>}, TContext> => {
+export const getCreateAdministratorMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdministrator>>, TError,{data: BodyType<CreateAdministratorInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAdministrator>>, TError,{data: BodyType<CreateAdministratorInput>}, TContext> => {
 
-const mutationKey = ['createAdministratorApproval'];
+const mutationKey = ['createAdministrator'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -365,10 +366,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdministratorApproval>>, {data: BodyType<AdministratorApprovalInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdministrator>>, {data: BodyType<CreateAdministratorInput>}> = (props) => {
           const {data} = props ?? {};
 
-          return  createAdministratorApproval(data,requestOptions)
+          return  createAdministrator(data,requestOptions)
         }
 
 
@@ -378,43 +379,44 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type CreateAdministratorApprovalMutationResult = NonNullable<Awaited<ReturnType<typeof createAdministratorApproval>>>
-    export type CreateAdministratorApprovalMutationBody = BodyType<AdministratorApprovalInput>
-    export type CreateAdministratorApprovalMutationError = ErrorType<ApiError>
+    export type CreateAdministratorMutationResult = NonNullable<Awaited<ReturnType<typeof createAdministrator>>>
+    export type CreateAdministratorMutationBody = BodyType<CreateAdministratorInput>
+    export type CreateAdministratorMutationError = ErrorType<ApiError>
 
     /**
- * @summary Approve one exact email to claim administrator access
+ * @summary Create an administrator with a one-time temporary password
  */
-export const useCreateAdministratorApproval = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdministratorApproval>>, TError,{data: BodyType<AdministratorApprovalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useCreateAdministrator = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdministrator>>, TError,{data: BodyType<CreateAdministratorInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof createAdministratorApproval>>,
+        Awaited<ReturnType<typeof createAdministrator>>,
         TError,
-        {data: BodyType<AdministratorApprovalInput>},
+        {data: BodyType<CreateAdministratorInput>},
         TContext
       > => {
-      return useMutation(getCreateAdministratorApprovalMutationOptions(options));
+      return useMutation(getCreateAdministratorMutationOptions(options));
     }
 
-export const getDeleteAdministratorApprovalUrl = () => {
+export const getSetAdministratorStatusUrl = (clerkUserId: string,) => {
 
 
 
 
-  return `/api/admin/administrators/approvals`
+  return `/api/admin/administrators/${clerkUserId}/status`
 }
 
 /**
- * @summary Cancel one pending administrator email approval
+ * @summary Disable or restore an administrator account
  */
-export const deleteAdministratorApproval = async (administratorApprovalInput: AdministratorApprovalInput, options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
+export const setAdministratorStatus = async (clerkUserId: string,
+    administratorStatusInput: AdministratorStatusInput, options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
 
-  return customFetch<SuccessResponse>(getDeleteAdministratorApprovalUrl(),
+  return customFetch<SuccessResponse>(getSetAdministratorStatusUrl(clerkUserId),
   {
     ...options,
-    method: 'DELETE',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(administratorApprovalInput)
+    body: JSON.stringify(administratorStatusInput)
   }
 );}
 
@@ -422,11 +424,11 @@ export const deleteAdministratorApproval = async (administratorApprovalInput: Ad
 
 
 
-export const getDeleteAdministratorApprovalMutationOptions = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdministratorApproval>>, TError,{data: BodyType<AdministratorApprovalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteAdministratorApproval>>, TError,{data: BodyType<AdministratorApprovalInput>}, TContext> => {
+export const getSetAdministratorStatusMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAdministratorStatus>>, TError,{clerkUserId: string;data: BodyType<AdministratorStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setAdministratorStatus>>, TError,{clerkUserId: string;data: BodyType<AdministratorStatusInput>}, TContext> => {
 
-const mutationKey = ['deleteAdministratorApproval'];
+const mutationKey = ['setAdministratorStatus'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -436,10 +438,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdministratorApproval>>, {data: BodyType<AdministratorApprovalInput>}> = (props) => {
-          const {data} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setAdministratorStatus>>, {clerkUserId: string;data: BodyType<AdministratorStatusInput>}> = (props) => {
+          const {clerkUserId,data} = props ?? {};
 
-          return  deleteAdministratorApproval(data,requestOptions)
+          return  setAdministratorStatus(clerkUserId,data,requestOptions)
         }
 
 
@@ -449,43 +451,43 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type DeleteAdministratorApprovalMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdministratorApproval>>>
-    export type DeleteAdministratorApprovalMutationBody = BodyType<AdministratorApprovalInput>
-    export type DeleteAdministratorApprovalMutationError = ErrorType<ApiError>
+    export type SetAdministratorStatusMutationResult = NonNullable<Awaited<ReturnType<typeof setAdministratorStatus>>>
+    export type SetAdministratorStatusMutationBody = BodyType<AdministratorStatusInput>
+    export type SetAdministratorStatusMutationError = ErrorType<ApiError>
 
     /**
- * @summary Cancel one pending administrator email approval
+ * @summary Disable or restore an administrator account
  */
-export const useDeleteAdministratorApproval = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdministratorApproval>>, TError,{data: BodyType<AdministratorApprovalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useSetAdministratorStatus = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAdministratorStatus>>, TError,{clerkUserId: string;data: BodyType<AdministratorStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof deleteAdministratorApproval>>,
+        Awaited<ReturnType<typeof setAdministratorStatus>>,
         TError,
-        {data: BodyType<AdministratorApprovalInput>},
+        {clerkUserId: string;data: BodyType<AdministratorStatusInput>},
         TContext
       > => {
-      return useMutation(getDeleteAdministratorApprovalMutationOptions(options));
+      return useMutation(getSetAdministratorStatusMutationOptions(options));
     }
 
-export const getRevokeAdministratorAccessUrl = () => {
+export const getResetAdministratorTemporaryPasswordUrl = (clerkUserId: string,) => {
 
 
 
 
-  return `/api/admin/administrators/access`
+  return `/api/admin/administrators/${clerkUserId}/temporary-password`
 }
 
 /**
- * @summary Revoke an administrator, preserving the final active administrator
+ * @summary Issue a new one-time temporary administrator password
  */
-export const revokeAdministratorAccess = async (administratorAccessRevocationInput: AdministratorAccessRevocationInput, options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
+export const resetAdministratorTemporaryPassword = async (clerkUserId: string, options?: Parameters<typeof customFetch>[1]): Promise<TemporaryPasswordResponse> => {
 
-  return customFetch<SuccessResponse>(getRevokeAdministratorAccessUrl(),
+  return customFetch<TemporaryPasswordResponse>(getResetAdministratorTemporaryPasswordUrl(clerkUserId),
   {
     ...options,
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(administratorAccessRevocationInput)
+    method: 'POST'
+
+
   }
 );}
 
@@ -493,11 +495,11 @@ export const revokeAdministratorAccess = async (administratorAccessRevocationInp
 
 
 
-export const getRevokeAdministratorAccessMutationOptions = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeAdministratorAccess>>, TError,{data: BodyType<AdministratorAccessRevocationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof revokeAdministratorAccess>>, TError,{data: BodyType<AdministratorAccessRevocationInput>}, TContext> => {
+export const getResetAdministratorTemporaryPasswordMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetAdministratorTemporaryPassword>>, TError,{clerkUserId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resetAdministratorTemporaryPassword>>, TError,{clerkUserId: string}, TContext> => {
 
-const mutationKey = ['revokeAdministratorAccess'];
+const mutationKey = ['resetAdministratorTemporaryPassword'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -507,10 +509,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeAdministratorAccess>>, {data: BodyType<AdministratorAccessRevocationInput>}> = (props) => {
-          const {data} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetAdministratorTemporaryPassword>>, {clerkUserId: string}> = (props) => {
+          const {clerkUserId} = props ?? {};
 
-          return  revokeAdministratorAccess(data,requestOptions)
+          return  resetAdministratorTemporaryPassword(clerkUserId,requestOptions)
         }
 
 
@@ -520,22 +522,93 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type RevokeAdministratorAccessMutationResult = NonNullable<Awaited<ReturnType<typeof revokeAdministratorAccess>>>
-    export type RevokeAdministratorAccessMutationBody = BodyType<AdministratorAccessRevocationInput>
-    export type RevokeAdministratorAccessMutationError = ErrorType<ApiError>
+    export type ResetAdministratorTemporaryPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof resetAdministratorTemporaryPassword>>>
+
+    export type ResetAdministratorTemporaryPasswordMutationError = ErrorType<ApiError>
 
     /**
- * @summary Revoke an administrator, preserving the final active administrator
+ * @summary Issue a new one-time temporary administrator password
  */
-export const useRevokeAdministratorAccess = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeAdministratorAccess>>, TError,{data: BodyType<AdministratorAccessRevocationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useResetAdministratorTemporaryPassword = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetAdministratorTemporaryPassword>>, TError,{clerkUserId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof revokeAdministratorAccess>>,
+        Awaited<ReturnType<typeof resetAdministratorTemporaryPassword>>,
         TError,
-        {data: BodyType<AdministratorAccessRevocationInput>},
+        {clerkUserId: string},
         TContext
       > => {
-      return useMutation(getRevokeAdministratorAccessMutationOptions(options));
+      return useMutation(getResetAdministratorTemporaryPasswordMutationOptions(options));
+    }
+
+export const getCompleteAdministratorPasswordChangeUrl = () => {
+
+
+
+
+  return `/api/auth/password-changed`
+}
+
+/**
+ * @summary Mark the current administrator temporary password as replaced
+ */
+export const completeAdministratorPasswordChange = async ( options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getCompleteAdministratorPasswordChangeUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompleteAdministratorPasswordChangeMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeAdministratorPasswordChange>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeAdministratorPasswordChange>>, TError,void, TContext> => {
+
+const mutationKey = ['completeAdministratorPasswordChange'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeAdministratorPasswordChange>>, void> = () => {
+
+
+          return  completeAdministratorPasswordChange(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteAdministratorPasswordChangeMutationResult = NonNullable<Awaited<ReturnType<typeof completeAdministratorPasswordChange>>>
+
+    export type CompleteAdministratorPasswordChangeMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Mark the current administrator temporary password as replaced
+ */
+export const useCompleteAdministratorPasswordChange = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeAdministratorPasswordChange>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeAdministratorPasswordChange>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCompleteAdministratorPasswordChangeMutationOptions(options));
     }
 
 export const getListProductsUrl = () => {

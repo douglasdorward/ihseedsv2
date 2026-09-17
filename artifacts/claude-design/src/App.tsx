@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   ClerkLoaded,
   ClerkProvider,
-  SignIn,
-  SignUp,
   useAuth,
   useClerk,
+  useSignIn,
+  useUser,
 } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadesOfPurple } from "@clerk/themes";
@@ -23,6 +23,8 @@ type AdminSession = {
   signedIn: boolean;
   authorized: boolean;
   email?: string;
+  role?: "admin" | "superadmin";
+  mustChangePassword?: boolean;
 };
 
 const appearance = {
@@ -60,53 +62,132 @@ const appearance = {
 };
 
 function AuthScreen() {
+  const { isLoaded, signIn, setActive } = useSignIn();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!isLoaded) return;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await signIn.create({
+        strategy: "password",
+        identifier: email.trim(),
+        password,
+      });
+      if (result.status !== "complete" || !result.createdSessionId) {
+        throw new Error("This account requires an unsupported sign-in step.");
+      }
+      await setActive({ session: result.createdSessionId });
+      navigate(basePath, { replace: true });
+    } catch (caught: any) {
+      setError(
+        caught?.errors?.[0]?.longMessage ||
+        caught?.errors?.[0]?.message ||
+        caught?.message ||
+        "Email or password is incorrect.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <main className="admin-auth-page">
-      <div className="admin-auth-context">
+      <section className="admin-simple-login">
         <img src={`${basePath}/ih-seeds-logo.png`} alt="IH Seeds" />
-        <h1>Authorized personnel only</h1>
-        <p>Sign in with an approved administrator email.</p>
-      </div>
-      <SignIn
-        routing="path"
-        path={`${basePath}/sign-in`}
-        signUpUrl={`${basePath}/sign-in`}
-        forceRedirectUrl={basePath}
-      />
+        <h1>Administrator login</h1>
+        <form onSubmit={submit}>
+          <label>
+            Email
+            <input
+              type="email"
+              autoComplete="username"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              autoFocus
+            />
+          </label>
+          <label>
+            Password
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </label>
+          {error && <p className="admin-auth-error" role="alert">{error}</p>}
+          <button type="submit" disabled={!isLoaded || busy}>
+            {busy ? "Logging in…" : "Log in"}
+          </button>
+        </form>
+      </section>
     </main>
   );
 }
 
-function InvitationScreen() {
-  const hasTicket = new URLSearchParams(window.location.search).has("__clerk_ticket");
-  if (!hasTicket) {
-    return (
-      <main className="admin-auth-page">
-        <section className="admin-access-card">
-          <img src={`${basePath}/ih-seeds-logo.png`} alt="IH Seeds" />
-          <p className="admin-auth-eyebrow">Private administration</p>
-          <h1>Invitation required</h1>
-          <p>Administrator accounts can only be created from an invitation sent by an existing administrator.</p>
-          <button type="button" onClick={() => navigate(`${basePath}/sign-in`)}>
-            Return to sign in
-          </button>
-        </section>
-      </main>
-    );
-  }
+function PasswordChangeScreen({ onComplete }: { onComplete: () => Promise<void> }) {
+  const { user } = useUser();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!user) return;
+    if (newPassword !== confirmation) {
+      setError("The new passwords do not match.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await user.updatePassword({
+        currentPassword,
+        newPassword,
+        signOutOfOtherSessions: true,
+      });
+      const response = await fetch("/api/auth/password-changed", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("The password changed, but access could not be unlocked. Try again.");
+      await onComplete();
+    } catch (caught: any) {
+      setError(
+        caught?.errors?.[0]?.longMessage ||
+        caught?.errors?.[0]?.message ||
+        caught?.message ||
+        "The password could not be changed.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <main className="admin-auth-page">
-      <div className="admin-auth-context">
+      <section className="admin-simple-login">
         <img src={`${basePath}/ih-seeds-logo.png`} alt="IH Seeds" />
-        <h1>Accept administrator invitation</h1>
-        <p>Create credentials for the invited email address.</p>
-      </div>
-      <SignUp
-        routing="path"
-        path={`${basePath}/invitation`}
-        signInUrl={`${basePath}/sign-in`}
-        forceRedirectUrl={basePath}
-      />
+        <h1>Choose your password</h1>
+        <p>Replace the temporary password before continuing.</p>
+        <form onSubmit={submit}>
+          <label>Temporary password<input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></label>
+          <label>New password<input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} required /></label>
+          <label>Confirm new password<input type="password" autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} minLength={8} required /></label>
+          {error && <p className="admin-auth-error" role="alert">{error}</p>}
+          <button type="submit" disabled={busy}>{busy ? "Saving…" : "Save new password"}</button>
+        </form>
+      </section>
     </main>
   );
 }
@@ -134,9 +215,7 @@ function AdminGate() {
   const { signOut } = useClerk();
   const [session, setSession] = useState<AdminSession | null>(null);
   const [loading, setLoading] = useState(true);
-  const isAuthRoute =
-    location.startsWith(`${basePath}/sign-in`) ||
-    location.startsWith(`${basePath}/invitation`);
+  const isAuthRoute = location.startsWith(`${basePath}/sign-in`);
   const shouldRedirectToSignIn =
     !isAuthRoute &&
     isLoaded &&
@@ -187,6 +266,12 @@ function AdminGate() {
     };
   }, [isLoaded, isSignedIn]);
 
+  const refreshSession = async () => {
+    const response = await fetch("/api/auth/session", { credentials: "include", cache: "no-store" });
+    const body = await response.json().catch(() => ({}));
+    setSession({ ...body, authorized: response.ok && body.authorized === true });
+  };
+
   useEffect(() => {
     if (shouldRedirectToSignIn) {
       navigate(`${basePath}/sign-in`, { replace: true });
@@ -194,7 +279,6 @@ function AdminGate() {
   }, [shouldRedirectToSignIn]);
 
   if (location.startsWith(`${basePath}/sign-in`)) return <AuthScreen />;
-  if (location.startsWith(`${basePath}/invitation`)) return <InvitationScreen />;
   if (!isLoaded || loading) {
     return <main className="admin-auth-page"><div className="admin-auth-loading">Checking administrator access…</div></main>;
   }
@@ -204,6 +288,9 @@ function AdminGate() {
   if (!session?.authorized) {
     if (session?.signedIn || isSignedIn) return <AccessDenied />;
     return <AuthScreen />;
+  }
+  if (session.mustChangePassword) {
+    return <PasswordChangeScreen onComplete={refreshSession} />;
   }
 
   return (
@@ -215,7 +302,7 @@ function AdminGate() {
       >
         Sign out
       </button>
-      <Admin />
+      <Admin role={session.role ?? "admin"} />
     </>
   );
 }
@@ -230,9 +317,6 @@ export default function App() {
       proxyUrl={clerkProxyUrl}
       appearance={appearance}
       signInUrl={`${basePath}/sign-in`}
-      localization={{
-        signIn: { start: { title: "Authorized personnel only", subtitle: "Sign in with an approved administrator email" } },
-      }}
       routerPush={(to) => navigate(to)}
       routerReplace={(to) => navigate(to, { replace: true })}
     >

@@ -7,7 +7,7 @@ import { publishableKeyFromHost } from "@clerk/shared/keys";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { publicRedirectTo } from "./lib/public-redirect";
-import { requireAdmin } from "./middlewares/admin-auth";
+import { requireAdmin, requireSuperadmin } from "./middlewares/admin-auth";
 import {
   CLERK_PROXY_PATH,
   clerkProxyMiddleware,
@@ -72,6 +72,7 @@ app.use(
     ),
   })),
 );
+app.use("/api/admin/administrators", requireSuperadmin);
 app.use("/api/admin", requireAdmin);
 app.use("/api", router);
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));

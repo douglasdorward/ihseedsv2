@@ -6,7 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type AdministratorAccessListPendingApprovalsItem = {
+export interface CreateAdministratorInput {
+  /**
+     * @minLength 3
+     * @maxLength 320
+     */
   email: string;
-  createdAt: Date;
-};
+}

@@ -7,11 +7,9 @@
  */
 import type { AdministratorAccessListAdministratorsItem } from './administratorAccessListAdministratorsItem';
 import type { AdministratorAccessListAuditItem } from './administratorAccessListAuditItem';
-import type { AdministratorAccessListPendingApprovalsItem } from './administratorAccessListPendingApprovalsItem';
 
 export interface AdministratorAccessList {
   administrators: AdministratorAccessListAdministratorsItem[];
-  pendingApprovals: AdministratorAccessListPendingApprovalsItem[];
   audit: AdministratorAccessListAuditItem[];
   currentUserId: string;
 }

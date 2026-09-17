@@ -11,4 +11,5 @@ export type AdminSessionRole = typeof AdminSessionRole[keyof typeof AdminSession
 
 export const AdminSessionRole = {
   admin: 'admin',
+  superadmin: 'superadmin',
 } as const;
