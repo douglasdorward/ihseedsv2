@@ -348,16 +348,11 @@ function AdminGate() {
   }
 
   return (
-    <>
-      <button
-        className="admin-global-signout"
-        type="button"
-        onClick={() => signOut({ redirectUrl: `${basePath}/sign-in` })}
-      >
-        Sign out
-      </button>
-      <Admin role={session.role ?? "admin"} />
-    </>
+    <Admin
+      role={session.role ?? "admin"}
+      accountName={session.email ?? "Administrator"}
+      onSignOut={() => signOut({ redirectUrl: `${basePath}/sign-in` })}
+    />
   );
 }
 

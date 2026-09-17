@@ -552,7 +552,27 @@ function AdminNavIcon({ name }: { name: string }) {
   return <Icon name={name} size={19} />;
 }
 
-function AdminLayout({ children, mobileOpen, setMobileOpen, role }: { children: ReactNode; mobileOpen: boolean; setMobileOpen: (open: boolean) => void; role: "admin" | "superadmin"; }) {
+type AdminAccountProps = {
+  role: "admin" | "superadmin";
+  accountName: string;
+  onSignOut: () => Promise<unknown>;
+};
+
+function AdminLayout({ children, mobileOpen, setMobileOpen, role, accountName, onSignOut }: AdminAccountProps & { children: ReactNode; mobileOpen: boolean; setMobileOpen: (open: boolean) => void; }) {
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    setSignOutError("");
+    try {
+      await onSignOut();
+    } catch {
+      setSignOutError("Could not sign out. Please try again.");
+    } finally {
+      setSigningOut(false);
+    }
+  };
   const [location] = useLocation();
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -624,7 +644,16 @@ function AdminLayout({ children, mobileOpen, setMobileOpen, role }: { children: 
             );
           })}
         </nav>
-        <div className="admin-user"><span className="admin-avatar">IH</span><span><strong>IH Seeds team</strong><small>Administrator</small></span></div>
+        <div className="admin-account-footer">
+          <div className="admin-user">
+            <span className="admin-avatar" aria-hidden="true">{accountName.slice(0, 2).toUpperCase()}</span>
+            <span className="admin-user-identity"><strong title={accountName}>{accountName}</strong><small>{role === "superadmin" ? "Superadmin" : "Administrator"}</small></span>
+            <button className="admin-sidebar-signout" type="button" aria-label={signingOut ? "Signing out" : "Sign out"} title="Sign out" disabled={signingOut} onClick={handleSignOut}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+            </button>
+          </div>
+          {signOutError && <p className="admin-signout-error" role="alert">{signOutError}</p>}
+        </div>
       </aside>
       {mobileOpen && <button className="admin-overlay" onClick={() => setMobileOpen(false)} aria-label="Close navigation" />}
       <main className="admin-main">{children}</main>
@@ -2301,7 +2330,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   );
 }
 
-export default function Admin({ role }: { role: "admin" | "superadmin" }) {
+export default function Admin({ role, accountName, onSignOut }: AdminAccountProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [location] = useLocation();
   const route = location.split("?")[0];
@@ -2317,7 +2346,7 @@ export default function Admin({ role }: { role: "admin" | "superadmin" }) {
   }, [isAdministrators, role]);
 
   return (
-    <AdminLayout mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} role={role}>
+    <AdminLayout mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} role={role} accountName={accountName} onSignOut={onSignOut}>
       {route === "/admin" && <Dashboard />}
       {isProducts && <ProductTable />}
       {isCategories && <AdminCategories />}
