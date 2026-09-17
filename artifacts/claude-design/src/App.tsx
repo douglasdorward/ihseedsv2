@@ -5,7 +5,6 @@ import {
   useAuth,
   useClerk,
   useSignIn,
-  useUser,
 } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadesOfPurple } from "@clerk/themes";
@@ -134,7 +133,6 @@ function AuthScreen() {
 }
 
 function PasswordChangeScreen({ onComplete }: { onComplete: () => Promise<void> }) {
-  const { user } = useUser();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -143,7 +141,6 @@ function PasswordChangeScreen({ onComplete }: { onComplete: () => Promise<void> 
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!user) return;
     if (newPassword !== confirmation) {
       setError("The new passwords do not match.");
       return;
@@ -151,16 +148,14 @@ function PasswordChangeScreen({ onComplete }: { onComplete: () => Promise<void> 
     setBusy(true);
     setError("");
     try {
-      await user.updatePassword({
-        currentPassword,
-        newPassword,
-        signOutOfOtherSessions: true,
-      });
-      const response = await fetch("/api/auth/password-changed", {
+      const response = await fetch("/api/auth/password", {
         method: "POST",
         credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
       });
-      if (!response.ok) throw new Error("The password changed, but access could not be unlocked. Try again.");
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "The password could not be changed.");
       await onComplete();
     } catch (caught: any) {
       setError(
@@ -182,8 +177,8 @@ function PasswordChangeScreen({ onComplete }: { onComplete: () => Promise<void> 
         <p>Replace the temporary password before continuing.</p>
         <form onSubmit={submit}>
           <label>Temporary password<input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></label>
-          <label>New password<input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} required /></label>
-          <label>Confirm new password<input type="password" autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} minLength={8} required /></label>
+          <label>New password<input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={15} required /></label>
+          <label>Confirm new password<input type="password" autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} minLength={15} required /></label>
           {error && <p className="admin-auth-error" role="alert">{error}</p>}
           <button type="submit" disabled={busy}>{busy ? "Saving…" : "Save new password"}</button>
         </form>

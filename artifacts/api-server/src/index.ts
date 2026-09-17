@@ -2,6 +2,7 @@ import app from "./app";
 import { appStorageBackend } from "./lib/app-storage";
 import { logger } from "./lib/logger";
 import { configureSimpleAdminAccounts } from "./lib/admin-accounts";
+import { setAdminAuthReady } from "./lib/admin-readiness";
 
 const rawPort = process.env["PORT"];
 
@@ -21,7 +22,9 @@ const storageBackend = appStorageBackend();
 
 try {
   await configureSimpleAdminAccounts();
+  setAdminAuthReady(true);
 } catch (err) {
+  setAdminAuthReady(false);
   logger.error(
     { err },
     "Administrator account bootstrap failed; public API will continue without administrator access",

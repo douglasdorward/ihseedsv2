@@ -7,6 +7,7 @@ export const adminUsersTable = pgTable("ih_admin_users", {
   role: text("role").notNull().default("admin"),
   disabledAt: timestamp("disabled_at", { withTimezone: true }),
   mustChangePassword: boolean("must_change_password").notNull().default(true),
+  passwordOperationId: text("password_operation_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [

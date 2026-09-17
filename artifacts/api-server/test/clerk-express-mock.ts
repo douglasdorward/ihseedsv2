@@ -16,6 +16,13 @@ let currentIdentity: MockIdentity | null = null;
 let nextId = 1;
 const invitations: { id: string; emailAddress: string; status: "pending" | "revoked" }[] = [];
 const allowlistIdentifiers: { id: string; identifier: string }[] = [];
+const users: {
+  id: string;
+  emailAddresses: MockEmailAddress[];
+  banned: boolean;
+  passwordUpdated: boolean;
+}[] = [];
+const userUpdates: { userId: string; signOutOfOtherSessions: boolean | undefined }[] = [];
 let allowlistEnabled = false;
 
 /**
@@ -30,6 +37,8 @@ export function getTestClerkOperations() {
   return {
     invitations: invitations.map((invitation) => ({ ...invitation })),
     allowlistIdentifiers: allowlistIdentifiers.map((entry) => ({ ...entry })),
+    users: users.map((user) => ({ ...user, emailAddresses: user.emailAddresses.map((email) => ({ ...email })) })),
+    userUpdates: userUpdates.map((update) => ({ ...update })),
     allowlistEnabled,
   };
 }
@@ -37,6 +46,8 @@ export function getTestClerkOperations() {
 export function resetTestClerkOperations() {
   invitations.splice(0);
   allowlistIdentifiers.splice(0);
+  users.splice(0);
+  userUpdates.splice(0);
   allowlistEnabled = false;
   nextId = 1;
 }
@@ -48,17 +59,59 @@ export function getAuth() {
 export const clerkClient = {
   users: {
     async getUser(userId: string) {
-      if (!currentIdentity || currentIdentity.userId !== userId) {
-        throw new Error("Mock Clerk user was not configured.");
-      }
-      return currentIdentity;
+      if (currentIdentity?.userId === userId) return currentIdentity;
+      const user = users.find((candidate) => candidate.id === userId);
+      if (user) return user;
+      throw new Error("Mock Clerk user was not configured.");
     },
     async getUserList({ emailAddress = [] }: { emailAddress?: string[] } = {}) {
-      const matches = currentIdentity && currentIdentity.emailAddresses.some((address) =>
-        emailAddress.some((email) => email.toLowerCase() === address.emailAddress.toLowerCase()))
-        ? [currentIdentity]
-        : [];
+      const candidates = [...users, ...(currentIdentity ? [currentIdentity] : [])];
+      const matches = candidates.filter((candidate) => candidate.emailAddresses.some((address) =>
+        emailAddress.some((email) => email.toLowerCase() === address.emailAddress.toLowerCase())));
       return { data: matches, totalCount: matches.length };
+    },
+    async createUser({ emailAddress }: { emailAddress: string[] }) {
+      const user = {
+        id: `user-${nextId++}`,
+        emailAddresses: emailAddress.map((email, index) => ({
+          id: `email-${nextId++}`,
+          emailAddress: email,
+          verification: { status: "verified" },
+          ...(index === 0 ? { primary: true } : {}),
+        })),
+        banned: false,
+        passwordUpdated: false,
+      };
+      users.push(user);
+      return user;
+    },
+    async updateUser(userId: string, params: { signOutOfOtherSessions?: boolean } = {}) {
+      userUpdates.push({ userId, signOutOfOtherSessions: params.signOutOfOtherSessions });
+      if (currentIdentity?.userId === userId) return currentIdentity;
+      const user = users.find((candidate) => candidate.id === userId);
+      if (!user) throw new Error("Mock Clerk user was not found.");
+      user.passwordUpdated = true;
+      return user;
+    },
+    async verifyPassword({ userId, password }: { userId: string; password: string }) {
+      if (currentIdentity?.userId !== userId || !password) throw new Error("Password verification failed.");
+      return { verified: true as const };
+    },
+    async deleteUser(userId: string) {
+      const index = users.findIndex((candidate) => candidate.id === userId);
+      if (index >= 0) users.splice(index, 1);
+    },
+    async banUser(userId: string) {
+      const user = users.find((candidate) => candidate.id === userId);
+      if (!user) throw new Error("Mock Clerk user was not found.");
+      user.banned = true;
+      return user;
+    },
+    async unbanUser(userId: string) {
+      const user = users.find((candidate) => candidate.id === userId);
+      if (!user) throw new Error("Mock Clerk user was not found.");
+      user.banned = false;
+      return user;
     },
   },
   invitations: {

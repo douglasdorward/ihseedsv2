@@ -130,12 +130,17 @@ paths:
         "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
         "403": { description: Superadmin access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
         "409": { description: Superadmin is protected or account is unavailable, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-  /auth/password-changed:
+  /auth/password:
     post:
-      operationId: completeAdministratorPasswordChange
+      operationId: changeAdministratorPassword
       tags: [admin]
       summary: Mark the current administrator temporary password as replaced
       security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdministratorPasswordInput" }
       responses:
         "200":
           description: Password change completed
@@ -928,6 +933,12 @@ components:
       required: [disabled]
       properties:
         disabled: { type: boolean }
+    AdministratorPasswordInput:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: { type: string, minLength: 1, maxLength: 128 }
+        newPassword: { type: string, minLength: 15, maxLength: 128 }
     TemporaryPasswordResponse:
       type: object
       required: [success, temporaryPassword]

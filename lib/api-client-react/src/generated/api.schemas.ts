@@ -54,6 +54,19 @@ export interface AdministratorStatusInput {
   disabled: boolean;
 }
 
+export interface AdministratorPasswordInput {
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  currentPassword: string;
+  /**
+     * @minLength 15
+     * @maxLength 128
+     */
+  newPassword: string;
+}
+
 export interface TemporaryPasswordResponse {
   success: true;
   /** @minLength 8 */

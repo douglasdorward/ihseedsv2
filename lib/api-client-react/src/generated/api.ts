@@ -24,6 +24,7 @@ import type {
   AdminSession,
   AdminSummary,
   AdministratorAccessList,
+  AdministratorPasswordInput,
   AdministratorStatusInput,
   ApiError,
   AvailabilityRow,
@@ -540,25 +541,25 @@ export const useResetAdministratorTemporaryPassword = <TError = ErrorType<ApiErr
       return useMutation(getResetAdministratorTemporaryPasswordMutationOptions(options));
     }
 
-export const getCompleteAdministratorPasswordChangeUrl = () => {
+export const getChangeAdministratorPasswordUrl = () => {
 
 
 
 
-  return `/api/auth/password-changed`
+  return `/api/auth/password`
 }
 
 /**
  * @summary Mark the current administrator temporary password as replaced
  */
-export const completeAdministratorPasswordChange = async ( options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
+export const changeAdministratorPassword = async (administratorPasswordInput: AdministratorPasswordInput, options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
 
-  return customFetch<SuccessResponse>(getCompleteAdministratorPasswordChangeUrl(),
+  return customFetch<SuccessResponse>(getChangeAdministratorPasswordUrl(),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(administratorPasswordInput)
   }
 );}
 
@@ -566,11 +567,11 @@ export const completeAdministratorPasswordChange = async ( options?: Parameters<
 
 
 
-export const getCompleteAdministratorPasswordChangeMutationOptions = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeAdministratorPasswordChange>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof completeAdministratorPasswordChange>>, TError,void, TContext> => {
+export const getChangeAdministratorPasswordMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeAdministratorPassword>>, TError,{data: BodyType<AdministratorPasswordInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof changeAdministratorPassword>>, TError,{data: BodyType<AdministratorPasswordInput>}, TContext> => {
 
-const mutationKey = ['completeAdministratorPasswordChange'];
+const mutationKey = ['changeAdministratorPassword'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -580,10 +581,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeAdministratorPasswordChange>>, void> = () => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof changeAdministratorPassword>>, {data: BodyType<AdministratorPasswordInput>}> = (props) => {
+          const {data} = props ?? {};
 
-
-          return  completeAdministratorPasswordChange(requestOptions)
+          return  changeAdministratorPassword(data,requestOptions)
         }
 
 
@@ -593,22 +594,22 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type CompleteAdministratorPasswordChangeMutationResult = NonNullable<Awaited<ReturnType<typeof completeAdministratorPasswordChange>>>
-
-    export type CompleteAdministratorPasswordChangeMutationError = ErrorType<ApiError>
+    export type ChangeAdministratorPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof changeAdministratorPassword>>>
+    export type ChangeAdministratorPasswordMutationBody = BodyType<AdministratorPasswordInput>
+    export type ChangeAdministratorPasswordMutationError = ErrorType<ApiError>
 
     /**
  * @summary Mark the current administrator temporary password as replaced
  */
-export const useCompleteAdministratorPasswordChange = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeAdministratorPasswordChange>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useChangeAdministratorPassword = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeAdministratorPassword>>, TError,{data: BodyType<AdministratorPasswordInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof completeAdministratorPasswordChange>>,
+        Awaited<ReturnType<typeof changeAdministratorPassword>>,
         TError,
-        void,
+        {data: BodyType<AdministratorPasswordInput>},
         TContext
       > => {
-      return useMutation(getCompleteAdministratorPasswordChangeMutationOptions(options));
+      return useMutation(getChangeAdministratorPasswordMutationOptions(options));
     }
 
 export const getListProductsUrl = () => {

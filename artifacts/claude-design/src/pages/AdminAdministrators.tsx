@@ -52,7 +52,7 @@ const actionLabels: Record<string, string> = {
   account_created: "created an administrator",
   account_disabled: "disabled an administrator",
   account_restored: "restored an administrator",
-  temporary_password_reset: "issued a new temporary password for",
+  temporary_password_reset_requested: "issued a new temporary password for",
 };
 
 function TemporaryPasswordCard({

@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { clerkClient } from "@clerk/express";
 import {
   adminAccessAuditTable,
@@ -7,7 +7,7 @@ import {
   adminUsersTable,
   db,
 } from "@workspace/db";
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
 import type { AdminSession } from "../middlewares/admin-auth";
 import { lockAdminAccess, normalizeAdminEmail } from "./admin-access";
 import { ensureAllowedAdminEmail, removeAllowedAdminEmail } from "./admin-invitations";
@@ -102,51 +102,129 @@ export async function createAdminAccount(actor: AdminSession, emailValue: string
 }
 
 export async function setAdminDisabled(actor: AdminSession, clerkUserId: string, disabled: boolean) {
+  const target = await db.transaction(async (tx) => {
+    await lockAdminAccess(tx);
+    if (!await activeSuperadmin(tx, actor)) return { ok: false as const, reason: "actor-revoked" as const };
+    const [stored] = await tx.select().from(adminUsersTable)
+      .where(eq(adminUsersTable.clerkUserId, clerkUserId)).for("update");
+    if (!stored) return { ok: false as const, reason: "target-not-found" as const };
+    if (stored.role === "superadmin") return { ok: false as const, reason: "protected-superadmin" as const };
+    if (disabled) {
+      await tx.update(adminUsersTable).set({
+        disabledAt: stored.disabledAt ?? new Date(),
+        updatedAt: new Date(),
+      }).where(eq(adminUsersTable.clerkUserId, clerkUserId));
+      await audit(tx, actor, stored.email, "account_disable_requested");
+    }
+    return { ok: true as const, email: stored.email };
+  });
+  if (!target.ok) return target;
+
+  if (disabled) {
+    // Persist local denial first. A Clerk failure leaves the account blocked by
+    // this application and the same operation can safely be retried.
+    await clerkClient.users.banUser(clerkUserId);
+    return { ok: true as const };
+  }
+
+  // Provider access is restored first; the ledger remains disabled unless the
+  // final transaction commits, so a partial failure cannot grant app access.
+  await clerkClient.users.unbanUser(clerkUserId);
   return db.transaction(async (tx) => {
     await lockAdminAccess(tx);
     if (!await activeSuperadmin(tx, actor)) return { ok: false as const, reason: "actor-revoked" as const };
-    const [target] = await tx.select().from(adminUsersTable)
+    const [stored] = await tx.select().from(adminUsersTable)
       .where(eq(adminUsersTable.clerkUserId, clerkUserId)).for("update");
-    if (!target) return { ok: false as const, reason: "target-not-found" as const };
-    if (target.role === "superadmin") return { ok: false as const, reason: "protected-superadmin" as const };
-    if (disabled) await clerkClient.users.banUser(clerkUserId);
-    else await clerkClient.users.unbanUser(clerkUserId);
+    if (!stored) return { ok: false as const, reason: "target-not-found" as const };
+    if (stored.role === "superadmin") return { ok: false as const, reason: "protected-superadmin" as const };
     await tx.update(adminUsersTable).set({
-      disabledAt: disabled ? new Date() : null,
+      disabledAt: null,
       updatedAt: new Date(),
     }).where(eq(adminUsersTable.clerkUserId, clerkUserId));
-    await audit(tx, actor, target.email, disabled ? "account_disabled" : "account_restored");
+    await audit(tx, actor, stored.email, "account_restored");
     return { ok: true as const };
   });
 }
 
 export async function resetAdminTemporaryPassword(actor: AdminSession, clerkUserId: string) {
   const password = temporaryPassword();
-  return db.transaction(async (tx) => {
+  const operationId = randomUUID();
+  const prepared = await db.transaction(async (tx) => {
     await lockAdminAccess(tx);
     if (!await activeSuperadmin(tx, actor)) return { ok: false as const, reason: "actor-revoked" as const };
     const [target] = await tx.select().from(adminUsersTable)
       .where(eq(adminUsersTable.clerkUserId, clerkUserId)).for("update");
     if (!target) return { ok: false as const, reason: "target-not-found" as const };
     if (target.role === "superadmin") return { ok: false as const, reason: "protected-superadmin" as const };
-    await clerkClient.users.updateUser(clerkUserId, {
-      password,
-      signOutOfOtherSessions: true,
-    });
+    if (target.passwordOperationId) return { ok: false as const, reason: "reset-in-progress" as const };
     await tx.update(adminUsersTable).set({
       mustChangePassword: true,
+      passwordOperationId: operationId,
       updatedAt: new Date(),
     }).where(eq(adminUsersTable.clerkUserId, clerkUserId));
-    await audit(tx, actor, target.email, "temporary_password_reset");
-    return { ok: true as const, password };
+    return { ok: true as const };
   });
+  if (!prepared.ok) return prepared;
+  try {
+    return await db.transaction(async (tx) => {
+      await lockAdminAccess(tx);
+      const [target] = await tx.select().from(adminUsersTable)
+        .where(eq(adminUsersTable.clerkUserId, clerkUserId)).for("update");
+      if (!target || target.passwordOperationId !== operationId) {
+        return { ok: false as const, reason: "reset-superseded" as const };
+      }
+      // The row lock prevents password completion from racing the provider
+      // update. The durable operation id remains set if this transaction fails.
+      await clerkClient.users.updateUser(clerkUserId, {
+        password,
+        signOutOfOtherSessions: true,
+      });
+      await tx.update(adminUsersTable).set({
+        mustChangePassword: true,
+        passwordOperationId: null,
+        updatedAt: new Date(),
+      }).where(eq(adminUsersTable.clerkUserId, clerkUserId));
+      await audit(tx, actor, target.email, "temporary_password_reset_requested");
+      return { ok: true as const, password };
+    });
+  } catch (error) {
+    // Keep mandatory change enabled but release a failed operation so the
+    // Superadmin can issue a replacement password immediately.
+    await db.update(adminUsersTable).set({
+      mustChangePassword: true,
+      passwordOperationId: null,
+      updatedAt: new Date(),
+    }).where(and(
+      eq(adminUsersTable.clerkUserId, clerkUserId),
+      eq(adminUsersTable.passwordOperationId, operationId),
+    )).catch(() => undefined);
+    throw error;
+  }
 }
 
-export async function completeOwnPasswordChange(actor: AdminSession) {
-  await db.update(adminUsersTable).set({
-    mustChangePassword: false,
-    updatedAt: new Date(),
-  }).where(eq(adminUsersTable.clerkUserId, actor.userId));
+export async function completeOwnPasswordChange(
+  actor: AdminSession,
+  passwords: { currentPassword: string; newPassword: string },
+) {
+  await db.transaction(async (tx) => {
+    await lockAdminAccess(tx);
+    const [stored] = await tx.select().from(adminUsersTable)
+      .where(eq(adminUsersTable.clerkUserId, actor.userId)).for("update");
+    if (!stored || stored.disabledAt) throw new Error("Administrator access is unavailable.");
+    if (!stored.mustChangePassword) throw new Error("A temporary password change is not required.");
+    if (stored.passwordOperationId) throw new Error("A temporary password reset is in progress.");
+    await clerkClient.users.verifyPassword({
+      userId: actor.userId,
+      password: passwords.currentPassword,
+    });
+    await clerkClient.users.updateUser(actor.userId, {
+      password: passwords.newPassword,
+    });
+    await tx.update(adminUsersTable).set({
+      mustChangePassword: false,
+      updatedAt: new Date(),
+    }).where(eq(adminUsersTable.clerkUserId, actor.userId));
+  });
 }
 
 async function allAllowlistEntries() {
@@ -180,17 +258,38 @@ export async function configureSimpleAdminAccounts() {
 
   await clerkClient.instance.updateRestrictions({ allowlist: true });
   await revokePendingInvitations();
+  // No password mutation can survive a process restart. Release abandoned
+  // operation ownership while retaining fail-closed mandatory-change state.
+  await db.update(adminUsersTable).set({
+    passwordOperationId: null,
+    mustChangePassword: true,
+    updatedAt: new Date(),
+  }).where(isNotNull(adminUsersTable.passwordOperationId));
 
   const [stored] = await db.select().from(adminUsersTable).where(eq(adminUsersTable.email, email));
+  const existingUsers = await clerkClient.users.getUserList({ emailAddress: [email], limit: 10 });
+  if (existingUsers.data.length > 1) {
+    throw new Error("The configured Superadmin email matches multiple Clerk users.");
+  }
+  let user = existingUsers.data[0];
+  if (user) {
+    const primary = user.emailAddresses?.find((address) => address.id === user.primaryEmailAddressId);
+    if (
+      primary?.verification?.status !== "verified"
+      || normalizeAdminEmail(primary.emailAddress) !== email
+    ) {
+      throw new Error("The configured Superadmin email must be the verified primary email in Clerk.");
+    }
+  }
   if (stored?.role === "superadmin" && !stored.disabledAt) {
+    if (!user || user.id !== stored.clerkUserId) {
+      throw new Error("The configured Superadmin ledger does not match the Clerk identity.");
+    }
     const entries = await allAllowlistEntries();
     await Promise.all(entries.map((entry) =>
       clerkClient.allowlistIdentifiers.deleteAllowlistIdentifier(entry.id)));
     return;
   }
-
-  const existingUsers = await clerkClient.users.getUserList({ emailAddress: [email], limit: 10 });
-  let user = existingUsers.data[0];
   if (!user) {
     await ensureAllowedAdminEmail(email);
     try {

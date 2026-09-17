@@ -10,6 +10,7 @@ export * from './administratorAccessList';
 export * from './administratorAccessListAdministratorsItem';
 export * from './administratorAccessListAdministratorsItemRole';
 export * from './administratorAccessListAuditItem';
+export * from './administratorPasswordInput';
 export * from './administratorStatusInput';
 export * from './adminProduct';
 export * from './adminProductLifecycleStatus';

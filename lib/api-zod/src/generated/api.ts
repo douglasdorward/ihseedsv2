@@ -124,7 +124,19 @@ export const ResetAdministratorTemporaryPasswordResponse = zod.object({
 /**
  * @summary Mark the current administrator temporary password as replaced
  */
-export const CompleteAdministratorPasswordChangeResponse = zod.object({
+export const changeAdministratorPasswordBodyCurrentPasswordMax = 128;
+
+export const changeAdministratorPasswordBodyNewPasswordMin = 15;
+export const changeAdministratorPasswordBodyNewPasswordMax = 128;
+
+
+
+export const ChangeAdministratorPasswordBody = zod.object({
+  "currentPassword": zod.string().min(1).max(changeAdministratorPasswordBodyCurrentPasswordMax),
+  "newPassword": zod.string().min(changeAdministratorPasswordBodyNewPasswordMin).max(changeAdministratorPasswordBodyNewPasswordMax)
+})
+
+export const ChangeAdministratorPasswordResponse = zod.object({
   "success": zod.literal(true)
 })
 

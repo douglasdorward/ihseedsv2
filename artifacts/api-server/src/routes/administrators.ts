@@ -28,6 +28,8 @@ function writeError(res: Response, reason: string) {
     "identity-exists": "That email already belongs to an existing sign-in account.",
     "target-not-found": "Administrator account was not found.",
     "protected-superadmin": "The Superadmin account cannot be changed here.",
+    "reset-in-progress": "A temporary password is already being issued for this account.",
+    "reset-superseded": "A newer temporary password request replaced this one.",
   }[reason] ?? "Unable to change the administrator account.";
   res.status(status).json({ error: message });
 }

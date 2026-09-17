@@ -1,6 +1,7 @@
 import { clerkClient, getAuth } from "@clerk/express";
 import type { NextFunction, Request, Response } from "express";
 import { resolveAdminIdentity, verifiedPrimaryEmail } from "../lib/admin-role";
+import { isAdminAuthReady } from "../lib/admin-readiness";
 
 export type AdminSession = {
   userId: string;
@@ -26,6 +27,7 @@ async function resolveAdmin(req: Request): Promise<AdminSession | null> {
       testBypass: true,
     };
   }
+  if (!isAdminAuthReady()) return null;
   const auth = getAuth(req);
   if (!auth.userId) return null;
 
