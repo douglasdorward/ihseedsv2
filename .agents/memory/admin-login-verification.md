@@ -14,3 +14,9 @@ For Clerk recovery, initiate an email factor once, and keep provider password co
 **Why:** Creating a sign-in with the reset strategy already sends a code; immediately preparing that factor again can send a second code and invalidate the first. Once the password reset completes, repeating it on the completed attempt cannot repair a failed application request.
 
 **How to apply:** Create an identifier-only attempt then prepare the selected factor once. Retry only reconciliation after provider completion. For server-side evidence, use the authoritative password-update timestamp, never the general user-update timestamp, which unrelated profile changes can advance.
+
+Check the connected provider's actual password policy before reducing application validation; published default minimums are insufficient.
+
+**Why:** A disposable-account check rejected an eight-character password because this instance required fifteen, despite Clerk's documented general minimum of eight. Application changes alone cannot relax provider enforcement.
+
+**How to apply:** Confirm current instance acceptance without modifying existing credentials. If managed dashboard access prevents changing the provider policy, report the block rather than substituting an unapproved requirement.
