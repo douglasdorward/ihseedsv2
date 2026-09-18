@@ -25,6 +25,10 @@ export function AlsoPopularPicker({
   readOnly,
   onChange,
   compact = false,
+  heading = "Also popular",
+  hint = "Choose up to three Active or New published products by name. Leave empty to show three other products from this category automatically. If a chosen product later becomes Legacy, that slot shows another current product from this category.",
+  emptyLabel = "None chosen. The website will show three other products from this category.",
+  addLabel = "Add Also popular product",
 }: {
   selectedSlugs: string[];
   options: AlsoPopularOption[];
@@ -32,6 +36,10 @@ export function AlsoPopularPicker({
   readOnly: boolean;
   onChange: (slugs: string[]) => void;
   compact?: boolean;
+  heading?: string;
+  hint?: string;
+  emptyLabel?: string;
+  addLabel?: string;
 }) {
   const chosen = selectedSlugs.map((slug) => slug.trim()).filter(Boolean).slice(0, ALSO_POPULAR_LIMIT);
   const available = options.filter((option) => !chosen.includes(option.slug));
@@ -42,8 +50,8 @@ export function AlsoPopularPicker({
       {!compact && (
         <div className="admin-section-heading">
           <div>
-            <h3>Also popular</h3>
-            <p className="admin-field-hint">Choose up to three Active or New published products by name. Leave empty to show three other products from this category automatically. If a chosen product later becomes Legacy, that slot shows another current product from this category.</p>
+            <h3>{heading}</h3>
+            <p className="admin-field-hint">{hint}</p>
           </div>
         </div>
       )}
@@ -52,7 +60,7 @@ export function AlsoPopularPicker({
           <select
             className={compact ? "ppe-ghost" : undefined}
             value=""
-            aria-label="Add Also popular product"
+            aria-label={addLabel}
             onChange={(event) => {
               const slug = event.target.value;
               if (!slug || chosen.includes(slug) || chosen.length >= ALSO_POPULAR_LIMIT) return;
@@ -89,7 +97,7 @@ export function AlsoPopularPicker({
         })}
         {chosen.length === 0 && (
           <p className={compact ? "ppe-also-popular-empty" : "admin-empty-inline"}>
-            None chosen. The website will show three other products from this category.
+            {emptyLabel}
           </p>
         )}
       </div>

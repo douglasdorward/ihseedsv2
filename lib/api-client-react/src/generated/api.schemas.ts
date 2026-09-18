@@ -427,6 +427,13 @@ export interface ProductComponent {
   note: string;
 }
 
+export interface ProductFaq {
+  /** @maxLength 180 */
+  question: string;
+  /** @maxLength 4000 */
+  answer: string;
+}
+
 export type ProductPhotoRole = typeof ProductPhotoRole[keyof typeof ProductPhotoRole];
 
 
@@ -458,8 +465,11 @@ export interface ProductPhoto {
   height?: number;
   /** @maxLength 20 */
   format?: string;
-  /** @maxLength 500 */
-  objectPath?: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  objectPath?: string | null;
   /** @maxLength 2000 */
   srcSet?: string;
   social?: boolean;
@@ -545,10 +555,14 @@ export interface ProductDetails {
   /** @maxLength 2000 */
   notes: string;
   components: ProductComponent[];
+  /** @maxItems 10 */
+  faqs: ProductFaq[];
   /** @maxLength 20 */
   formulationYear: string;
   photos: ProductPhoto[];
   inCurrentPrintedGuide: boolean;
+  /** @maxLength 160 */
+  h1?: string;
   /** @maxLength 180 */
   seoTitle: string;
   /** @maxLength 2000 */
@@ -687,6 +701,8 @@ export interface PublicProductDetails {
   certification: string[];
   description: string;
   components: ProductComponent[];
+  /** @maxItems 10 */
+  faqs: ProductFaq[];
   relatedProducts: string[];
   formulationYear: string;
   photos: ProductPhoto[];
@@ -1103,6 +1119,10 @@ export interface MediaUsageSummary {
   category: number;
   /** @minimum 0 */
   static: number;
+  /** @minimum 0 */
+  article: number;
+  /** @minimum 0 */
+  reseller: number;
 }
 
 export interface MediaAsset {
@@ -1153,6 +1173,8 @@ export const MediaReferenceOwnerType = {
   product: 'product',
   category: 'category',
   static: 'static',
+  article: 'article',
+  reseller: 'reseller',
 } as const;
 
 export type MediaReferenceUsageState = typeof MediaReferenceUsageState[keyof typeof MediaReferenceUsageState];
@@ -1271,6 +1293,13 @@ export interface AvailabilityRow {
   status: string;
 }
 
+export interface CatalogueCategoryFaq {
+  /** @maxLength 200 */
+  question: string;
+  /** @maxLength 2000 */
+  answer: string;
+}
+
 export interface CatalogueCategory {
   id: number;
   parentId: number | null;
@@ -1283,6 +1312,8 @@ export interface CatalogueCategory {
   seoDescription: string;
   rainfall: string;
   image: string;
+  /** @maxItems 20 */
+  faqs: CatalogueCategoryFaq[];
   sortOrder: number;
   active: boolean;
   createdAt: string;
@@ -1324,6 +1355,8 @@ export interface CatalogueCategoryInput {
   rainfall: string;
   /** @maxLength 500 */
   image: string;
+  /** @maxItems 20 */
+  faqs?: CatalogueCategoryFaq[];
   /** @minimum 0 */
   sortOrder: number;
   active: boolean;
@@ -1359,6 +1392,8 @@ export interface CatalogueCategoryUpdate {
   rainfall?: string;
   /** @maxLength 500 */
   image?: string;
+  /** @maxItems 20 */
+  faqs?: CatalogueCategoryFaq[];
   /** @minimum 0 */
   sortOrder?: number;
   active?: boolean;
@@ -1444,6 +1479,438 @@ export interface EnquiryCreated {
   createdAt: string;
 }
 
+export interface SiteHomepageSettings {
+  /** @maxLength 500 */
+  heroImageSrc: string;
+  /** @maxLength 80 */
+  heroImageAssetId: string | null;
+  /** @maxLength 120 */
+  heroEyebrow: string;
+  /** @maxLength 180 */
+  heroHeading: string;
+  /** @maxLength 2000 */
+  heroBody: string;
+  /**
+     * @maxItems 4
+     * @items.maxLength 160
+     */
+  bestSellerSlugs: string[];
+}
+
+export interface SiteSeedGuideSettings {
+  /** @maxLength 80 */
+  navTitle: string;
+  /** @maxLength 240 */
+  cardHeading: string;
+  /** @maxLength 120 */
+  cardButtonLabel: string;
+  /** @maxLength 500 */
+  cardImageSrc: string;
+  /** @maxLength 80 */
+  cardImageAssetId: string | null;
+  /** @maxLength 160 */
+  pdfFilename: string;
+  /** @maxLength 500 */
+  pdfPublicUrl: string;
+  /** @maxLength 180 */
+  pageTitle: string;
+  /** @maxLength 2000 */
+  pageIntro: string;
+  /** @maxLength 120 */
+  pageButtonLabel: string;
+}
+
+export interface SiteSettings {
+  homepage: SiteHomepageSettings;
+  seedGuide: SiteSeedGuideSettings;
+  updatedAt: string;
+}
+
+export interface SiteSeedGuideInput {
+  /** @maxLength 80 */
+  navTitle: string;
+  /** @maxLength 240 */
+  cardHeading: string;
+  /** @maxLength 120 */
+  cardButtonLabel: string;
+  /** @maxLength 500 */
+  cardImageSrc: string;
+  /** @maxLength 80 */
+  cardImageAssetId: string | null;
+  /** @maxLength 180 */
+  pageTitle: string;
+  /** @maxLength 2000 */
+  pageIntro: string;
+  /** @maxLength 120 */
+  pageButtonLabel: string;
+}
+
+export interface SiteSettingsInput {
+  homepage: SiteHomepageSettings;
+  seedGuide: SiteSeedGuideInput;
+}
+
+export interface SeedGuidePdfInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  filename: string;
+  /** @minLength 1 */
+  data: string;
+}
+
+export type ArticlePublishStatus = typeof ArticlePublishStatus[keyof typeof ArticlePublishStatus];
+
+
+export const ArticlePublishStatus = {
+  Draft: 'Draft',
+  Published: 'Published',
+} as const;
+
+export interface Article {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string;
+  body: string;
+  /**
+     * @maxItems 12
+     * @items.maxLength 80
+     */
+  tags: string[];
+  heroImageSrc: string;
+  /** @nullable */
+  heroImageAssetId: string | null;
+  /**
+     * @maxItems 3
+     * @items.maxLength 180
+     */
+  relatedProductSlugs: string[];
+  publishStatus: ArticlePublishStatus;
+  /** @nullable */
+  publishedAt: string | null;
+  seoTitle: string;
+  seoDescription: string;
+  socialTitle: string;
+  socialDescription: string;
+  socialImage: string;
+  robotsIndex: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicArticle {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string;
+  body: string;
+  /**
+     * @maxItems 12
+     * @items.maxLength 80
+     */
+  tags: string[];
+  heroImageSrc: string;
+  /**
+     * @maxItems 3
+     * @items.maxLength 180
+     */
+  relatedProductSlugs: string[];
+  publishedAt: string;
+  seoTitle: string;
+  seoDescription: string;
+  socialTitle: string;
+  socialDescription: string;
+  socialImage: string;
+  robotsIndex: boolean;
+  updatedAt: string;
+}
+
+export interface ArticleInput {
+  /**
+     * @minLength 1
+     * @maxLength 180
+     * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+     */
+  slug: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  title: string;
+  /** @maxLength 500 */
+  excerpt?: string;
+  /** @maxLength 200000 */
+  body?: string;
+  /**
+     * @maxItems 12
+     * @items.maxLength 80
+     */
+  tags?: string[];
+  /** @maxLength 500 */
+  heroImageSrc?: string;
+  /**
+     * @maxLength 80
+     * @nullable
+     */
+  heroImageAssetId?: string | null;
+  /**
+     * @maxItems 3
+     * @items.maxLength 180
+     */
+  relatedProductSlugs?: string[];
+  /** @maxLength 180 */
+  seoTitle?: string;
+  /** @maxLength 2000 */
+  seoDescription?: string;
+  /** @maxLength 180 */
+  socialTitle?: string;
+  /** @maxLength 2000 */
+  socialDescription?: string;
+  /** @maxLength 500 */
+  socialImage?: string;
+  robotsIndex?: boolean;
+}
+
+export interface ArticleUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 180
+     * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+     */
+  slug?: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  title?: string;
+  /** @maxLength 500 */
+  excerpt?: string;
+  /** @maxLength 200000 */
+  body?: string;
+  /**
+     * @maxItems 12
+     * @items.maxLength 80
+     */
+  tags?: string[];
+  /** @maxLength 500 */
+  heroImageSrc?: string;
+  /**
+     * @maxLength 80
+     * @nullable
+     */
+  heroImageAssetId?: string | null;
+  /**
+     * @maxItems 3
+     * @items.maxLength 180
+     */
+  relatedProductSlugs?: string[];
+  /** @maxLength 180 */
+  seoTitle?: string;
+  /** @maxLength 2000 */
+  seoDescription?: string;
+  /** @maxLength 180 */
+  socialTitle?: string;
+  /** @maxLength 2000 */
+  socialDescription?: string;
+  /** @maxLength 500 */
+  socialImage?: string;
+  robotsIndex?: boolean;
+}
+
+export type ResellerKind = typeof ResellerKind[keyof typeof ResellerKind];
+
+
+export const ResellerKind = {
+  elders: 'elders',
+  nutrien: 'nutrien',
+  independent: 'independent',
+} as const;
+
+export interface ResellerOutlet {
+  id: number;
+  brandId: number;
+  name: string;
+  address: string;
+  suburb: string;
+  postcode: string;
+  region: string;
+  phone: string;
+  email: string;
+  mapsUrl: string;
+  sortOrder: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicResellerOutlet {
+  id: number;
+  name: string;
+  address: string;
+  suburb: string;
+  postcode: string;
+  region: string;
+  phone: string;
+  email: string;
+  mapsUrl: string;
+}
+
+export interface ResellerBrand {
+  id: number;
+  name: string;
+  kind: ResellerKind;
+  website: string;
+  logoSrc: string;
+  /** @nullable */
+  logoAssetId: string | null;
+  sortOrder: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  outlets: ResellerOutlet[];
+}
+
+export interface PublicResellerBrand {
+  id: number;
+  name: string;
+  kind: ResellerKind;
+  website: string;
+  logoSrc: string;
+  /** @nullable */
+  logoAssetId: string | null;
+  outlets: PublicResellerOutlet[];
+}
+
+export interface ResellerBrandInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  kind: ResellerKind;
+  /** @maxLength 500 */
+  website?: string;
+  /** @maxLength 500 */
+  logoSrc?: string;
+  /**
+     * @maxLength 80
+     * @nullable
+     */
+  logoAssetId?: string | null;
+  /** @minimum 0 */
+  sortOrder?: number;
+  active?: boolean;
+}
+
+export interface ResellerBrandUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name?: string;
+  kind?: ResellerKind;
+  /** @maxLength 500 */
+  website?: string;
+  /** @maxLength 500 */
+  logoSrc?: string;
+  /**
+     * @maxLength 80
+     * @nullable
+     */
+  logoAssetId?: string | null;
+  /** @minimum 0 */
+  sortOrder?: number;
+  active?: boolean;
+}
+
+export interface ResellerOutletInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  /** @maxLength 300 */
+  address?: string;
+  /** @maxLength 120 */
+  suburb?: string;
+  /** @maxLength 12 */
+  postcode?: string;
+  /** @maxLength 80 */
+  region?: string;
+  /** @maxLength 80 */
+  phone?: string;
+  /** @maxLength 180 */
+  email?: string;
+  /** @maxLength 1000 */
+  mapsUrl?: string;
+  /** @minimum 0 */
+  sortOrder?: number;
+  active?: boolean;
+}
+
+export interface ResellerOutletUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name?: string;
+  /** @maxLength 300 */
+  address?: string;
+  /** @maxLength 120 */
+  suburb?: string;
+  /** @maxLength 12 */
+  postcode?: string;
+  /** @maxLength 80 */
+  region?: string;
+  /** @maxLength 80 */
+  phone?: string;
+  /** @maxLength 180 */
+  email?: string;
+  /** @maxLength 1000 */
+  mapsUrl?: string;
+  /** @minimum 0 */
+  sortOrder?: number;
+  active?: boolean;
+}
+
+export type ResellerReorderItemsItem = {
+  id: number;
+  /** @minimum 0 */
+  sortOrder: number;
+};
+
+export interface ResellerReorder {
+  /** @minItems 1 */
+  items: ResellerReorderItemsItem[];
+}
+
+export interface ResellerImportUpload {
+  csvText: string;
+}
+
+export type ResellerImportCommit = ResellerImportUpload & {
+  token: string;
+};
+
+export interface ResellerImportIssue {
+  row: number;
+  column: string;
+  problem: string;
+}
+
+export interface ResellerImportReport {
+  token: string;
+  rows: number;
+  brandsCreated: number;
+  outletsCreated: number;
+  outletsUpdated: number;
+  skipped: number;
+  issues: ResellerImportIssue[];
+  plannedChanges: string[];
+}
+
 export type ListMediaAssetsParams = {
 /**
  * @maxLength 160
@@ -1476,6 +1943,8 @@ export const ListMediaAssetsArea = {
   product: 'product',
   category: 'category',
   static: 'static',
+  article: 'article',
+  reseller: 'reseller',
 } as const;
 
 export type LookupRedirectParams = {

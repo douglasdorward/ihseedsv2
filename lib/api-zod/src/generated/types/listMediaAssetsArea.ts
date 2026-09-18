@@ -13,4 +13,6 @@ export const ListMediaAssetsArea = {
   product: 'product',
   category: 'category',
   static: 'static',
+  article: 'article',
+  reseller: 'reseller',
 } as const;

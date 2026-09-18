@@ -3,8 +3,9 @@ import Link from "next/link";
 import { Icon } from "../components/Icon";
 import { ProductNewStamp } from "../components/NewStamp";
 import { StatusPill } from "../components/StatusPill";
-import { getCategories, getProducts, saleLinePriceDisplay } from "../lib/catalogue";
+import { getCategories, getProducts } from "../lib/catalogue";
 import { CATALOGUE_INDEX_PATH, productPublicPath } from "../lib/catalogue-paths";
+import { expandProductCount, loadSiteSettings, publicMediaSrc, resolveBestSellers } from "../lib/site-settings";
 import { hasProductPhoto, productCardImage } from "./products/product-card-facts";
 
 export const metadata: Metadata = {
@@ -12,24 +13,22 @@ export const metadata: Metadata = {
   description: "Western Australian pasture seed, proven varieties, regional mixes and practical advice from the independently owned IH Seeds team.",
 };
 
-const imageOptions = [
-  "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1530507629858-e4977d30e9e0?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1499529112087-3cb3b73cec95?auto=format&fit=crop&w=900&q=80",
-];
+const ABOUT_IMAGE = "https://images.unsplash.com/photo-1530507629858-e4977d30e9e0?auto=format&fit=crop&w=900&q=80";
 
 export default async function Home() {
-  const [products, categories] = await Promise.all([getProducts(), getCategories()]);
-  const visibleProducts = products.slice(0, 4);
+  const [products, categories, settings] = await Promise.all([getProducts(), getCategories(), loadSiteSettings()]);
+  const visibleProducts = resolveBestSellers(settings.homepage.bestSellerSlugs, products);
+  const heroBody = expandProductCount(settings.homepage.heroBody, products.length);
+  const heroImage = publicMediaSrc({ src: settings.homepage.heroImageSrc, assetId: settings.homepage.heroImageAssetId });
+  const guideImage = publicMediaSrc({ src: settings.seedGuide.cardImageSrc, assetId: settings.seedGuide.cardImageAssetId });
 
   return (
     <>
       <section className="hero-wrap">
-        <div className="hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.98) 0%, rgba(29,40,28,.84) 47%, rgba(29,40,28,.42) 100%), url(${imageOptions[0]})` }}>
+        <div className="hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.98) 0%, rgba(29,40,28,.84) 47%, rgba(29,40,28,.42) 100%), url(${heroImage})` }}>
           <div className="hero-copy">
-            <h1><span>Western Australia's</span><strong>Pasture Seed Specialists</strong></h1>
-            <p>Independently owned since 1966. We source, test and blend {products.length > 0 ? `${products.length}+ varieties and mixes` : "improved pasture seed"} for every region of the state — from Esperance to Derby.</p>
+            <h1><span>{settings.homepage.heroEyebrow}</span><strong>{settings.homepage.heroHeading}</strong></h1>
+            <p>{heroBody}</p>
             <div className="hero-actions">
               <Link href="/contact" className="button button-primary" data-testid="button-advice">Advice</Link>
               <Link href={CATALOGUE_INDEX_PATH} className="button button-light" data-testid="button-browse-catalogue">Browse the catalogue</Link>
@@ -66,8 +65,6 @@ export default async function Home() {
                   <div className="product-details">
                     <h3>{product.name}</h3>
                     <p className="product-card-tagline">{product.details.tagline}</p>
-                    <small>{product.packSize}</small>
-                    <strong>{saleLinePriceDisplay(product) || "Contact for pricing"}</strong>
                   </div>
                 </Link>
               ))}
@@ -78,7 +75,7 @@ export default async function Home() {
 
       <section id="about" className="section about-section">
         <div className="feature-panel">
-          <div className="feature-image" style={{ backgroundImage: `linear-gradient(90deg, rgba(12,88,60,.12), rgba(12,88,60,.02)), url(${imageOptions[2]})` }} />
+          <div className="feature-image" style={{ backgroundImage: `linear-gradient(90deg, rgba(12,88,60,.12), rgba(12,88,60,.02)), url(${ABOUT_IMAGE})` }} />
           <div className="feature-copy">
             <h2><span>About</span> Us</h2>
             <p>Irwin Hunter &amp; Co has been Western Australian owned and operated since 1966. We supply true to type seed from credible growers, blended into mixes that suit the paddock they are going into. Our long history across the state means we know which varieties perform in every region.</p>
@@ -88,10 +85,10 @@ export default async function Home() {
       </section>
 
       <section id="guide" className="section guide-section">
-        <div className="guide-banner" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.92), rgba(29,40,28,.44)), url(${imageOptions[1]})` }}>
+        <div className="guide-banner" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.92), rgba(29,40,28,.44)), url(${guideImage})` }}>
           <div>
-            <h2>Regional advice, sowing rates and seasonal planning in one place.</h2>
-            <a href="/IH-Seeds-2026-Pasture-Seed-Guide.pdf" className="button button-light" style={{ display: "inline-block", textDecoration: "none" }} data-testid="button-download-guide" download>Download the 2026 Pasture Seed Guide (PDF)</a>
+            <h2>{settings.seedGuide.cardHeading}</h2>
+            <a href={settings.seedGuide.pdfPublicUrl} className="button button-light" style={{ display: "inline-block", textDecoration: "none" }} data-testid="button-download-guide" download>{settings.seedGuide.cardButtonLabel}</a>
           </div>
         </div>
       </section>

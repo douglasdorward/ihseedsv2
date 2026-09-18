@@ -341,6 +341,22 @@
   color: var(--muted);
 }
 
+.pricing-reseller-logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.pricing-reseller-logo {
+  display: block;
+  height: 32px;
+  width: auto;
+  max-width: 120px;
+  object-fit: contain;
+}
+
 .pricing-disclaimer {
   font-size: 14px;
   line-height: 1.5;

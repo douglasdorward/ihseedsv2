@@ -5,6 +5,7 @@ import { createServer } from "node:net";
 import { after, before, test } from "node:test";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 /*
  * This is deliberately a component harness rather than an authenticated
@@ -14,7 +15,8 @@ import { basename, join } from "node:path";
  * used.
  */
 
-const claudeDesignRoot = new URL("..", import.meta.url);
+const claudeDesignRoot = fileURLToPath(new URL("..", import.meta.url));
+const viteBin = join(claudeDesignRoot, "node_modules/.bin/vite");
 const chromeBin = process.env.CHROMIUM_BIN ?? "/repl/tools/bin/chromium";
 
 let harnessRoot;
@@ -190,7 +192,7 @@ async function sidebarButtonMetrics() {
 }
 
 before(async () => {
-  harnessRoot = mkdtempSync(join(new URL("test/", claudeDesignRoot).pathname, "admin-sidebar-harness-"));
+  harnessRoot = mkdtempSync(join(claudeDesignRoot, "test", "admin-sidebar-harness-"));
   const harnessName = basename(harnessRoot);
   writeFileSync(join(harnessRoot, "index.html"), `<!doctype html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
@@ -217,7 +219,8 @@ const summary = {
 };
 window.fetch = async (input) => {
   const url = String(input);
-  return new Response(JSON.stringify(url.includes("/summary") ? summary : {}), {
+  const emptyList = url.includes("/articles") || url.includes("/products") || url.includes("/categories") || url.includes("/media") || url.includes("/resellers");
+  return new Response(JSON.stringify(url.includes("/summary") ? summary : emptyList ? [] : {}), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
@@ -237,8 +240,8 @@ createRoot(document.getElementById("root")).render(
 
   const vitePort = await freePort();
   baseUrl = `http://127.0.0.1:${vitePort}`;
-  vite = spawn("pnpm", ["exec", "vite", "--host", "127.0.0.1", "--port", String(vitePort)], {
-    cwd: new URL(claudeDesignRoot).pathname,
+  vite = spawn(viteBin, ["--host", "127.0.0.1", "--port", String(vitePort)], {
+    cwd: claudeDesignRoot,
     env: { ...process.env, PORT: String(vitePort) },
     stdio: ["ignore", "ignore", "ignore"],
   });
@@ -330,4 +333,70 @@ test("sign-out footer stays reachable across sidebar breakpoints and invokes its
 
   const errors = await cdp.evaluate("window.__harnessErrors");
   assert.deepEqual(errors, [], "The sidebar harness should not emit runtime errors");
+});
+
+test("site settings is enabled and opens the hub", async () => {
+  await setViewport(1280, 800);
+  await navigate(`/test/${basename(harnessRoot)}/`);
+  await waitFor(() => cdp.evaluate('Boolean(document.querySelector("#admin-sidebar-nav"))'), "admin navigation");
+  const siteSettings = await cdp.evaluate(`(() => {
+    const button = [...document.querySelectorAll("#admin-sidebar-nav button")].find((item) => item.textContent.includes("Site settings"));
+    return {
+      present: Boolean(button),
+      disabled: Boolean(button?.disabled),
+      soon: Boolean(button?.querySelector("small")),
+    };
+  })()`);
+  assert.equal(siteSettings.present, true);
+  assert.equal(siteSettings.disabled, false);
+  assert.equal(siteSettings.soon, false);
+  await cdp.evaluate(`[...document.querySelectorAll("#admin-sidebar-nav button")].find((item) => item.textContent.includes("Site settings"))?.click()`);
+  await waitFor(
+    () => cdp.evaluate('Boolean([...document.querySelectorAll("button")].find((item) => item.textContent.includes("Edit home page")))'),
+    "site settings hub",
+  );
+});
+
+test("blog is enabled and opens the article list", async () => {
+  await setViewport(1280, 800);
+  await navigate(`/test/${basename(harnessRoot)}/`);
+  await waitFor(() => cdp.evaluate('Boolean(document.querySelector("#admin-sidebar-nav"))'), "admin navigation");
+  const blog = await cdp.evaluate(`(() => {
+    const button = [...document.querySelectorAll("#admin-sidebar-nav button")].find((item) => item.textContent.includes("Blog"));
+    return {
+      present: Boolean(button),
+      disabled: Boolean(button?.disabled),
+      soon: Boolean(button?.querySelector("small")),
+    };
+  })()`);
+  assert.equal(blog.present, true);
+  assert.equal(blog.disabled, false);
+  assert.equal(blog.soon, false);
+  await cdp.evaluate(`[...document.querySelectorAll("#admin-sidebar-nav button")].find((item) => item.textContent.includes("Blog"))?.click()`);
+  await waitFor(
+    () => cdp.evaluate('Boolean([...document.querySelectorAll("button")].find((item) => item.textContent.includes("New article")))'),
+    "blog article list",
+  );
+});
+
+test("resellers is enabled and opens the store list", async () => {
+  await setViewport(1280, 800);
+  await navigate(`/test/${basename(harnessRoot)}/`);
+  await waitFor(() => cdp.evaluate('Boolean(document.querySelector("#admin-sidebar-nav"))'), "admin navigation");
+  const resellers = await cdp.evaluate(`(() => {
+    const button = [...document.querySelectorAll("#admin-sidebar-nav button")].find((item) => item.textContent.includes("Resellers"));
+    return {
+      present: Boolean(button),
+      disabled: Boolean(button?.disabled),
+      soon: Boolean(button?.querySelector("small")),
+    };
+  })()`);
+  assert.equal(resellers.present, true);
+  assert.equal(resellers.disabled, false);
+  assert.equal(resellers.soon, false);
+  await cdp.evaluate(`[...document.querySelectorAll("#admin-sidebar-nav button")].find((item) => item.textContent.includes("Resellers"))?.click()`);
+  await waitFor(
+    () => cdp.evaluate('Boolean([...document.querySelectorAll("button")].find((item) => item.textContent.includes("Add a store")))'),
+    "reseller store list",
+  );
 });

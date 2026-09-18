@@ -7,7 +7,7 @@ import { CATALOGUE_INDEX_PATH, categoryPublicPath, type NavCategory } from "../l
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
 
-export function Header({ productCategories = [] }: { productCategories?: NavCategory[] }) {
+export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 2026" }: { productCategories?: NavCategory[]; seedGuideTitle?: string }) {
   const location = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -41,7 +41,7 @@ export function Header({ productCategories = [] }: { productCategories?: NavCate
             <Link href={CATALOGUE_INDEX_PATH} className="button button-accent nav-dropdown-all" onClick={closeMenu} data-testid="link-products-nav-all">All categories <Icon name="chevron-right" size={16} /></Link>
           </div>
         </div>
-        <Link href="/guide" className={navItemClass("/guide")} aria-current={isActive("/guide") ? "page" : undefined} onClick={closeMenu} data-testid="link-guide">Seed Guide 2026</Link>
+        <Link href="/guide" className={navItemClass("/guide")} aria-current={isActive("/guide") ? "page" : undefined} onClick={closeMenu} data-testid="link-guide">{seedGuideTitle}</Link>
         <Link href="/availability" className={navItemClass("/availability")} aria-current={isActive("/availability") ? "page" : undefined} onClick={closeMenu} data-testid="link-availability">Seed Availability</Link>
         <Link href="/resources" className={navItemClass("/resources")} aria-current={isActive("/resources") ? "page" : undefined} onClick={closeMenu} data-testid="link-resources">Resources</Link>
         <Link href="/about" className={navItemClass("/about")} aria-current={isActive("/about") ? "page" : undefined} onClick={closeMenu} data-testid="link-about">About</Link>

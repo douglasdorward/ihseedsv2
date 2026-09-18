@@ -41,6 +41,9 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+.env
+.env.rtf
+.env.local
 
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
@@ -49,6 +52,9 @@ Thumbs.db
 .cache/
 .local/
 artifacts/web/.next-lifecycle/
+
+# Runtime copy of API uploads when the server is started from the repo root
+/uploads/
 
 # Admin product photo uploads
 artifacts/api-server/uploads/products/*

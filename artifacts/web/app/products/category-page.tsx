@@ -13,6 +13,7 @@ import { CATALOGUE_INDEX_PATH, productPublicPath } from "../../lib/catalogue-pat
 import { absoluteSiteUrl } from "../../lib/site-url";
 import { CategoryCatalogue } from "./CategoryCatalogue";
 import { forSearchMetadata } from "../../lib/search-metadata";
+import { loadSiteSettings } from "../../lib/site-settings";
 
 type RouteParams = { category: string };
 
@@ -114,7 +115,7 @@ export async function CategoryPage({ params }: { params: RouteParams }) {
     notFound();
   }
 
-  const products = await getProducts();
+  const [products, settings] = await Promise.all([getProducts(), loadSiteSettings()]);
   const legacy = await getLegacyProducts(page.root.name);
   const rootProducts = productsForRoot(products, page.root, page.children);
   const heading = headingFor(page);
@@ -226,10 +227,10 @@ export async function CategoryPage({ params }: { params: RouteParams }) {
       <section style={{ background: "var(--sage)" }}>
         <div className="category-guide-cta" style={{ maxWidth: 1180, margin: "0 auto", padding: "64px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 32 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: "54ch" }}>
-            <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)" }}>2026 Pasture Seed Guide</h2>
+            <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)" }}>{settings.seedGuide.pageTitle}</h2>
             <p style={{ margin: 0, fontSize: 16, lineHeight: 1.6, color: "var(--black-green)" }}>Every line in this category, with sowing rates and regional notes.</p>
           </div>
-          <a href="/IH-Seeds-2026-Pasture-Seed-Guide.pdf" className="button button-primary" download>Download the 2026 Pasture Seed Guide (PDF)</a>
+          <a href={settings.seedGuide.pdfPublicUrl} className="button button-primary" download>{settings.seedGuide.cardButtonLabel}</a>
         </div>
       </section>
     </>

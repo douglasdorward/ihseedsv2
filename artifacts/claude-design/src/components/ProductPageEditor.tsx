@@ -423,7 +423,7 @@ export function ProductPageEditor(props: ProductPageEditorProps) {
                         <div className="quick-fact-content">
                           <span className="quick-fact-label">{slot.label}</span>
                           <span className={`quick-fact-value ${slot.formatted ? "" : "is-empty"}`}>
-                            <QuickFactValue slotId={slot.id} formatted={slot.formatted} form={form} {...props} />
+                            <QuickFactValue slotId={slot.id} formatted={slot.formatted} {...props} />
                           </span>
                         </div>
                       </div>
@@ -437,6 +437,10 @@ export function ProductPageEditor(props: ProductPageEditorProps) {
                     {packLabels.length > 0 && <span className="pricing-unit">Available in {packLabels.join(", ")}</span>}
                   </div>
                   <span className="button button-primary" style={{ width: "100%", textAlign: "center" }}>Ask about an order</span>
+                  <div className="pricing-reseller-logos">
+                    <img className="pricing-reseller-logo" src={`${import.meta.env.BASE_URL}elders-logo.webp`} alt="Elders" />
+                    <img className="pricing-reseller-logo" src={`${import.meta.env.BASE_URL}nutrien-logo.webp`} alt="Nutrien Ag Solutions" />
+                  </div>
                   <small className="pricing-disclaimer">We supply through rural resellers across Western Australia.</small>
                 </div>
               </div>

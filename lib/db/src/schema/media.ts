@@ -2,7 +2,7 @@ import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export type MediaAssetStatus = "Pending" | "Ready" | "Failed";
 export type MediaStorageKind = "managed" | "legacy" | "external";
-export type MediaOwnerType = "product" | "category" | "static";
+export type MediaOwnerType = "product" | "category" | "static" | "article" | "reseller";
 export type MediaUsageState = "Draft" | "Published";
 
 export const mediaAssetsTable = pgTable("ih_media_assets", {

@@ -16,7 +16,11 @@ const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
 );
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+const clerkProxyUrl = (
+  window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? undefined
+    : import.meta.env.VITE_CLERK_PROXY_URL
+);
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 type AdminSession = {

@@ -13,4 +13,6 @@ export const MediaReferenceOwnerType = {
   product: 'product',
   category: 'category',
   static: 'static',
+  article: 'article',
+  reseller: 'reseller',
 } as const;

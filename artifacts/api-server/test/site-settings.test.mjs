@@ -1,0 +1,261 @@
+import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import { createServer } from "node:net";
+import { after, before, describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
+
+const serverRoot = new URL("..", import.meta.url);
+const testRunId = `${process.pid}-${Date.now()}`;
+const createdAssetIds = [];
+let child;
+let baseUrl;
+
+const PNG_1X1 = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+);
+const PNG_RED_1X1 = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==",
+  "base64",
+);
+const MINI_PDF = Buffer.from("%PDF-1.1\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n");
+
+async function freePort() {
+  const server = createServer();
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const address = server.address();
+  const port = typeof address === "object" && address ? address.port : null;
+  await new Promise((resolve, reject) => {
+    server.close((error) => (error ? reject(error) : resolve()));
+  });
+  assert.ok(port, "Expected the test port to be assigned");
+  return port;
+}
+
+async function waitForServer() {
+  let lastError;
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    if (child.exitCode !== null) {
+      throw new Error(`API server exited before becoming ready: ${lastError?.message ?? "unknown error"}`);
+    }
+    try {
+      const response = await fetch(`${baseUrl}/api/healthz`);
+      if (response.ok) return;
+    } catch (error) {
+      lastError = error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`API server did not become ready: ${lastError?.message ?? "unknown error"}`);
+}
+
+async function stopChild(processToStop) {
+  if (!processToStop || processToStop.exitCode !== null) return;
+  processToStop.kill("SIGTERM");
+  await new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      processToStop.kill("SIGKILL");
+      resolve();
+    }, 2_000);
+    processToStop.once("exit", () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+  });
+}
+
+async function request(method, path, body, raw) {
+  const response = await fetch(`${baseUrl}/api${path}`, {
+    method,
+    headers: raw
+      ? { "content-type": raw }
+      : body === undefined ? undefined : { "content-type": "application/json" },
+    body: raw ? body : body === undefined ? undefined : JSON.stringify(body),
+  });
+  const buffer = Buffer.from(await response.arrayBuffer());
+  const text = buffer.toString("utf8");
+  let data;
+  try {
+    data = text ? JSON.parse(text) : undefined;
+  } catch {
+    data = buffer;
+  }
+  return { response, data, buffer };
+}
+
+function assertStatus(result, status) {
+  assert.equal(result.response.status, status, typeof result.data === "object" ? JSON.stringify(result.data) : String(result.data));
+  return result.data;
+}
+
+async function uploadPng(filename = `site-settings-${testRunId}.png`, bytes = PNG_1X1) {
+  const requested = assertStatus(await request("POST", "/admin/media/upload-request", {
+    originalFilename: filename,
+    contentType: "image/png",
+    bytes: bytes.length,
+  }), 201);
+  createdAssetIds.push(requested.assetId);
+  assertStatus(await request("PUT", `/admin/media/${requested.assetId}/object`, bytes, "image/png"), 204);
+  return assertStatus(await request("POST", `/admin/media/${requested.assetId}/complete`), 200);
+}
+
+before(async () => {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL is required for site settings API tests");
+  }
+  if (!/^ih_catalogue_test_\d+_\d+$/.test(process.env.CATALOGUE_TEST_DATABASE ?? "")) {
+    throw new Error("Site settings API tests must run through the isolated lifecycle-test runner");
+  }
+  const port = await freePort();
+  baseUrl = `http://127.0.0.1:${port}`;
+  child = spawn(process.execPath, ["--enable-source-maps", "./dist/index.mjs"], {
+    cwd: fileURLToPath(serverRoot),
+    env: {
+      ...process.env,
+      NODE_ENV: "test",
+      ADMIN_TEST_BYPASS: "1",
+      PORT: String(port),
+      APP_STORAGE_BACKEND: "local",
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  let stderr = "";
+  child.stderr.setEncoding("utf8");
+  child.stderr.on("data", (chunk) => {
+    stderr += chunk;
+  });
+  await waitForServer().catch((error) => {
+    throw new Error(`${error.message}\n${stderr}`);
+  });
+});
+
+after(async () => {
+  for (const id of createdAssetIds) {
+    await request("DELETE", `/admin/media/${id}`, { confirm: true }).catch(() => {});
+  }
+  await stopChild(child);
+});
+
+describe("site settings API", { concurrency: false }, () => {
+test("public site settings expose the seeded homepage and seed-guide defaults", async () => {
+  const data = assertStatus(await request("GET", "/site-settings"), 200);
+  assert.equal(data.homepage.heroEyebrow, "Western Australia's");
+  assert.equal(data.homepage.heroHeading, "Pasture Seed Specialists");
+  assert.match(data.homepage.heroBody, /\{productCount\}/);
+  assert.deepEqual(data.homepage.bestSellerSlugs, []);
+  assert.equal(data.seedGuide.navTitle, "Seed Guide 2026");
+  assert.equal(data.seedGuide.pdfPublicUrl, "/IH-Seeds-2026-Pasture-Seed-Guide.pdf");
+});
+
+test("admin can persist homepage copy and invalid best-seller slugs", async () => {
+  const current = assertStatus(await request("GET", "/admin/site-settings"), 200);
+  const saved = assertStatus(await request("PUT", "/admin/site-settings", {
+    homepage: {
+      ...current.homepage,
+      heroEyebrow: "Test region",
+      heroHeading: "Test specialists",
+      bestSellerSlugs: ["not-a-real-product", "also-missing"],
+    },
+    seedGuide: {
+      navTitle: current.seedGuide.navTitle,
+      cardHeading: current.seedGuide.cardHeading,
+      cardButtonLabel: current.seedGuide.cardButtonLabel,
+      cardImageSrc: current.seedGuide.cardImageSrc,
+      cardImageAssetId: current.seedGuide.cardImageAssetId,
+      pageTitle: current.seedGuide.pageTitle,
+      pageIntro: current.seedGuide.pageIntro,
+      pageButtonLabel: current.seedGuide.pageButtonLabel,
+    },
+  }), 200);
+  assert.equal(saved.homepage.heroEyebrow, "Test region");
+  assert.equal(saved.homepage.heroHeading, "Test specialists");
+  assert.deepEqual(saved.homepage.bestSellerSlugs, ["not-a-real-product", "also-missing"]);
+  const publicSettings = assertStatus(await request("GET", "/site-settings"), 200);
+  assert.deepEqual(publicSettings.homepage.bestSellerSlugs, ["not-a-real-product", "also-missing"]);
+});
+
+test("seed-guide PDF upload rejects non-PDF and oversized files, then stores a valid PDF", async () => {
+  const current = assertStatus(await request("GET", "/admin/site-settings"), 200);
+  const notPdf = await request("POST", "/admin/site-settings/seed-guide-pdf", {
+    filename: "notes.txt",
+    data: Buffer.from("hello").toString("base64"),
+  });
+  assert.equal(notPdf.response.status, 400);
+  assert.match(JSON.stringify(notPdf.data), /not a PDF/i);
+
+  const oversized = Buffer.concat([Buffer.from("%PDF"), Buffer.alloc((15 * 1024 * 1024) + 1, 65)]);
+  const tooBig = await request("POST", "/admin/site-settings/seed-guide-pdf", {
+    filename: "huge.pdf",
+    data: oversized.toString("base64"),
+  });
+  assert.equal(tooBig.response.status, 400);
+  assert.match(JSON.stringify(tooBig.data), /15 MB/i);
+
+  const uploaded = assertStatus(await request("POST", "/admin/site-settings/seed-guide-pdf", {
+    filename: `guide-${testRunId}.pdf`,
+    data: MINI_PDF.toString("base64"),
+  }), 200);
+  assert.equal(uploaded.seedGuide.pdfFilename, `guide-${testRunId}.pdf`);
+  assert.equal(uploaded.seedGuide.pdfPublicUrl, "/api/site/seed-guide.pdf");
+  const pdf = await request("GET", "/site/seed-guide.pdf");
+  assert.equal(pdf.response.status, 200);
+  assert.equal(pdf.response.headers.get("content-type"), "application/pdf");
+  assert.ok(pdf.buffer.subarray(0, 4).equals(Buffer.from("%PDF")));
+
+  const preserved = assertStatus(await request("PUT", "/admin/site-settings", {
+    homepage: current.homepage,
+    seedGuide: {
+      navTitle: "Seed Guide test",
+      cardHeading: current.seedGuide.cardHeading,
+      cardButtonLabel: current.seedGuide.cardButtonLabel,
+      cardImageSrc: current.seedGuide.cardImageSrc,
+      cardImageAssetId: current.seedGuide.cardImageAssetId,
+      pageTitle: current.seedGuide.pageTitle,
+      pageIntro: current.seedGuide.pageIntro,
+      pageButtonLabel: current.seedGuide.pageButtonLabel,
+    },
+  }), 200);
+  assert.equal(preserved.seedGuide.navTitle, "Seed Guide test");
+  assert.equal(preserved.seedGuide.pdfPublicUrl, "/api/site/seed-guide.pdf");
+});
+
+test("saving homepage and seed-guide images creates published static media references", async () => {
+  const hero = await uploadPng(`hero-${testRunId}.png`);
+  const card = await uploadPng(`card-${testRunId}.png`, PNG_RED_1X1);
+  const current = assertStatus(await request("GET", "/admin/site-settings"), 200);
+  const saved = assertStatus(await request("PUT", "/admin/site-settings", {
+    homepage: {
+      ...current.homepage,
+      heroImageSrc: `/api/media/${hero.id}`,
+      heroImageAssetId: hero.id,
+    },
+    seedGuide: {
+      navTitle: current.seedGuide.navTitle,
+      cardHeading: current.seedGuide.cardHeading,
+      cardButtonLabel: current.seedGuide.cardButtonLabel,
+      cardImageSrc: `/api/media/${card.id}`,
+      cardImageAssetId: card.id,
+      pageTitle: current.seedGuide.pageTitle,
+      pageIntro: current.seedGuide.pageIntro,
+      pageButtonLabel: current.seedGuide.pageButtonLabel,
+    },
+  }), 200);
+  assert.equal(saved.homepage.heroImageAssetId, hero.id);
+  assert.equal(saved.seedGuide.cardImageAssetId, card.id);
+
+  const heroDetail = assertStatus(await request("GET", `/admin/media/${hero.id}`), 200);
+  const heroUsage = heroDetail.usages.find((item) => item.ownerType === "static" && item.ownerId === "homepage");
+  assert.ok(heroUsage);
+  assert.equal(heroUsage.usageState, "Published");
+  const publicHero = await request("GET", `/media/${hero.id}`);
+  assert.equal(publicHero.response.status, 200);
+
+  const cardDetail = assertStatus(await request("GET", `/admin/media/${card.id}`), 200);
+  const cardUsage = cardDetail.usages.find((item) => item.ownerType === "static" && item.ownerId === "seed-guide");
+  assert.ok(cardUsage);
+  assert.equal(cardUsage.usageState, "Published");
+});
+});

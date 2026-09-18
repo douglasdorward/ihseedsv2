@@ -50,7 +50,7 @@ export function useLocation() {
 export function useParams<T extends Record<string, string>>() {
   const [location] = useLocation();
   const slug = decodeURIComponent(location.split("/").filter(Boolean).at(-1) ?? "");
-  return { slug } as T;
+  return { slug } as unknown as T;
 }
 
 type LinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & {

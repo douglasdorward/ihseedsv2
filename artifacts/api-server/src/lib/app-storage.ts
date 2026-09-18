@@ -32,7 +32,7 @@ function localPath(key: string) {
   // Media keys already include the media/ prefix and live next to tech-sheets/.
   // Tech-sheet keys also include tech-sheets/, but the historical local root is
   // uploads/tech-sheets, so those files stay at uploads/tech-sheets/tech-sheets/...
-  if (safe.startsWith("media/")) return path.join(uploadsRoot(), safe);
+  if (safe.startsWith("media/") || safe.startsWith("site/")) return path.join(uploadsRoot(), safe);
   return path.join(uploadsRoot(), "tech-sheets", safe);
 }
 

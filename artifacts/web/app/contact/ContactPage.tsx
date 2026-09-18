@@ -2,30 +2,37 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { Icon } from "../../components/Icon";
-
-const RESELLERS = [
-  { name: "Elders Katanning", address: "15 Clive St, Katanning WA 6317", region: "Great Southern", phone: "(08) 9821 1455" },
-  { name: "Landmark Albany", address: "92 Sanford Rd, Albany WA 6330", region: "Great Southern", phone: "(08) 9841 2233" },
-  { name: "CRT Esperance Rural", address: "2 Dempster St, Esperance WA 6450", region: "Esperance", phone: "(08) 9071 3300" },
-  { name: "Elders Northam", address: "188 Fitzgerald St, Northam WA 6401", region: "Wheatbelt", phone: "(08) 9622 1166" },
-  { name: "Landmark Merredin", address: "10 Great Eastern Hwy, Merredin WA 6415", region: "Wheatbelt", phone: "(08) 9041 1022" },
-  { name: "Nutrien Ag Bunbury", address: "45 Spencer St, Bunbury WA 6230", region: "South West", phone: "(08) 9721 4477" },
-  { name: "CRT Manjimup Rural", address: "33 Rose St, Manjimup WA 6258", region: "South West", phone: "(08) 9771 1099" },
-  { name: "Elders Geraldton", address: "5 Utakarra Rd, Geraldton WA 6530", region: "Midwest", phone: "(08) 9964 2244" },
-  { name: "Landmark Broome", address: "18 Frederick St, Broome WA 6725", region: "Kimberley", phone: "(08) 9192 1188" },
-];
+import type { CatalogueResellerBrand } from "../../lib/catalogue";
+import { publicMediaSrc } from "../../lib/site-settings";
 
 const EMPTY_DETAILS = { location: "", soil: "", rainfall: "", landSize: "" };
 const EMPTY_FORM = { name: "", email: "", phone: "", topic: "General advice", message: "" };
 
-export function ContactPage() {
+function outletAddress(outlet: { address: string; suburb: string; postcode: string }) {
+  return [outlet.address, outlet.suburb, outlet.postcode].filter(Boolean).join(", ");
+}
+
+function directionsUrl(outlet: { address: string; suburb: string; postcode: string; mapsUrl: string }) {
+  if (outlet.mapsUrl.trim()) return outlet.mapsUrl.trim();
+  const query = outletAddress(outlet);
+  return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : "";
+}
+
+export function ContactPage({ resellers }: { resellers: CatalogueResellerBrand[] }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitState, setSubmitState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [details, setDetails] = useState(EMPTY_DETAILS);
   const [region, setRegion] = useState("All");
   const [showAll, setShowAll] = useState(false);
-  const regions = ["All", ...Array.from(new Set(RESELLERS.map((reseller) => reseller.region)))];
-  const filteredResellers = useMemo(() => (region === "All" ? RESELLERS : RESELLERS.filter((reseller) => reseller.region === region)), [region]);
+  const listings = useMemo(
+    () => resellers.flatMap((brand) => brand.outlets.map((outlet) => ({ brand, outlet }))),
+    [resellers],
+  );
+  const regions = ["All", ...Array.from(new Set(listings.map((listing) => listing.outlet.region).filter(Boolean)))];
+  const filteredResellers = useMemo(
+    () => (region === "All" ? listings : listings.filter((listing) => listing.outlet.region === region)),
+    [listings, region],
+  );
   const visibleResellers = showAll ? filteredResellers : filteredResellers.slice(0, 6);
 
   const updateDetail = (key: keyof typeof EMPTY_DETAILS, value: string) => setDetails((current) => ({ ...current, [key]: value }));
@@ -41,7 +48,7 @@ export function ContactPage() {
     ].filter(Boolean).join("\n");
     try {
       const message = [form.message, extraContext].filter(Boolean).join("\n\n");
-      const response = await fetch("/api/enquiries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, message }) });
+      const response = await fetch("/api/enquiries", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...form, message }) });
       if (!response.ok) throw new Error("Unable to send enquiry");
       setSubmitState("sent");
       setForm(EMPTY_FORM);
@@ -95,18 +102,37 @@ export function ContactPage() {
             <button className="button button-outline" type="button" onClick={() => setRegion("All")}><Icon name="map-pin" size={18} /> Show all resellers</button>
           </div>
           <p className="reseller-lead">We sell through rural resellers across Western Australia. Filter by region to find your closest store, or call the office and we will point you the right way.</p>
-          <div className="region-chips" aria-label="Filter resellers by region">
-            {regions.map((currentRegion) => <button key={currentRegion} className={region === currentRegion ? "active" : ""} type="button" onClick={() => { setRegion(currentRegion); setShowAll(false); }}>{currentRegion}</button>)}
-          </div>
+          {regions.length > 1 && (
+            <div className="region-chips" aria-label="Filter resellers by region">
+              {regions.map((currentRegion) => <button key={currentRegion} className={region === currentRegion ? "active" : ""} type="button" onClick={() => { setRegion(currentRegion); setShowAll(false); }}>{currentRegion}</button>)}
+            </div>
+          )}
           <div className="reseller-list">
-            {visibleResellers.map((reseller) => (
-              <div className="reseller-row" key={reseller.name}>
-                <div><strong>{reseller.name}</strong><span>{reseller.address}</span></div>
-                <span>{reseller.region}</span>
-                <a href={`tel:${reseller.phone.replace(/[^\d+]/g, "")}`}>{reseller.phone}</a>
-                <a className="button button-outline button-small" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(reseller.address)}`} target="_blank" rel="noreferrer">Get directions</a>
-              </div>
-            ))}
+            {visibleResellers.map(({ brand, outlet }) => {
+              const address = outletAddress(outlet);
+              const maps = directionsUrl(outlet);
+              const logo = publicMediaSrc({ src: brand.logoSrc, assetId: brand.logoAssetId })
+                || (brand.kind === "elders" ? "/elders-logo.webp" : brand.kind === "nutrien" ? "/nutrien-logo.webp" : "");
+              return (
+                <div className="reseller-row" key={`${brand.id}-${outlet.id}`}>
+                  <div className="reseller-identity">
+                    {logo ? <img className="reseller-logo" src={logo} alt="" /> : null}
+                    <div>
+                      <strong>{brand.name} {outlet.name}</strong>
+                      <span>{address || "Call the office for this store’s address."}</span>
+                    </div>
+                  </div>
+                  <span>{outlet.region || "Western Australia"}</span>
+                  <div className="reseller-contacts">
+                    {outlet.phone ? <a href={`tel:${outlet.phone.replace(/[^\d+]/g, "")}`}>{outlet.phone}</a> : <span>Phone on request</span>}
+                    {outlet.email ? <a href={`mailto:${outlet.email}`}>{outlet.email}</a> : null}
+                  </div>
+                  {maps
+                    ? <a className="button button-outline button-small" href={maps} target="_blank" rel="noreferrer">Get directions</a>
+                    : <span />}
+                </div>
+              );
+            })}
             {visibleResellers.length === 0 && <div className="reseller-empty">No resellers listed in that region yet — call the office and we will find your closest.</div>}
           </div>
           {filteredResellers.length > 6 && <div className="centered-action"><button className="button button-outline" type="button" onClick={() => setShowAll((current) => !current)}>{showAll ? "Show fewer" : "View all"}</button></div>}

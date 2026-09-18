@@ -37,10 +37,12 @@ type UsageSummary = {
   product: number;
   category: number;
   static: number;
+  article: number;
+  reseller: number;
 };
 
 const emptyUsage = (): UsageSummary => ({
-  total: 0, draft: 0, published: 0, product: 0, category: 0, static: 0,
+  total: 0, draft: 0, published: 0, product: 0, category: 0, static: 0, article: 0, reseller: 0,
 });
 
 function sha256(bytes: Buffer) {
@@ -66,6 +68,8 @@ async function usageByAssetId(ids: string[]) {
     if (ref.ownerType === "product") usage.product += 1;
     if (ref.ownerType === "category") usage.category += 1;
     if (ref.ownerType === "static") usage.static += 1;
+    if (ref.ownerType === "article") usage.article += 1;
+    if (ref.ownerType === "reseller") usage.reseller += 1;
     map.set(ref.assetId, usage);
   }
   return map;
@@ -132,7 +136,7 @@ router.get("/admin/media", async (req, res): Promise<void> => {
   const usageMap = await usageByAssetId(rows.map((row) => row.id));
   let items = rows.map((row) => toPublicAsset(row, usageMap.get(row.id) ?? emptyUsage()));
   if (usageFilter) items = items.filter((item) => usageBucket(item.usageSummary) === usageFilter);
-  if (area === "product" || area === "category" || area === "static") {
+  if (area === "product" || area === "category" || area === "static" || area === "article" || area === "reseller") {
     items = items.filter((item) => item.usageSummary[area] > 0);
   }
   let start = 0;

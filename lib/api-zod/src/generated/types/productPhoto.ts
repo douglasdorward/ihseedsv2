@@ -29,8 +29,11 @@ export interface ProductPhoto {
   height?: number;
   /** @maxLength 20 */
   format?: string;
-  /** @maxLength 500 */
-  objectPath?: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  objectPath?: string | null;
   /** @maxLength 2000 */
   srcSet?: string;
   social?: boolean;

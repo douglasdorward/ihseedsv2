@@ -522,7 +522,7 @@ paths:
       parameters:
         - { name: query, in: query, schema: { type: string, maxLength: 160 } }
         - { name: usage, in: query, schema: { type: string, enum: [unassigned, draft, published, mixed] } }
-        - { name: area, in: query, schema: { type: string, enum: [product, category, static] } }
+        - { name: area, in: query, schema: { type: string, enum: [product, category, static, article, reseller] } }
         - { name: cursor, in: query, schema: { type: string } }
         - { name: limit, in: query, schema: { type: number, multipleOf: 1, minimum: 1, maximum: 100 } }
       responses:
@@ -721,6 +721,294 @@ paths:
           content:
             application/xml:
               schema: { type: string }
+  /sitemap-articles:
+    get:
+      operationId: getArticleSitemap
+      tags: [catalogue]
+      summary: Published article sitemap
+      responses:
+        "200":
+          description: XML sitemap
+          content:
+            application/xml:
+              schema: { type: string }
+  /articles:
+    get:
+      operationId: listArticles
+      tags: [catalogue]
+      summary: List published blog articles
+      responses:
+        "200":
+          description: Published articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PublicArticle" }
+  /articles/slug/{slug}:
+    get:
+      operationId: getArticleBySlug
+      tags: [catalogue]
+      summary: Get a published blog article by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 180 }
+      responses:
+        "200":
+          description: Published article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicArticle" }
+        "404": { description: Article not found }
+  /resellers:
+    get:
+      operationId: listResellers
+      tags: [catalogue]
+      summary: List listed reseller brands and their listed outlets
+      responses:
+        "200":
+          description: Listed reseller brands with listed outlets
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PublicResellerBrand" }
+  /admin/resellers:
+    get:
+      operationId: listAdminResellerBrands
+      tags: [admin]
+      summary: List all reseller brands and outlets
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Reseller brands
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ResellerBrand" }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    post:
+      operationId: createResellerBrand
+      tags: [admin]
+      summary: Create a reseller brand
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResellerBrandInput" }
+      responses:
+        "201":
+          description: Brand created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResellerBrand" }
+        "400": { description: Invalid brand, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Brand name already exists, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/resellers/reorder:
+    post:
+      operationId: reorderResellerBrands
+      tags: [admin]
+      summary: Reorder reseller brands
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResellerReorder" }
+      responses:
+        "200":
+          description: Reordered brands
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ResellerBrand" }
+        "400": { description: Invalid reorder request }
+        "404": { description: Brand not found }
+  /admin/resellers/outlets/reorder:
+    post:
+      operationId: reorderResellerOutlets
+      tags: [admin]
+      summary: Reorder reseller outlets
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResellerReorder" }
+      responses:
+        "200":
+          description: Reordered outlets
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ResellerBrand" }
+        "400": { description: Invalid reorder request }
+        "404": { description: Outlet not found }
+  /admin/resellers/import/template:
+    get:
+      operationId: downloadResellerImportTemplate
+      tags: [admin]
+      summary: Download the reseller CSV import template
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: CSV template
+          content:
+            text/csv:
+              schema: { type: string }
+  /admin/resellers/import/dry-run:
+    post:
+      operationId: dryRunResellerImport
+      tags: [admin]
+      summary: Validate a reseller CSV import
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResellerImportUpload" }
+      responses:
+        "200":
+          description: Dry-run report
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResellerImportReport" }
+        "400": { description: Invalid CSV, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/resellers/import/commit:
+    post:
+      operationId: commitResellerImport
+      tags: [admin]
+      summary: Commit a validated reseller CSV import
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResellerImportCommit" }
+      responses:
+        "200":
+          description: Import committed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResellerImportReport" }
+        "400": { description: Invalid or stale token, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/resellers/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: number, multipleOf: 1, minimum: 1 }
+    get:
+      operationId: getAdminResellerBrand
+      tags: [admin]
+      summary: Get a reseller brand and its outlets
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Brand record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResellerBrand" }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: Brand not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    patch:
+      operationId: updateResellerBrand
+      tags: [admin]
+      summary: Update a reseller brand
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResellerBrandUpdate" }
+      responses:
+        "200":
+          description: Updated brand
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResellerBrand" }
+        "400": { description: Invalid brand, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: Brand not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Brand name already exists, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    delete:
+      operationId: deleteResellerBrand
+      tags: [admin]
+      summary: Delete a reseller brand and its outlets
+      security: [{ clerkSession: [] }]
+      responses:
+        "204": { description: Brand deleted }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: Brand not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/resellers/{id}/outlets:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: number, multipleOf: 1, minimum: 1 }
+    post:
+      operationId: createResellerOutlet
+      tags: [admin]
+      summary: Create a reseller outlet
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResellerOutletInput" }
+      responses:
+        "201":
+          description: Outlet created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResellerOutlet" }
+        "400": { description: Invalid outlet, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: Brand not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Outlet name already exists, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/resellers/{brandId}/outlets/{id}:
+    parameters:
+      - name: brandId
+        in: path
+        required: true
+        schema: { type: number, multipleOf: 1, minimum: 1 }
+      - name: id
+        in: path
+        required: true
+        schema: { type: number, multipleOf: 1, minimum: 1 }
+    patch:
+      operationId: updateResellerOutlet
+      tags: [admin]
+      summary: Update a reseller outlet
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResellerOutletUpdate" }
+      responses:
+        "200":
+          description: Updated outlet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResellerOutlet" }
+        "400": { description: Invalid outlet, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: Outlet not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Outlet name already exists, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    delete:
+      operationId: deleteResellerOutlet
+      tags: [admin]
+      summary: Delete a reseller outlet
+      security: [{ clerkSession: [] }]
+      responses:
+        "204": { description: Outlet deleted }
+        "404": { description: Outlet not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
   /admin/import/dry-run:
     post:
       operationId: dryRunProductImport
@@ -877,6 +1165,203 @@ paths:
         "204": { description: Category deleted }
         "404": { description: Category not found }
         "409": { description: Category still has products or subcategories }
+  /admin/articles:
+    get:
+      operationId: listAdminArticles
+      tags: [admin]
+      summary: List all blog articles
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Article records
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Article" }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    post:
+      operationId: createArticle
+      tags: [admin]
+      summary: Create a draft blog article
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticleInput" }
+      responses:
+        "201":
+          description: Article created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { description: Invalid article, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Article slug already exists, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/articles/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: number, multipleOf: 1, minimum: 1 }
+    get:
+      operationId: getAdminArticle
+      tags: [admin]
+      summary: Get a blog article
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Article record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: Article not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    patch:
+      operationId: updateArticle
+      tags: [admin]
+      summary: Update a blog article
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticleUpdate" }
+      responses:
+        "200":
+          description: Updated article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { description: Invalid article, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: Article not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Article slug already exists, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    delete:
+      operationId: deleteArticle
+      tags: [admin]
+      summary: Delete a blog article
+      security: [{ clerkSession: [] }]
+      responses:
+        "204": { description: Article deleted }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: Article not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/articles/{id}/publish:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: number, multipleOf: 1, minimum: 1 }
+    post:
+      operationId: publishArticle
+      tags: [admin]
+      summary: Publish a blog article
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Published article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { description: Article is incomplete, content: { application/json: { schema: { $ref: "#/components/schemas/PublishValidationError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: Article not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/articles/{id}/unpublish:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: number, multipleOf: 1, minimum: 1 }
+    post:
+      operationId: unpublishArticle
+      tags: [admin]
+      summary: Unpublish a blog article
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Unpublished article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: Article not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /site-settings:
+    get:
+      operationId: getPublicSiteSettings
+      tags: [catalogue]
+      summary: Get public homepage and seed guide settings
+      responses:
+        "200":
+          description: Current public site settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SiteSettings" }
+  /site/seed-guide.pdf:
+    get:
+      operationId: downloadSeedGuidePdf
+      tags: [catalogue]
+      summary: Download the uploaded pasture seed guide PDF
+      responses:
+        "200":
+          description: Seed guide PDF
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "404": { description: No seed guide PDF has been uploaded }
+  /admin/site-settings:
+    get:
+      operationId: getAdminSiteSettings
+      tags: [admin]
+      summary: Get homepage and seed guide settings for editing
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Current site settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SiteSettings" }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "403": { description: Administrator access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    put:
+      operationId: updateSiteSettings
+      tags: [admin]
+      summary: Save homepage and seed guide settings
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SiteSettingsInput" }
+      responses:
+        "200":
+          description: Saved site settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SiteSettings" }
+        "400": { description: Invalid site settings, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "403": { description: Administrator access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/site-settings/seed-guide-pdf:
+    post:
+      operationId: uploadSeedGuidePdf
+      tags: [admin]
+      summary: Upload or replace the public pasture seed guide PDF
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SeedGuidePdfInput" }
+      responses:
+        "200":
+          description: Site settings including the new PDF
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SiteSettings" }
+        "400": { description: Invalid PDF, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "403": { description: Administrator access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
   /enquiries:
     post:
       operationId: createEnquiry
@@ -1125,6 +1610,10 @@ components:
         components:
           type: array
           items: { $ref: "#/components/schemas/ProductComponent" }
+        faqs:
+          type: array
+          maxItems: 10
+          items: { $ref: "#/components/schemas/ProductFaq" }
         relatedProducts: { type: array, items: { type: string } }
         formulationYear: { type: string }
         photos:
@@ -1137,7 +1626,7 @@ components:
         socialImage: { type: string }
         canonicalUrl: { type: string }
         robotsIndex: { type: boolean }
-      required: [recordType, botanicalName, tagline, blurb, keyAttributes, distributionNote, persistencyType, ploidy, flowerColour, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, tolerance, endUse, livestock, maturityMeasure, maturityDays, headingDate, headingOffsetDays, floweringWindow, winterActivity, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, certification, description, components, relatedProducts, formulationYear, photos, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex]
+      required: [recordType, botanicalName, tagline, blurb, keyAttributes, distributionNote, persistencyType, ploidy, flowerColour, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, tolerance, endUse, livestock, maturityMeasure, maturityDays, headingDate, headingOffsetDays, floweringWindow, winterActivity, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, certification, description, components, faqs, relatedProducts, formulationYear, photos, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex]
     ProductDraftInput:
       type: object
       properties:
@@ -1316,12 +1805,17 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ProductComponent"
+        faqs:
+          type: array
+          maxItems: 10
+          items: { $ref: "#/components/schemas/ProductFaq" }
         formulationYear: { type: string, maxLength: 20 }
         photos:
           type: array
           items:
             $ref: "#/components/schemas/ProductPhoto"
         inCurrentPrintedGuide: { type: boolean }
+        h1: { type: string, maxLength: 160 }
         seoTitle: { type: string, maxLength: 180 }
         seoDescription: { type: string, maxLength: 2000 }
         socialTitle: { type: string, maxLength: 180 }
@@ -1347,7 +1841,7 @@ components:
         regrowth: { type: string }
         productForm: { type: string, maxLength: 120 }
         applicationRate: { type: string }
-      required: [stockCode, guideSection, recordType, botanicalName, alsoKnownAs, packSizes, treatment, persistencyType, ploidy, flowerColour, bredByOrigin, australianBred, distributedBy, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, sowingDepthMinCm, sowingDepthMaxCm, tolerance, maturityMeasure, maturityDays, headingDate, floweringWindow, winterActivity, inoculantGroup, seedTreatment, ecocertApproved, endUse, livestock, companionSpecies, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, licenceRestriction, certification, isThirdPartyProduct, supplierName, tagline, blurb, keyAttributes, distributionNote, description, notes, components, formulationYear, photos, inCurrentPrintedGuide, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex, sortOrder, featured, relatedProducts, headingOffsetDays, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate]
+      required: [stockCode, guideSection, recordType, botanicalName, alsoKnownAs, packSizes, treatment, persistencyType, ploidy, flowerColour, bredByOrigin, australianBred, distributedBy, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, sowingDepthMinCm, sowingDepthMaxCm, tolerance, maturityMeasure, maturityDays, headingDate, floweringWindow, winterActivity, inoculantGroup, seedTreatment, ecocertApproved, endUse, livestock, companionSpecies, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, licenceRestriction, certification, isThirdPartyProduct, supplierName, tagline, blurb, keyAttributes, distributionNote, description, notes, components, faqs, formulationYear, photos, inCurrentPrintedGuide, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex, sortOrder, featured, relatedProducts, headingOffsetDays, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate]
     SaleLine:
       type: object
       properties:
@@ -1392,6 +1886,12 @@ components:
         description: { type: string, maxLength: 10000 }
         note: { type: string, maxLength: 4000 }
       required: [productLink, speciesName, inclusionRate, unit, description, note]
+    ProductFaq:
+      type: object
+      required: [question, answer]
+      properties:
+        question: { type: string, maxLength: 180 }
+        answer: { type: string, maxLength: 4000 }
     ProductPhoto:
       type: object
       properties:
@@ -1406,7 +1906,7 @@ components:
         width: { type: number, multipleOf: 1, minimum: 1 }
         height: { type: number, multipleOf: 1, minimum: 1 }
         format: { type: string, maxLength: 20 }
-        objectPath: { type: string, maxLength: 500 }
+        objectPath: { type: [string, "null"], maxLength: 500 }
         srcSet: { type: string, maxLength: 2000 }
         social: { type: boolean }
       required: [slot, file, rating, src]
@@ -1457,7 +1957,7 @@ components:
         updatedAt: { type: string, format: date-time }
     MediaUsageSummary:
       type: object
-      required: [total, draft, published, product, category, static]
+      required: [total, draft, published, product, category, static, article, reseller]
       properties:
         total: { type: number, multipleOf: 1, minimum: 0 }
         draft: { type: number, multipleOf: 1, minimum: 0 }
@@ -1465,13 +1965,15 @@ components:
         product: { type: number, multipleOf: 1, minimum: 0 }
         category: { type: number, multipleOf: 1, minimum: 0 }
         static: { type: number, multipleOf: 1, minimum: 0 }
+        article: { type: number, multipleOf: 1, minimum: 0 }
+        reseller: { type: number, multipleOf: 1, minimum: 0 }
     MediaReference:
       type: object
       required: [id, assetId, ownerType, ownerId, ownerName, field, role, usageState, metadata, createdAt, updatedAt]
       properties:
         id: { type: number, multipleOf: 1 }
         assetId: { type: string }
-        ownerType: { type: string, enum: [product, category, static] }
+        ownerType: { type: string, enum: [product, category, static, article, reseller] }
         ownerId: { type: string }
         ownerName: { type: string }
         field: { type: string }
@@ -1563,6 +2065,12 @@ components:
         note: { type: string }
         status: { type: string }
       required: [id, name, note, status]
+    CatalogueCategoryFaq:
+      type: object
+      required: [question, answer]
+      properties:
+        question: { type: string, maxLength: 200 }
+        answer: { type: string, maxLength: 2000 }
     CatalogueCategory:
       type: object
       properties:
@@ -1577,11 +2085,15 @@ components:
         seoDescription: { type: string }
         rainfall: { type: string }
         image: { type: string }
+        faqs:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/CatalogueCategoryFaq" }
         sortOrder: { type: number, multipleOf: 1 }
         active: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-      required: [id, parentId, slug, name, groupLabel, lead, pageHeading, seoTitle, seoDescription, rainfall, image, sortOrder, active, createdAt, updatedAt]
+      required: [id, parentId, slug, name, groupLabel, lead, pageHeading, seoTitle, seoDescription, rainfall, image, faqs, sortOrder, active, createdAt, updatedAt]
     PublicCatalogueCategory:
       allOf:
         - $ref: "#/components/schemas/CatalogueCategory"
@@ -1602,6 +2114,10 @@ components:
         seoDescription: { type: string, maxLength: 2000 }
         rainfall: { type: string, maxLength: 120 }
         image: { type: string, maxLength: 500 }
+        faqs:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/CatalogueCategoryFaq" }
         sortOrder: { type: number, minimum: 0, multipleOf: 1 }
         active: { type: boolean }
       required: [parentId, slug, name, groupLabel, lead, pageHeading, seoTitle, seoDescription, rainfall, image, sortOrder, active]
@@ -1618,6 +2134,10 @@ components:
         seoDescription: { type: string, maxLength: 2000 }
         rainfall: { type: string, maxLength: 120 }
         image: { type: string, maxLength: 500 }
+        faqs:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/CatalogueCategoryFaq" }
         sortOrder: { type: number, minimum: 0, multipleOf: 1 }
         active: { type: boolean }
     CatalogueCategoryReorder:
@@ -1699,4 +2219,300 @@ components:
         id: { type: number }
         createdAt: { type: string, format: date-time }
       required: [ok, id, createdAt]
+    SiteHomepageSettings:
+      type: object
+      required: [heroImageSrc, heroImageAssetId, heroEyebrow, heroHeading, heroBody, bestSellerSlugs]
+      properties:
+        heroImageSrc: { type: string, maxLength: 500 }
+        heroImageAssetId: { type: string, nullable: true, maxLength: 80 }
+        heroEyebrow: { type: string, maxLength: 120 }
+        heroHeading: { type: string, maxLength: 180 }
+        heroBody: { type: string, maxLength: 2000 }
+        bestSellerSlugs:
+          type: array
+          maxItems: 4
+          items: { type: string, maxLength: 160 }
+    SiteSeedGuideSettings:
+      type: object
+      required: [navTitle, cardHeading, cardButtonLabel, cardImageSrc, cardImageAssetId, pdfFilename, pdfPublicUrl, pageTitle, pageIntro, pageButtonLabel]
+      properties:
+        navTitle: { type: string, maxLength: 80 }
+        cardHeading: { type: string, maxLength: 240 }
+        cardButtonLabel: { type: string, maxLength: 120 }
+        cardImageSrc: { type: string, maxLength: 500 }
+        cardImageAssetId: { type: string, nullable: true, maxLength: 80 }
+        pdfFilename: { type: string, maxLength: 160 }
+        pdfPublicUrl: { type: string, maxLength: 500 }
+        pageTitle: { type: string, maxLength: 180 }
+        pageIntro: { type: string, maxLength: 2000 }
+        pageButtonLabel: { type: string, maxLength: 120 }
+    SiteSettings:
+      type: object
+      required: [homepage, seedGuide, updatedAt]
+      properties:
+        homepage: { $ref: "#/components/schemas/SiteHomepageSettings" }
+        seedGuide: { $ref: "#/components/schemas/SiteSeedGuideSettings" }
+        updatedAt: { type: string, format: date-time }
+    SiteSeedGuideInput:
+      type: object
+      required: [navTitle, cardHeading, cardButtonLabel, cardImageSrc, cardImageAssetId, pageTitle, pageIntro, pageButtonLabel]
+      properties:
+        navTitle: { type: string, maxLength: 80 }
+        cardHeading: { type: string, maxLength: 240 }
+        cardButtonLabel: { type: string, maxLength: 120 }
+        cardImageSrc: { type: string, maxLength: 500 }
+        cardImageAssetId: { type: string, nullable: true, maxLength: 80 }
+        pageTitle: { type: string, maxLength: 180 }
+        pageIntro: { type: string, maxLength: 2000 }
+        pageButtonLabel: { type: string, maxLength: 120 }
+    SiteSettingsInput:
+      type: object
+      required: [homepage, seedGuide]
+      properties:
+        homepage: { $ref: "#/components/schemas/SiteHomepageSettings" }
+        seedGuide: { $ref: "#/components/schemas/SiteSeedGuideInput" }
+    SeedGuidePdfInput:
+      type: object
+      required: [filename, data]
+      properties:
+        filename: { type: string, minLength: 1, maxLength: 160 }
+        data: { type: string, minLength: 1 }
+    Article:
+      type: object
+      required: [id, slug, title, excerpt, body, tags, heroImageSrc, heroImageAssetId, relatedProductSlugs, publishStatus, publishedAt, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, robotsIndex, createdAt, updatedAt]
+      properties:
+        id: { type: number, multipleOf: 1 }
+        slug: { type: string }
+        title: { type: string }
+        excerpt: { type: string }
+        body: { type: string }
+        tags: { type: array, maxItems: 12, items: { type: string, maxLength: 80 } }
+        heroImageSrc: { type: string }
+        heroImageAssetId: { type: [string, "null"] }
+        relatedProductSlugs: { type: array, maxItems: 3, items: { type: string, maxLength: 180 } }
+        publishStatus: { type: string, enum: [Draft, Published] }
+        publishedAt: { type: [string, "null"], format: date-time }
+        seoTitle: { type: string }
+        seoDescription: { type: string }
+        socialTitle: { type: string }
+        socialDescription: { type: string }
+        socialImage: { type: string }
+        robotsIndex: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PublicArticle:
+      type: object
+      required: [id, slug, title, excerpt, body, tags, heroImageSrc, relatedProductSlugs, publishedAt, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, robotsIndex, updatedAt]
+      properties:
+        id: { type: number, multipleOf: 1 }
+        slug: { type: string }
+        title: { type: string }
+        excerpt: { type: string }
+        body: { type: string }
+        tags: { type: array, maxItems: 12, items: { type: string, maxLength: 80 } }
+        heroImageSrc: { type: string }
+        relatedProductSlugs: { type: array, maxItems: 3, items: { type: string, maxLength: 180 } }
+        publishedAt: { type: string, format: date-time }
+        seoTitle: { type: string }
+        seoDescription: { type: string }
+        socialTitle: { type: string }
+        socialDescription: { type: string }
+        socialImage: { type: string }
+        robotsIndex: { type: boolean }
+        updatedAt: { type: string, format: date-time }
+    ArticleInput:
+      type: object
+      required: [slug, title]
+      properties:
+        slug: { type: string, minLength: 1, maxLength: 180, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        title: { type: string, minLength: 1, maxLength: 180 }
+        excerpt: { type: string, maxLength: 500 }
+        body: { type: string, maxLength: 200000 }
+        tags: { type: array, maxItems: 12, items: { type: string, maxLength: 80 } }
+        heroImageSrc: { type: string, maxLength: 500 }
+        heroImageAssetId: { type: [string, "null"], maxLength: 80 }
+        relatedProductSlugs: { type: array, maxItems: 3, items: { type: string, maxLength: 180 } }
+        seoTitle: { type: string, maxLength: 180 }
+        seoDescription: { type: string, maxLength: 2000 }
+        socialTitle: { type: string, maxLength: 180 }
+        socialDescription: { type: string, maxLength: 2000 }
+        socialImage: { type: string, maxLength: 500 }
+        robotsIndex: { type: boolean }
+    ArticleUpdate:
+      type: object
+      properties:
+        slug: { type: string, minLength: 1, maxLength: 180, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        title: { type: string, minLength: 1, maxLength: 180 }
+        excerpt: { type: string, maxLength: 500 }
+        body: { type: string, maxLength: 200000 }
+        tags: { type: array, maxItems: 12, items: { type: string, maxLength: 80 } }
+        heroImageSrc: { type: string, maxLength: 500 }
+        heroImageAssetId: { type: [string, "null"], maxLength: 80 }
+        relatedProductSlugs: { type: array, maxItems: 3, items: { type: string, maxLength: 180 } }
+        seoTitle: { type: string, maxLength: 180 }
+        seoDescription: { type: string, maxLength: 2000 }
+        socialTitle: { type: string, maxLength: 180 }
+        socialDescription: { type: string, maxLength: 2000 }
+        socialImage: { type: string, maxLength: 500 }
+        robotsIndex: { type: boolean }
+    ResellerKind:
+      type: string
+      enum: [elders, nutrien, independent]
+    ResellerOutlet:
+      type: object
+      required: [id, brandId, name, address, suburb, postcode, region, phone, email, mapsUrl, sortOrder, active, createdAt, updatedAt]
+      properties:
+        id: { type: number, multipleOf: 1 }
+        brandId: { type: number, multipleOf: 1 }
+        name: { type: string }
+        address: { type: string }
+        suburb: { type: string }
+        postcode: { type: string }
+        region: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        mapsUrl: { type: string }
+        sortOrder: { type: number, multipleOf: 1 }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PublicResellerOutlet:
+      type: object
+      required: [id, name, address, suburb, postcode, region, phone, email, mapsUrl]
+      properties:
+        id: { type: number, multipleOf: 1 }
+        name: { type: string }
+        address: { type: string }
+        suburb: { type: string }
+        postcode: { type: string }
+        region: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        mapsUrl: { type: string }
+    ResellerBrand:
+      type: object
+      required: [id, name, kind, website, logoSrc, logoAssetId, sortOrder, active, createdAt, updatedAt, outlets]
+      properties:
+        id: { type: number, multipleOf: 1 }
+        name: { type: string }
+        kind: { $ref: "#/components/schemas/ResellerKind" }
+        website: { type: string }
+        logoSrc: { type: string }
+        logoAssetId: { type: [string, "null"] }
+        sortOrder: { type: number, multipleOf: 1 }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        outlets:
+          type: array
+          items: { $ref: "#/components/schemas/ResellerOutlet" }
+    PublicResellerBrand:
+      type: object
+      required: [id, name, kind, website, logoSrc, logoAssetId, outlets]
+      properties:
+        id: { type: number, multipleOf: 1 }
+        name: { type: string }
+        kind: { $ref: "#/components/schemas/ResellerKind" }
+        website: { type: string }
+        logoSrc: { type: string }
+        logoAssetId: { type: [string, "null"] }
+        outlets:
+          type: array
+          items: { $ref: "#/components/schemas/PublicResellerOutlet" }
+    ResellerBrandInput:
+      type: object
+      required: [name, kind]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        kind: { $ref: "#/components/schemas/ResellerKind" }
+        website: { type: string, maxLength: 500 }
+        logoSrc: { type: string, maxLength: 500 }
+        logoAssetId: { type: [string, "null"], maxLength: 80 }
+        sortOrder: { type: number, minimum: 0, multipleOf: 1 }
+        active: { type: boolean }
+    ResellerBrandUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        kind: { $ref: "#/components/schemas/ResellerKind" }
+        website: { type: string, maxLength: 500 }
+        logoSrc: { type: string, maxLength: 500 }
+        logoAssetId: { type: [string, "null"], maxLength: 80 }
+        sortOrder: { type: number, minimum: 0, multipleOf: 1 }
+        active: { type: boolean }
+    ResellerOutletInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        address: { type: string, maxLength: 300 }
+        suburb: { type: string, maxLength: 120 }
+        postcode: { type: string, maxLength: 12 }
+        region: { type: string, maxLength: 80 }
+        phone: { type: string, maxLength: 80 }
+        email: { type: string, maxLength: 180 }
+        mapsUrl: { type: string, maxLength: 1000 }
+        sortOrder: { type: number, minimum: 0, multipleOf: 1 }
+        active: { type: boolean }
+    ResellerOutletUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        address: { type: string, maxLength: 300 }
+        suburb: { type: string, maxLength: 120 }
+        postcode: { type: string, maxLength: 12 }
+        region: { type: string, maxLength: 80 }
+        phone: { type: string, maxLength: 80 }
+        email: { type: string, maxLength: 180 }
+        mapsUrl: { type: string, maxLength: 1000 }
+        sortOrder: { type: number, minimum: 0, multipleOf: 1 }
+        active: { type: boolean }
+    ResellerReorder:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [id, sortOrder]
+            properties:
+              id: { type: number, multipleOf: 1 }
+              sortOrder: { type: number, minimum: 0, multipleOf: 1 }
+    ResellerImportUpload:
+      type: object
+      required: [csvText]
+      properties:
+        csvText: { type: string }
+    ResellerImportCommit:
+      allOf:
+        - $ref: "#/components/schemas/ResellerImportUpload"
+        - type: object
+          required: [token]
+          properties:
+            token: { type: string }
+    ResellerImportIssue:
+      type: object
+      required: [row, column, problem]
+      properties:
+        row: { type: number, multipleOf: 1 }
+        column: { type: string }
+        problem: { type: string }
+    ResellerImportReport:
+      type: object
+      required: [token, rows, brandsCreated, outletsCreated, outletsUpdated, skipped, issues, plannedChanges]
+      properties:
+        token: { type: string }
+        rows: { type: number, multipleOf: 1 }
+        brandsCreated: { type: number, multipleOf: 1 }
+        outletsCreated: { type: number, multipleOf: 1 }
+        outletsUpdated: { type: number, multipleOf: 1 }
+        skipped: { type: number, multipleOf: 1 }
+        issues:
+          type: array
+          items: { $ref: "#/components/schemas/ResellerImportIssue" }
+        plannedChanges:
+          type: array
+          items: { type: string }
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Icon } from "../../components/Icon";
 import { getProducts } from "../../lib/catalogue";
+import { loadSiteSettings, publicMediaSrc } from "../../lib/site-settings";
 
 export const metadata: Metadata = {
   title: "About IH Seeds | Western Australian Pasture Seed Specialists",
@@ -15,7 +16,7 @@ const imageOptions = [
 ];
 
 export default async function About() {
-  const products = await getProducts();
+  const [products, settings] = await Promise.all([getProducts(), loadSiteSettings()]);
   const values = [
     { icon: "map-pin", title: "Regional expertise", body: "Local conditions, understood and applied. Sixty years of sowing across every WA rainfall zone." },
     { icon: "sprout", title: "Proven performance", body: "Varieties and mixes proven over generations across Australia, with trial data behind them." },
@@ -64,10 +65,10 @@ export default async function About() {
 
       <section style={{ background: "#FFFFFF" }}>
         <div className="page-wide" style={{ maxWidth: 1440, margin: "0 auto", padding: "96px 40px" }}>
-          <div className="guide-banner" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.92), rgba(29,40,28,.44)), url(${imageOptions[3]})` }}>
+          <div className="guide-banner" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.92), rgba(29,40,28,.44)), url(${publicMediaSrc({ src: settings.seedGuide.cardImageSrc, assetId: settings.seedGuide.cardImageAssetId })})` }}>
             <div>
-              <h2>Sixty years of sowing across Western Australia, in one guide.</h2>
-              <a href="/IH-Seeds-2026-Pasture-Seed-Guide.pdf" className="button button-light" style={{ display: "inline-block", textDecoration: "none" }} download>Download the 2026 Pasture Seed Guide (PDF)</a>
+              <h2>{settings.seedGuide.cardHeading}</h2>
+              <a href={settings.seedGuide.pdfPublicUrl} className="button button-light" style={{ display: "inline-block", textDecoration: "none" }} download>{settings.seedGuide.cardButtonLabel}</a>
             </div>
           </div>
         </div>

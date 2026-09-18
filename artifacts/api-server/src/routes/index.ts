@@ -8,6 +8,9 @@ import administratorsRouter from "./administrators";
 import aiIngestRouter from "./ai-ingest";
 import authRouter from "./auth";
 import mediaRouter from "./media";
+import siteSettingsRouter from "./site-settings";
+import articlesRouter from "./articles";
+import resellersRouter from "./resellers";
 
 const router: IRouter = Router();
 
@@ -19,6 +22,9 @@ router.use(categoriesRouter);
 router.use(importRouter);
 router.use(aiIngestRouter);
 router.use(mediaRouter);
+router.use(siteSettingsRouter);
+router.use(articlesRouter);
+router.use(resellersRouter);
 router.use(administratorsRouter);
 
 export default router;

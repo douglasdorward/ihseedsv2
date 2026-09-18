@@ -44,7 +44,9 @@ app.use((req, res, next) => {
     express.raw({ type: "*/*", limit: "12mb" })(req, res, next);
     return;
   }
-  const large = path.startsWith("/api/admin/ai") || path.startsWith("/api/admin/tech-sheets");
+  const large = path.startsWith("/api/admin/ai")
+    || path.startsWith("/api/admin/tech-sheets")
+    || path.startsWith("/api/admin/site-settings");
   express.json({ limit: large ? "25mb" : "10mb" })(req, res, next);
 });
 app.use((req, res, next) => {

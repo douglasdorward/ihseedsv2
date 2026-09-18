@@ -3,15 +3,9 @@
 import Link from "next/link";
 import { Fragment, useState, type ReactNode } from "react";
 import { Icon } from "../../components/Icon";
-import type { CatalogueCategory, CatalogueProduct } from "../../lib/catalogue";
+import type { CatalogueArticle, CatalogueCategory, CatalogueProduct, PublicSiteSeedGuide } from "../../lib/catalogue";
 import { productPublicPath } from "../../lib/catalogue-paths";
-
-const articleSeed = [
-  { category: "Editorial", date: "27 October 2025", title: "Mix & Match Custom Pasture", excerpt: "The need for sustainable and productive pastures has never been greater in today’s farming landscape.", image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1000&q=80" },
-  { category: "Sowing & Timing", date: "12 September 2025", title: "Getting Your Autumn Sowing Window Right", excerpt: "Timing decides the season. Soil temperature, rainfall triggers and the sowing rates that hold up.", image: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=1000&q=80" },
-  { category: "Feed Planning", date: "4 August 2025", title: "Feed Planning Through a Dry Finish", excerpt: "Practical steps for holding feed quality when the season shortens.", image: "https://images.unsplash.com/photo-1530507629858-e4977d30e9e0?auto=format&fit=crop&w=1000&q=80" },
-  { category: "Regional Advice", date: "18 July 2025", title: "Choosing a Mix for Your Rainfall Zone", excerpt: "A practical starting point for matching pasture performance to the country you farm.", image: "https://images.unsplash.com/photo-1499529112087-3cb3b73cec95?auto=format&fit=crop&w=1000&q=80" },
-];
+import { publicMediaSrc } from "../../lib/site-settings";
 
 const imageOptions = [
   "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80",
@@ -20,11 +14,27 @@ const imageOptions = [
   "https://images.unsplash.com/photo-1499529112087-3cb3b73cec95?auto=format&fit=crop&w=900&q=80",
 ];
 
-export function ResourcesContent({ products, categories, intro }: { products: CatalogueProduct[]; categories: CatalogueCategory[]; intro: ReactNode }) {
+function formatArticleDate(value: string) {
+  return new Date(value).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+}
+
+export function ResourcesContent({
+  articles,
+  products,
+  categories,
+  seedGuide,
+  intro,
+}: {
+  articles: CatalogueArticle[];
+  products: CatalogueProduct[];
+  categories: CatalogueCategory[];
+  seedGuide: PublicSiteSeedGuide;
+  intro: ReactNode;
+}) {
   const [tab, setTab] = useState<"articles" | "sheets">("articles");
   const [articleCat, setArticleCat] = useState("All");
-  const articleCats = ["All", ...Array.from(new Set(articleSeed.map(a => a.category)))];
-  const filteredArticles = articleCat === "All" ? articleSeed : articleSeed.filter(a => a.category === articleCat);
+  const articleCats = ["All", ...Array.from(new Set(articles.flatMap((article) => article.tags).filter(Boolean)))];
+  const filteredArticles = articleCat === "All" ? articles : articles.filter((article) => article.tags.includes(articleCat));
 
   return (
     <>
@@ -39,24 +49,30 @@ export function ResourcesContent({ products, categories, intro }: { products: Ca
       {tab === "articles" && (
         <section style={{ background: "#FFFFFF" }}>
           <div className="page-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "64px 40px 96px" }}>
-            <div className="chip-scroller" style={{ display: "flex", flexWrap: "wrap", gap: 12, paddingBottom: 48 }}>
-              {articleCats.map((c) => (
-                <button key={c} onClick={() => setArticleCat(c)} style={{ padding: "9px 20px", borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: "pointer", border: `2px solid ${articleCat === c ? "var(--green)" : "var(--line)"}`, background: articleCat === c ? "var(--green)" : "transparent", color: articleCat === c ? "#fff" : "var(--green)" }}>{c}</button>
-              ))}
-            </div>
-            <div className="article-grid">
-              {filteredArticles.map((article, index) => (
-                <article className="article-card" key={index} data-testid={`card-article-${index}`}>
-                  <div className="article-image" style={{ backgroundImage: `url(${article.image})` }} />
-                  <div className="article-copy">
-                    <small>{article.category} · {article.date}</small>
-                    <h3>{article.title}</h3>
-                    <p>{article.excerpt}</p>
-                    <Link href="/contact" className="text-link">Ask for advice <span>↗</span></Link>
-                  </div>
-                </article>
-              ))}
-            </div>
+            {articleCats.length > 1 && (
+              <div className="chip-scroller" style={{ display: "flex", flexWrap: "wrap", gap: 12, paddingBottom: 48 }}>
+                {articleCats.map((c) => (
+                  <button key={c} onClick={() => setArticleCat(c)} style={{ padding: "9px 20px", borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: "pointer", border: `2px solid ${articleCat === c ? "var(--green)" : "var(--line)"}`, background: articleCat === c ? "var(--green)" : "transparent", color: articleCat === c ? "#fff" : "var(--green)" }}>{c}</button>
+                ))}
+              </div>
+            )}
+            {filteredArticles.length === 0 ? (
+              <p className="empty-state" data-testid="status-articles-empty">No articles published yet.</p>
+            ) : (
+              <div className="article-grid">
+                {filteredArticles.map((article, index) => (
+                  <article className="article-card" key={article.id} data-testid={`card-article-${index}`}>
+                    <div className="article-image" style={article.heroImageSrc ? { backgroundImage: `url(${article.heroImageSrc})` } : undefined} />
+                    <div className="article-copy">
+                      <small>{[article.tags[0], formatArticleDate(article.publishedAt)].filter(Boolean).join(" · ")}</small>
+                      <h3>{article.title}</h3>
+                      <p>{article.excerpt}</p>
+                      <Link href={`/resources/${article.slug}`} className="text-link">Read article <span>↗</span></Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -86,10 +102,10 @@ export function ResourcesContent({ products, categories, intro }: { products: Ca
 
       <section style={{ background: "var(--sage)" }}>
         <div className="page-wide" style={{ maxWidth: 1440, margin: "0 auto", padding: "96px 40px" }}>
-          <div className="guide-banner" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.92), rgba(29,40,28,.44)), url(${imageOptions[3]})` }}>
+          <div className="guide-banner" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.92), rgba(29,40,28,.44)), url(${publicMediaSrc({ src: seedGuide.cardImageSrc, assetId: seedGuide.cardImageAssetId }) || imageOptions[3]})` }}>
             <div>
-              <h2>Species, sowing rates and regional advice for the season ahead.</h2>
-              <a href="/IH-Seeds-2026-Pasture-Seed-Guide.pdf" className="button button-light" style={{ display: "inline-block", textDecoration: "none" }} download>Download the 2026 Pasture Seed Guide (PDF)</a>
+              <h2>{seedGuide.cardHeading}</h2>
+              <a href={seedGuide.pdfPublicUrl} className="button button-light" style={{ display: "inline-block", textDecoration: "none" }} download>{seedGuide.cardButtonLabel}</a>
             </div>
           </div>
         </div>

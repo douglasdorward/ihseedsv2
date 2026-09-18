@@ -19,4 +19,8 @@ export interface MediaUsageSummary {
   category: number;
   /** @minimum 0 */
   static: number;
+  /** @minimum 0 */
+  article: number;
+  /** @minimum 0 */
+  reseller: number;
 }

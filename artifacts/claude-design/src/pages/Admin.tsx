@@ -10,6 +10,12 @@ import { isAlsoPopularEligible } from "../also-popular";
 import { navigate, useLocation } from "../router";
 import AdminCategories from "./AdminCategories";
 import AdminAdministrators from "./AdminAdministrators";
+import AdminSiteSettings from "./AdminSiteSettings";
+import AdminHomePage from "./AdminHomePage";
+import AdminRootCategories from "./AdminRootCategories";
+import AdminSeedGuide from "./AdminSeedGuide";
+import AdminBlog from "./AdminBlog";
+import AdminResellers from "./AdminResellers";
 import { persistLatestProductAndPublish } from "../persist-latest-product";
 import { photoDisplaySrc, uploadMediaAsset } from "../upload-image";
 import { useQueryClient } from "@tanstack/react-query";
@@ -124,7 +130,7 @@ const OPTS = {
   availabilityOverride: ["", "Good stock", "Low stock", "Very low", "Unavailable"]
 };
 
-const blankProduct: ProductInput = {
+const blankProduct = {
   name: "",
   slug: "",
   price: "Contact for pricing",
@@ -174,6 +180,7 @@ const blankProduct: ProductInput = {
     ecocertApproved: false,
     endUse: [],
     livestock: [],
+    companionSpecies: [],
     diseasePestResistance: "",
     standLifeNotes: "",
     grazingManagementNotes: "",
@@ -206,6 +213,8 @@ const blankProduct: ProductInput = {
     socialImage: "",
     canonicalUrl: "",
     robotsIndex: true,
+    sortOrder: null,
+    featured: false,
     relatedProducts: [],
     headingOffsetDays: null,
     argtResistant: false,
@@ -586,10 +595,12 @@ function AdminLayout({ children, mobileOpen, setMobileOpen, role, accountName, o
     { label: "Products & mixes", icon: "sprout", href: "/admin/products", enabled: true },
     { label: "Images", icon: "image", href: "/admin/images", enabled: true },
     { label: "Tech sheets", icon: "file-text", href: "/admin/tech-sheets", enabled: true },
+    { label: "Blog", icon: "newspaper", href: "/admin/blog", enabled: true },
+    { label: "Resellers", icon: "map-pin", href: "/admin/resellers", enabled: true },
     ...(role === "superadmin"
       ? [{ label: "Administrators", icon: "users", href: "/admin/administrators", enabled: true }]
       : []),
-    { label: "Site settings", icon: "settings", href: "", enabled: false },
+    { label: "Site settings", icon: "settings", href: "/admin/site-settings", enabled: true },
   ];
 
   const toggleCollapsed = () => {
@@ -1545,7 +1556,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey(), refetchType: "all" });
         await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
         if (action === "save-and-back") {
-          navigate(`/admin/products?view=${product?.lifecycleStatus === "Published" ? "Published" : "Draft"}`);
+          navigate("/admin/products?view=Draft");
         }
       }
     } catch (err) {
@@ -2059,7 +2070,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                           </div>
                         </div>
                         <label>Availability
-                          <select disabled={isLegacyListing} value={isLegacyListing ? "Unavailable" : (line.availability ?? "")} onChange={(e) => updateSaleLine(i, { availability: e.target.value || null })}><option value="">TBA</option>{OPTS.availability.map(o => <option key={o} value={o}>{o}</option>)}</select>
+                          <select disabled={isLegacyListing} value={isLegacyListing ? "Unavailable" : (line.availability ?? "")} onChange={(e) => updateSaleLine(i, { availability: (e.target.value || null) as SaleLine["availability"] })}><option value="">TBA</option>{OPTS.availability.map(o => <option key={o} value={o}>{o}</option>)}</select>
                         </label>
                         <label>Price display
                           <input value={line.priceDisplay} onChange={(e) => updateSaleLine(i, { priceDisplay: e.target.value })} placeholder="Contact for pricing" />
@@ -2337,8 +2348,14 @@ export default function Admin({ role, accountName, onSignOut }: AdminAccountProp
   const isProducts = route === "/admin/products";
   const isCategories = route === "/admin/products/categories";
   const isTechSheets = route === "/admin/tech-sheets";
+  const isBlog = route === "/admin/blog" || route.startsWith("/admin/blog/");
+  const isResellers = route === "/admin/resellers" || route.startsWith("/admin/resellers/");
   const isImages = route === "/admin/images" || route.startsWith("/admin/images/");
   const isAdministrators = route === "/admin/administrators";
+  const isSiteSettingsHub = route === "/admin/site-settings";
+  const isSiteHome = route === "/admin/site-settings/home";
+  const isSiteGuide = route === "/admin/site-settings/seed-guide";
+  const isSiteCategories = route === "/admin/site-settings/categories" || route.startsWith("/admin/site-settings/categories/");
   const isEditor = route.startsWith("/admin/products/") && route !== "/admin/products/categories";
 
   useEffect(() => {
@@ -2353,6 +2370,12 @@ export default function Admin({ role, accountName, onSignOut }: AdminAccountProp
       {isAdministrators && role === "superadmin" && <AdminAdministrators />}
       {isImages && <AdminImages />}
       {isTechSheets && <AdminTechSheets />}
+      {isBlog && <AdminBlog />}
+      {isResellers && <AdminResellers />}
+      {isSiteSettingsHub && <AdminSiteSettings />}
+      {isSiteHome && <AdminHomePage />}
+      {isSiteCategories && <AdminRootCategories />}
+      {isSiteGuide && <AdminSeedGuide />}
       {isEditor && (
         <ProductEditor
           isNew={route === "/admin/products/new"}

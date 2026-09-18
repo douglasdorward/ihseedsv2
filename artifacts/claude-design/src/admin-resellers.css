@@ -1,0 +1,97 @@
+.admin-table-card.admin-reseller-table table {
+  min-width: 720px;
+  table-layout: auto;
+}
+.admin-table-card.admin-reseller-table th,
+.admin-table-card.admin-reseller-table td {
+  padding: 16px;
+  vertical-align: middle;
+}
+.admin-table-card.admin-reseller-table th:first-child,
+.admin-table-card.admin-reseller-table td:first-child,
+.admin-table-card.admin-reseller-table th:nth-child(2),
+.admin-table-card.admin-reseller-table td:nth-child(2) {
+  width: auto;
+  padding-left: 20px;
+}
+.admin-table-card.admin-reseller-table th:nth-child(2),
+.admin-table-card.admin-reseller-table td:nth-child(2) {
+  padding-left: 16px;
+}
+.admin-table-card.admin-reseller-table th:last-child,
+.admin-table-card.admin-reseller-table td:last-child {
+  width: 72px;
+  padding-right: 20px;
+  text-align: center;
+}
+.admin-reseller-table td strong {
+  display: block;
+  color: #174e37;
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+.admin-reseller-table td small {
+  display: block;
+  margin-top: 4px;
+  color: #5f6f66;
+}
+.admin-reseller-table tbody tr {
+  cursor: pointer;
+}
+.admin-reseller-table tbody tr:hover {
+  background: #f4f7f4;
+}
+.admin-reseller-table tbody tr.is-hidden td {
+  opacity: 0.62;
+}
+.admin-reseller-pin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: #174e37;
+  background: #eef3ee;
+}
+.admin-reseller-pin:hover {
+  background: #dce8df;
+}
+.admin-reseller-pin.is-empty {
+  color: #9aa59e;
+  background: transparent;
+}
+.admin-reseller-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  border: 1px solid #d8ddd9;
+  border-radius: 12px;
+  background: #f6f7f6 center / contain no-repeat;
+}
+.admin-reseller-brand-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.admin-reseller-brand-thumb {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border: 1px solid #e0e4df;
+  border-radius: 8px;
+  background: #f6f7f6 center / contain no-repeat;
+}
+.admin-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 720px) {
+  .admin-form-row {
+    grid-template-columns: 1fr;
+  }
+}

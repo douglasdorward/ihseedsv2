@@ -2,12 +2,17 @@ import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { after, before, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import xlsx from "xlsx";
 
-const serverRoot = new URL("..", import.meta.url);
+const serverRoot = fileURLToPath(new URL("..", import.meta.url));
+const webRoot = fileURLToPath(new URL("../../web", import.meta.url));
+const nextBin = join(webRoot, "node_modules/.bin/next");
 const testRunId = `${process.pid}-${Date.now()}`;
 const createdProductIds = [];
+const createdArticleIds = [];
 let child;
 let baseUrl;
 let webChild;
@@ -106,7 +111,7 @@ function sql(query) {
 
 function runMigrations() {
   execFileSync(process.execPath, ["./migrate.mjs"], {
-    cwd: new URL("../../../lib/db", import.meta.url),
+    cwd: fileURLToPath(new URL("../../../lib/db", import.meta.url)),
     env: process.env,
     encoding: "utf8",
   });
@@ -930,7 +935,7 @@ before(async () => {
   const port = await freePort();
   baseUrl = `http://127.0.0.1:${port}`;
   child = spawn(process.execPath, ["--enable-source-maps", "./dist/index.mjs"], {
-    cwd: new URL(serverRoot).pathname,
+    cwd: serverRoot,
     env: {
       ...process.env,
       NODE_ENV: "test",
@@ -958,10 +963,11 @@ before(async () => {
   const nextEnvPath = new URL("../../web/next-env.d.ts", import.meta.url);
   const nextEnvBeforeBuild = await readFile(nextEnvPath, "utf8");
   try {
-    execFileSync("pnpm", ["--filter", "@workspace/web", "run", "build"], {
-      cwd: new URL("../../..", import.meta.url),
+    execFileSync(nextBin, ["build"], {
+      cwd: webRoot,
       env: {
         ...process.env,
+        NODE_ENV: "production",
         API_BASE: baseUrl,
         NEXT_DIST_DIR: ".next-lifecycle",
         NEXT_TSCONFIG_PATH: "tsconfig.lifecycle.json",
@@ -973,10 +979,11 @@ before(async () => {
   }
   const webPort = await freePort();
   webBaseUrl = `http://127.0.0.1:${webPort}`;
-  webChild = spawn("pnpm", ["--dir", "artifacts/web", "exec", "next", "start", "-p", String(webPort)], {
-    cwd: new URL("../../..", import.meta.url),
+  webChild = spawn(nextBin, ["start", "-p", String(webPort)], {
+    cwd: webRoot,
     env: {
       ...process.env,
+      NODE_ENV: "production",
       API_BASE: baseUrl,
       NEXT_DIST_DIR: ".next-lifecycle",
       NEXT_TSCONFIG_PATH: "tsconfig.lifecycle.json",
@@ -996,6 +1003,9 @@ before(async () => {
 after(async () => {
   for (const id of createdProductIds) {
     await request("DELETE", `/products/${id}`);
+  }
+  for (const id of createdArticleIds) {
+    await request("DELETE", `/admin/articles/${id}`).catch(() => {});
   }
   await stopChild(webChild);
   await stopChild(child);
@@ -1685,3 +1695,172 @@ test("tech sheet queue matches a filename to a product without publishing", asyn
   const after = await adminProduct(product.id);
   assert.notEqual(after.details.blurb, "Queued blurb from the tech sheet.");
 });
+
+test("site settings persist homepage and seed guide content for the public site", async () => {
+  const original = assertStatus(await request("GET", "/site-settings"), 200);
+  assert.equal(original.homepage.heroHeading, "Pasture Seed Specialists");
+  assert.equal(original.seedGuide.navTitle, "Seed Guide 2026");
+  assert.equal(original.seedGuide.pdfPublicUrl, "/IH-Seeds-2026-Pasture-Seed-Guide.pdf");
+
+  const product = await createProduct("best-seller");
+  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+
+  const saved = assertStatus(await request("PUT", "/admin/site-settings", {
+    homepage: {
+      ...original.homepage,
+      heroEyebrow: "Lifecycle",
+      heroHeading: "Edited specialists",
+      heroBody: "We blend {productCount} for tests.",
+      bestSellerSlugs: [published.slug, "missing-best-seller"],
+    },
+    seedGuide: {
+      navTitle: "Seed Guide Test",
+      cardHeading: "Lifecycle seed guide card",
+      cardButtonLabel: "Download the test guide",
+      cardImageSrc: original.seedGuide.cardImageSrc,
+      cardImageAssetId: original.seedGuide.cardImageAssetId,
+      pageTitle: "Test Pasture Seed Guide",
+      pageIntro: original.seedGuide.pageIntro,
+      pageButtonLabel: original.seedGuide.pageButtonLabel,
+    },
+  }), 200);
+  assert.equal(saved.homepage.heroHeading, "Edited specialists");
+  assert.deepEqual(saved.homepage.bestSellerSlugs, [published.slug, "missing-best-seller"]);
+  assert.equal(saved.seedGuide.navTitle, "Seed Guide Test");
+  assert.equal(saved.seedGuide.pdfPublicUrl, "/IH-Seeds-2026-Pasture-Seed-Guide.pdf");
+
+  const publicSettings = assertStatus(await request("GET", "/site-settings"), 200);
+  assert.equal(publicSettings.homepage.heroHeading, "Edited specialists");
+  assert.equal(publicSettings.seedGuide.navTitle, "Seed Guide Test");
+
+  const homePage = await fetch(webBaseUrl);
+  assert.equal(homePage.status, 200);
+  const homeHtml = await homePage.text();
+  assert.match(homeHtml, /Edited specialists/);
+  assert.match(homeHtml, /Lifecycle seed guide card/);
+  assert.match(homeHtml, /Seed Guide Test/);
+  assert.match(homeHtml, new RegExp(`card-product-${published.id}`));
+
+  const rejectedPdf = await request("POST", "/admin/site-settings/seed-guide-pdf", {
+    filename: "not-a-pdf.txt",
+    data: Buffer.from("hello").toString("base64"),
+  });
+  assert.equal(rejectedPdf.response.status, 400);
+
+  const uploadedPdf = assertStatus(await request("POST", "/admin/site-settings/seed-guide-pdf", {
+    filename: "lifecycle-seed-guide.pdf",
+    data: textPdfBase64("Lifecycle seed guide"),
+  }), 200);
+  assert.equal(uploadedPdf.seedGuide.pdfFilename, "lifecycle-seed-guide.pdf");
+  assert.equal(uploadedPdf.seedGuide.pdfPublicUrl, "/api/site/seed-guide.pdf");
+  const pdf = await fetch(`${baseUrl}/api/site/seed-guide.pdf`);
+  assert.equal(pdf.status, 200);
+  assert.match(pdf.headers.get("content-type") ?? "", /pdf/);
+
+  assertStatus(await request("PUT", "/admin/site-settings", {
+    homepage: original.homepage,
+    seedGuide: {
+      navTitle: original.seedGuide.navTitle,
+      cardHeading: original.seedGuide.cardHeading,
+      cardButtonLabel: original.seedGuide.cardButtonLabel,
+      cardImageSrc: original.seedGuide.cardImageSrc,
+      cardImageAssetId: original.seedGuide.cardImageAssetId,
+      pageTitle: original.seedGuide.pageTitle,
+      pageIntro: original.seedGuide.pageIntro,
+      pageButtonLabel: original.seedGuide.pageButtonLabel,
+    },
+  }), 200);
+});
+
+test("published blog articles appear on Resources immediately and drafts stay private", async () => {
+  const slug = `lifecycle-article-${testRunId}`;
+  const originalTitle = `Lifecycle original ${testRunId}`;
+  const revisedTitle = `Lifecycle revised ${testRunId}`;
+  const payload = {
+    title: originalTitle,
+    slug,
+    excerpt: "Lifecycle article excerpt",
+    body: "## Sowing window\n\nLifecycle body copy with a [contact link](/contact).",
+    tags: ["Editorial"],
+    seoTitle: `${originalTitle} | IH Seeds`,
+    seoDescription: "Lifecycle article SEO description",
+  };
+  const incomplete = assertStatus(await request("POST", "/admin/articles", {
+    title: `Incomplete ${testRunId}`,
+    slug: `incomplete-article-${testRunId}`,
+  }), 201);
+  createdArticleIds.push(incomplete.id);
+  const blockedPublish = await request("POST", `/admin/articles/${incomplete.id}/publish`);
+  assert.equal(blockedPublish.response.status, 400);
+  assert.match(JSON.stringify(blockedPublish.data), /Excerpt|Article body|SEO title|SEO description/);
+
+  const created = assertStatus(await request("POST", "/admin/articles", payload), 201);
+  createdArticleIds.push(created.id);
+  assert.equal(created.publishStatus, "Draft");
+  assert.equal((await request("GET", "/articles")).data.some((item) => item.id === created.id), false);
+  assert.equal((await request("GET", `/articles/slug/${slug}`)).response.status, 404);
+
+  const publicBeforePublish = await fetch(`${webBaseUrl}/resources`);
+  assert.equal(publicBeforePublish.status, 200);
+  const resourcesBefore = await publicBeforePublish.text();
+  assert.doesNotMatch(resourcesBefore, new RegExp(originalTitle));
+
+  const published = assertStatus(await request("POST", `/admin/articles/${created.id}/publish`), 200);
+  assert.equal(published.publishStatus, "Published");
+  const listed = assertStatus(await request("GET", "/articles"), 200);
+  assert.equal(listed.some((item) => item.slug === slug), true);
+  const publicArticle = assertStatus(await request("GET", `/articles/slug/${slug}`), 200);
+  assert.equal(publicArticle.title, originalTitle);
+  assert.equal("publishStatus" in publicArticle, false);
+  assert.equal("heroImageAssetId" in publicArticle, false);
+
+  const primedIndex = await fetch(`${webBaseUrl}/resources`);
+  assert.equal(primedIndex.status, 200);
+  assert.match(await primedIndex.text(), new RegExp(originalTitle));
+  const primedPage = await fetch(`${webBaseUrl}/resources/${slug}`);
+  assert.equal(primedPage.status, 200);
+  const primedHtml = await primedPage.text();
+  assert.match(primedHtml, new RegExp(originalTitle));
+  assert.match(primedHtml, /Lifecycle article SEO description/);
+  assert.match(primedHtml, /"@type":"Article"|og:type" content="article"/);
+
+  const duplicate = await request("POST", "/admin/articles", { title: "Duplicate slug", slug, excerpt: "x", body: "y", seoTitle: "SEO", seoDescription: "SEO desc" });
+  assert.equal(duplicate.response.status, 409);
+
+  const invalidLink = await request("PATCH", `/admin/articles/${created.id}`, {
+    relatedProductSlugs: [`missing-article-product-${testRunId}`],
+  });
+  assert.equal(invalidLink.response.status, 400);
+  assert.match(JSON.stringify(invalidLink.data), /invalid product references/i);
+
+  const product = await createProduct("article-link");
+  const publishedProduct = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  assertStatus(await request("PATCH", `/admin/articles/${created.id}`, {
+    title: revisedTitle,
+    seoTitle: `${revisedTitle} | IH Seeds`,
+    relatedProductSlugs: [publishedProduct.slug],
+  }), 200);
+
+  const revisedApi = assertStatus(await request("GET", `/articles/slug/${slug}`), 200);
+  assert.equal(revisedApi.title, revisedTitle);
+  assert.deepEqual(revisedApi.relatedProductSlugs, [publishedProduct.slug]);
+
+  const revisedPage = await fetch(`${webBaseUrl}/resources/${slug}`);
+  assert.equal(revisedPage.status, 200);
+  const revisedHtml = await revisedPage.text();
+  assert.match(revisedHtml, new RegExp(revisedTitle));
+  assert.doesNotMatch(revisedHtml, new RegExp(originalTitle));
+  assert.match(revisedHtml, new RegExp(publishedProduct.name));
+
+  const sitemap = await fetch(`${baseUrl}/api/sitemap-articles`);
+  assert.equal(sitemap.status, 200);
+  assert.match(await sitemap.text(), new RegExp(`/resources/${slug}`));
+
+  assertStatus(await request("POST", `/admin/articles/${created.id}/unpublish`), 200);
+  assert.equal((await request("GET", `/articles/slug/${slug}`)).response.status, 404);
+  const unpublishedPage = await fetch(`${webBaseUrl}/resources/${slug}`);
+  assert.equal(unpublishedPage.status, 404);
+  const unpublishedIndex = await fetch(`${webBaseUrl}/resources`);
+  assert.doesNotMatch(await unpublishedIndex.text(), new RegExp(revisedTitle));
+});
+

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getResellers } from "../../lib/catalogue";
 import { ContactPage } from "./ContactPage";
 
 export const metadata: Metadata = {
@@ -6,6 +7,7 @@ export const metadata: Metadata = {
   description: "Contact IH Seeds for pasture seed advice, sowing rates, availability, pricing and help finding a rural reseller in Western Australia.",
 };
 
-export default function Contact() {
-  return <ContactPage />;
+export default async function Contact() {
+  const resellers = await getResellers().catch(() => []);
+  return <ContactPage resellers={resellers} />;
 }

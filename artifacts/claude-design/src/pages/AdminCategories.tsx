@@ -7,7 +7,6 @@ import {
   useDeleteCategory,
   useReorderCategories,
   CatalogueCategory,
-  CatalogueCategoryFaq,
   CatalogueCategoryInput,
   CatalogueCategoryUpdate,
   getListAdminCategoriesQueryKey,
@@ -26,23 +25,6 @@ function slugify(text: string) {
     .replace(/™/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
-}
-
-function forSearchMetadataInput(value: string) {
-  return value.replace(/[™®]/g, "").replace(/\s{2,}/g, " ").replace(/\s+([,.;:!?])/g, "$1");
-}
-
-function forSearchMetadata(value: string) {
-  return forSearchMetadataInput(value).trim();
-}
-
-const MAX_CATEGORY_FAQS = 20;
-
-function completeFaqs(faqs: CatalogueCategoryFaq[] | undefined): CatalogueCategoryFaq[] {
-  return (faqs ?? [])
-    .map((item) => ({ question: item.question.trim(), answer: item.answer.trim() }))
-    .filter((item) => item.question && item.answer)
-    .slice(0, MAX_CATEGORY_FAQS);
 }
 
 function PageHeader({ eyebrow, title, action, onBack }: { eyebrow: string; title: React.ReactNode; action?: React.ReactNode, onBack?: () => void }) {
@@ -126,7 +108,6 @@ const CategoryForm = ({
     }
 
     const groupLabel = form.groupLabel?.trim() || parent?.groupLabel || parent?.name || form.name;
-    const faqs = isSubcategory ? [] : completeFaqs(form.faqs);
     try {
       if (isEditing) {
         const update: CatalogueCategoryUpdate = isSubcategory
@@ -142,12 +123,8 @@ const CategoryForm = ({
               slug: categorySlug,
               groupLabel,
               lead: form.lead,
-              pageHeading: form.pageHeading,
-              seoTitle: form.seoTitle,
-              seoDescription: form.seoDescription,
               rainfall: form.rainfall,
               image: form.image,
-              faqs,
               active: form.active,
             };
         await onSave(update);
@@ -157,12 +134,12 @@ const CategoryForm = ({
           slug: categorySlug,
           groupLabel,
           lead: form.lead || "",
-          pageHeading: isSubcategory ? "" : form.pageHeading || "",
-          seoTitle: isSubcategory ? "" : form.seoTitle || "",
-          seoDescription: isSubcategory ? "" : form.seoDescription || "",
+          pageHeading: "",
+          seoTitle: "",
+          seoDescription: "",
           rainfall: isSubcategory ? "" : form.rainfall || "",
           image: isSubcategory ? parent?.image || "" : form.image || "",
-          faqs,
+          faqs: [],
           active: form.active ?? true,
           sortOrder: form.sortOrder ?? 0,
           parentId: form.parentId ?? null,
@@ -269,100 +246,17 @@ const CategoryForm = ({
               <small>Internal notes only. Not shown on the public site yet.</small>
             </label>
           )}
-          {!isSubcategory && (
-            <>
-              <label className="wide">
-                Page heading
-                <input
-                  value={form.pageHeading}
-                  onChange={e => setForm(prev => ({ ...prev, pageHeading: e.target.value }))}
-                  placeholder={`${form.name || "Category"} Seed`}
-                />
-                <small>Optional full search heading. If blank, the public page uses “{form.name || "Category"} Seed”.</small>
-              </label>
-              <label className="wide">
-                SEO title
-                <input
-                  value={form.seoTitle}
-                  onChange={e => setForm(prev => ({ ...prev, seoTitle: forSearchMetadataInput(e.target.value) }))}
-                  onBlur={e => setForm(prev => ({ ...prev, seoTitle: forSearchMetadata(e.target.value) }))}
-                  placeholder={`${form.name || "Category"} Seed | IH Seeds`}
-                />
-                <small>If blank, the public page uses “{form.name || "Category"} Seed | IH Seeds”. Do not use ™ or ®.</small>
-              </label>
-              <label className="wide">
-                Meta description
-                <textarea
-                  value={form.seoDescription}
-                  onChange={e => setForm(prev => ({ ...prev, seoDescription: forSearchMetadataInput(e.target.value) }))}
-                  onBlur={e => setForm(prev => ({ ...prev, seoDescription: forSearchMetadata(e.target.value) }))}
-                  placeholder={form.lead || "Category lead copy is used when this is blank."}
-                  rows={3}
-                />
-                <small>If blank, the public page uses the category lead copy. Plain text only — no ™ or ®.</small>
-              </label>
-              <div className="admin-repeat-group wide">
-                <div className="admin-section-heading">
-                  <div>
-                    <h3>FAQs</h3>
-                    <p>Shown on the public category page above “Also in our catalogue”. Leave blank to hide the section.</p>
-                  </div>
-                  {(form.faqs?.length ?? 0) < MAX_CATEGORY_FAQS && (
-                    <button
-                      className="admin-button outline small"
-                      type="button"
-                      onClick={() => setForm((prev) => ({
-                        ...prev,
-                        faqs: [...(prev.faqs ?? []), { question: "", answer: "" }],
-                      }))}
-                    >
-                      <Icon name="plus" size={16} />
-                      Add FAQ
-                    </button>
-                  )}
-                </div>
-                {(form.faqs ?? []).map((faq, index) => (
-                  <div className="admin-repeat-row admin-repeat-row-faq" key={index}>
-                    <div>
-                      <input
-                        value={faq.question}
-                        onChange={(event) => setForm((prev) => ({
-                          ...prev,
-                          faqs: (prev.faqs ?? []).map((item, itemIndex) =>
-                            itemIndex === index ? { ...item, question: event.target.value } : item,
-                          ),
-                        }))}
-                        placeholder="Question"
-                        maxLength={200}
-                      />
-                      <textarea
-                        value={faq.answer}
-                        onChange={(event) => setForm((prev) => ({
-                          ...prev,
-                          faqs: (prev.faqs ?? []).map((item, itemIndex) =>
-                            itemIndex === index ? { ...item, answer: event.target.value } : item,
-                          ),
-                        }))}
-                        placeholder="Answer"
-                        rows={3}
-                        maxLength={2000}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setForm((prev) => ({
-                        ...prev,
-                        faqs: (prev.faqs ?? []).filter((_, itemIndex) => itemIndex !== index),
-                      }))}
-                      aria-label="Remove FAQ"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                {(form.faqs?.length ?? 0) === 0 && <p className="admin-empty-inline">No FAQs added yet.</p>}
-              </div>
-            </>
+          {!isSubcategory && isEditing && initialData && (
+            <div className="wide admin-notice" style={{ margin: 0 }}>
+              <Icon name="info" size={18} />
+              <p>
+                Page heading, search metadata and FAQs are edited in Site settings.
+                {" "}
+                <button type="button" className="admin-text-button" onClick={() => navigate(`/admin/site-settings/categories/${initialData.id}`)}>
+                  Edit SEO and FAQs in Site settings
+                </button>
+              </p>
+            </div>
           )}
           <label className="wide admin-check-row">
             <input 
@@ -527,6 +421,7 @@ export default function AdminCategories() {
                   </div>
                    <div className="admin-taxonomy-actions" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <button className="admin-button ghost small" onClick={() => setAddingChildTo(root.id)}><Icon name="plus" size={14}/> Add subcategory</button>
+                    <button className="admin-button ghost small" onClick={() => navigate(`/admin/site-settings/categories/${root.id}`)}>SEO &amp; FAQs</button>
                     <button className="admin-button outline small" onClick={() => setEditingId(root.id)}>Edit</button>
                     <button className="admin-text-button danger" onClick={() => handleDelete(root)}><Icon name="trash-2" size={16}/></button>
                   </div>

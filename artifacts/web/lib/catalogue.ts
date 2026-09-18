@@ -109,6 +109,75 @@ export type CatalogueCategory = {
 
 export type LegacyCatalogueProduct = { name: string };
 
+export type CatalogueArticle = {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string;
+  body: string;
+  tags: string[];
+  heroImageSrc: string;
+  relatedProductSlugs: string[];
+  publishedAt: string;
+  seoTitle: string;
+  seoDescription: string;
+  socialTitle: string;
+  socialDescription: string;
+  socialImage: string;
+  robotsIndex: boolean;
+  updatedAt: string;
+};
+
+export type PublicSiteHomepage = {
+  heroImageSrc: string;
+  heroImageAssetId: string | null;
+  heroEyebrow: string;
+  heroHeading: string;
+  heroBody: string;
+  bestSellerSlugs: string[];
+};
+
+export type PublicSiteSeedGuide = {
+  navTitle: string;
+  cardHeading: string;
+  cardButtonLabel: string;
+  cardImageSrc: string;
+  cardImageAssetId: string | null;
+  pdfFilename: string;
+  pdfPublicUrl: string;
+  pageTitle: string;
+  pageIntro: string;
+  pageButtonLabel: string;
+};
+
+export type PublicSiteSettings = {
+  homepage: PublicSiteHomepage;
+  seedGuide: PublicSiteSeedGuide;
+  updatedAt: string;
+};
+
+export type CatalogueResellerOutlet = {
+  id: number;
+  name: string;
+  address: string;
+  suburb: string;
+  postcode: string;
+  region: string;
+  phone: string;
+  email: string;
+  mapsUrl: string;
+};
+
+export type CatalogueResellerBrand = {
+  id: number;
+  name: string;
+  kind: "elders" | "nutrien" | "independent";
+  website: string;
+  logoSrc: string;
+  logoAssetId: string | null;
+  outlets: CatalogueResellerOutlet[];
+};
+
 export function productPageHeading(product: CatalogueProduct) {
   return product.details.h1?.trim() || product.name;
 }
@@ -175,6 +244,27 @@ export async function getRedirect(fromPath: string) {
 
 export function getCategories() {
   return catalogueFetch<CatalogueCategory[]>("/api/categories");
+}
+
+export function getArticles() {
+  return catalogueFetch<CatalogueArticle[]>("/api/articles");
+}
+
+export async function getArticleBySlug(slug: string) {
+  const response = await fetch(apiUrl(`/api/articles/slug/${encodeURIComponent(slug)}`), {
+    cache: "no-store",
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`Article request failed (${response.status}) for ${slug}`);
+  return response.json() as Promise<CatalogueArticle>;
+}
+
+export function getSiteSettings() {
+  return catalogueFetch<PublicSiteSettings>("/api/site-settings");
+}
+
+export function getResellers() {
+  return catalogueFetch<CatalogueResellerBrand[]>("/api/resellers");
 }
 
 export function getLegacyProducts(categoryName: string) {
