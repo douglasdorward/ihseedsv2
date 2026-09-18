@@ -25,7 +25,12 @@ export function ContactPage({ resellers }: { resellers: CatalogueResellerBrand[]
   const [region, setRegion] = useState("All");
   const [showAll, setShowAll] = useState(false);
   const listings = useMemo(
-    () => resellers.flatMap((brand) => brand.outlets.map((outlet) => ({ brand, outlet }))),
+    () => resellers
+      .flatMap((brand) => brand.outlets.map((outlet) => ({ brand, outlet })))
+      .sort((a, b) =>
+        a.outlet.name.localeCompare(b.outlet.name, "en-AU", { sensitivity: "base" })
+        || a.brand.name.localeCompare(b.brand.name, "en-AU", { sensitivity: "base" }),
+      ),
     [resellers],
   );
   const regions = ["All", ...Array.from(new Set(listings.map((listing) => listing.outlet.region).filter(Boolean)))];

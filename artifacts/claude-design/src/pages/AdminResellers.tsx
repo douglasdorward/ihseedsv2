@@ -160,9 +160,9 @@ function flattenStores(brands: ResellerBrand[]): StoreRow[] {
   return brands
     .flatMap((brand) => brand.outlets.map((outlet) => ({ brand, outlet })))
     .sort((a, b) => {
-      const brandCmp = a.brand.name.localeCompare(b.brand.name);
-      if (brandCmp !== 0) return brandCmp;
-      return a.outlet.name.localeCompare(b.outlet.name);
+      const branchCmp = a.outlet.name.localeCompare(b.outlet.name, "en-AU", { sensitivity: "base" });
+      if (branchCmp !== 0) return branchCmp;
+      return a.brand.name.localeCompare(b.brand.name, "en-AU", { sensitivity: "base" });
     });
 }
 
