@@ -20,7 +20,7 @@ import {
 } from "../lib/app-storage";
 import { imageAltFromContext, resolveImageAlt, shouldReplaceGeneratedAlt } from "../lib/image-alt";
 import { convertToWebp } from "../lib/media-image";
-import { backfillMediaUsage, insertHeroPhoto, syncProductMediaReferences } from "../lib/media-usage";
+import { backfillMediaUsage, insertHeroPhoto, isProtectedMediaReference, syncProductMediaReferences, unlinkAndDeleteMediaRecords } from "../lib/media-usage";
 
 const router: IRouter = Router();
 const MAX_BYTES = 12 * 1024 * 1024;
@@ -40,10 +40,11 @@ type UsageSummary = {
   static: number;
   article: number;
   reseller: number;
+  protected: number;
 };
 
 const emptyUsage = (): UsageSummary => ({
-  total: 0, draft: 0, published: 0, product: 0, category: 0, static: 0, article: 0, reseller: 0,
+  total: 0, draft: 0, published: 0, product: 0, category: 0, static: 0, article: 0, reseller: 0, protected: 0,
 });
 
 function sha256(bytes: Buffer) {
@@ -71,6 +72,7 @@ async function usageByAssetId(ids: string[]) {
     if (ref.ownerType === "static") usage.static += 1;
     if (ref.ownerType === "article") usage.article += 1;
     if (ref.ownerType === "reseller") usage.reseller += 1;
+    if (isProtectedMediaReference(ref)) usage.protected += 1;
     map.set(ref.assetId, usage);
   }
   return map;
@@ -340,6 +342,39 @@ router.post("/admin/media/backfill", async (_req, res): Promise<void> => {
   res.json({ ok: true, message: `Reconciled media usage for ${result.products} products.` });
 });
 
+const BULK_DELETE_LIMIT = 100;
+
+async function deleteAssetsAndFiles(ids: string[]) {
+  const deleted = await unlinkAndDeleteMediaRecords(ids);
+  for (const asset of deleted) {
+    if (asset.objectPath) await removeStoredFile(asset.objectPath);
+    if (asset.stagingPath) await removeStoredFile(asset.stagingPath);
+  }
+  return deleted;
+}
+
+function confirmedIds(body: unknown, fallbackId?: string) {
+  if (!body || typeof body !== "object" || (body as { confirm?: unknown }).confirm !== true) return { error: "Confirmation required." as const };
+  if (fallbackId) return { ids: [fallbackId] };
+  const ids = (body as { ids?: unknown }).ids;
+  if (!Array.isArray(ids) || ids.length < 1 || ids.length > BULK_DELETE_LIMIT) {
+    return { error: `Choose between 1 and ${BULK_DELETE_LIMIT} images.` as const };
+  }
+  const unique = [...new Set(ids.map((id) => typeof id === "string" ? id.trim() : "").filter(Boolean))];
+  if (!unique.length) return { error: `Choose between 1 and ${BULK_DELETE_LIMIT} images.` as const };
+  return { ids: unique };
+}
+
+router.post("/admin/media/bulk-delete", async (req, res): Promise<void> => {
+  const parsed = confirmedIds(req.body);
+  if ("error" in parsed) {
+    res.status(400).json({ error: parsed.error });
+    return;
+  }
+  await deleteAssetsAndFiles(parsed.ids);
+  res.sendStatus(204);
+});
+
 router.post("/admin/media/:id/attach", async (req, res): Promise<void> => {
   const id = String(req.params.id ?? "");
   const productId = Number(req.body?.productId);
@@ -449,23 +484,16 @@ router.patch("/admin/media/:id", async (req, res): Promise<void> => {
 });
 
 router.delete("/admin/media/:id", async (req, res): Promise<void> => {
-  if (req.body?.confirm !== true) {
-    res.status(400).json({ error: "Confirmation required." });
+  const parsed = confirmedIds(req.body, String(req.params.id ?? ""));
+  if ("error" in parsed) {
+    res.status(400).json({ error: parsed.error });
     return;
   }
-  const [asset] = await db.select().from(mediaAssetsTable).where(eq(mediaAssetsTable.id, req.params.id));
-  if (!asset) {
+  const deleted = await deleteAssetsAndFiles(parsed.ids);
+  if (!deleted.length) {
     res.status(404).json({ error: "Asset not found." });
     return;
   }
-  const refs = await db.select().from(mediaReferencesTable).where(eq(mediaReferencesTable.assetId, asset.id));
-  if (refs.length) {
-    res.status(409).json({ error: "Asset is still in use.", usages: refs.map(toPublicReference) });
-    return;
-  }
-  if (asset.objectPath) await removeStoredFile(asset.objectPath);
-  if (asset.stagingPath) await removeStoredFile(asset.stagingPath);
-  await db.delete(mediaAssetsTable).where(eq(mediaAssetsTable.id, asset.id));
   res.sendStatus(204);
 });
 

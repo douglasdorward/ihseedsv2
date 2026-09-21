@@ -6801,6 +6801,9 @@ export const listMediaAssetsResponseItemsItemUsageSummaryArticleMultipleOf = 1;
 export const listMediaAssetsResponseItemsItemUsageSummaryResellerMin = 0;
 export const listMediaAssetsResponseItemsItemUsageSummaryResellerMultipleOf = 1;
 
+export const listMediaAssetsResponseItemsItemUsageSummaryProtectedMin = 0;
+export const listMediaAssetsResponseItemsItemUsageSummaryProtectedMultipleOf = 1;
+
 
 
 export const ListMediaAssetsResponse = zod.object({
@@ -6828,7 +6831,8 @@ export const ListMediaAssetsResponse = zod.object({
   "category": zod.number().min(listMediaAssetsResponseItemsItemUsageSummaryCategoryMin).multipleOf(listMediaAssetsResponseItemsItemUsageSummaryCategoryMultipleOf),
   "static": zod.number().min(listMediaAssetsResponseItemsItemUsageSummaryStaticMin).multipleOf(listMediaAssetsResponseItemsItemUsageSummaryStaticMultipleOf),
   "article": zod.number().min(listMediaAssetsResponseItemsItemUsageSummaryArticleMin).multipleOf(listMediaAssetsResponseItemsItemUsageSummaryArticleMultipleOf),
-  "reseller": zod.number().min(listMediaAssetsResponseItemsItemUsageSummaryResellerMin).multipleOf(listMediaAssetsResponseItemsItemUsageSummaryResellerMultipleOf)
+  "reseller": zod.number().min(listMediaAssetsResponseItemsItemUsageSummaryResellerMin).multipleOf(listMediaAssetsResponseItemsItemUsageSummaryResellerMultipleOf),
+  "protected": zod.number().min(listMediaAssetsResponseItemsItemUsageSummaryProtectedMin).multipleOf(listMediaAssetsResponseItemsItemUsageSummaryProtectedMultipleOf)
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -6890,6 +6894,9 @@ export const requestMediaUploadResponseAssetUsageSummaryArticleMultipleOf = 1;
 export const requestMediaUploadResponseAssetUsageSummaryResellerMin = 0;
 export const requestMediaUploadResponseAssetUsageSummaryResellerMultipleOf = 1;
 
+export const requestMediaUploadResponseAssetUsageSummaryProtectedMin = 0;
+export const requestMediaUploadResponseAssetUsageSummaryProtectedMultipleOf = 1;
+
 
 
 export const RequestMediaUploadResponse = zod.object({
@@ -6918,7 +6925,8 @@ export const RequestMediaUploadResponse = zod.object({
   "category": zod.number().min(requestMediaUploadResponseAssetUsageSummaryCategoryMin).multipleOf(requestMediaUploadResponseAssetUsageSummaryCategoryMultipleOf),
   "static": zod.number().min(requestMediaUploadResponseAssetUsageSummaryStaticMin).multipleOf(requestMediaUploadResponseAssetUsageSummaryStaticMultipleOf),
   "article": zod.number().min(requestMediaUploadResponseAssetUsageSummaryArticleMin).multipleOf(requestMediaUploadResponseAssetUsageSummaryArticleMultipleOf),
-  "reseller": zod.number().min(requestMediaUploadResponseAssetUsageSummaryResellerMin).multipleOf(requestMediaUploadResponseAssetUsageSummaryResellerMultipleOf)
+  "reseller": zod.number().min(requestMediaUploadResponseAssetUsageSummaryResellerMin).multipleOf(requestMediaUploadResponseAssetUsageSummaryResellerMultipleOf),
+  "protected": zod.number().min(requestMediaUploadResponseAssetUsageSummaryProtectedMin).multipleOf(requestMediaUploadResponseAssetUsageSummaryProtectedMultipleOf)
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -6937,6 +6945,22 @@ export const BackfillMediaUsageResponse = zod.object({
   "ok": zod.boolean(),
   "message": zod.string()
 })
+
+
+/**
+ * @summary Unlink library images from every owner, then delete the files
+ */
+
+export const bulkDeleteMediaAssetsBodyIdsMax = 100;
+
+
+
+export const BulkDeleteMediaAssetsBody = zod.object({
+  "ids": zod.array(zod.string().min(1)).min(1).max(bulkDeleteMediaAssetsBodyIdsMax),
+  "confirm": zod.literal(true)
+})
+
+export const BulkDeleteMediaAssetsResponse = zod.void()
 
 
 /**
@@ -6980,6 +7004,9 @@ export const getMediaAssetResponseOneUsageSummaryArticleMultipleOf = 1;
 export const getMediaAssetResponseOneUsageSummaryResellerMin = 0;
 export const getMediaAssetResponseOneUsageSummaryResellerMultipleOf = 1;
 
+export const getMediaAssetResponseOneUsageSummaryProtectedMin = 0;
+export const getMediaAssetResponseOneUsageSummaryProtectedMultipleOf = 1;
+
 export const getMediaAssetResponseTwoUsagesItemIdMultipleOf = 1;
 
 
@@ -7008,7 +7035,8 @@ export const GetMediaAssetResponse = zod.object({
   "category": zod.number().min(getMediaAssetResponseOneUsageSummaryCategoryMin).multipleOf(getMediaAssetResponseOneUsageSummaryCategoryMultipleOf),
   "static": zod.number().min(getMediaAssetResponseOneUsageSummaryStaticMin).multipleOf(getMediaAssetResponseOneUsageSummaryStaticMultipleOf),
   "article": zod.number().min(getMediaAssetResponseOneUsageSummaryArticleMin).multipleOf(getMediaAssetResponseOneUsageSummaryArticleMultipleOf),
-  "reseller": zod.number().min(getMediaAssetResponseOneUsageSummaryResellerMin).multipleOf(getMediaAssetResponseOneUsageSummaryResellerMultipleOf)
+  "reseller": zod.number().min(getMediaAssetResponseOneUsageSummaryResellerMin).multipleOf(getMediaAssetResponseOneUsageSummaryResellerMultipleOf),
+  "protected": zod.number().min(getMediaAssetResponseOneUsageSummaryProtectedMin).multipleOf(getMediaAssetResponseOneUsageSummaryProtectedMultipleOf)
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -7082,6 +7110,9 @@ export const updateMediaAssetResponseUsageSummaryArticleMultipleOf = 1;
 export const updateMediaAssetResponseUsageSummaryResellerMin = 0;
 export const updateMediaAssetResponseUsageSummaryResellerMultipleOf = 1;
 
+export const updateMediaAssetResponseUsageSummaryProtectedMin = 0;
+export const updateMediaAssetResponseUsageSummaryProtectedMultipleOf = 1;
+
 
 
 export const UpdateMediaAssetResponse = zod.object({
@@ -7108,7 +7139,8 @@ export const UpdateMediaAssetResponse = zod.object({
   "category": zod.number().min(updateMediaAssetResponseUsageSummaryCategoryMin).multipleOf(updateMediaAssetResponseUsageSummaryCategoryMultipleOf),
   "static": zod.number().min(updateMediaAssetResponseUsageSummaryStaticMin).multipleOf(updateMediaAssetResponseUsageSummaryStaticMultipleOf),
   "article": zod.number().min(updateMediaAssetResponseUsageSummaryArticleMin).multipleOf(updateMediaAssetResponseUsageSummaryArticleMultipleOf),
-  "reseller": zod.number().min(updateMediaAssetResponseUsageSummaryResellerMin).multipleOf(updateMediaAssetResponseUsageSummaryResellerMultipleOf)
+  "reseller": zod.number().min(updateMediaAssetResponseUsageSummaryResellerMin).multipleOf(updateMediaAssetResponseUsageSummaryResellerMultipleOf),
+  "protected": zod.number().min(updateMediaAssetResponseUsageSummaryProtectedMin).multipleOf(updateMediaAssetResponseUsageSummaryProtectedMultipleOf)
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -7116,7 +7148,7 @@ export const UpdateMediaAssetResponse = zod.object({
 
 
 /**
- * @summary Delete an unreferenced library asset after confirmation
+ * @summary Unlink a library image from every owner, then delete the file
  */
 export const DeleteMediaAssetParams = zod.object({
   "id": zod.coerce.string()
@@ -7181,6 +7213,9 @@ export const completeMediaUploadResponseUsageSummaryArticleMultipleOf = 1;
 export const completeMediaUploadResponseUsageSummaryResellerMin = 0;
 export const completeMediaUploadResponseUsageSummaryResellerMultipleOf = 1;
 
+export const completeMediaUploadResponseUsageSummaryProtectedMin = 0;
+export const completeMediaUploadResponseUsageSummaryProtectedMultipleOf = 1;
+
 
 
 export const CompleteMediaUploadResponse = zod.object({
@@ -7207,7 +7242,8 @@ export const CompleteMediaUploadResponse = zod.object({
   "category": zod.number().min(completeMediaUploadResponseUsageSummaryCategoryMin).multipleOf(completeMediaUploadResponseUsageSummaryCategoryMultipleOf),
   "static": zod.number().min(completeMediaUploadResponseUsageSummaryStaticMin).multipleOf(completeMediaUploadResponseUsageSummaryStaticMultipleOf),
   "article": zod.number().min(completeMediaUploadResponseUsageSummaryArticleMin).multipleOf(completeMediaUploadResponseUsageSummaryArticleMultipleOf),
-  "reseller": zod.number().min(completeMediaUploadResponseUsageSummaryResellerMin).multipleOf(completeMediaUploadResponseUsageSummaryResellerMultipleOf)
+  "reseller": zod.number().min(completeMediaUploadResponseUsageSummaryResellerMin).multipleOf(completeMediaUploadResponseUsageSummaryResellerMultipleOf),
+  "protected": zod.number().min(completeMediaUploadResponseUsageSummaryProtectedMin).multipleOf(completeMediaUploadResponseUsageSummaryProtectedMultipleOf)
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -7263,6 +7299,9 @@ export const attachMediaAssetResponseUsageSummaryArticleMultipleOf = 1;
 export const attachMediaAssetResponseUsageSummaryResellerMin = 0;
 export const attachMediaAssetResponseUsageSummaryResellerMultipleOf = 1;
 
+export const attachMediaAssetResponseUsageSummaryProtectedMin = 0;
+export const attachMediaAssetResponseUsageSummaryProtectedMultipleOf = 1;
+
 
 
 export const AttachMediaAssetResponse = zod.object({
@@ -7289,7 +7328,8 @@ export const AttachMediaAssetResponse = zod.object({
   "category": zod.number().min(attachMediaAssetResponseUsageSummaryCategoryMin).multipleOf(attachMediaAssetResponseUsageSummaryCategoryMultipleOf),
   "static": zod.number().min(attachMediaAssetResponseUsageSummaryStaticMin).multipleOf(attachMediaAssetResponseUsageSummaryStaticMultipleOf),
   "article": zod.number().min(attachMediaAssetResponseUsageSummaryArticleMin).multipleOf(attachMediaAssetResponseUsageSummaryArticleMultipleOf),
-  "reseller": zod.number().min(attachMediaAssetResponseUsageSummaryResellerMin).multipleOf(attachMediaAssetResponseUsageSummaryResellerMultipleOf)
+  "reseller": zod.number().min(attachMediaAssetResponseUsageSummaryResellerMin).multipleOf(attachMediaAssetResponseUsageSummaryResellerMultipleOf),
+  "protected": zod.number().min(attachMediaAssetResponseUsageSummaryProtectedMin).multipleOf(attachMediaAssetResponseUsageSummaryProtectedMultipleOf)
 }),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()

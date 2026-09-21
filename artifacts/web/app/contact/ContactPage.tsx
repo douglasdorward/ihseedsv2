@@ -25,6 +25,7 @@ export function ContactPage({ resellers, company }: { resellers: CatalogueResell
   const [details, setDetails] = useState(EMPTY_DETAILS);
   const [region, setRegion] = useState("All");
   const [showAll, setShowAll] = useState(false);
+  const hasOfficePhone = Boolean(company.phone.trim() && companyTelHref(company.phone));
   const listings = useMemo(
     () => resellers
       .flatMap((brand) => brand.outlets.map((outlet) => ({ brand, outlet })))
@@ -68,9 +69,9 @@ export function ContactPage({ resellers, company }: { resellers: CatalogueResell
       <section className="contact-section contact-page">
         <div className="contact-layout contact-layout-expanded">
           <div className="contact-info-column">
-            <div className="contact-intro"><div className="eyebrow">Contact</div><h1>Get in <span>Touch</span></h1><p>Questions on a mix, a sowing rate, or which reseller to order through — call the office or send an enquiry and we will get back to you.</p></div>
+            <div className="contact-intro"><div className="eyebrow">Contact</div><h1>Get in <span>Touch</span></h1><p>Questions on a mix, a sowing rate, or which reseller to order through — {hasOfficePhone ? "call the office or send an enquiry" : "send an enquiry"} and we will get back to you.</p></div>
             <div className="contact-info-cards">
-              {company.phone.trim() && companyTelHref(company.phone) ? (
+              {hasOfficePhone ? (
                 <a className="contact-info-card" href={companyTelHref(company.phone)} data-testid="link-office-phone">
                   <Icon name="phone" size={24} /><span><small>Call the office</small><strong>{company.phone}</strong></span>
                 </a>
@@ -121,7 +122,7 @@ export function ContactPage({ resellers, company }: { resellers: CatalogueResell
             <div><div className="eyebrow">Reseller</div><h2>near you</h2></div>
             <button className="button button-outline" type="button" onClick={() => setRegion("All")}><Icon name="map-pin" size={18} /> Show all resellers</button>
           </div>
-          <p className="reseller-lead">We sell through rural resellers across Western Australia. Filter by region to find your closest store, or call the office and we will point you the right way.</p>
+          <p className="reseller-lead">We sell through rural resellers across Western Australia. Filter by region to find your closest store{hasOfficePhone ? ", or call the office and we will point you the right way" : ""}.</p>
           {regions.length > 1 && (
             <div className="region-chips" aria-label="Filter resellers by region">
               {regions.map((currentRegion) => <button key={currentRegion} className={region === currentRegion ? "active" : ""} type="button" onClick={() => { setRegion(currentRegion); setShowAll(false); }}>{currentRegion}</button>)}
@@ -145,7 +146,7 @@ export function ContactPage({ resellers, company }: { resellers: CatalogueResell
                     ) : null}
                     <div>
                       <strong>{brand.name} {outlet.name}</strong>
-                      <span>{address || "Call the office for this store’s address."}</span>
+                      <span>{address || (hasOfficePhone ? "Call the office for this store’s address." : "Address on request.")}</span>
                     </div>
                   </div>
                   <span>{outlet.region || "Western Australia"}</span>
@@ -159,7 +160,7 @@ export function ContactPage({ resellers, company }: { resellers: CatalogueResell
                 </div>
               );
             })}
-            {visibleResellers.length === 0 && <div className="reseller-empty">No resellers listed in that region yet — call the office and we will find your closest.</div>}
+            {visibleResellers.length === 0 && <div className="reseller-empty">No resellers listed in that region yet{hasOfficePhone ? " — call the office and we will find your closest" : ""}.</div>}
           </div>
           {filteredResellers.length > 6 && <div className="centered-action"><button className="button button-outline" type="button" onClick={() => setShowAll((current) => !current)}>{showAll ? "Show fewer" : "View all"}</button></div>}
         </div>

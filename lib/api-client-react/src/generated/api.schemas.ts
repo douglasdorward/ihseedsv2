@@ -1123,6 +1123,8 @@ export interface MediaUsageSummary {
   article: number;
   /** @minimum 0 */
   reseller: number;
+  /** @minimum 0 */
+  protected: number;
 }
 
 export interface MediaAsset {
@@ -1271,6 +1273,16 @@ export const MediaDeleteConfirmationValue = {
   confirm: true,
 } as const;
 export type MediaDeleteConfirmation = typeof MediaDeleteConfirmationValue;
+
+export interface MediaBulkDeleteRequest {
+  /**
+     * @minItems 1
+     * @maxItems 100
+     * @items.minLength 1
+     */
+  ids: string[];
+  confirm: true;
+}
 
 export interface MediaInUseError {
   error: string;

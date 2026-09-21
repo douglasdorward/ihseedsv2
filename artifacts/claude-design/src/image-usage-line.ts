@@ -7,6 +7,7 @@ export type ImageUsageSummary = {
   static?: number;
   article?: number;
   reseller?: number;
+  protected?: number;
 };
 
 function countLabel(count: number, one: string, many: string) {

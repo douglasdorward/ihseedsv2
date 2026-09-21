@@ -1,5 +1,7 @@
+import { existsSync } from "node:fs";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 type StoredObject = {
   bytes: Buffer;
@@ -24,7 +26,19 @@ export function appStorageBackend(): AppStorageBackend {
 }
 
 function uploadsRoot() {
-  return path.resolve(process.cwd(), "uploads");
+  const fromEnv = process.env.APP_UPLOADS_DIR?.trim();
+  if (fromEnv) return path.resolve(fromEnv);
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    path.resolve(here, "../uploads"),
+    path.resolve(here, "../../uploads"),
+    path.resolve(process.cwd(), "uploads"),
+    path.resolve(process.cwd(), "artifacts/api-server/uploads"),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(path.join(candidate, "media")) || existsSync(path.join(candidate, "site"))) return candidate;
+  }
+  return candidates[0];
 }
 
 function localPath(key: string) {
