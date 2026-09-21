@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { after, afterEach, before, test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 const serverRoot = new URL("..", import.meta.url);
 const testRunId = `${process.pid}-${Date.now()}`;
@@ -113,8 +114,14 @@ before(async () => {
   const port = await freePort();
   baseUrl = `http://127.0.0.1:${port}`;
   child = spawn(process.execPath, ["--enable-source-maps", "./dist/index.mjs"], {
-    cwd: new URL(serverRoot).pathname,
-    env: { ...process.env, NODE_ENV: "development", PORT: String(port), APP_STORAGE_BACKEND: "local" },
+    cwd: fileURLToPath(serverRoot),
+    env: {
+      ...process.env,
+      NODE_ENV: process.env.CATALOGUE_TEST_DATABASE ? "test" : "development",
+      ...(process.env.CATALOGUE_TEST_DATABASE ? { ADMIN_TEST_BYPASS: "1" } : {}),
+      PORT: String(port),
+      APP_STORAGE_BACKEND: "local",
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let stderr = "";
@@ -242,9 +249,6 @@ test("public media is 404 until a product with that asset is published", async (
   const stillPrivate = await request("GET", `/media/${asset.id}`);
   assert.equal(stillPrivate.response.status, 404);
 
-  const blocked = await request("DELETE", `/admin/media/${asset.id}`, { confirm: true });
-  assert.equal(blocked.response.status, 409);
-
   assertStatus(await request("POST", `/admin/products/${drafted.id}/publish`, {
     name: drafted.name,
     price: drafted.price,
@@ -296,6 +300,114 @@ test("attach inserts the new image as hero and shifts existing photos", async (t
   assert.equal(afterSecond.details.photos[0].assetId, second.id);
   assert.equal(afterSecond.details.photos[1].assetId, first.id);
   assert.equal(afterSecond.details.photos[1].slot, "Photo 2");
+});
+
+test("product photos can be deleted and remaining photos move up", async (t) => {
+  if (!process.env.DATABASE_URL) {
+    t.skip("DATABASE_URL is not set");
+    return;
+  }
+  const created = assertStatus(await request("POST", "/products", {
+    name: `Media gallery delete ${testRunId}`,
+    slug: `media-gallery-delete-${testRunId}`,
+    price: "",
+    packSize: "",
+    status: "in-stock",
+    note: "",
+    category: "Automated tests",
+    subcategoryId: null,
+    techSheet: "",
+    details: { recordType: "Variety" },
+  }), 201);
+  createdProductIds.push(created.id);
+
+  const first = assertStatus((await uploadPng(`gallery-a-${testRunId}.png`)).completed, 200);
+  assertStatus(await request("POST", `/admin/media/${first.id}/attach`, { productId: created.id }), 200);
+  const second = assertStatus((await uploadPng(`gallery-b-${testRunId}.png`, PNG_RED_1X1)).completed, 200);
+  assertStatus(await request("POST", `/admin/media/${second.id}/attach`, { productId: created.id }), 200);
+
+  assertStatus(await request("DELETE", `/admin/media/${first.id}`, { confirm: true }), 204);
+  const afterFirstDelete = assertStatus(await request("GET", `/admin/products/${created.id}`), 200);
+  assert.equal(afterFirstDelete.details.photos[0].assetId, second.id);
+  assert.ok(!afterFirstDelete.details.photos[1]?.assetId);
+  assert.equal(afterFirstDelete.details.photos[1]?.src ?? "", "");
+  const missing = await request("GET", `/admin/media/${first.id}`);
+  assert.equal(missing.response.status, 404);
+
+  assertStatus(await request("DELETE", `/admin/media/${second.id}`, { confirm: true }), 204);
+  const afterHeroDelete = assertStatus(await request("GET", `/admin/products/${created.id}`), 200);
+  assert.equal(afterHeroDelete.details.photos[0]?.assetId ?? "", "");
+  assert.equal(afterHeroDelete.details.photos[0]?.src ?? "", "");
+});
+
+test("extra-slot photos can be deleted without leaving the hero", async (t) => {
+  if (!process.env.DATABASE_URL) {
+    t.skip("DATABASE_URL is not set");
+    return;
+  }
+  const created = assertStatus(await request("POST", "/products", {
+    name: `Media extra slot ${testRunId}`,
+    slug: `media-extra-slot-${testRunId}`,
+    price: "",
+    packSize: "",
+    status: "in-stock",
+    note: "",
+    category: "Automated tests",
+    subcategoryId: null,
+    techSheet: "",
+    details: { recordType: "Variety" },
+  }), 201);
+  createdProductIds.push(created.id);
+
+  const hero = assertStatus((await uploadPng(`extra-hero-${testRunId}.png`)).completed, 200);
+  const extra = assertStatus((await uploadPng(`extra-slot-${testRunId}.png`, PNG_RED_1X1)).completed, 200);
+  assertStatus(await request("POST", `/admin/products/${created.id}/draft`, {
+    name: created.name,
+    price: created.price,
+    packSize: created.packSize,
+    status: created.status,
+    note: created.note,
+    category: created.category,
+    subcategoryId: created.subcategoryId,
+    techSheet: "",
+    details: {
+      ...created.details,
+      tagline: "Media tagline",
+      blurb: "Media blurb",
+      keyAttributes: ["Has extra photo"],
+      description: "Media description",
+      seoTitle: "Media SEO title",
+      seoDescription: "Media SEO description",
+      photos: [
+        {
+          slot: "Photo 1 · Hero",
+          file: hero.originalFilename,
+          rating: "",
+          src: `/api/media/${hero.id}`,
+          assetId: hero.id,
+          format: "webp",
+          role: "hero",
+        },
+        {
+          slot: "Photo 2",
+          file: extra.originalFilename,
+          rating: "",
+          src: `/api/media/${extra.id}`,
+          assetId: extra.id,
+          format: "webp",
+        },
+      ],
+    },
+  }), 200);
+
+  assertStatus(await request("DELETE", `/admin/media/${extra.id}`, { confirm: true }), 204);
+  const afterDelete = assertStatus(await request("GET", `/admin/products/${created.id}`), 200);
+  assert.equal(afterDelete.details.photos[0].assetId, hero.id);
+  assert.ok(!afterDelete.details.photos[1]?.assetId);
+
+  assertStatus(await request("DELETE", `/admin/media/${hero.id}`, { confirm: true }), 204);
+  const afterHeroDelete = assertStatus(await request("GET", `/admin/products/${created.id}`), 200);
+  assert.equal(afterHeroDelete.details.photos[0]?.assetId ?? "", "");
 });
 
 test("complete uses owner context and keeps an editor-typed alt", async (t) => {

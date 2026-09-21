@@ -1032,7 +1032,7 @@ fields:
     visibility: customer
     customerSurfaces: [product-hero, related-cards, also-popular, social-fallback]
     workbook: 1 Products.photo_1
-    fillGuidance: First non-blank src is the hero. Upload JPEG/PNG/WebP to the Images library (converted to WebP) or paste an external URL. Alt is filled from the product name on upload or attach (filename only while unassigned). AI never fills photos. Category grids currently use placeholders.
+    fillGuidance: First non-blank src is the hero. Upload JPEG/PNG/WebP to the Images library (converted to WebP) or paste an external URL. Alt is filled from the product name on upload or attach (filename only while unassigned). AI never fills photos. Deleting from Images removes in-use files and compacts remaining product photos. Category grids currently use placeholders.
 
   - id: techSheet
     tab: 5

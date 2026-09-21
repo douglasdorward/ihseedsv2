@@ -63,20 +63,39 @@ function assignedProductNames(products: { name?: string; details?: { photos?: Ar
   return names;
 }
 
-async function deleteUnusedAsset(assetId: string) {
-  const response = await fetch(`/api/admin/media/${assetId}`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ confirm: true }),
-  });
-  if (response.status === 404) return;
-  if (response.status === 409) {
-    const body = await response.json().catch(() => null);
-    throw new Error(body?.error ?? "This image is still in use.");
+function deleteConfirmCopy(assets: MediaAsset[]) {
+  const inUse = assets.some((asset) => asset.usageSummary.total > 0);
+  if (assets.length === 1) {
+    const asset = assets[0];
+    if (inUse) {
+      return `Delete ${asset.originalFilename}? It will be removed from every product and page that uses it. Remaining product photos move up. This cannot be undone.`;
+    }
+    return `Delete ${asset.originalFilename}? This cannot be undone.`;
   }
+  if (inUse) {
+    return `Delete ${assets.length} images? Any that appear on products or pages will be removed there. Remaining product photos move up. This cannot be undone.`;
+  }
+  return `Delete ${assets.length} images? This cannot be undone.`;
+}
+
+async function deleteLibraryAssets(assetIds: string[]) {
+  const unique = [...new Set(assetIds.map((id) => id.trim()).filter(Boolean))];
+  if (!unique.length) return;
+  const response = unique.length === 1
+    ? await fetch(`/api/admin/media/${unique[0]}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirm: true }),
+    })
+    : await fetch("/api/admin/media/bulk-delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: unique, confirm: true }),
+    });
+  if (response.status === 404) return;
   if (!response.ok && response.status !== 204) {
     const body = await response.json().catch(() => null);
-    throw new Error(body?.error ?? "Could not delete that image.");
+    throw new Error(body?.error ?? "Could not delete those images.");
   }
 }
 
@@ -96,6 +115,11 @@ export default function AdminImages() {
   const [preview, setPreview] = useState<{ assetId: string; filename: string } | null>(null);
   const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[] | null>(null);
   const [uploadFinished, setUploadFinished] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [pendingDelete, setPendingDelete] = useState<MediaAsset[] | null>(null);
+
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const allSelected = items.length > 0 && items.every((asset) => selectedSet.has(asset.id));
 
   const exportRows = useMemo(
     () => [...products].sort((first, second) => (first.name ?? "").localeCompare(second.name ?? "", undefined, { numeric: true, sensitivity: "base" }) || second.id - first.id),
@@ -254,16 +278,19 @@ export default function AdminImages() {
     }
   };
 
-  const remove = async (asset: MediaAsset) => {
-    if (asset.usageSummary.total > 0) return;
-    if (!window.confirm(`Delete ${asset.originalFilename}? This cannot be undone.`)) return;
+  const confirmDelete = async () => {
+    if (!pendingDelete?.length) return;
+    const deleting = pendingDelete;
     setBusy(true);
     setError("");
     try {
-      await deleteUnusedAsset(asset.id);
+      await deleteLibraryAssets(deleting.map((asset) => asset.id));
+      setPendingDelete(null);
+      setSelectedIds((current) => current.filter((id) => !deleting.some((asset) => asset.id === id)));
       await refresh();
+      await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey() });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not delete that image.");
+      setError(caught instanceof Error ? caught.message : "Could not delete those images.");
     } finally {
       setBusy(false);
     }
@@ -275,7 +302,7 @@ export default function AdminImages() {
     setError("");
     try {
       for (const assetId of pendingCancel.assetIds) {
-        await deleteUnusedAsset(assetId);
+        await deleteLibraryAssets([assetId]);
       }
       const cancelled = new Set(pendingCancel.assetIds);
       setMatchRows((current) => {
@@ -335,10 +362,55 @@ export default function AdminImages() {
           {error && <p className="admin-inline-field-error">{error}</p>}
         </section>
         {loading ? <p className="admin-empty">Loading images…</p> : (
-          <div className="admin-image-grid">
+          <>
+            {items.length > 0 && (
+              <div className="admin-image-grid-tools">
+                <label className="admin-image-select-all">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    disabled={busy}
+                    onChange={() => setSelectedIds(allSelected ? [] : items.map((asset) => asset.id))}
+                  />
+                  <span>{allSelected ? "Clear selection" : "Select all"}</span>
+                </label>
+                <span>{items.length} image{items.length === 1 ? "" : "s"}</span>
+              </div>
+            )}
+            {selectedIds.length > 0 && (
+              <div className="admin-bulk-bar">
+                <strong>{selectedIds.length} selected</strong>
+                <button
+                  className="admin-button primary small"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    const assets = items.filter((asset) => selectedSet.has(asset.id));
+                    if (assets.length) setPendingDelete(assets);
+                  }}
+                >
+                  Delete selected
+                </button>
+                <button className="admin-text-button" type="button" disabled={busy} onClick={() => setSelectedIds([])}>Clear</button>
+              </div>
+            )}
+            <div className="admin-image-grid">
             {items.length === 0 && <p className="admin-empty">No library images yet.</p>}
             {items.map((asset) => (
-              <article className="admin-image-card" key={asset.id}>
+              <article className={`admin-image-card${selectedSet.has(asset.id) ? " is-selected" : ""}`} key={asset.id}>
+                <label className="admin-image-select">
+                  <input
+                    type="checkbox"
+                    checked={selectedSet.has(asset.id)}
+                    disabled={busy}
+                    aria-label={`Select ${asset.originalFilename}`}
+                    onChange={() => setSelectedIds((current) => (
+                      current.includes(asset.id)
+                        ? current.filter((id) => id !== asset.id)
+                        : [...current, asset.id]
+                    ))}
+                  />
+                </label>
                 <div className="admin-image-thumb">
                   <img src={photoDisplaySrc({ assetId: asset.id })} alt={asset.defaultAlt || asset.originalFilename} />
                 </div>
@@ -381,16 +453,17 @@ export default function AdminImages() {
                     <button
                       className="admin-text-button"
                       type="button"
-                      disabled={asset.usageSummary.total > 0 || busy}
-                      onClick={() => void remove(asset)}
+                      disabled={busy}
+                      onClick={() => setPendingDelete([asset])}
                     >
-                      {asset.usageSummary.total > 0 ? "In use" : "Delete"}
+                      Delete
                     </button>
                   </div>
                 )}
               </article>
             ))}
-          </div>
+            </div>
+          </>
         )}
       </div>
       {uploadQueue && (
@@ -557,6 +630,17 @@ export default function AdminImages() {
           busy={busy}
           onCancel={() => !busy && setPendingCancel(null)}
           onConfirm={() => void confirmCancelUploads()}
+        />
+      )}
+      {pendingDelete && (
+        <ConfirmDialog
+          title={pendingDelete.length === 1 ? "Delete image?" : "Delete selected images?"}
+          body={deleteConfirmCopy(pendingDelete)}
+          confirmLabel="Delete"
+          busyLabel="Deleting…"
+          busy={busy}
+          onCancel={() => !busy && setPendingDelete(null)}
+          onConfirm={() => void confirmDelete()}
         />
       )}
     </>

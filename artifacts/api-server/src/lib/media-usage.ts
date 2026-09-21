@@ -2,6 +2,8 @@ import { and, eq, inArray } from "drizzle-orm";
 import {
   db,
   articlesTable,
+  DEFAULT_SEED_GUIDE_CARD_IMAGE,
+  mediaAssetsTable,
   mediaReferencesTable,
   productsTable,
   resellerBrandsTable,
@@ -11,6 +13,7 @@ import {
   withHomepageDefaults,
   withSeedGuideDefaults,
   type Article,
+  type MediaAsset,
   type Product,
   type ProductPhoto,
   type ResellerBrand,
@@ -19,7 +22,14 @@ import {
   type SiteSeedGuideSettings,
 } from "@workspace/db";
 
-type DbLike = Pick<typeof db, "delete" | "insert" | "select">;
+type DbLike = Pick<typeof db, "delete" | "insert" | "select" | "update">;
+
+type MediaRefLike = {
+  ownerType: string;
+  field?: string | null;
+  role?: string | null;
+  metadata?: Record<string, unknown> | null;
+};
 
 const PHOTO_SLOTS: Array<{ slot: string; role: NonNullable<ProductPhoto["role"]> }> = [
   { slot: "Photo 1 · Hero", role: "hero" },
@@ -41,15 +51,246 @@ export function insertHeroPhoto(photos: ProductPhoto[] | undefined, incoming: Pr
     return true;
   });
   const shifted = [incoming, ...filled].slice(0, 3);
+  return slotPhotos(shifted);
+}
+
+function assetIdSet(ids: Iterable<string>) {
+  return new Set([...ids].map((id) => id.trim()).filter(Boolean));
+}
+
+function publicSrcs(ids: Set<string>) {
+  return new Set([...ids].map((id) => `/api/media/${id}`));
+}
+
+function matchesAsset(
+  assetId: string | null | undefined,
+  src: string | null | undefined,
+  ids: Set<string>,
+  srcs: Set<string>,
+) {
+  const id = assetId?.trim();
+  if (id && ids.has(id)) return true;
+  const value = src?.trim();
+  return Boolean(value && srcs.has(value));
+}
+
+function slotPhotos(filled: ProductPhoto[]): ProductPhoto[] {
   return PHOTO_SLOTS.map((meta, index) => {
-    const photo = shifted[index];
+    const photo = filled[index];
     if (!photo) return { slot: meta.slot, file: "", rating: "", src: "", role: meta.role };
     return { ...photo, slot: meta.slot, role: meta.role, rating: photo.rating ?? "" };
   });
 }
 
+export function photosWithoutAssets(photos: ProductPhoto[] | undefined, assetIds: Iterable<string>): ProductPhoto[] {
+  const ids = assetIdSet(assetIds);
+  const srcs = publicSrcs(ids);
+  const filled = (photos ?? []).filter((photo) => {
+    if (!photoSlotFilled(photo)) return false;
+    return !matchesAsset(photo.assetId, photo.src, ids, srcs);
+  });
+  return slotPhotos(filled);
+}
+
+export function detailsWithoutAssets(details: Product["details"], assetIds: Iterable<string>): Product["details"] {
+  const ids = assetIdSet(assetIds);
+  const srcs = publicSrcs(ids);
+  const photos = photosWithoutAssets(details.photos, ids);
+  const socialImage = matchesAsset(null, details.socialImage, ids, srcs) ? "" : details.socialImage;
+  return { ...details, photos, socialImage };
+}
+
+export function homepageWithoutAssets(
+  homepage: SiteHomepageSettings,
+  assetIds: Iterable<string>,
+): SiteHomepageSettings {
+  const ids = assetIdSet(assetIds);
+  const srcs = publicSrcs(ids);
+  const current = homepage.heroImages?.length
+    ? homepage.heroImages
+    : [{ src: homepage.heroImageSrc, assetId: homepage.heroImageAssetId }];
+  const remaining = current.filter((image) => !matchesAsset(image.assetId, image.src, ids, srcs));
+  return withHomepageDefaults({
+    ...homepage,
+    heroImages: remaining,
+    heroImageSrc: remaining[0]?.src ?? "",
+    heroImageAssetId: remaining[0]?.assetId ?? null,
+  });
+}
+
+export function aboutWithoutAssets(about: SiteAboutSettings, assetIds: Iterable<string>): SiteAboutSettings {
+  const ids = assetIdSet(assetIds);
+  const srcs = publicSrcs(ids);
+  if (!matchesAsset(about.heroImageAssetId, about.heroImageSrc, ids, srcs)) return about;
+  return withAboutDefaults({ ...about, heroImageSrc: "", heroImageAssetId: null });
+}
+
+export function seedGuideWithoutAssets(
+  seedGuide: SiteSeedGuideSettings,
+  assetIds: Iterable<string>,
+): SiteSeedGuideSettings {
+  const ids = assetIdSet(assetIds);
+  const srcs = publicSrcs(ids);
+  if (!matchesAsset(seedGuide.cardImageAssetId, seedGuide.cardImageSrc, ids, srcs)) return seedGuide;
+  return withSeedGuideDefaults({
+    ...seedGuide,
+    cardImageSrc: DEFAULT_SEED_GUIDE_CARD_IMAGE,
+    cardImageAssetId: null,
+  });
+}
+
+export function articleFieldsWithoutAssets(
+  article: Pick<Article, "heroImageSrc" | "heroImageAssetId" | "socialImage">,
+  assetIds: Iterable<string>,
+) {
+  const ids = assetIdSet(assetIds);
+  const srcs = publicSrcs(ids);
+  const heroMatches = matchesAsset(article.heroImageAssetId, article.heroImageSrc, ids, srcs);
+  return {
+    heroImageSrc: heroMatches ? "" : article.heroImageSrc,
+    heroImageAssetId: heroMatches ? null : article.heroImageAssetId,
+    socialImage: matchesAsset(null, article.socialImage, ids, srcs) ? "" : article.socialImage,
+  };
+}
+
+export function resellerLogoWithoutAssets(
+  brand: Pick<ResellerBrand, "logoSrc" | "logoAssetId">,
+  assetIds: Iterable<string>,
+) {
+  const ids = assetIdSet(assetIds);
+  const srcs = publicSrcs(ids);
+  if (!matchesAsset(brand.logoAssetId, brand.logoSrc, ids, srcs)) return brand;
+  return { logoSrc: "", logoAssetId: null };
+}
+
 export function mediaUsageState(publishStatus: string): "Draft" | "Published" {
   return publishStatus === "Published" ? "Published" : "Draft";
+}
+
+function metadataSlot(metadata: Record<string, unknown> | null | undefined) {
+  return typeof metadata?.slot === "string" ? metadata.slot : "";
+}
+
+function metadataIndex(metadata: Record<string, unknown> | null | undefined) {
+  return typeof metadata?.index === "number" ? metadata.index : undefined;
+}
+
+export function isProductHeroPhoto(photo: ProductPhoto | undefined, index: number) {
+  if (index === 0) return true;
+  if (photo?.role === "hero") return true;
+  return /hero/i.test(photo?.slot ?? "");
+}
+
+export function isProductHeroReference(ref: MediaRefLike) {
+  if (ref.ownerType !== "product") return false;
+  if (ref.role === "hero") return true;
+  if (ref.field === "details.photos[0]") return true;
+  if (metadataIndex(ref.metadata) === 0) return true;
+  return /hero/i.test(metadataSlot(ref.metadata));
+}
+
+export function isProtectedMediaReference(ref: MediaRefLike) {
+  if (ref.ownerType !== "product") return true;
+  return isProductHeroReference(ref);
+}
+
+function photosLookEqual(left: ProductPhoto[] | undefined, right: ProductPhoto[]) {
+  const current = left ?? [];
+  if (current.length !== right.length) return false;
+  return current.every((photo, index) => (
+    (photo.assetId?.trim() || "") === (right[index]?.assetId?.trim() || "")
+    && (photo.src?.trim() || "") === (right[index]?.src?.trim() || "")
+  ));
+}
+
+export async function unlinkAndDeleteMediaRecords(ids: string[]): Promise<MediaAsset[]> {
+  const unique = [...assetIdSet(ids)];
+  if (!unique.length) return [];
+  const assets = await db.select().from(mediaAssetsTable).where(inArray(mediaAssetsTable.id, unique));
+  if (!assets.length) return [];
+  const idSet = new Set(assets.map((asset) => asset.id));
+
+  await db.transaction(async (tx) => {
+    const products = await tx.select({
+      id: productsTable.id,
+      name: productsTable.name,
+      publishStatus: productsTable.publishStatus,
+      details: productsTable.details,
+    }).from(productsTable);
+    for (const product of products) {
+      const details = detailsWithoutAssets(product.details, idSet);
+      if (photosLookEqual(product.details.photos, details.photos) && details.socialImage === product.details.socialImage) continue;
+      const [saved] = await tx.update(productsTable).set({
+        details,
+        updatedAt: new Date(),
+      }).where(eq(productsTable.id, product.id)).returning();
+      await syncProductMediaReferences(saved ?? { ...product, details }, details.photos, tx);
+    }
+
+    const articles = await tx.select().from(articlesTable);
+    for (const article of articles) {
+      const next = articleFieldsWithoutAssets(article, idSet);
+      if (
+        next.heroImageSrc === article.heroImageSrc
+        && next.heroImageAssetId === article.heroImageAssetId
+        && next.socialImage === article.socialImage
+      ) continue;
+      const [saved] = await tx.update(articlesTable).set({
+        heroImageSrc: next.heroImageSrc,
+        heroImageAssetId: next.heroImageAssetId,
+        socialImage: next.socialImage,
+        updatedAt: new Date(),
+      }).where(eq(articlesTable.id, article.id)).returning();
+      await syncArticleMediaReferences(saved ?? { ...article, ...next }, tx);
+    }
+
+    const brands = await tx.select().from(resellerBrandsTable);
+    for (const brand of brands) {
+      const next = resellerLogoWithoutAssets(brand, idSet);
+      if (next.logoSrc === brand.logoSrc && next.logoAssetId === brand.logoAssetId) continue;
+      const [saved] = await tx.update(resellerBrandsTable).set({
+        logoSrc: next.logoSrc,
+        logoAssetId: next.logoAssetId,
+        updatedAt: new Date(),
+      }).where(eq(resellerBrandsTable.id, brand.id)).returning();
+      await syncResellerMediaReferences(saved ?? { ...brand, ...next }, tx);
+    }
+
+    const [settings] = await tx.select().from(siteSettingsTable).where(eq(siteSettingsTable.id, SITE_SETTINGS_ID));
+    if (settings) {
+      const currentHomepage = withHomepageDefaults(settings.homepage);
+      const currentSeedGuide = withSeedGuideDefaults(settings.seedGuide);
+      const currentAbout = withAboutDefaults(settings.about);
+      const homepage = homepageWithoutAssets(currentHomepage, idSet);
+      const seedGuide = seedGuideWithoutAssets(currentSeedGuide, idSet);
+      const about = aboutWithoutAssets(currentAbout, idSet);
+      const homepageChanged = homepage.heroImageSrc !== currentHomepage.heroImageSrc
+        || homepage.heroImageAssetId !== currentHomepage.heroImageAssetId
+        || homepage.heroImages.length !== currentHomepage.heroImages.length
+        || homepage.heroImages.some((image, index) => (
+          image.src !== currentHomepage.heroImages[index]?.src
+          || image.assetId !== currentHomepage.heroImages[index]?.assetId
+        ));
+      const changed = homepageChanged
+        || seedGuide.cardImageSrc !== currentSeedGuide.cardImageSrc
+        || seedGuide.cardImageAssetId !== currentSeedGuide.cardImageAssetId
+        || about.heroImageSrc !== currentAbout.heroImageSrc
+        || about.heroImageAssetId !== currentAbout.heroImageAssetId;
+      if (changed) {
+        await tx.update(siteSettingsTable).set({
+          homepage,
+          seedGuide,
+          about,
+          updatedAt: new Date(),
+        }).where(eq(siteSettingsTable.id, SITE_SETTINGS_ID));
+        await syncStaticSiteMediaReferences(homepage, seedGuide, about, tx);
+      }
+    }
+
+    await tx.delete(mediaAssetsTable).where(inArray(mediaAssetsTable.id, [...idSet]));
+  });
+
+  return assets;
 }
 
 export async function syncProductMediaReferences(

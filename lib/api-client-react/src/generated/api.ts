@@ -52,9 +52,9 @@ import type {
   MediaAssetPage,
   MediaAttachInput,
   MediaBackfillResult,
+  MediaBulkDeleteRequest,
   MediaCompleteInput,
   MediaDeleteConfirmation,
-  MediaInUseError,
   MediaMetadataUpdate,
   MediaUploadInput,
   MediaUploadRequestResult,
@@ -2113,6 +2113,77 @@ export const useBackfillMediaUsage = <TError = ErrorType<unknown>,
       return useMutation(getBackfillMediaUsageMutationOptions(options));
     }
 
+export const getBulkDeleteMediaAssetsUrl = () => {
+
+
+
+
+  return `/api/admin/media/bulk-delete`
+}
+
+/**
+ * @summary Unlink library images from every owner, then delete the files
+ */
+export const bulkDeleteMediaAssets = async (mediaBulkDeleteRequest: MediaBulkDeleteRequest, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getBulkDeleteMediaAssetsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(mediaBulkDeleteRequest)
+  }
+);}
+
+
+
+
+
+export const getBulkDeleteMediaAssetsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkDeleteMediaAssets>>, TError,{data: BodyType<MediaBulkDeleteRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof bulkDeleteMediaAssets>>, TError,{data: BodyType<MediaBulkDeleteRequest>}, TContext> => {
+
+const mutationKey = ['bulkDeleteMediaAssets'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bulkDeleteMediaAssets>>, {data: BodyType<MediaBulkDeleteRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  bulkDeleteMediaAssets(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BulkDeleteMediaAssetsMutationResult = NonNullable<Awaited<ReturnType<typeof bulkDeleteMediaAssets>>>
+    export type BulkDeleteMediaAssetsMutationBody = BodyType<MediaBulkDeleteRequest>
+    export type BulkDeleteMediaAssetsMutationError = ErrorType<void>
+
+    /**
+ * @summary Unlink library images from every owner, then delete the files
+ */
+export const useBulkDeleteMediaAssets = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkDeleteMediaAssets>>, TError,{data: BodyType<MediaBulkDeleteRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof bulkDeleteMediaAssets>>,
+        TError,
+        {data: BodyType<MediaBulkDeleteRequest>},
+        TContext
+      > => {
+      return useMutation(getBulkDeleteMediaAssetsMutationOptions(options));
+    }
+
 export const getGetMediaAssetUrl = (id: string,) => {
 
 
@@ -2271,7 +2342,7 @@ export const getDeleteMediaAssetUrl = (id: string,) => {
 }
 
 /**
- * @summary Delete an unreferenced library asset after confirmation
+ * @summary Unlink a library image from every owner, then delete the file
  */
 export const deleteMediaAsset = async (id: string,
     mediaDeleteConfirmation: MediaDeleteConfirmation, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
@@ -2289,7 +2360,7 @@ export const deleteMediaAsset = async (id: string,
 
 
 
-export const getDeleteMediaAssetMutationOptions = <TError = ErrorType<void | MediaInUseError>,
+export const getDeleteMediaAssetMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMediaAsset>>, TError,{id: string;data: BodyType<MediaDeleteConfirmation>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteMediaAsset>>, TError,{id: string;data: BodyType<MediaDeleteConfirmation>}, TContext> => {
 
@@ -2318,12 +2389,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteMediaAssetMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMediaAsset>>>
     export type DeleteMediaAssetMutationBody = BodyType<MediaDeleteConfirmation>
-    export type DeleteMediaAssetMutationError = ErrorType<void | MediaInUseError>
+    export type DeleteMediaAssetMutationError = ErrorType<void>
 
     /**
- * @summary Delete an unreferenced library asset after confirmation
+ * @summary Unlink a library image from every owner, then delete the file
  */
-export const useDeleteMediaAsset = <TError = ErrorType<void | MediaInUseError>,
+export const useDeleteMediaAsset = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMediaAsset>>, TError,{id: string;data: BodyType<MediaDeleteConfirmation>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteMediaAsset>>,

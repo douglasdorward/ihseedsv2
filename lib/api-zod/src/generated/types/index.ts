@@ -52,6 +52,7 @@ export * from './mediaAssetStatus';
 export * from './mediaAssetStorageKind';
 export * from './mediaAttachInput';
 export * from './mediaBackfillResult';
+export * from './mediaBulkDeleteRequest';
 export * from './mediaCompleteInput';
 export * from './mediaDeleteConfirmation';
 export * from './mediaInUseError';

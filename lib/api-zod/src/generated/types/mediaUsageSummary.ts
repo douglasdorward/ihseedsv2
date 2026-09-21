@@ -23,4 +23,6 @@ export interface MediaUsageSummary {
   article: number;
   /** @minimum 0 */
   reseller: number;
+  /** @minimum 0 */
+  protected: number;
 }

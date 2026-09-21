@@ -556,6 +556,18 @@ paths:
         "200":
           description: Usage index reconciled
           content: { application/json: { schema: { $ref: "#/components/schemas/MediaBackfillResult" } } }
+  /admin/media/bulk-delete:
+    post:
+      operationId: bulkDeleteMediaAssets
+      tags: [admin]
+      summary: Unlink library images from every owner, then delete the files
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/MediaBulkDeleteRequest" } } }
+      responses:
+        "204": { description: Assets deleted }
+        "400": { description: Confirmation required or invalid ids }
   /admin/media/{id}:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -582,7 +594,7 @@ paths:
     delete:
       operationId: deleteMediaAsset
       tags: [admin]
-      summary: Delete an unreferenced library asset after confirmation
+      summary: Unlink a library image from every owner, then delete the file
       security: [{ clerkSession: [] }]
       requestBody:
         required: true
@@ -591,9 +603,6 @@ paths:
         "204": { description: Asset deleted }
         "400": { description: Confirmation required }
         "404": { description: Asset not found }
-        "409":
-          description: Asset has product, category, or static references
-          content: { application/json: { schema: { $ref: "#/components/schemas/MediaInUseError" } } }
   /admin/media/{id}/complete:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -2066,7 +2075,7 @@ components:
         updatedAt: { type: string, format: date-time }
     MediaUsageSummary:
       type: object
-      required: [total, draft, published, product, category, static, article, reseller]
+      required: [total, draft, published, product, category, static, article, reseller, protected]
       properties:
         total: { type: number, multipleOf: 1, minimum: 0 }
         draft: { type: number, multipleOf: 1, minimum: 0 }
@@ -2076,6 +2085,7 @@ components:
         static: { type: number, multipleOf: 1, minimum: 0 }
         article: { type: number, multipleOf: 1, minimum: 0 }
         reseller: { type: number, multipleOf: 1, minimum: 0 }
+        protected: { type: number, multipleOf: 1, minimum: 0 }
     MediaReference:
       type: object
       required: [id, assetId, ownerType, ownerId, ownerName, field, role, usageState, metadata, createdAt, updatedAt]
@@ -2143,6 +2153,16 @@ components:
       type: object
       required: [confirm]
       properties:
+        confirm: { type: boolean, const: true }
+    MediaBulkDeleteRequest:
+      type: object
+      required: [ids, confirm]
+      properties:
+        ids:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: { type: string, minLength: 1 }
         confirm: { type: boolean, const: true }
     MediaInUseError:
       type: object
