@@ -100,6 +100,25 @@
   background: #e4f0e6;
   color: #128354;
 }
+.admin-blog-status-scheduled {
+  background: #f5efe0;
+  color: #8a5a12;
+}
+.admin-blog-schedule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.admin-blog-schedule span {
+  color: #536059;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.admin-blog-schedule input[type="datetime-local"] {
+  min-width: 210px;
+}
 .admin-blog-path {
   flex: 0 0 auto;
   color: #536059;

@@ -5,11 +5,15 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SiteAboutSettings } from './siteAboutSettings';
+import type { SiteCompanySettings } from './siteCompanySettings';
 import type { SiteHomepageSettings } from './siteHomepageSettings';
 import type { SiteSeedGuideSettings } from './siteSeedGuideSettings';
 
 export interface SiteSettings {
   homepage: SiteHomepageSettings;
   seedGuide: SiteSeedGuideSettings;
+  about: SiteAboutSettings;
+  company: SiteCompanySettings;
   updatedAt: Date;
 }

@@ -4,15 +4,19 @@ import {
   getGetAdminArticleQueryKey,
   getListAdminArticlesQueryKey,
   getListArticlesQueryKey,
+  useCommitArticleImport,
   useCreateArticle,
   useDeleteArticle,
+  useDryRunArticleImport,
   useGetAdminArticle,
   useListAdminArticles,
   useListAdminProducts,
   usePublishArticle,
+  useScheduleArticle,
   useUnpublishArticle,
   useUpdateArticle,
   type Article,
+  type ArticleImportReport,
   type ArticleInput,
 } from "@workspace/api-client-react";
 import { AlsoPopularPicker } from "../components/AlsoPopularPicker";
@@ -55,6 +59,42 @@ function errorMessage(error: unknown, fallback: string) {
 function formatDate(value: string | null) {
   if (!value) return "Not published";
   return new Date(value).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) return "Not scheduled";
+  return new Date(value).toLocaleString("en-AU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function toDatetimeLocal(value: string | Date | null) {
+  if (!value) return "";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function fromDatetimeLocal(value: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function articleDateLabel(article: Article) {
+  if (article.publishStatus === "Scheduled") return formatDateTime(article.scheduledPublishAt);
+  return formatDate(article.publishedAt);
+}
+
+function statusPillClass(status: Article["publishStatus"]) {
+  if (status === "Published") return "status-pill admin-blog-status-live";
+  if (status === "Scheduled") return "status-pill admin-blog-status-scheduled";
+  return "status-pill";
 }
 
 function CharacterCount({ value, recommend }: { value: string; recommend: number }) {
@@ -200,6 +240,123 @@ function MediaPicker({
   );
 }
 
+function ImportDialog({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const dryRun = useDryRunArticleImport();
+  const commit = useCommitArticleImport();
+  const [filename, setFilename] = useState("");
+  const [workbookBase64, setWorkbookBase64] = useState("");
+  const [report, setReport] = useState<ArticleImportReport | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const reset = () => {
+    setFilename("");
+    setWorkbookBase64("");
+    setReport(null);
+    setError("");
+  };
+
+  const close = () => {
+    if (busy) return;
+    reset();
+    onClose();
+  };
+
+  const handleFile = async (file: File) => {
+    setFilename(file.name);
+    setReport(null);
+    setError("");
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("Could not read that file."));
+      reader.readAsDataURL(file);
+    });
+    const base64 = dataUrl.split(",")[1] ?? "";
+    setWorkbookBase64(base64);
+  };
+
+  const handleDryRun = async () => {
+    if (!workbookBase64) return;
+    setBusy(true);
+    setError("");
+    try {
+      setReport(await dryRun.mutateAsync({ data: { workbookBase64 } }));
+    } catch (caught) {
+      setError(errorMessage(caught, "Could not validate that workbook."));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleCommit = async () => {
+    if (!report) return;
+    setBusy(true);
+    setError("");
+    try {
+      await commit.mutateAsync({ data: { workbookBase64, token: report.token } });
+      await queryClient.invalidateQueries({ queryKey: getListAdminArticlesQueryKey() });
+      await queryClient.invalidateQueries({ queryKey: getListArticlesQueryKey() });
+      reset();
+      onClose();
+    } catch (caught) {
+      setError(errorMessage(caught, "Could not import those articles."));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!open) return null;
+  return (
+    <div className="admin-dialog-backdrop" role="presentation" onMouseDown={close}>
+      <section className="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="article-import-title" onMouseDown={(event) => event.stopPropagation()}>
+        <h2 id="article-import-title">Import articles</h2>
+        <p>Upload an Excel workbook with one row per article on the Articles sheet. Matching slugs update existing articles. Copy product slugs from the Products sheet into related_product_slugs, and use Categories.path or Products.path for in-article links. Put HTML or markdown in the body cell for headings, bold and lists. Use published_at to backdate the public date; use scheduled_publish_at for future go-live.</p>
+        {!report ? (
+          <div className="admin-import-file-row">
+            <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" data-testid="article-import-file" onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file) void handleFile(file);
+            }} />
+            <button className="admin-button outline small" type="button" onClick={() => { void handleDryRun(); }} disabled={!workbookBase64 || busy} data-testid="article-dry-run-btn">
+              {busy ? "Checking…" : "Dry run import"}
+            </button>
+          </div>
+        ) : (
+          <div className="admin-import-report">
+            <p>
+              <strong>{filename || "Workbook"}:</strong> {report.created} new, {report.updated} updates, {report.skipped} skipped.
+            </p>
+            {report.plannedChanges.length > 0 && (
+              <ul>{report.plannedChanges.map((change) => <li key={change}>{change}</li>)}</ul>
+            )}
+            {report.issues.length > 0 && (
+              <ul>{report.issues.map((issue) => <li key={`${issue.row}-${issue.column}`} style={{ color: "red" }}>Row {issue.row} {issue.column}: {issue.problem}</li>)}</ul>
+            )}
+          </div>
+        )}
+        {error && <p className="admin-inline-field-error">{error}</p>}
+        <div className="admin-import-actions">
+          <button className="admin-button ghost" type="button" onClick={close} disabled={busy}>Cancel</button>
+          {report && report.issues.length === 0 && (
+            <button className="admin-button primary" type="button" onClick={() => { void handleCommit(); }} disabled={busy} data-testid="article-commit-import-btn">
+              {busy ? "Importing…" : "Confirm import"}
+            </button>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function ArticleEditor({ articleId }: { articleId: number | "new" }) {
   const queryClient = useQueryClient();
   const isNew = articleId === "new";
@@ -210,10 +367,13 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
   const createArticle = useCreateArticle();
   const updateArticle = useUpdateArticle();
   const publishArticle = usePublishArticle();
+  const scheduleArticle = useScheduleArticle();
   const unpublishArticle = useUnpublishArticle();
   const deleteArticle = useDeleteArticle();
   const [form, setForm] = useState<ArticleForm>(emptyForm);
   const [slugLocked, setSlugLocked] = useState(false);
+  const [scheduleAt, setScheduleAt] = useState("");
+  const [publishedOn, setPublishedOn] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -224,6 +384,8 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
   useEffect(() => {
     if (!article || isNew) return;
     setForm(formFromArticle(article));
+    setScheduleAt(toDatetimeLocal(article.scheduledPublishAt));
+    setPublishedOn(toDatetimeLocal(article.publishedAt));
     setSlugLocked(true);
   }, [article, isNew]);
 
@@ -241,16 +403,28 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
     if (id) await queryClient.invalidateQueries({ queryKey: getGetAdminArticleQueryKey(id) });
   };
 
+  const publishedAtValue = () => {
+    const publishedAt = fromDatetimeLocal(publishedOn);
+    if (publishedAt && new Date(publishedAt).getTime() > Date.now() + 60_000) {
+      throw new Error("Published date cannot be in the future. Schedule the article instead.");
+    }
+    return publishedAt ?? undefined;
+  };
+
   const save = async () => {
     const payload = toInput(form);
     if (!payload.title || !payload.slug) throw new Error("Title and URL slug are required.");
+    const publishedAt = publishedAtValue();
     if (isNew) {
       const created = await createArticle.mutateAsync({ data: payload });
       await refreshQueries(created.id);
       navigate(`/admin/blog/${created.id}`, { replace: true });
       return created;
     }
-    const updated = await updateArticle.mutateAsync({ id: articleId, data: payload });
+    const updated = await updateArticle.mutateAsync({
+      id: articleId,
+      data: { ...payload, ...(publishedAt ? { publishedAt } : {}) },
+    });
     await refreshQueries(updated.id);
     return updated;
   };
@@ -276,9 +450,12 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
     setMessage("");
     try {
       const saved = await save();
-      await publishArticle.mutateAsync({ id: saved.id });
+      const publishedAt = publishedAtValue();
+      await publishArticle.mutateAsync({ id: saved.id, ...(publishedAt ? { data: { publishedAt } } : {}) });
       await refreshQueries(saved.id);
-      setMessage("Article published. It appears on Resources immediately.");
+      setMessage(publishedAt
+        ? `Article published, dated ${formatDateTime(publishedAt)}. It appears on Resources immediately.`
+        : "Article published. It appears on Resources immediately.");
     } catch (caught) {
       setError(errorMessage(caught, "Could not publish this article."));
     } finally {
@@ -294,9 +471,33 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
     try {
       await unpublishArticle.mutateAsync({ id: articleId });
       await refreshQueries(articleId);
-      setMessage("Article unpublished. It is hidden from Resources.");
+      setScheduleAt("");
+      setMessage(article?.publishStatus === "Scheduled"
+        ? "Schedule cancelled. The article stays private."
+        : "Article unpublished. It is hidden from Resources.");
     } catch (caught) {
       setError(errorMessage(caught, "Could not unpublish this article."));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSchedule = async () => {
+    const scheduledPublishAt = fromDatetimeLocal(scheduleAt);
+    if (!scheduledPublishAt) {
+      setError("Choose a date and time to schedule this article.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const saved = await save();
+      await scheduleArticle.mutateAsync({ id: saved.id, data: { scheduledPublishAt } });
+      await refreshQueries(saved.id);
+      setMessage(`Article scheduled for ${formatDateTime(scheduledPublishAt)}. It stays private until then.`);
+    } catch (caught) {
+      setError(errorMessage(caught, "Could not schedule this article."));
     } finally {
       setBusy(false);
     }
@@ -323,7 +524,7 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
     setBusy(true);
     setError("");
     try {
-      const uploaded = await uploadMediaAsset(file);
+      const uploaded = await uploadMediaAsset(file, { ownerName: form.title });
       setForm((current) => ({
         ...current,
         heroImageSrc: uploaded.src,
@@ -347,6 +548,8 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
   if (!isNew && (loadError || !article)) return <p className="admin-empty">That article could not be loaded.</p>;
 
   const published = article?.publishStatus === "Published";
+  const scheduled = article?.publishStatus === "Scheduled";
+  const statusLabel = isNew ? "Draft" : article?.publishStatus ?? "Draft";
   const titleFallback = form.title.trim() ? `${form.title.trim()} | IH Seeds` : "Article title | IH Seeds";
   const descriptionFallback = form.excerpt.trim() || "Excerpt copy is used when this is blank.";
   const previewTitle = form.seoTitle.trim() || titleFallback;
@@ -365,10 +568,41 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
             <h1>{isNew ? <>New <strong>article</strong></> : <>{form.title || "Untitled article"}</>}</h1>
           </div>
           <div className="admin-header-actions">
-            <span className={`status-pill${published ? " admin-blog-status-live" : ""}`}>{isNew ? "Draft" : published ? "Published" : "Draft"}</span>
+            <span className={statusPillClass(isNew ? "Draft" : article?.publishStatus ?? "Draft")}>{statusLabel}</span>
             <button className="admin-button primary" type="button" onClick={() => void handleSave()} disabled={busy}>{busy ? "Saving…" : "Save"}</button>
-            <button className="admin-button outline" type="button" onClick={() => void handlePublish()} disabled={busy}>{published ? "Save & publish" : "Publish"}</button>
-            {published && <button className="admin-button ghost" type="button" onClick={() => void handleUnpublish()} disabled={busy}>Unpublish</button>}
+            <button className="admin-button outline" type="button" onClick={() => void handlePublish()} disabled={busy}>{published ? "Save & publish" : "Publish now"}</button>
+            {!scheduled && (
+              <label className="admin-blog-schedule">
+                <span>Published on</span>
+                <input
+                  type="datetime-local"
+                  value={publishedOn}
+                  max={toDatetimeLocal(new Date())}
+                  onChange={(event) => setPublishedOn(event.target.value)}
+                  data-testid="article-published-on"
+                />
+              </label>
+            )}
+            {!published && (
+              <label className="admin-blog-schedule">
+                <span>Publish at</span>
+                <input
+                  type="datetime-local"
+                  value={scheduleAt}
+                  min={toDatetimeLocal(new Date())}
+                  onChange={(event) => setScheduleAt(event.target.value)}
+                  data-testid="article-schedule-at"
+                />
+                <button className="admin-button outline" type="button" onClick={() => void handleSchedule()} disabled={busy} data-testid="article-schedule-btn">
+                  {scheduled ? "Reschedule" : "Schedule"}
+                </button>
+              </label>
+            )}
+            {(published || scheduled) && (
+              <button className="admin-button ghost" type="button" onClick={() => void handleUnpublish()} disabled={busy}>
+                {scheduled ? "Cancel schedule" : "Unpublish"}
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -594,21 +828,47 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
 
 function ArticleList() {
   const { data: articles = [], isLoading, error } = useListAdminArticles();
+  const [importOpen, setImportOpen] = useState(false);
+  const [promptCopied, setPromptCopied] = useState(false);
+
+  const copyAgentPrompt = async () => {
+    try {
+      const response = await fetch("/api/admin/articles/import/prompt", { credentials: "include" });
+      const text = await response.text();
+      if (!response.ok) throw new Error(text || "Could not load the agent prompt.");
+      await navigator.clipboard.writeText(text);
+      setPromptCopied(true);
+      window.setTimeout(() => setPromptCopied(false), 2000);
+    } catch {
+      setPromptCopied(false);
+    }
+  };
+
   return (
     <>
       <PageHeader
         eyebrow="Blog"
         title={<>Articles &amp; <strong>publications</strong></>}
-        action={<button className="admin-button primary" type="button" onClick={() => navigate("/admin/blog/new")}><Icon name="plus" size={18} />New article</button>}
+        action={(
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button className="admin-button outline" type="button" onClick={() => { window.location.href = "/api/admin/articles/import/template"; }}>Download template</button>
+            <button className="admin-button outline" type="button" onClick={() => { void copyAgentPrompt(); }} data-testid="article-copy-prompt-btn">
+              {promptCopied ? "Prompt copied" : "Copy agent prompt"}
+            </button>
+            <button className="admin-button outline" type="button" onClick={() => { window.location.href = "/api/admin/articles/export"; }} data-testid="article-export-btn">Export</button>
+            <button className="admin-button outline" type="button" onClick={() => setImportOpen(true)} data-testid="article-import-btn">Import</button>
+            <button className="admin-button primary" type="button" onClick={() => navigate("/admin/blog/new")}><Icon name="plus" size={18} />New article</button>
+          </div>
+        )}
       />
       <div className="admin-content">
         <div className="admin-notice">
           <Icon name="info" size={20} />
-          <p>Drafts stay private. Publishing makes the article appear on Resources immediately. Saving a published article updates the public page on the next visit.</p>
+          <p>Drafts and scheduled articles stay private. Publishing makes the article appear on Resources immediately. Scheduled articles go live at the chosen time.</p>
         </div>
         {error && <div className="admin-notice" style={{ background: "#fef3f2", color: "#b42318" }}><p>{errorMessage(error, "Could not load articles.")}</p></div>}
         {isLoading ? <p className="admin-empty">Loading articles…</p> : null}
-        {!isLoading && articles.length === 0 && <p className="admin-empty">No articles yet. Publish the first one to replace the placeholder Resources cards.</p>}
+        {!isLoading && articles.length === 0 && <p className="admin-empty">No articles yet. Publish the first one to replace the placeholder Resources cards, or import a workbook.</p>}
         {articles.length > 0 && (
           <div className="admin-table-card admin-blog-table">
             <table>
@@ -617,7 +877,7 @@ function ArticleList() {
                   <th>Title</th>
                   <th>Tags</th>
                   <th>Status</th>
-                  <th>Published</th>
+                  <th>Date</th>
                   <th></th>
                 </tr>
               </thead>
@@ -635,8 +895,8 @@ function ArticleList() {
                         </div>
                       ) : "—"}
                     </td>
-                    <td><span className="status-pill">{item.publishStatus}</span></td>
-                    <td className="admin-blog-date">{formatDate(item.publishedAt)}</td>
+                    <td><span className={statusPillClass(item.publishStatus)}>{item.publishStatus}</span></td>
+                    <td className="admin-blog-date">{articleDateLabel(item)}</td>
                     <td><button className="admin-button outline small" type="button" onClick={() => navigate(`/admin/blog/${item.id}`)}>Edit</button></td>
                   </tr>
                 ))}
@@ -645,6 +905,7 @@ function ArticleList() {
           </div>
         )}
       </div>
+      <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} />
     </>
   );
 }

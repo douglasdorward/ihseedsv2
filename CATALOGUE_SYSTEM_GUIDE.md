@@ -591,7 +591,7 @@ The current public hierarchy is:
 - Product JSON-LD contains the public name, IH Seeds brand, public description, optional real image and selected Quick facts.
 - When a product has complete FAQs, the page also emits FAQPage JSON-LD for those question/answer pairs.
 - When a category page has complete FAQs, it also emits FAQPage JSON-LD for those question/answer pairs.
-- The sitemap contains the same Published + Active or New product set as the main catalogue.
+- The sitemap contains the same Published + Active or New product set as the main catalogue, excluding products with search indexing turned off.
 - Redirect lookup supports valid legacy paths; the application issues permanent redirects for mapped routes.
 
 ### Public redaction

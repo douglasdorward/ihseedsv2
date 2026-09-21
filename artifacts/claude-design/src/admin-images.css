@@ -34,6 +34,24 @@
   font-size: 13px;
   line-height: 1.35;
 }
+.admin-image-alt,
+.admin-image-caption {
+  margin: 0;
+  color: #174e37;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.admin-image-alt.is-missing {
+  color: #9a4a12;
+  font-weight: 700;
+}
+.admin-image-meta label {
+  display: grid;
+  gap: 4px;
+  color: #536059;
+  font-size: 12px;
+  font-weight: 700;
+}
 .admin-image-meta {
   display: grid;
   gap: 8px;

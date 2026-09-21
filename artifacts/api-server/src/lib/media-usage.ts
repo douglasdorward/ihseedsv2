@@ -7,12 +7,14 @@ import {
   resellerBrandsTable,
   siteSettingsTable,
   SITE_SETTINGS_ID,
+  withAboutDefaults,
   withHomepageDefaults,
   withSeedGuideDefaults,
   type Article,
   type Product,
   type ProductPhoto,
   type ResellerBrand,
+  type SiteAboutSettings,
   type SiteHomepageSettings,
   type SiteSeedGuideSettings,
 } from "@workspace/db";
@@ -149,31 +151,40 @@ export async function clearResellerMediaReferences(brandId: number, tx: DbLike =
   ));
 }
 
-const STATIC_OWNER_IDS = ["homepage", "seed-guide"] as const;
+const STATIC_OWNER_IDS = ["homepage", "seed-guide", "about"] as const;
 
 export async function syncStaticSiteMediaReferences(
   homepage: SiteHomepageSettings,
   seedGuide: SiteSeedGuideSettings,
+  about: SiteAboutSettings,
   tx: DbLike = db,
 ) {
   await tx.delete(mediaReferencesTable).where(and(
     eq(mediaReferencesTable.ownerType, "static"),
     inArray(mediaReferencesTable.ownerId, [...STATIC_OWNER_IDS]),
   ));
+  const heroImages = homepage.heroImages?.length
+    ? homepage.heroImages
+    : [{ src: homepage.heroImageSrc, assetId: homepage.heroImageAssetId }];
+  const seenHeroAssets = new Set<string>();
+  const heroRows = heroImages.flatMap((image, index) => {
+    const assetId = image.assetId?.trim();
+    if (!assetId || seenHeroAssets.has(assetId)) return [];
+    seenHeroAssets.add(assetId);
+    return [{
+      assetId,
+      ownerType: "static" as const,
+      ownerId: "homepage",
+      ownerName: "Home page",
+      field: index === 0 ? "heroImage" : `heroImage:${index}`,
+      role: "hero",
+      usageState: "Published" as const,
+      editPath: "/admin/site-settings/home",
+      metadata: {},
+    }];
+  });
   const rows = [
-    homepage.heroImageAssetId?.trim()
-      ? {
-          assetId: homepage.heroImageAssetId.trim(),
-          ownerType: "static" as const,
-          ownerId: "homepage",
-          ownerName: "Home page",
-          field: "heroImage",
-          role: "hero",
-          usageState: "Published" as const,
-          editPath: "/admin/site-settings/home",
-          metadata: {},
-        }
-      : null,
+    ...heroRows,
     seedGuide.cardImageAssetId?.trim()
       ? {
           assetId: seedGuide.cardImageAssetId.trim(),
@@ -184,6 +195,19 @@ export async function syncStaticSiteMediaReferences(
           role: "hero",
           usageState: "Published" as const,
           editPath: "/admin/site-settings/seed-guide",
+          metadata: {},
+        }
+      : null,
+    about.heroImageAssetId?.trim()
+      ? {
+          assetId: about.heroImageAssetId.trim(),
+          ownerType: "static" as const,
+          ownerId: "about",
+          ownerName: "About us",
+          field: "heroImage",
+          role: "hero",
+          usageState: "Published" as const,
+          editPath: "/admin/site-settings/about",
           metadata: {},
         }
       : null,
@@ -244,6 +268,7 @@ export async function backfillMediaUsage() {
   await syncStaticSiteMediaReferences(
     withHomepageDefaults(settings?.homepage),
     withSeedGuideDefaults(settings?.seedGuide),
+    withAboutDefaults(settings?.about),
   );
   return { products: products.length, articles: articles.length, resellers: brands.length };
 }

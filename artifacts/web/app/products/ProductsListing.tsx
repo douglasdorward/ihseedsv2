@@ -20,7 +20,7 @@ import {
   type FilterOptionDimension,
   type ProductListingFilters,
 } from "../../lib/product-filters";
-import { getFactChips, hasProductPhoto, productCardImage } from "./product-card-facts";
+import { getFactChips, hasProductPhoto, productCardImage, productImageAlt } from "./product-card-facts";
 
 function toggleValue(values: string[], value: string) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
@@ -275,7 +275,7 @@ export function ProductsListing({
                     <div
                       className="catalogue-product-image"
                       role="img"
-                      aria-label={hasPhoto ? product.name : `${product.name} — product image unavailable`}
+                      aria-label={hasPhoto ? productImageAlt(product) : `${product.name} — product image unavailable`}
                       style={{ backgroundImage: `url(${productCardImage(product)})` }}
                     />
                     {!hasPhoto && <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" />}

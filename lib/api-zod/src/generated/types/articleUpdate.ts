@@ -50,4 +50,5 @@ export interface ArticleUpdate {
   /** @maxLength 500 */
   socialImage?: string;
   robotsIndex?: boolean;
+  publishedAt?: Date;
 }

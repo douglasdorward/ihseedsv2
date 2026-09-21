@@ -53,6 +53,7 @@ One card per warehouse stock code. Legacy listing state disables availability on
 - **Customer website:** “How it’s sold” Status pill, and contributes to the product stock pill when no override is set. Disabled and forced Unavailable when listing state is Legacy.
 - **Public API:** yes (`Good stock`, `Low stock`, `Very low`, `Unavailable`, or null)
 - **How to fill:** Leave TBA only when stock is not yet known. Legacy products cannot advertise stock.
+- **Bulk table action:** On `/admin/products`, **Set stock status** PATCHes `status` and writes that level onto every live sale line. It does not go through publish. Leftover draft copy is kept; leftover draft sale-line availability follows the same stock change. Legacy rows are skipped.
 
 ### Price display
 
@@ -73,6 +74,7 @@ One card per warehouse stock code. Legacy listing state disables availability on
 - **Public API:** override itself is excluded; only the derived `status` is public
 - **Purpose:** Force a product-level stock message without editing every line.
 - **How to fill:** Leave “Use derived” unless the warehouse picture should differ from the lines.
+- **Bulk table action:** The product-table stock picker clears this override when sale lines exist, so the product pill is derived from the lines just updated. Products with no sale lines get the chosen level written here instead.
 
 ## PBR protected / PBR details
 

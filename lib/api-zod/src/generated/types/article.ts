@@ -29,6 +29,8 @@ export interface Article {
   publishStatus: ArticlePublishStatus;
   /** @nullable */
   publishedAt: Date | null;
+  /** @nullable */
+  scheduledPublishAt: Date | null;
   seoTitle: string;
   seoDescription: string;
   socialTitle: string;

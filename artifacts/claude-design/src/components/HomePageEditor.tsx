@@ -16,10 +16,13 @@ import { isAlsoPopularEligible } from "../also-popular";
 import { navigate } from "../router";
 import {
   BEST_SELLER_LIMIT,
+  HERO_IMAGE_LIMIT,
   expandProductCount,
   heroDisplaySrc,
+  homepageHeroImages,
   guideCardDisplaySrc,
   resolveBestSellers,
+  withHomepageHeroImages,
 } from "../site-settings";
 import "../homepage-editor.css";
 
@@ -61,11 +64,20 @@ export function HomePageEditor({
   const chosen = homepage.bestSellerSlugs;
   const previewCards = resolveBestSellers(chosen, eligible);
   const productCount = eligible.length;
-  const heroSrc = heroDisplaySrc({ src: homepage.heroImageSrc, assetId: homepage.heroImageAssetId }, true);
+  const heroImages = homepageHeroImages(homepage);
+  const [selectedHero, setSelectedHero] = useState(0);
+  const selectedIndex = Math.min(selectedHero, Math.max(heroImages.length - 1, 0));
+  const selectedImage = heroImages[selectedIndex] ?? heroImages[0];
+  const heroSrc = heroDisplaySrc(selectedImage ?? { src: homepage.heroImageSrc, assetId: homepage.heroImageAssetId }, true);
   const guideSrc = guideCardDisplaySrc({ src: seedGuide.cardImageSrc, assetId: seedGuide.cardImageAssetId }, true);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const addInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setSelectedHero((current) => Math.min(current, Math.max(heroImages.length - 1, 0)));
+  }, [heroImages.length]);
 
   const setSlot = (index: number, slug: string) => {
     const next = [...chosen];
@@ -77,24 +89,52 @@ export function HomePageEditor({
     });
   };
 
-  const uploadHero = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
+  const uploadHeroFiles = async (files: File[], mode: "add" | "replace") => {
+    if (!files.length) return;
     setBusy(true);
     setError("");
     try {
-      const uploaded = await uploadMediaAsset(file);
-      onChange({
-        ...homepage,
-        heroImageSrc: uploaded.src,
-        heroImageAssetId: uploaded.assetId,
-      });
+      const uploaded = [];
+      for (const file of files) {
+        uploaded.push(await uploadMediaAsset(file, { ownerName: homepage.heroHeading || "IH Seeds" }));
+      }
+      const nextImages = [...heroImages];
+      if (mode === "replace" && uploaded[0]) {
+        nextImages[selectedIndex] = { src: uploaded[0].src, assetId: uploaded[0].assetId };
+        const extras = uploaded.slice(1).map((item) => ({ src: item.src, assetId: item.assetId }));
+        nextImages.splice(selectedIndex + 1, 0, ...extras);
+      } else {
+        nextImages.push(...uploaded.map((item) => ({ src: item.src, assetId: item.assetId })));
+      }
+      const limited = nextImages.slice(0, HERO_IMAGE_LIMIT);
+      onChange(withHomepageHeroImages(homepage, limited));
+      if (mode === "add") setSelectedHero(Math.min(heroImages.length, HERO_IMAGE_LIMIT - 1));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleUpload = (mode: "add" | "replace") => async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = [...(event.target.files ?? [])];
+    event.target.value = "";
+    await uploadHeroFiles(files, mode);
+  };
+
+  const moveHero = (from: number, to: number) => {
+    if (to < 0 || to >= heroImages.length) return;
+    const next = [...heroImages];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onChange(withHomepageHeroImages(homepage, next));
+    setSelectedHero(to);
+  };
+
+  const removeHero = (index: number) => {
+    if (heroImages.length < 2) return;
+    onChange(withHomepageHeroImages(homepage, heroImages.filter((_, itemIndex) => itemIndex !== index)));
+    setSelectedHero(Math.max(0, index - 1));
   };
 
   return (
@@ -136,11 +176,58 @@ export function HomePageEditor({
               <span className="button button-light">Browse the catalogue</span>
             </div>
           </div>
-          <div className="ppe-hero-upload">
-            <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={uploadHero} />
-            <button type="button" className="ppe-hero-upload-button" onClick={() => inputRef.current?.click()} disabled={busy}>
-              {busy ? "Uploading…" : "Change photo"}
-            </button>
+          <div className="ppe-hero-upload hpe-hero-photos">
+            <input ref={addInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden multiple onChange={handleUpload("add")} />
+            <input ref={replaceInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={handleUpload("replace")} />
+            <div className="hpe-hero-thumbs" role="listbox" aria-label="Hero photos">
+              {heroImages.map((image, index) => (
+                <button
+                  type="button"
+                  key={`${image.assetId || image.src}-${index}`}
+                  className={`hpe-hero-thumb ${index === selectedIndex ? "is-selected" : ""}`}
+                  role="option"
+                  aria-selected={index === selectedIndex}
+                  aria-label={`Hero photo ${index + 1}`}
+                  onClick={() => setSelectedHero(index)}
+                  style={{ backgroundImage: `url(${heroDisplaySrc(image, true)})` }}
+                />
+              ))}
+            </div>
+            <div className="hpe-hero-photo-actions">
+              <button
+                type="button"
+                className="ppe-hero-upload-button"
+                onClick={() => addInputRef.current?.click()}
+                disabled={busy || heroImages.length >= HERO_IMAGE_LIMIT}
+              >
+                {busy ? "Uploading…" : heroImages.length >= HERO_IMAGE_LIMIT ? "Photo limit reached" : "Add photo"}
+              </button>
+              <button type="button" className="ppe-hero-upload-button hpe-hero-secondary" onClick={() => replaceInputRef.current?.click()} disabled={busy}>
+                Change photo
+              </button>
+            </div>
+            <div className="hpe-hero-photo-tools">
+              <div className="hpe-hero-move" role="group" aria-label="Reorder selected photo">
+                <button type="button" aria-label="Move left" onClick={() => moveHero(selectedIndex, selectedIndex - 1)} disabled={busy || selectedIndex === 0}>
+                  <Icon name="chevron-left" size={16} />
+                </button>
+                <button type="button" aria-label="Move right" onClick={() => moveHero(selectedIndex, selectedIndex + 1)} disabled={busy || selectedIndex >= heroImages.length - 1}>
+                  <Icon name="chevron-right" size={16} />
+                </button>
+              </div>
+              <button type="button" className="hpe-hero-text-button" onClick={() => removeHero(selectedIndex)} disabled={busy || heroImages.length < 2}>
+                Remove
+              </button>
+              <label className={`hpe-hero-slideshow ${heroImages.length < 2 ? "is-disabled" : ""}`}>
+                <input
+                  type="checkbox"
+                  checked={homepage.heroSlideshow && heroImages.length > 1}
+                  disabled={heroImages.length < 2}
+                  onChange={(event) => onChange(withHomepageHeroImages(homepage, heroImages, event.target.checked))}
+                />
+                Slideshow
+              </label>
+            </div>
             {error && <span className="ppe-hero-upload-error">{error}</span>}
           </div>
         </div>
@@ -207,12 +294,18 @@ export function HomePageEditor({
       </section>
 
       <section id="about" className="section about-section">
-        <p className="hpe-readonly-note" style={{ maxWidth: 1360, margin: "0 auto 16px" }}>About copy is not editable here.</p>
         <div className="feature-panel">
           <div className="feature-image" style={{ backgroundImage: `${ABOUT_OVERLAY}, url(${ABOUT_IMAGE})` }} />
           <div className="feature-copy">
             <h2><span>About</span> Us</h2>
-            <p>Irwin Hunter &amp; Co has been Western Australian owned and operated since 1966. We supply true to type seed from credible growers, blended into mixes that suit the paddock they are going into.</p>
+            <textarea
+              className={`ppe-ghost ${(homepage.aboutBody ?? "").trim() ? "" : "is-empty"}`}
+              rows={4}
+              value={homepage.aboutBody ?? ""}
+              placeholder="About Us introduction"
+              aria-label="About Us introduction"
+              onChange={(event) => onChange({ ...homepage, aboutBody: event.target.value })}
+            />
             <span className="button button-outline" style={{ color: "#fff", borderColor: "#fff" }}>Learn more about IH Seeds</span>
           </div>
         </div>

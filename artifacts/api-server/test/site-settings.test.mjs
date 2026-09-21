@@ -18,6 +18,18 @@ const PNG_RED_1X1 = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==",
   "base64",
 );
+const PNG_BLUE_1X1 = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNgYPgPAAEDAQAIicLsAAAAAElFTkSuQmCC",
+  "base64",
+);
+const PNG_GREEN_1X1 = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNg+M8AAAICAQB7CYF4AAAAAElFTkSuQmCC",
+  "base64",
+);
+const PNG_WHITE_1X1 = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
+  "base64",
+);
 const MINI_PDF = Buffer.from("%PDF-1.1\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n");
 
 async function freePort() {
@@ -145,9 +157,20 @@ test("public site settings expose the seeded homepage and seed-guide defaults", 
   assert.equal(data.homepage.heroEyebrow, "Western Australia's");
   assert.equal(data.homepage.heroHeading, "Pasture Seed Specialists");
   assert.match(data.homepage.heroBody, /\{productCount\}/);
+  assert.match(data.homepage.aboutBody, /Irwin Hunter/);
   assert.deepEqual(data.homepage.bestSellerSlugs, []);
+  assert.equal(data.homepage.heroSlideshow, false);
+  assert.equal(data.homepage.heroImages.length, 1);
   assert.equal(data.seedGuide.navTitle, "Seed Guide 2026");
   assert.equal(data.seedGuide.pdfPublicUrl, "/IH-Seeds-2026-Pasture-Seed-Guide.pdf");
+  assert.equal(data.about.heroEyebrow, "About Us");
+  assert.equal(data.about.heroHeadingEmphasis, "since 1966");
+  assert.equal(data.about.values.length, 3);
+  assert.match(data.about.storyParagraphs.join(" "), /\{productCount\}/);
+  assert.equal(data.company.legalName, "Irwin Hunter & Co");
+  assert.equal(data.company.tradingName, "IH Seeds");
+  assert.equal(data.company.phone, "");
+  assert.equal(data.company.email, "info@irwinhunter.com.au");
 });
 
 test("admin can persist homepage copy and invalid best-seller slugs", async () => {
@@ -157,6 +180,7 @@ test("admin can persist homepage copy and invalid best-seller slugs", async () =
       ...current.homepage,
       heroEyebrow: "Test region",
       heroHeading: "Test specialists",
+      aboutBody: "Edited About Us blurb for the home page.",
       bestSellerSlugs: ["not-a-real-product", "also-missing"],
     },
     seedGuide: {
@@ -172,6 +196,7 @@ test("admin can persist homepage copy and invalid best-seller slugs", async () =
   }), 200);
   assert.equal(saved.homepage.heroEyebrow, "Test region");
   assert.equal(saved.homepage.heroHeading, "Test specialists");
+  assert.equal(saved.homepage.aboutBody, "Edited About Us blurb for the home page.");
   assert.deepEqual(saved.homepage.bestSellerSlugs, ["not-a-real-product", "also-missing"]);
   const publicSettings = assertStatus(await request("GET", "/site-settings"), 200);
   assert.deepEqual(publicSettings.homepage.bestSellerSlugs, ["not-a-real-product", "also-missing"]);
@@ -231,6 +256,7 @@ test("saving homepage and seed-guide images creates published static media refer
       ...current.homepage,
       heroImageSrc: `/api/media/${hero.id}`,
       heroImageAssetId: hero.id,
+      heroImages: [{ src: `/api/media/${hero.id}`, assetId: hero.id }],
     },
     seedGuide: {
       navTitle: current.seedGuide.navTitle,
@@ -257,5 +283,141 @@ test("saving homepage and seed-guide images creates published static media refer
   const cardUsage = cardDetail.usages.find((item) => item.ownerType === "static" && item.ownerId === "seed-guide");
   assert.ok(cardUsage);
   assert.equal(cardUsage.usageState, "Published");
+});
+
+test("admin can persist multiple homepage hero photos and a slideshow flag", async () => {
+  const first = await uploadPng(`hero-a-${testRunId}.png`, PNG_BLUE_1X1);
+  const second = await uploadPng(`hero-b-${testRunId}.png`, PNG_GREEN_1X1);
+  const current = assertStatus(await request("GET", "/admin/site-settings"), 200);
+  const saved = assertStatus(await request("PUT", "/admin/site-settings", {
+    homepage: {
+      ...current.homepage,
+      heroImages: [
+        { src: `/api/media/${first.id}`, assetId: first.id },
+        { src: `/api/media/${second.id}`, assetId: second.id },
+      ],
+      heroSlideshow: true,
+    },
+    seedGuide: {
+      navTitle: current.seedGuide.navTitle,
+      cardHeading: current.seedGuide.cardHeading,
+      cardButtonLabel: current.seedGuide.cardButtonLabel,
+      cardImageSrc: current.seedGuide.cardImageSrc,
+      cardImageAssetId: current.seedGuide.cardImageAssetId,
+      pageTitle: current.seedGuide.pageTitle,
+      pageIntro: current.seedGuide.pageIntro,
+      pageButtonLabel: current.seedGuide.pageButtonLabel,
+    },
+  }), 200);
+  assert.equal(saved.homepage.heroSlideshow, true);
+  assert.equal(saved.homepage.heroImageAssetId, first.id);
+  assert.deepEqual(saved.homepage.heroImages, [
+    { src: `/api/media/${first.id}`, assetId: first.id },
+    { src: `/api/media/${second.id}`, assetId: second.id },
+  ]);
+  const publicSettings = assertStatus(await request("GET", "/site-settings"), 200);
+  assert.equal(publicSettings.homepage.heroSlideshow, true);
+  assert.equal(publicSettings.homepage.heroImages.length, 2);
+
+  const firstDetail = assertStatus(await request("GET", `/admin/media/${first.id}`), 200);
+  const secondDetail = assertStatus(await request("GET", `/admin/media/${second.id}`), 200);
+  assert.ok(firstDetail.usages.find((item) => item.ownerType === "static" && item.ownerId === "homepage"));
+  assert.ok(secondDetail.usages.find((item) => item.ownerType === "static" && item.ownerId === "homepage"));
+});
+
+test("admin can persist About us copy and hero image without clearing homepage settings", async () => {
+  const photo = await uploadPng(`about-${testRunId}.png`, PNG_WHITE_1X1);
+  const current = assertStatus(await request("GET", "/admin/site-settings"), 200);
+  const saved = assertStatus(await request("PUT", "/admin/site-settings", {
+    homepage: current.homepage,
+    seedGuide: {
+      navTitle: current.seedGuide.navTitle,
+      cardHeading: current.seedGuide.cardHeading,
+      cardButtonLabel: current.seedGuide.cardButtonLabel,
+      cardImageSrc: current.seedGuide.cardImageSrc,
+      cardImageAssetId: current.seedGuide.cardImageAssetId,
+      pageTitle: current.seedGuide.pageTitle,
+      pageIntro: current.seedGuide.pageIntro,
+      pageButtonLabel: current.seedGuide.pageButtonLabel,
+    },
+    about: {
+      ...current.about,
+      heroHeading: "Edited family owned,",
+      heroHeadingEmphasis: "since testing",
+      heroImageSrc: `/api/media/${photo.id}`,
+      heroImageAssetId: photo.id,
+      values: [
+        { title: "Regional expertise", body: "Edited regional copy." },
+        current.about.values[1],
+        current.about.values[2],
+      ],
+    },
+  }), 200);
+  assert.equal(saved.about.heroHeading, "Edited family owned,");
+  assert.equal(saved.about.heroHeadingEmphasis, "since testing");
+  assert.equal(saved.about.heroImageAssetId, photo.id);
+  assert.equal(saved.about.values[0].body, "Edited regional copy.");
+  assert.equal(saved.homepage.heroHeading, current.homepage.heroHeading);
+
+  const publicSettings = assertStatus(await request("GET", "/site-settings"), 200);
+  assert.equal(publicSettings.about.heroHeadingEmphasis, "since testing");
+
+  const detail = assertStatus(await request("GET", `/admin/media/${photo.id}`), 200);
+  const usage = detail.usages.find((item) => item.ownerType === "static" && item.ownerId === "about");
+  assert.ok(usage);
+  assert.equal(usage.usageState, "Published");
+  assert.equal(usage.editPath, "/admin/site-settings/about");
+});
+
+test("admin can persist company contact details without clearing homepage settings", async () => {
+  const current = assertStatus(await request("GET", "/admin/site-settings"), 200);
+  const saved = assertStatus(await request("PUT", "/admin/site-settings", {
+    homepage: current.homepage,
+    seedGuide: {
+      navTitle: current.seedGuide.navTitle,
+      cardHeading: current.seedGuide.cardHeading,
+      cardButtonLabel: current.seedGuide.cardButtonLabel,
+      cardImageSrc: current.seedGuide.cardImageSrc,
+      cardImageAssetId: current.seedGuide.cardImageAssetId,
+      pageTitle: current.seedGuide.pageTitle,
+      pageIntro: current.seedGuide.pageIntro,
+      pageButtonLabel: current.seedGuide.pageButtonLabel,
+    },
+    company: {
+      legalName: "Irwin Hunter & Co",
+      tradingName: "IH Seeds",
+      phone: "(08) 9381 2345",
+      email: "office@irwinhunter.com.au",
+      address: "Unit 5, 75 Robinson Avenue, Belmont, WA 6104",
+      officeHours: "Monday to Friday, 8am–5pm AWST",
+      abn: "12 345 678 901",
+    },
+  }), 200);
+  assert.equal(saved.company.phone, "(08) 9381 2345");
+  assert.equal(saved.company.email, "office@irwinhunter.com.au");
+  assert.equal(saved.company.abn, "12 345 678 901");
+  assert.equal(saved.homepage.heroHeading, current.homepage.heroHeading);
+
+  const homepageOnly = assertStatus(await request("PUT", "/admin/site-settings", {
+    homepage: {
+      ...current.homepage,
+      heroHeading: current.homepage.heroHeading,
+    },
+    seedGuide: {
+      navTitle: current.seedGuide.navTitle,
+      cardHeading: current.seedGuide.cardHeading,
+      cardButtonLabel: current.seedGuide.cardButtonLabel,
+      cardImageSrc: current.seedGuide.cardImageSrc,
+      cardImageAssetId: current.seedGuide.cardImageAssetId,
+      pageTitle: current.seedGuide.pageTitle,
+      pageIntro: current.seedGuide.pageIntro,
+      pageButtonLabel: current.seedGuide.pageButtonLabel,
+    },
+  }), 200);
+  assert.equal(homepageOnly.company.phone, "(08) 9381 2345");
+  assert.equal(homepageOnly.company.abn, "12 345 678 901");
+
+  const publicSettings = assertStatus(await request("GET", "/site-settings"), 200);
+  assert.equal(publicSettings.company.phone, "(08) 9381 2345");
 });
 });

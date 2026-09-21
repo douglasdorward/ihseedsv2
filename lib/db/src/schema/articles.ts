@@ -3,7 +3,7 @@ import { boolean, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "
 import { z } from "zod/v4";
 import { forSearchMetadata } from "./products";
 
-export type ArticlePublishStatus = "Draft" | "Published";
+export type ArticlePublishStatus = "Draft" | "Published" | "Scheduled";
 
 export const ARTICLE_RELATED_PRODUCT_LIMIT = 3;
 export const ARTICLE_TAG_LIMIT = 12;
@@ -24,6 +24,7 @@ export const articlesTable = pgTable("ih_articles", {
   relatedProductSlugs: jsonb("related_product_slugs").$type<string[]>().notNull().default(emptyRelated),
   publishStatus: text("publish_status").$type<ArticlePublishStatus>().notNull().default("Draft"),
   publishedAt: timestamp("published_at", { withTimezone: true }),
+  scheduledPublishAt: timestamp("scheduled_publish_at", { withTimezone: true }),
   seoTitle: text("seo_title").notNull().default(""),
   seoDescription: text("seo_description").notNull().default(""),
   socialTitle: text("social_title").notNull().default(""),

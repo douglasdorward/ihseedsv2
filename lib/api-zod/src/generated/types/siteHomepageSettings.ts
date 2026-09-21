@@ -5,18 +5,24 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SiteHeroImage } from './siteHeroImage';
 
 export interface SiteHomepageSettings {
   /** @maxLength 500 */
   heroImageSrc: string;
   /** @maxLength 80 */
   heroImageAssetId: string | null;
+  /** @maxItems 6 */
+  heroImages: SiteHeroImage[];
+  heroSlideshow: boolean;
   /** @maxLength 120 */
   heroEyebrow: string;
   /** @maxLength 180 */
   heroHeading: string;
   /** @maxLength 2000 */
   heroBody: string;
+  /** @maxLength 2000 */
+  aboutBody: string;
   /**
      * @maxItems 4
      * @items.maxLength 160

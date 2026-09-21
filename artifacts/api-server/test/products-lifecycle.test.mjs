@@ -227,6 +227,14 @@ test("only registered redirect paths resolve through lookup and the legacy HTTP 
   sql(`DELETE FROM ih_redirects WHERE from_path = '${fromPath}'`);
 });
 
+function publicOrigin() {
+  const raw = (process.env.PUBLIC_SITE_URL || "https://www.irwinhunter.com.au").trim().replace(/\/+$/, "")
+    || "https://www.irwinhunter.com.au";
+  const url = new URL(raw);
+  if (url.hostname === "irwinhunter.com.au") url.hostname = "www.irwinhunter.com.au";
+  return url.origin;
+}
+
 test("sitemap contains only canonical Active Published product paths", async () => {
   const publicCatalogue = await publicProducts();
   const categories = assertStatus(await request("GET", "/categories"), 200);
@@ -234,14 +242,99 @@ test("sitemap contains only canonical Active Published product paths", async () 
   const categorySlug = (product) => rootByName.get(product.category)
     || product.category.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
     || "catalogue";
+  const origin = publicOrigin();
+  const expectedLoc = (product) => {
+    const fallback = `/products/${categorySlug(product)}/${encodeURIComponent(product.slug)}`;
+    const override = typeof product.details.canonicalUrl === "string" ? product.details.canonicalUrl.trim() : "";
+    if (override.startsWith("/") && !override.startsWith("//") && !override.startsWith("/\\")) {
+      return `${origin}${override}`;
+    }
+    try {
+      const url = new URL(override);
+      const expectedHost = new URL(origin).hostname.replace(/^www\./, "");
+      if (["http:", "https:"].includes(url.protocol) && url.hostname.replace(/^www\./, "") === expectedHost) {
+        return `${origin}${`${url.pathname}${url.search}`.replace(/\/+$/, "") || "/"}`;
+      }
+    } catch {
+      // Off-site or invalid overrides keep the nested product path.
+    }
+    return `${origin}${fallback}`;
+  };
   const response = await fetch(`${baseUrl}/api/sitemap-products`);
   assert.equal(response.status, 200);
   const xml = await response.text();
   const locations = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
   assert.deepEqual(
     locations.sort(),
-    publicCatalogue.map((product) => `/products/${categorySlug(product)}/${encodeURIComponent(product.slug)}`).sort(),
+    publicCatalogue
+      .filter((product) => product.details.robotsIndex !== false)
+      .map((product) => expectedLoc(product))
+      .sort(),
   );
+  assert.equal([...xml.matchAll(/<lastmod>.*?<\/lastmod>/g)].length, locations.length);
+  const entries = assertStatus(await request("GET", "/sitemap-product-entries"), 200);
+  assert.deepEqual(
+    entries.map((entry) => entry.slug).sort(),
+    publicCatalogue.filter((product) => product.details.robotsIndex !== false).map((product) => product.slug).sort(),
+  );
+  assert.equal(entries.every((entry) => Number.isNaN(Date.parse(entry.lastModified)) === false), true);
+  for (const entry of entries) {
+    assert.deepEqual(Object.keys(entry).sort(), ["lastModified", "slug"]);
+  }
+});
+
+test("public sitemap.xml and robots.txt are the crawl contract", async () => {
+  const origin = publicOrigin();
+  const robots = await fetch(`${webBaseUrl}/robots.txt`);
+  assert.equal(robots.status, 200);
+  const robotsBody = await robots.text();
+  assert.match(robotsBody, /Disallow:\s*\/admin/i);
+  assert.match(robotsBody, /Disallow:\s*\/api/i);
+  assert.match(robotsBody, new RegExp(`Sitemap:\\s*${origin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/sitemap\\.xml`));
+
+  const response = await fetch(`${webBaseUrl}/sitemap.xml`);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") ?? "", /xml/);
+  const xml = await response.text();
+  assert.match(xml, /<urlset/);
+  const locations = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
+  assert.equal(locations.some((loc) => loc.startsWith(`${origin}/`)), true);
+  assert.equal(locations.every((loc) => loc.startsWith(origin)), true);
+  assert.equal(locations.includes(`${origin}/`), true);
+  assert.equal(locations.includes(`${origin}/products`), true);
+  assert.equal(locations.includes(`${origin}/resources`), true);
+  assert.equal(locations.includes(`${origin}/privacy`), true);
+  assert.equal(locations.includes(`${origin}/terms-and-conditions`), true);
+  assert.equal(locations.includes(`${origin}/admin`), false);
+  const articles = assertStatus(await request("GET", "/articles"), 200)
+    .filter((article) => article.robotsIndex !== false);
+  assert.equal(articles.every((article) => locations.includes(`${origin}/resources/${article.slug}`)), true);
+});
+
+test("product sitemap uses same-origin canonical overrides, lastmod, and omits noindex", async () => {
+  const origin = publicOrigin();
+  const overridePath = `/products/automated-tests/canonical-override-${testRunId}`;
+  const indexed = await createProduct("sitemap-canonical");
+  const hidden = await createProduct("sitemap-noindex");
+  assertStatus(await request("POST", `/admin/products/${indexed.id}/publish`, draftPayload(indexed, {
+    details: { ...indexed.details, canonicalUrl: overridePath },
+  })), 200);
+  assertStatus(await request("POST", `/admin/products/${hidden.id}/publish`, draftPayload(hidden, {
+    details: { ...hidden.details, robotsIndex: false },
+  })), 200);
+
+  const xml = await (await fetch(`${baseUrl}/api/sitemap-products`)).text();
+  assert.match(xml, new RegExp(`<loc>${origin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}${overridePath}</loc>`));
+  assert.match(xml, /<lastmod>\d{4}-\d{2}-\d{2}T/);
+  assert.doesNotMatch(xml, new RegExp(`/products/automated-tests/${hidden.slug}`));
+
+  const entries = assertStatus(await request("GET", "/sitemap-product-entries"), 200);
+  assert.equal(entries.some((entry) => entry.slug === indexed.slug), true);
+  assert.equal(entries.some((entry) => entry.slug === hidden.slug), false);
+
+  const publicXml = await (await fetch(`${webBaseUrl}/sitemap.xml`)).text();
+  assert.match(publicXml, new RegExp(`${origin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}${overridePath}`));
+  assert.doesNotMatch(publicXml, new RegExp(`/products/automated-tests/${hidden.slug}`));
 });
 
 test("drafts require only identity fields while publishing requires public catalogue fields", async () => {
@@ -434,6 +527,28 @@ test("redirect lookup follows only the registered table entry", async () => {
     { toPath },
   );
   sql(`DELETE FROM ih_redirects WHERE from_path = '${fromPath.replaceAll("'", "''")}'`);
+});
+
+test("redirect lookup does not steal a live product canonical path", async () => {
+  const product = await createProduct("canonical-steal");
+  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  const categories = assertStatus(await request("GET", "/categories"), 200);
+  const root = categories.find((category) => category.parentId === null && category.name === published.category);
+  const categorySlug = root?.slug || published.category.toLowerCase().normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "catalogue";
+  const canonical = `/products/${categorySlug}/${published.slug}`;
+  sql(`
+    INSERT INTO ih_redirects (from_path, to_path)
+    VALUES ('${canonical.replaceAll("'", "''")}', '/products/${categorySlug}')
+    ON CONFLICT (from_path) DO UPDATE SET to_path = EXCLUDED.to_path, updated_at = now()
+  `);
+  assert.equal(
+    (await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(canonical)}`)).response.status,
+    404,
+  );
+  const page = await fetch(`${webBaseUrl}${canonical}`, { redirect: "manual" });
+  assert.equal(page.status, 200);
+  sql(`DELETE FROM ih_redirects WHERE from_path = '${canonical.replaceAll("'", "''")}'`);
 });
 
 test("manual listing state takes precedence over sale-line availability", async () => {
@@ -1105,9 +1220,12 @@ test("catalogue lifecycle transition matrix protects public content", async () =
 
   const stockUpdated = assertStatus(await request("PATCH", `/products/${product.id}`, { status: "low" }), 200);
   assert.equal(stockUpdated.status, "low");
-  assert.equal((await adminProduct(product.id)).status, "low");
-  assert.equal((await adminProduct(product.id)).draft, null);
+  const adminAfterStock = await adminProduct(product.id);
+  assert.equal(adminAfterStock.status, "low");
+  assert.equal(adminAfterStock.availabilityOverride, "Low stock");
+  assert.equal(adminAfterStock.draft, null);
   assert.equal((await availability()).find((item) => item.id === product.id).status, "low");
+  assert.equal((await publicProducts()).find((item) => item.id === product.id).status, "low");
 
   assertStatus(await request("PATCH", `/products/${product.id}`, { name: `Illegal live edit ${testRunId}` }), 409);
   const unchangedLive = await adminProduct(product.id);
@@ -1152,6 +1270,55 @@ test("catalogue lifecycle transition matrix protects public content", async () =
 
   assertStatus(await request("POST", "/admin/products/not-an-id/publish"), 400);
   assertStatus(await request("GET", "/admin/products/999999999"), 404);
+});
+
+test("status patch updates derived stock without publishing leftover drafts", async () => {
+  const product = await createProduct("bulk-stock");
+  const leftoverName = `Leftover stock copy ${testRunId}`;
+  const saleLines = [{
+    stockCode: `bulk-${testRunId}`,
+    seedForm: "",
+    seedGrade: "",
+    packKg: 25,
+    packUnit: "kg",
+    availability: "Good stock",
+    priceDisplay: "Contact for pricing",
+    isDefault: true,
+    sortOrder: 0,
+  }];
+  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`, draftPayload(product, {
+    saleLines,
+  })), 200);
+  assert.equal(published.saleLines[0].availability, "Good stock");
+  insertLeftoverDraft(published, {
+    name: leftoverName,
+    saleLines: [{ ...saleLines[0], availability: "Good stock" }],
+  });
+
+  const stockUpdated = assertStatus(await request("PATCH", `/products/${product.id}`, { status: "low" }), 200);
+  assert.equal(stockUpdated.status, "low");
+
+  const admin = await adminProduct(product.id);
+  assert.equal(admin.name, published.name);
+  assert.equal(admin.status, "low");
+  assert.equal(admin.availabilityOverride, null);
+  assert.equal(admin.saleLines[0].availability, "Low stock");
+  assert.equal(admin.hasDraft, true);
+  assert.equal(admin.draft.name, leftoverName);
+  assert.equal(admin.draft.saleLines[0].availability, "Low stock");
+
+  const publicProduct = (await publicProducts()).find((item) => item.id === product.id);
+  assert.ok(publicProduct);
+  assert.equal(publicProduct.name, published.name);
+  assert.equal(publicProduct.status, "low");
+  assert.equal(publicProduct.saleLines[0].availability, "Low stock");
+  assert.equal((await availability()).find((item) => item.id === product.id).status, "low");
+
+  assertStatus(await request("PATCH", `/products/${product.id}`, { name: `Illegal stock publish ${testRunId}` }), 409);
+  const unchanged = await adminProduct(product.id);
+  assert.equal(unchanged.name, published.name);
+  assert.equal(unchanged.draft.name, leftoverName);
+  assert.equal((await publicProducts()).find((item) => item.id === product.id).name, published.name);
 });
 
 test("export workbook matches the authoritative contract and round-trips cleanly", async () => {
@@ -1711,6 +1878,7 @@ test("site settings persist homepage and seed guide content for the public site"
       heroEyebrow: "Lifecycle",
       heroHeading: "Edited specialists",
       heroBody: "We blend {productCount} for tests.",
+      aboutBody: "Lifecycle About Us blurb.",
       bestSellerSlugs: [published.slug, "missing-best-seller"],
     },
     seedGuide: {
@@ -1725,6 +1893,7 @@ test("site settings persist homepage and seed guide content for the public site"
     },
   }), 200);
   assert.equal(saved.homepage.heroHeading, "Edited specialists");
+  assert.equal(saved.homepage.aboutBody, "Lifecycle About Us blurb.");
   assert.deepEqual(saved.homepage.bestSellerSlugs, [published.slug, "missing-best-seller"]);
   assert.equal(saved.seedGuide.navTitle, "Seed Guide Test");
   assert.equal(saved.seedGuide.pdfPublicUrl, "/IH-Seeds-2026-Pasture-Seed-Guide.pdf");
@@ -1737,6 +1906,7 @@ test("site settings persist homepage and seed guide content for the public site"
   assert.equal(homePage.status, 200);
   const homeHtml = await homePage.text();
   assert.match(homeHtml, /Edited specialists/);
+  assert.match(homeHtml, /Lifecycle About Us blurb/);
   assert.match(homeHtml, /Lifecycle seed guide card/);
   assert.match(homeHtml, /Seed Guide Test/);
   assert.match(homeHtml, new RegExp(`card-product-${published.id}`));
@@ -1854,7 +2024,14 @@ test("published blog articles appear on Resources immediately and drafts stay pr
 
   const sitemap = await fetch(`${baseUrl}/api/sitemap-articles`);
   assert.equal(sitemap.status, 200);
-  assert.match(await sitemap.text(), new RegExp(`/resources/${slug}`));
+  const articleSitemap = await sitemap.text();
+  assert.match(articleSitemap, new RegExp(`/resources/${slug}`));
+  assert.match(articleSitemap, /<lastmod>\d{4}-\d{2}-\d{2}T/);
+  const publicSitemap = await fetch(`${webBaseUrl}/sitemap.xml`);
+  assert.equal(publicSitemap.status, 200);
+  const publicSitemapXml = await publicSitemap.text();
+  assert.match(publicSitemapXml, new RegExp(`/resources/${slug}`));
+  assert.match(publicSitemapXml, new RegExp(`<loc>[^<]*/resources/${slug}</loc>\\s*<lastmod>`));
 
   assertStatus(await request("POST", `/admin/articles/${created.id}/unpublish`), 200);
   assert.equal((await request("GET", `/articles/slug/${slug}`)).response.status, 404);
@@ -1863,4 +2040,237 @@ test("published blog articles appear on Resources immediately and drafts stay pr
   const unpublishedIndex = await fetch(`${webBaseUrl}/resources`);
   assert.doesNotMatch(await unpublishedIndex.text(), new RegExp(revisedTitle));
 });
+
+function articleWorkbook(rows) {
+  const book = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet(rows), "Articles");
+  return xlsx.write(book, { type: "buffer", bookType: "xlsx" });
+}
+
+test("blog article Excel import keeps HTML formatting and upserts by slug", async () => {
+  const htmlSlug = `import-html-${testRunId}`;
+  const markdownSlug = `import-md-${testRunId}`;
+  const workbook = articleWorkbook([
+    {
+      title: `HTML import ${testRunId}`,
+      slug: htmlSlug,
+      excerpt: "HTML import excerpt",
+      body: "<h2>Sowing window</h2><p>Plant <strong>early</strong> in autumn.</p>",
+      tags: "Editorial|Sowing & Timing",
+      seo_title: `HTML import ${testRunId} | IH Seeds`,
+      seo_description: "HTML import SEO description",
+      publish_status: "Published",
+    },
+    {
+      title: `Markdown import ${testRunId}`,
+      slug: markdownSlug,
+      excerpt: "Markdown import excerpt",
+      body: "## Feed planning\n\nUse **ryegrass** this season.",
+      seo_title: `Markdown import ${testRunId} | IH Seeds`,
+      seo_description: "Markdown import SEO description",
+      publish_status: "Draft",
+    },
+  ]);
+  const dryRun = assertStatus(await request("POST", "/admin/articles/import/dry-run", {
+    workbookBase64: workbook.toString("base64"),
+  }), 200);
+  assert.equal(dryRun.created, 2);
+  assert.equal(dryRun.issues.length, 0);
+  assertStatus(await request("POST", "/admin/articles/import/commit", {
+    workbookBase64: workbook.toString("base64"),
+    token: dryRun.token,
+  }), 200);
+
+  const listed = assertStatus(await request("GET", "/admin/articles"), 200);
+  const htmlArticle = listed.find((item) => item.slug === htmlSlug);
+  const markdownArticle = listed.find((item) => item.slug === markdownSlug);
+  assert.ok(htmlArticle);
+  assert.ok(markdownArticle);
+  createdArticleIds.push(htmlArticle.id, markdownArticle.id);
+  assert.match(htmlArticle.body, /<h2>Sowing window<\/h2>/);
+  assert.match(htmlArticle.body, /<strong>early<\/strong>/);
+  assert.equal(htmlArticle.publishStatus, "Published");
+  assert.match(markdownArticle.body, /<h2>Feed planning<\/h2>/);
+  assert.match(markdownArticle.body, /<strong>ryegrass<\/strong>/);
+  assert.equal(markdownArticle.publishStatus, "Draft");
+  assert.equal((await request("GET", "/articles")).data.some((item) => item.slug === htmlSlug), true);
+  assert.equal((await request("GET", `/articles/slug/${markdownSlug}`)).response.status, 404);
+
+  const updateWorkbook = articleWorkbook([{
+    title: `HTML import revised ${testRunId}`,
+    slug: htmlSlug,
+    excerpt: "HTML import excerpt",
+    body: "<h3>Updated window</h3><p>Still <em>early</em>.</p>",
+    seo_title: `HTML import revised ${testRunId} | IH Seeds`,
+    seo_description: "HTML import SEO description",
+    publish_status: "Published",
+  }]);
+  const updateDryRun = assertStatus(await request("POST", "/admin/articles/import/dry-run", {
+    workbookBase64: updateWorkbook.toString("base64"),
+  }), 200);
+  assert.equal(updateDryRun.created, 0);
+  assert.equal(updateDryRun.updated, 1);
+  assertStatus(await request("POST", "/admin/articles/import/commit", {
+    workbookBase64: updateWorkbook.toString("base64"),
+    token: updateDryRun.token,
+  }), 200);
+  const revised = assertStatus(await request("GET", `/articles/slug/${htmlSlug}`), 200);
+  assert.equal(revised.title, `HTML import revised ${testRunId}`);
+  assert.match(revised.body, /<h3>Updated window<\/h3>/);
+
+  const exported = await fetch(`${baseUrl}/api/admin/articles/export`);
+  assert.equal(exported.status, 200);
+  const exportedBook = xlsx.read(Buffer.from(await exported.arrayBuffer()), { type: "buffer" });
+  assert.ok(exportedBook.Sheets.Articles);
+  const exportedRows = xlsx.utils.sheet_to_json(exportedBook.Sheets.Articles, { defval: "", raw: false });
+  const exportedHeaders = xlsx.utils.sheet_to_json(exportedBook.Sheets.Articles, { header: 1 })[0];
+  assert.equal(exportedRows.some((row) => row.slug === htmlSlug), true);
+  assert.equal(exportedHeaders.includes("published_at"), true);
+  assert.ok(exportedBook.Sheets["Agent prompt"]);
+
+  const template = await fetch(`${baseUrl}/api/admin/articles/import/template`);
+  assert.equal(template.status, 200);
+  const templateBook = xlsx.read(Buffer.from(await template.arrayBuffer()), { type: "buffer" });
+  const templateHeaders = xlsx.utils.sheet_to_json(templateBook.Sheets.Articles, { header: 1 })[0];
+  assert.deepEqual(templateHeaders, ["title", "slug", "excerpt", "body", "tags", "hero_image_src", "related_product_slugs", "seo_title", "seo_description", "social_title", "social_description", "social_image", "robots_index", "publish_status", "published_at", "scheduled_publish_at"]);
+  assert.ok(templateBook.Sheets.Products);
+  const productHeaders = xlsx.utils.sheet_to_json(templateBook.Sheets.Products, { header: 1 })[0];
+  assert.deepEqual(productHeaders, ["slug", "name", "category", "category_slug", "path"]);
+  const productRows = xlsx.utils.sheet_to_json(templateBook.Sheets.Products, { defval: "", raw: false });
+  const catalogue = assertStatus(await request("GET", "/admin/products"), 200);
+  const linkable = catalogue.find((product) => product.publishStatus === "Published" && product.listingState !== "Legacy");
+  assert.ok(linkable);
+  assert.equal(productRows.some((row) => row.slug === linkable.slug && String(row.category_slug).length > 0 && String(row.path).startsWith("/products/")), true);
+  assert.ok(templateBook.Sheets.Categories);
+  const categoryHeaders = xlsx.utils.sheet_to_json(templateBook.Sheets.Categories, { header: 1 })[0];
+  assert.deepEqual(categoryHeaders, ["slug", "name", "path"]);
+  const categoryRows = xlsx.utils.sheet_to_json(templateBook.Sheets.Categories, { defval: "", raw: false });
+  const categories = assertStatus(await request("GET", "/admin/categories"), 200);
+  const rootCategory = categories.find((category) => category.parentId == null && category.active);
+  assert.ok(rootCategory);
+  assert.equal(categoryRows.some((row) => row.slug === rootCategory.slug && row.path === `/products/${rootCategory.slug}`), true);
+  const promptSheet = xlsx.utils.sheet_to_json(templateBook.Sheets["Agent prompt"], { header: 1, defval: "" });
+  assert.match(String(promptSheet[1]?.[0] ?? ""), /published_at/);
+  const prompt = await fetch(`${baseUrl}/api/admin/articles/import/prompt`);
+  assert.equal(prompt.status, 200);
+  assert.match(await prompt.text(), /published_at: optional public date for backdating/);
+});
+
+test("blog articles can be backdated on import, patch, and publish", async () => {
+  const slug = `backdated-article-${testRunId}`;
+  const publishedAt = "2024-03-18T01:00:00.000Z";
+  const workbook = articleWorkbook([{
+    title: `Backdated import ${testRunId}`,
+    slug,
+    excerpt: "Backdated import excerpt",
+    body: "<p>Backdated body copy.</p>",
+    seo_title: `Backdated import ${testRunId} | IH Seeds`,
+    seo_description: "Backdated import SEO description",
+    publish_status: "Published",
+    published_at: publishedAt,
+  }]);
+  const dryRun = assertStatus(await request("POST", "/admin/articles/import/dry-run", {
+    workbookBase64: workbook.toString("base64"),
+  }), 200);
+  assert.equal(dryRun.created, 1);
+  assert.equal(dryRun.issues.length, 0);
+  assert.match(dryRun.plannedChanges.join("\n"), /publish dated 2024-03-18T01:00:00.000Z/);
+  assertStatus(await request("POST", "/admin/articles/import/commit", {
+    workbookBase64: workbook.toString("base64"),
+    token: dryRun.token,
+  }), 200);
+
+  const listed = assertStatus(await request("GET", "/admin/articles"), 200);
+  const imported = listed.find((item) => item.slug === slug);
+  assert.ok(imported);
+  createdArticleIds.push(imported.id);
+  assert.equal(imported.publishStatus, "Published");
+  assert.equal(imported.publishedAt, publishedAt);
+  const publicImported = assertStatus(await request("GET", `/articles/slug/${slug}`), 200);
+  assert.equal(publicImported.publishedAt, publishedAt);
+
+  const futureImport = assertStatus(await request("POST", "/admin/articles/import/dry-run", {
+    workbookBase64: articleWorkbook([{
+      title: `Future dated ${testRunId}`,
+      slug: `future-dated-${testRunId}`,
+      excerpt: "Future excerpt",
+      body: "<p>Future body copy.</p>",
+      seo_title: `Future dated ${testRunId} | IH Seeds`,
+      seo_description: "Future dated SEO description",
+      publish_status: "Published",
+      published_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+    }]).toString("base64"),
+  }), 200);
+  assert.equal(futureImport.created, 0);
+  assert.equal(futureImport.issues.some((issue) => issue.column === "published_at"), true);
+
+  const futurePatch = await request("PATCH", `/admin/articles/${imported.id}`, {
+    publishedAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+  });
+  assert.equal(futurePatch.response.status, 400);
+
+  const revisedDate = "2023-11-02T08:30:00.000Z";
+  const patched = assertStatus(await request("PATCH", `/admin/articles/${imported.id}`, {
+    publishedAt: revisedDate,
+  }), 200);
+  assert.equal(patched.publishedAt, revisedDate);
+  assert.equal((await request("GET", `/articles/slug/${slug}`)).data.publishedAt, revisedDate);
+
+  const draft = assertStatus(await request("POST", "/admin/articles", {
+    title: `Backdated publish ${testRunId}`,
+    slug: `backdated-publish-${testRunId}`,
+    excerpt: "Backdated publish excerpt",
+    body: "<p>Backdated publish body.</p>",
+    seoTitle: `Backdated publish ${testRunId} | IH Seeds`,
+    seoDescription: "Backdated publish SEO description",
+  }), 201);
+  createdArticleIds.push(draft.id);
+  const publishPast = "2022-06-15T00:00:00.000Z";
+  const published = assertStatus(await request("POST", `/admin/articles/${draft.id}/publish`, {
+    publishedAt: publishPast,
+  }), 200);
+  assert.equal(published.publishStatus, "Published");
+  assert.equal(published.publishedAt, publishPast);
+  const futurePublish = await request("POST", `/admin/articles/${draft.id}/publish`, {
+    publishedAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+  });
+  assert.equal(futurePublish.response.status, 400);
+});
+
+test("scheduled blog articles stay private until the publish time", async () => {
+  const slug = `scheduled-article-${testRunId}`;
+  const title = `Scheduled article ${testRunId}`;
+  const created = assertStatus(await request("POST", "/admin/articles", {
+    title,
+    slug,
+    excerpt: "Scheduled excerpt",
+    body: "<p>Scheduled body copy.</p>",
+    seoTitle: `${title} | IH Seeds`,
+    seoDescription: "Scheduled SEO description",
+  }), 201);
+  createdArticleIds.push(created.id);
+
+  const past = await request("POST", `/admin/articles/${created.id}/schedule`, {
+    scheduledPublishAt: new Date(Date.now() - 60_000).toISOString(),
+  });
+  assert.equal(past.response.status, 400);
+
+  const future = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+  const scheduled = assertStatus(await request("POST", `/admin/articles/${created.id}/schedule`, {
+    scheduledPublishAt: future,
+  }), 200);
+  assert.equal(scheduled.publishStatus, "Scheduled");
+  assert.equal((await request("GET", "/articles")).data.some((item) => item.slug === slug), false);
+  assert.equal((await request("GET", `/articles/slug/${slug}`)).response.status, 404);
+
+  sql(`UPDATE ih_articles SET scheduled_publish_at = now() - interval '1 minute' WHERE id = ${created.id}`);
+  const listed = assertStatus(await request("GET", "/articles"), 200);
+  assert.equal(listed.some((item) => item.slug === slug), true);
+  const publicArticle = assertStatus(await request("GET", `/articles/slug/${slug}`), 200);
+  assert.equal(publicArticle.title, title);
+  const live = assertStatus(await request("GET", `/admin/articles/${created.id}`), 200);
+  assert.equal(live.publishStatus, "Published");
+  assert.equal(live.scheduledPublishAt, null);
+});
+
 

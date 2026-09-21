@@ -262,7 +262,7 @@ export function ProductPageEditor(props: ProductPageEditorProps) {
               {techSheet && <a className="button button-primary" href={techSheet} target="_blank" rel="noreferrer">Download tech sheet</a>}
             </div>
           </div>
-          <HeroUpload photos={details.photos} updatePhoto={props.updatePhoto} readOnly={readOnly} />
+          <HeroUpload photos={details.photos} updatePhoto={props.updatePhoto} readOnly={readOnly} ownerName={form.name} />
         </section>
 
         <section>
@@ -569,7 +569,7 @@ function GrowingNote({ summary, value, onChange }: { summary: string; value: str
   );
 }
 
-function HeroUpload({ photos, updatePhoto, readOnly }: { photos: ProductPhoto[]; updatePhoto: ProductPageEditorProps["updatePhoto"]; readOnly: boolean }) {
+function HeroUpload({ photos, updatePhoto, readOnly, ownerName }: { photos: ProductPhoto[]; updatePhoto: ProductPageEditorProps["updatePhoto"]; readOnly: boolean; ownerName: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -586,6 +586,7 @@ function HeroUpload({ photos, updatePhoto, readOnly }: { photos: ProductPhoto[];
       objectPath: undefined,
       width: undefined,
       height: undefined,
+      alt: photos[0]?.alt || ownerName.trim() || undefined,
     });
   };
   return (
@@ -602,7 +603,7 @@ function HeroUpload({ photos, updatePhoto, readOnly }: { photos: ProductPhoto[];
           setBusy(true);
           setError("");
           try {
-            const uploaded = await uploadMediaAsset(file);
+            const uploaded = await uploadMediaAsset(file, { ownerName, role: "hero" });
             updatePhoto(0, { ...uploaded, role: "hero" });
             setUrl(uploaded.src);
           } catch (caught) {
@@ -618,6 +619,15 @@ function HeroUpload({ photos, updatePhoto, readOnly }: { photos: ProductPhoto[];
       <label className="ppe-hero-url">
         <span>or image URL</span>
         <input type="url" value={url} placeholder="https://" onChange={(event) => setUrl(event.target.value)} onBlur={applyUrl} />
+      </label>
+      <label className="ppe-hero-url">
+        <span>Alt text</span>
+        <input
+          value={photos[0]?.alt || ""}
+          placeholder={ownerName.trim() || "Describe the photo"}
+          aria-label="Hero image alt text"
+          onChange={(event) => updatePhoto(0, { alt: event.target.value })}
+        />
       </label>
       {error && <span className="ppe-hero-upload-error">{error}</span>}
     </div>
@@ -753,8 +763,8 @@ function BelowCards(props: ProductPageEditorProps) {
             <textarea aria-invalid={Boolean(props.issueFor("details.seoDescription"))} value={details.seoDescription} onChange={(event) => props.setDetail("seoDescription", props.forSearchMetadataInput(event.target.value))} onBlur={(event) => props.setDetail("seoDescription", props.forSearchMetadata(event.target.value))} rows={4} />
             {props.issueFor("details.seoDescription") && <span className="admin-inline-field-error">{props.issueFor("details.seoDescription")!.message}</span>}
           </label>
-          <label className="wide"><FieldLabel hint="Optional. Uses the SEO title when left blank.">Social sharing title</FieldLabel><input value={details.socialTitle} onChange={(event) => props.setDetail("socialTitle", props.forSearchMetadataInput(event.target.value))} onBlur={(event) => props.setDetail("socialTitle", props.forSearchMetadata(event.target.value))} /></label>
-          <label className="wide"><FieldLabel hint="Optional. Uses the SEO description when left blank.">Social sharing description</FieldLabel><textarea value={details.socialDescription} onChange={(event) => props.setDetail("socialDescription", props.forSearchMetadataInput(event.target.value))} onBlur={(event) => props.setDetail("socialDescription", props.forSearchMetadata(event.target.value))} rows={4} /></label>
+          <label className="wide"><FieldLabel hint="Optional. Uses the SEO title when left blank.">Social sharing title</FieldLabel><input value={details.socialTitle} placeholder={details.seoTitle} onChange={(event) => props.setDetail("socialTitle", props.forSearchMetadataInput(event.target.value))} onBlur={(event) => props.setDetail("socialTitle", props.forSearchMetadata(event.target.value))} /></label>
+          <label className="wide"><FieldLabel hint="Optional. Uses the SEO description when left blank.">Social sharing description</FieldLabel><textarea value={details.socialDescription} placeholder={details.seoDescription} onChange={(event) => props.setDetail("socialDescription", props.forSearchMetadataInput(event.target.value))} onBlur={(event) => props.setDetail("socialDescription", props.forSearchMetadata(event.target.value))} rows={4} /></label>
           <label className="wide"><FieldLabel hint="Choose a product photo or enter another image URL below.">Social sharing image</FieldLabel>
             <select value={details.photos.some((photo: ProductPhoto) => photo.src && photo.src === details.socialImage) ? details.socialImage : ""} onChange={(event) => props.setDetail("socialImage", event.target.value)}>
               <option value="">Use the product hero image</option>
@@ -869,8 +879,18 @@ function BelowCards(props: ProductPageEditorProps) {
           <div className="admin-photo-list">
             {details.photos.map((photo: ProductPhoto, index: number) => (
               <div className="admin-photo-row" key={photo.slot || index}>
-                <div className="admin-photo-thumb">{photoDisplaySrc(photo) ? <img src={photoDisplaySrc(photo)} alt={photo.file} /> : <Icon name="package" size={24} />}</div>
-                <span><small>{photo.slot}</small><strong>{photo.file || "No file selected"}</strong></span>
+                <div className="admin-photo-thumb">{photoDisplaySrc(photo) ? <img src={photoDisplaySrc(photo)} alt={photo.alt || photo.file} /> : <Icon name="package" size={24} />}</div>
+                <span>
+                  <small>{photo.slot}</small>
+                  <strong>{photo.file || "No file selected"}</strong>
+                  <input
+                    className="admin-photo-alt"
+                    value={photo.alt || ""}
+                    placeholder="Alt text"
+                    aria-label={`${photo.slot || "Photo"} alt text`}
+                    onChange={(event) => props.updatePhoto(index, { alt: event.target.value })}
+                  />
+                </span>
                 {index > 0 && (
                   <>
                     <input
@@ -896,7 +916,7 @@ function BelowCards(props: ProductPageEditorProps) {
                           const file = event.target.files?.[0];
                           event.target.value = "";
                           if (!file) return;
-                          props.updatePhoto(index, await uploadMediaAsset(file));
+                          props.updatePhoto(index, await uploadMediaAsset(file, { ownerName: form.name, role: photo.role }));
                         }}
                       />
                     </label>

@@ -7,7 +7,7 @@ import {
   productDraftsTable, productsTable, redirectsTable, resolveListingState, saleLinesTable,
 } from "@workspace/db";
 import { clearProductMediaReferences, syncProductMediaReferences } from "./media-usage.ts";
-import { normalizePublicPath, productPublicPath } from "./product-path.ts";
+import { legacyWebsitePath, productPublicPath, requiredLegacyRedirects } from "./product-path.ts";
 
 export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "7 Website SEO", "10 Product FAQs"] as const;
 const PRODUCT_FAQ_SHEET = "10 Product FAQs";
@@ -114,19 +114,6 @@ function pipe(value: unknown) { return cell(value).split("|").map((v) => v.trim(
 function values(sheet: XLSX.WorkSheet) { return XLSX.utils.sheet_to_json<Row>(sheet, { defval: "", raw: false }); }
 function isReview(value: unknown) { return /^stated\s*[–-]\s*review$/i.test(cell(value)); }
 function normal(value: string) { return value.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, ""); }
-function legacyWebsitePath(value: unknown) {
-  const raw = cell(value);
-  if (!raw) return null;
-  try {
-    const url = new URL(raw);
-    const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
-    if (!["http:", "https:"].includes(url.protocol) || hostname !== "irwinhunter.com.au" ||
-      url.username || url.password || url.search || url.hash) return null;
-    return normalizePublicPath(url.pathname);
-  } catch {
-    return null;
-  }
-}
 function taxonomySlug(value: string) {
   return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
     .replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "catalogue";
@@ -623,11 +610,17 @@ export async function commitWorkbook(content: Buffer, token: string) {
     await tx.delete(redirectsTable);
     for (const row of rows["1 Products"]) {
       const product = productBySlug.get(cell(row.slug));
-      const fromPath = legacyWebsitePath(row.website_url);
+      const fromPath = legacyWebsitePath(cell(row.website_url));
       if (!product || !fromPath) continue;
       const toPath = productPublicPath(product.slug, product.category, categories);
       if (fromPath === toPath) throw new Error(`SELF_REDIRECT:${product.slug}`);
       await tx.insert(redirectsTable).values({ fromPath, toPath });
+    }
+    for (const alias of requiredLegacyRedirects([...productBySlug.values()], categories)) {
+      await tx.insert(redirectsTable).values(alias).onConflictDoUpdate({
+        target: redirectsTable.fromPath,
+        set: { toPath: alias.toPath, updatedAt: new Date() },
+      });
     }
     // The sale-line sheet is authoritative for every imported product.
     for (const slug of importedSlugs) {

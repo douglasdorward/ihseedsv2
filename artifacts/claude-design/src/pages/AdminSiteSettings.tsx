@@ -14,11 +14,25 @@ import "../homepage-editor.css";
 
 const sections = [
   {
+    href: "/admin/site-settings/company",
+    icon: "phone",
+    title: "Company details",
+    body: "Edit the public office phone, email, address, hours and legal names used on Contact, the footer and Organization markup.",
+    action: "Edit company details",
+  },
+  {
     href: "/admin/site-settings/home",
     icon: "image",
     title: "Home page",
-    body: "Edit the public homepage hero photograph and copy, then choose the four Best Sellers shown on the home page.",
+    body: "Edit the public homepage hero photos, optional slideshow and copy, the About Us blurb, then choose the four Best Sellers shown on the home page.",
     action: "Edit home page",
+  },
+  {
+    href: "/admin/site-settings/about",
+    icon: "users",
+    title: "About us",
+    body: "Preview the public About us page and edit the hero, story and values copy in place.",
+    action: "Edit About us",
   },
   {
     href: "/admin/site-settings/categories",

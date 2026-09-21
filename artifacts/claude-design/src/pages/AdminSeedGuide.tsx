@@ -134,7 +134,7 @@ export default function AdminSeedGuide() {
     setUploadingImage(true);
     setError("");
     try {
-      const uploaded = await uploadMediaAsset(file);
+      const uploaded = await uploadMediaAsset(file, { ownerName: form?.pageTitle || "Pasture Seed Guide" });
       setField("cardImageSrc", uploaded.src);
       setField("cardImageAssetId", uploaded.assetId);
     } catch (err: unknown) {

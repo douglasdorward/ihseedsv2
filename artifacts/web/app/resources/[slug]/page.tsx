@@ -8,7 +8,7 @@ import { getArticleBySlug, getCategories, getProducts } from "../../../lib/catal
 import { productPublicPath } from "../../../lib/catalogue-paths";
 import { forSearchMetadata } from "../../../lib/search-metadata";
 import { absoluteSiteUrl } from "../../../lib/site-url";
-import { hasProductPhoto, productCardImage } from "../../products/product-card-facts";
+import { hasProductPhoto, productCardImage, productImageAlt } from "../../products/product-card-facts";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -103,7 +103,7 @@ export default async function ArticlePage({ params }: Props) {
               <div className="also-popular-grid">
                 {linkedProducts.map((product) => (
                   <Link key={product.id} href={productPublicPath(product, categories)} className="also-popular-card">
-                    <div className="also-popular-image" role="img" aria-label={product.name} style={{ backgroundImage: `url(${productCardImage(product)})` }}>
+                    <div className="also-popular-image" role="img" aria-label={productImageAlt(product)} style={{ backgroundImage: `url(${productCardImage(product)})` }}>
                       {!hasProductPhoto(product) && <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" />}
                       <StatusPill status={product.status} />
                       <ProductNewStamp listingState={product.listingState} />

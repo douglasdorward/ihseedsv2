@@ -1,21 +1,34 @@
 import { Router, type IRouter, type Response } from "express";
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import {
   ARTICLE_RELATED_PRODUCT_LIMIT,
   articlesTable,
   db,
   insertArticleSchema,
-  isActiveListing,
-  productsTable,
   updateArticleSchema,
   withArticleSearchMetadata,
   type Article,
 } from "@workspace/db";
-import { bodyHasText, normalizeArticleBody } from "../lib/article-body";
+import { normalizeArticleBody } from "../lib/article-body";
+import {
+  ARTICLE_AGENT_PROMPT,
+  articleImportTemplate,
+  articlesToWorkbook,
+  commitArticleImport,
+  dryRunArticleImport,
+} from "../lib/article-import";
+import {
+  findRelatedProductIssues,
+  isFuturePublishDate,
+  listWorkbookLookups,
+  parseScheduledPublishAt,
+  publishDueArticles,
+  publishValidationIssues,
+} from "../lib/article-publish";
 import { clearArticleMediaReferences, syncArticleMediaReferences } from "../lib/media-usage";
+import { absolutePublicUrl } from "../lib/public-site-url";
 
 const router: IRouter = Router();
-const publicSiteBaseUrl = (process.env.PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "");
 
 function validId(rawId: string) {
   const id = Number(rawId);
@@ -37,8 +50,7 @@ function escapeXml(value: string) {
 }
 
 function canonicalArticleUrl(slug: string) {
-  const path = `/resources/${encodeURIComponent(slug)}`;
-  return publicSiteBaseUrl ? `${publicSiteBaseUrl}${path}` : path;
+  return absolutePublicUrl(`/resources/${encodeURIComponent(slug)}`);
 }
 
 function toAdminArticle(article: Article) {
@@ -48,6 +60,7 @@ function toAdminArticle(article: Article) {
     relatedProductSlugs: article.relatedProductSlugs ?? [],
     heroImageAssetId: article.heroImageAssetId ?? null,
     publishedAt: article.publishedAt ? article.publishedAt.toISOString() : null,
+    scheduledPublishAt: article.scheduledPublishAt ? article.scheduledPublishAt.toISOString() : null,
     createdAt: article.createdAt.toISOString(),
     updatedAt: article.updatedAt.toISOString(),
   };
@@ -74,33 +87,6 @@ function toPublicArticle(article: Article) {
   };
 }
 
-function publishValidationIssues(article: Pick<Article, "title" | "slug" | "excerpt" | "body" | "seoTitle" | "seoDescription">) {
-  return [
-    !article.title.trim() && { field: "title", label: "Title" },
-    !article.slug.trim() && { field: "slug", label: "Slug" },
-    !article.excerpt.trim() && { field: "excerpt", label: "Excerpt" },
-    !bodyHasText(article.body) && { field: "body", label: "Article body" },
-    !article.seoTitle.trim() && { field: "seoTitle", label: "SEO title" },
-    !article.seoDescription.trim() && { field: "seoDescription", label: "SEO description" },
-  ].filter(Boolean) as Array<{ field: string; label: string }>;
-}
-
-async function findRelatedProductIssues(slugs: string[]) {
-  const unique = [...new Set(slugs.map((slug) => slug.trim()).filter(Boolean))];
-  if (!unique.length) return [] as string[];
-  const rows = await db.select({
-    slug: productsTable.slug,
-    publishStatus: productsTable.publishStatus,
-    listingState: productsTable.listingState,
-  }).from(productsTable).where(inArray(productsTable.slug, unique));
-  const eligible = new Set(
-    rows
-      .filter((product) => product.publishStatus === "Published" && isActiveListing(product))
-      .map((product) => product.slug),
-  );
-  return unique.filter((slug) => !eligible.has(slug));
-}
-
 function sendRelatedProductError(res: Response, invalid: string[]) {
   res.status(400).json({
     error: `Linked products contains invalid product references: ${invalid.join(", ")}.`,
@@ -112,7 +98,18 @@ async function persistMedia(article: Article) {
   await syncArticleMediaReferences(article);
 }
 
+function workbookFromBody(body: unknown) {
+  return typeof (body as { workbookBase64?: unknown })?.workbookBase64 === "string"
+    ? Buffer.from((body as { workbookBase64: string }).workbookBase64, "base64")
+    : null;
+}
+
+function sendWorkbook(res: Response, filename: string, file: Buffer) {
+  res.type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet").attachment(filename).send(file);
+}
+
 router.get("/articles", async (_req, res): Promise<void> => {
+  await publishDueArticles();
   const articles = await db.select().from(articlesTable)
     .where(eq(articlesTable.publishStatus, "Published"))
     .orderBy(desc(articlesTable.publishedAt), desc(articlesTable.id));
@@ -125,6 +122,7 @@ router.get("/articles/slug/:slug", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Article not found." });
     return;
   }
+  await publishDueArticles();
   const [article] = await db.select().from(articlesTable).where(eq(articlesTable.slug, slug));
   if (!article || article.publishStatus !== "Published") {
     res.status(404).json({ error: "Article not found." });
@@ -134,19 +132,26 @@ router.get("/articles/slug/:slug", async (req, res): Promise<void> => {
 });
 
 router.get("/sitemap-articles", async (_req, res): Promise<void> => {
+  await publishDueArticles();
   const articles = await db.select({
     slug: articlesTable.slug,
     robotsIndex: articlesTable.robotsIndex,
+    publishedAt: articlesTable.publishedAt,
+    updatedAt: articlesTable.updatedAt,
   }).from(articlesTable).where(eq(articlesTable.publishStatus, "Published"));
   res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${
     articles
       .filter((article) => article.robotsIndex !== false)
-      .map((article) => `<url><loc>${escapeXml(canonicalArticleUrl(article.slug))}</loc></url>`)
+      .map((article) => {
+        const lastModified = (article.updatedAt ?? article.publishedAt).toISOString();
+        return `<url><loc>${escapeXml(canonicalArticleUrl(article.slug))}</loc><lastmod>${escapeXml(lastModified)}</lastmod></url>`;
+      })
       .join("")
   }</urlset>`);
 });
 
 router.get("/admin/articles", async (_req, res): Promise<void> => {
+  await publishDueArticles();
   const articles = await db.select().from(articlesTable)
     .orderBy(desc(articlesTable.updatedAt), desc(articlesTable.id));
   res.json(articles.map(toAdminArticle));
@@ -172,6 +177,7 @@ router.post("/admin/articles", async (req, res): Promise<void> => {
       ...values,
       publishStatus: "Draft",
       publishedAt: null,
+      scheduledPublishAt: null,
       updatedAt: new Date(),
     }).returning();
     await persistMedia(article);
@@ -182,6 +188,44 @@ router.post("/admin/articles", async (req, res): Promise<void> => {
       return;
     }
     throw error;
+  }
+});
+
+router.get("/admin/articles/import/template", async (_req, res): Promise<void> => {
+  sendWorkbook(res, "blog-articles-template.xlsx", articleImportTemplate(await listWorkbookLookups()));
+});
+
+router.get("/admin/articles/import/prompt", (_req, res): void => {
+  res.type("text/plain; charset=utf-8").send(ARTICLE_AGENT_PROMPT);
+});
+
+router.get("/admin/articles/export", async (_req, res): Promise<void> => {
+  await publishDueArticles();
+  const articles = await db.select().from(articlesTable)
+    .orderBy(desc(articlesTable.updatedAt), desc(articlesTable.id));
+  sendWorkbook(res, "blog-articles.xlsx", articlesToWorkbook(articles, await listWorkbookLookups()));
+});
+
+router.post("/admin/articles/import/dry-run", async (req, res): Promise<void> => {
+  const file = workbookFromBody(req.body);
+  if (!file) {
+    res.status(400).json({ error: "workbookBase64 is required." });
+    return;
+  }
+  res.json(await dryRunArticleImport(file));
+});
+
+router.post("/admin/articles/import/commit", async (req, res): Promise<void> => {
+  const file = workbookFromBody(req.body);
+  const token = typeof req.body?.token === "string" ? req.body.token : "";
+  if (!file || !token) {
+    res.status(400).json({ error: "workbookBase64 and token are required." });
+    return;
+  }
+  try {
+    res.json(await commitArticleImport(file, token));
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Import failed" });
   }
 });
 
@@ -201,10 +245,27 @@ router.get("/admin/articles/:id", async (req, res): Promise<void> => {
 
 router.patch("/admin/articles/:id", async (req, res): Promise<void> => {
   const id = validId(req.params.id);
-  const parsed = updateArticleSchema.safeParse(req.body);
-  if (!id || !parsed.success || Object.keys(parsed.data).length === 0) {
+  const body = req.body && typeof req.body === "object" ? { ...(req.body as Record<string, unknown>) } : {};
+  const hasPublishedAt = Object.prototype.hasOwnProperty.call(body, "publishedAt");
+  const rawPublishedAt = body.publishedAt;
+  delete body.publishedAt;
+  const parsed = updateArticleSchema.safeParse(body);
+  if (!id || !parsed.success || (Object.keys(parsed.data).length === 0 && !hasPublishedAt)) {
     res.status(400).json({ error: "Please provide a valid article id and update." });
     return;
+  }
+  let publishedAt: Date | undefined;
+  if (hasPublishedAt && rawPublishedAt != null && rawPublishedAt !== "") {
+    const value = parseScheduledPublishAt(rawPublishedAt);
+    if (!value) {
+      res.status(400).json({ error: "Published date must be a valid date." });
+      return;
+    }
+    if (isFuturePublishDate(value)) {
+      res.status(400).json({ error: "Published date cannot be in the future. Schedule the article instead." });
+      return;
+    }
+    publishedAt = value;
   }
   const values = withArticleSearchMetadata({
     ...parsed.data,
@@ -220,6 +281,7 @@ router.patch("/admin/articles/:id", async (req, res): Promise<void> => {
   try {
     const [article] = await db.update(articlesTable).set({
       ...values,
+      ...(publishedAt ? { publishedAt } : {}),
       updatedAt: new Date(),
     }).where(eq(articlesTable.id, id)).returning();
     if (!article) {
@@ -276,9 +338,77 @@ router.post("/admin/articles/:id/publish", async (req, res): Promise<void> => {
     sendRelatedProductError(res, invalid);
     return;
   }
+  const requestedPublishedAt = parseScheduledPublishAt((req.body as { publishedAt?: unknown } | undefined)?.publishedAt);
+  if ((req.body as { publishedAt?: unknown } | undefined)?.publishedAt && !requestedPublishedAt) {
+    res.status(400).json({
+      error: "Published date must be a valid date.",
+      issues: [{ field: "publishedAt", label: "Published on" }],
+    });
+    return;
+  }
+  if (requestedPublishedAt && isFuturePublishDate(requestedPublishedAt)) {
+    res.status(400).json({
+      error: "Published date cannot be in the future. Schedule the article instead.",
+      issues: [{ field: "publishedAt", label: "Published on" }],
+    });
+    return;
+  }
   const [article] = await db.update(articlesTable).set({
     publishStatus: "Published",
-    publishedAt: current.publishedAt ?? new Date(),
+    publishedAt: requestedPublishedAt ?? current.publishedAt ?? new Date(),
+    scheduledPublishAt: null,
+    updatedAt: new Date(),
+  }).where(eq(articlesTable.id, id)).returning();
+  if (!article) {
+    res.status(404).json({ error: "Article not found." });
+    return;
+  }
+  await persistMedia(article);
+  res.json(toAdminArticle(article));
+});
+
+router.post("/admin/articles/:id/schedule", async (req, res): Promise<void> => {
+  const id = validId(req.params.id);
+  if (!id) {
+    res.status(400).json({ error: "Please provide a valid article id." });
+    return;
+  }
+  const scheduledPublishAt = parseScheduledPublishAt((req.body as { scheduledPublishAt?: unknown })?.scheduledPublishAt);
+  if (!scheduledPublishAt || scheduledPublishAt.getTime() <= Date.now()) {
+    res.status(400).json({
+      error: "Choose a future date and time.",
+      issues: [{ field: "scheduledPublishAt", label: "Scheduled publish time" }],
+    });
+    return;
+  }
+  const [current] = await db.select().from(articlesTable).where(eq(articlesTable.id, id));
+  if (!current) {
+    res.status(404).json({ error: "Article not found." });
+    return;
+  }
+  if (current.publishStatus === "Published") {
+    res.status(400).json({
+      error: "Unpublish this article before scheduling it.",
+      issues: [{ field: "publishStatus", label: "Status" }],
+    });
+    return;
+  }
+  const issues = publishValidationIssues(current);
+  if (issues.length) {
+    res.status(400).json({
+      error: `Complete these fields before scheduling: ${issues.map((issue) => issue.label).join(", ")}.`,
+      issues,
+    });
+    return;
+  }
+  const invalid = await findRelatedProductIssues(current.relatedProductSlugs ?? []);
+  if (invalid.length) {
+    sendRelatedProductError(res, invalid);
+    return;
+  }
+  const [article] = await db.update(articlesTable).set({
+    publishStatus: "Scheduled",
+    scheduledPublishAt,
     updatedAt: new Date(),
   }).where(eq(articlesTable.id, id)).returning();
   if (!article) {
@@ -297,6 +427,7 @@ router.post("/admin/articles/:id/unpublish", async (req, res): Promise<void> => 
   }
   const [article] = await db.update(articlesTable).set({
     publishStatus: "Draft",
+    scheduledPublishAt: null,
     updatedAt: new Date(),
   }).where(eq(articlesTable.id, id)).returning();
   if (!article) {

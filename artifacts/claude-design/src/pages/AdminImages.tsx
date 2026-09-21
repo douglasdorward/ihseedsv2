@@ -5,6 +5,7 @@ import { Icon } from "../components/ui";
 import { ConfirmDialog, PageHeader } from "./Admin";
 import { downloadImageListCsv, productListingState } from "../image-list-csv";
 import { matchUploadToProduct } from "../match-upload-product";
+import { imageUsageLine, type ImageUsageSummary } from "../image-usage-line";
 import { photoDisplaySrc, uploadMediaAsset, type UploadedMediaPhoto, type UploadMediaProgress } from "../upload-image";
 import { runUploadBatch, successfulUploadValues } from "../upload-batch";
 import { uploadCancelCopy } from "../upload-cancel-copy";
@@ -19,7 +20,7 @@ type MediaAsset = {
   defaultAlt: string;
   defaultCaption: string;
   previewURL: string | null;
-  usageSummary: { total: number; draft: number; published: number };
+  usageSummary: ImageUsageSummary;
   createdAt: string;
 };
 
@@ -60,16 +61,6 @@ function assignedProductNames(products: { name?: string; details?: { photos?: Ar
     if (usesAsset && !names.includes(name)) names.push(name);
   }
   return names;
-}
-
-function imageUsageLine(
-  asset: Pick<MediaAsset, "width" | "height" | "usageSummary">,
-  productNames: string[],
-) {
-  const size = asset.width && asset.height ? `${asset.width}×${asset.height}` : "WebP";
-  if (!asset.usageSummary.total) return `${size} · unused`;
-  const assigned = productNames.length ? ` · ${productNames.join(", ")}` : "";
-  return `${size}${assigned} · used ${asset.usageSummary.total}`;
 }
 
 async function deleteUnusedAsset(assetId: string) {
@@ -355,10 +346,20 @@ export default function AdminImages() {
                 <small>
                   {imageUsageLine(asset, assignedProductNames(products, asset.id))}
                 </small>
+                <p className={asset.defaultAlt.trim() ? "admin-image-alt" : "admin-image-alt is-missing"}>
+                  {asset.defaultAlt.trim() ? `Alt: ${asset.defaultAlt}` : "No alt text"}
+                </p>
+                {asset.defaultCaption.trim() ? <p className="admin-image-caption">Caption: {asset.defaultCaption}</p> : null}
                 {editingId === asset.id ? (
                   <div className="admin-image-meta">
-                    <input value={alt} onChange={(event) => setAlt(event.target.value)} placeholder="Default alt text" />
-                    <input value={caption} onChange={(event) => setCaption(event.target.value)} placeholder="Caption" />
+                    <label>
+                      Alt text
+                      <input value={alt} onChange={(event) => setAlt(event.target.value)} placeholder="Default alt text" />
+                    </label>
+                    <label>
+                      Caption
+                      <input value={caption} onChange={(event) => setCaption(event.target.value)} placeholder="Caption" />
+                    </label>
                     <div className="admin-image-actions">
                       <button className="admin-button small" type="button" onClick={() => void saveMeta(asset)} disabled={busy}>Save</button>
                       <button className="admin-text-button" type="button" onClick={() => setEditingId(null)}>Cancel</button>

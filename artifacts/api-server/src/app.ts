@@ -46,7 +46,8 @@ app.use((req, res, next) => {
   }
   const large = path.startsWith("/api/admin/ai")
     || path.startsWith("/api/admin/tech-sheets")
-    || path.startsWith("/api/admin/site-settings");
+    || path.startsWith("/api/admin/site-settings")
+    || path.startsWith("/api/admin/articles/import");
   express.json({ limit: large ? "25mb" : "10mb" })(req, res, next);
 });
 app.use((req, res, next) => {
@@ -84,10 +85,16 @@ app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 const adminDistDir = fileURLToPath(
   new URL("../../claude-design/dist/public", import.meta.url),
 );
-const sendAdminIndex = (_req: express.Request, res: express.Response) =>
+const sendAdminIndex = (_req: express.Request, res: express.Response) => {
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
   res.sendFile("index.html", { root: adminDistDir });
+};
 app.use("/admin/sign-up", (_req, res) => {
   res.redirect(302, "/admin/sign-in");
+});
+app.use("/admin", (_req, res, next) => {
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  next();
 });
 app.get("/admin", sendAdminIndex);
 app.use(

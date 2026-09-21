@@ -3,6 +3,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Icon } from "../../components/Icon";
 import type { CatalogueResellerBrand } from "../../lib/catalogue";
+import { companyMapsUrl, companyTelHref, type CompanyContact } from "../../lib/company";
 import { publicMediaSrc } from "../../lib/site-settings";
 
 const EMPTY_DETAILS = { location: "", soil: "", rainfall: "", landSize: "" };
@@ -18,7 +19,7 @@ function directionsUrl(outlet: { address: string; suburb: string; postcode: stri
   return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : "";
 }
 
-export function ContactPage({ resellers }: { resellers: CatalogueResellerBrand[] }) {
+export function ContactPage({ resellers, company }: { resellers: CatalogueResellerBrand[]; company: CompanyContact }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitState, setSubmitState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [details, setDetails] = useState(EMPTY_DETAILS);
@@ -69,10 +70,24 @@ export function ContactPage({ resellers }: { resellers: CatalogueResellerBrand[]
           <div className="contact-info-column">
             <div className="contact-intro"><div className="eyebrow">Contact</div><h1>Get in <span>Touch</span></h1><p>Questions on a mix, a sowing rate, or which reseller to order through — call the office or send an enquiry and we will get back to you.</p></div>
             <div className="contact-info-cards">
-              <a className="contact-info-card" href="tel:+61891234567"><Icon name="phone" size={24} /><span><small>Call the office</small><strong>(08) 9123 4567</strong></span></a>
-              <a className="contact-info-card" href="mailto:info@irwinhunter.com.au"><Icon name="mail" size={24} /><span><small>Email</small><strong>info@irwinhunter.com.au</strong></span></a>
-              <div className="contact-info-card"><Icon name="clock" size={24} /><span><small>Office hours</small><strong>Monday to Friday, 8am–5pm AWST</strong></span></div>
-              <div className="contact-info-card"><Icon name="map-pin" size={24} /><span><small>Address</small><strong>14 Robinson Rd, Picton East WA 6229</strong></span></div>
+              {company.phone.trim() && companyTelHref(company.phone) ? (
+                <a className="contact-info-card" href={companyTelHref(company.phone)} data-testid="link-office-phone">
+                  <Icon name="phone" size={24} /><span><small>Call the office</small><strong>{company.phone}</strong></span>
+                </a>
+              ) : null}
+              {company.email.trim() ? (
+                <a className="contact-info-card" href={`mailto:${company.email}`}><Icon name="mail" size={24} /><span><small>Email</small><strong>{company.email}</strong></span></a>
+              ) : null}
+              {company.officeHours.trim() ? (
+                <div className="contact-info-card"><Icon name="clock" size={24} /><span><small>Office hours</small><strong>{company.officeHours}</strong></span></div>
+              ) : null}
+              {company.address.trim() ? (
+                companyMapsUrl(company.address) ? (
+                  <a className="contact-info-card" href={companyMapsUrl(company.address)} target="_blank" rel="noreferrer"><Icon name="map-pin" size={24} /><span><small>Address</small><strong>{company.address}</strong></span></a>
+                ) : (
+                  <div className="contact-info-card"><Icon name="map-pin" size={24} /><span><small>Address</small><strong>{company.address}</strong></span></div>
+                )
+              ) : null}
             </div>
           </div>
 
@@ -121,7 +136,13 @@ export function ContactPage({ resellers }: { resellers: CatalogueResellerBrand[]
               return (
                 <div className="reseller-row" key={`${brand.id}-${outlet.id}`}>
                   <div className="reseller-identity">
-                    {logo ? <img className="reseller-logo" src={logo} alt="" /> : null}
+                    {logo ? (
+                      <img className="reseller-logo" src={logo} alt="" />
+                    ) : brand.kind === "independent" ? (
+                      <span className="reseller-logo reseller-logo-shop" aria-hidden="true">
+                        <Icon name="store" size={24} />
+                      </span>
+                    ) : null}
                     <div>
                       <strong>{brand.name} {outlet.name}</strong>
                       <span>{address || "Call the office for this store’s address."}</span>

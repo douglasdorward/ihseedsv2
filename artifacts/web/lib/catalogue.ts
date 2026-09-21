@@ -73,7 +73,7 @@ export type CatalogueProduct = {
     faqs?: Array<{ question?: string; answer?: string }>;
     relatedProducts?: string[];
     formulationYear?: string;
-    photos?: Array<{ src?: string; file?: string; slot?: string; rating?: string }>;
+    photos?: Array<{ src?: string; file?: string; slot?: string; rating?: string; alt?: string }>;
     h1?: string;
     seoTitle?: string;
     seoDescription?: string;
@@ -128,12 +128,25 @@ export type CatalogueArticle = {
   updatedAt: string;
 };
 
+export type SitemapProductEntry = {
+  slug: string;
+  lastModified: string;
+};
+
+export type PublicSiteHeroImage = {
+  src: string;
+  assetId: string | null;
+};
+
 export type PublicSiteHomepage = {
   heroImageSrc: string;
   heroImageAssetId: string | null;
+  heroImages: PublicSiteHeroImage[];
+  heroSlideshow: boolean;
   heroEyebrow: string;
   heroHeading: string;
   heroBody: string;
+  aboutBody: string;
   bestSellerSlugs: string[];
 };
 
@@ -150,9 +163,40 @@ export type PublicSiteSeedGuide = {
   pageButtonLabel: string;
 };
 
+export type PublicSiteAboutValue = {
+  title: string;
+  body: string;
+};
+
+export type PublicSiteAbout = {
+  heroEyebrow: string;
+  heroHeading: string;
+  heroHeadingEmphasis: string;
+  heroIntro: string;
+  heroImageSrc: string;
+  heroImageAssetId: string | null;
+  storyLead: string;
+  storyParagraphs: string[];
+  valuesHeading: string;
+  valuesHeadingEmphasis: string;
+  values: PublicSiteAboutValue[];
+};
+
+export type PublicSiteCompany = {
+  legalName: string;
+  tradingName: string;
+  phone: string;
+  email: string;
+  address: string;
+  officeHours: string;
+  abn: string;
+};
+
 export type PublicSiteSettings = {
   homepage: PublicSiteHomepage;
   seedGuide: PublicSiteSeedGuide;
+  about: PublicSiteAbout;
+  company: PublicSiteCompany;
   updatedAt: string;
 };
 
@@ -248,6 +292,10 @@ export function getCategories() {
 
 export function getArticles() {
   return catalogueFetch<CatalogueArticle[]>("/api/articles");
+}
+
+export function getSitemapProductEntries() {
+  return catalogueFetch<SitemapProductEntry[]>("/api/sitemap-product-entries");
 }
 
 export async function getArticleBySlug(slug: string) {

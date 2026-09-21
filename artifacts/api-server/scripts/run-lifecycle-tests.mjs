@@ -44,6 +44,7 @@ try {
   run(process.execPath, ["lib/db/seed.mjs"], isolatedEnv);
   run(process.execPath, ["--test", "artifacts/claude-design/test/persist-latest-product.test.mjs"], isolatedEnv);
   run(process.execPath, ["--test", "artifacts/claude-design/test/site-settings.test.mjs"], isolatedEnv);
+  run(process.execPath, ["--test", "lib/db/test/site-settings.test.ts"], isolatedEnv);
   run(process.execPath, ["artifacts/api-server/test/products-lifecycle.test.mjs"], isolatedEnv);
   run(process.execPath, ["--test", "artifacts/api-server/test/site-settings.test.mjs"], isolatedEnv);
   run(process.execPath, ["--test", "artifacts/api-server/test/resellers.test.mjs"], isolatedEnv);

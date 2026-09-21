@@ -857,7 +857,7 @@ fields:
     visibility: customer
     customerSurfaces: [how-its-sold, product-stock-pill-when-no-override]
     workbook: 4 Sale lines.availability
-    fillGuidance: Forced Unavailable when listingState is Legacy. Blank is TBA in the editor.
+    fillGuidance: Forced Unavailable when listingState is Legacy. Blank is TBA in the editor. The product-table bulk stock action writes this on every live line without a full publish.
 
   - id: saleLines.priceDisplay
     tab: 4
@@ -887,7 +887,7 @@ fields:
     visibility: adminOnly
     customerSurfaces: [derived-product-status]
     workbook: product availability fields
-    fillGuidance: Leave derived unless the product-level pill must differ from the lines. Legacy ignores it.
+    fillGuidance: Leave derived unless the product-level pill must differ from the lines. Legacy ignores it. Bulk stock clears this when sale lines exist and sets it when they do not.
 
   - id: pbrProtected
     tab: 4
@@ -1032,7 +1032,7 @@ fields:
     visibility: customer
     customerSurfaces: [product-hero, related-cards, also-popular, social-fallback]
     workbook: 1 Products.photo_1
-    fillGuidance: First non-blank src is the hero. Upload JPEG/PNG/WebP to the Images library (converted to WebP) or paste an external URL. AI never fills photos. Category grids currently use placeholders.
+    fillGuidance: First non-blank src is the hero. Upload JPEG/PNG/WebP to the Images library (converted to WebP) or paste an external URL. Alt is filled from the product name on upload or attach (filename only while unassigned). AI never fills photos. Category grids currently use placeholders.
 
   - id: techSheet
     tab: 5
@@ -1225,6 +1225,6 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [robots-meta]
+    customerSurfaces: [robots-meta, sitemap]
     workbook: 7 Website SEO.robots_index
-    fillGuidance: Off publishes noindex. Sitemap is still Published + Active or New.
+    fillGuidance: Off publishes noindex. The public sitemap omits noindexed products.
