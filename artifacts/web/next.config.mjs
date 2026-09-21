@@ -22,8 +22,6 @@ const wordpressRedirects = [
   ["/about-us", "/about"],
   ["/products-and-services", "/products"],
   ["/rainfall-map", "/guide"],
-  ["/terms-and-conditions", "/contact"],
-  ["/privacy", "/contact"],
 ].flatMap(([source, destination]) => [
   { source, destination, permanent: true },
   { source: `${source}/`, destination, permanent: true },

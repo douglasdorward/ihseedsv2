@@ -6,6 +6,7 @@ import { ResourcesContent } from "./ResourcesContent";
 export const metadata: Metadata = {
   title: "Pasture Seed Resources and Tech Sheets | IH Seeds",
   description: "Read IH Seeds pasture advice and browse downloadable technical information for current seed varieties and mixes.",
+  alternates: { canonical: "/resources" },
 };
 
 export default async function Resources() {

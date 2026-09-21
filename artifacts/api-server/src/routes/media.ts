@@ -18,6 +18,7 @@ import {
   putStoredFile,
   removeStoredFile,
 } from "../lib/app-storage";
+import { imageAltFromContext, resolveImageAlt, shouldReplaceGeneratedAlt } from "../lib/image-alt";
 import { convertToWebp } from "../lib/media-image";
 import { backfillMediaUsage, insertHeroPhoto, syncProductMediaReferences } from "../lib/media-usage";
 
@@ -115,6 +116,33 @@ function toPublicReference(ref: MediaReference) {
   };
 }
 
+function ownerContextFromBody(body: unknown) {
+  const record = body && typeof body === "object" ? body as { ownerName?: unknown; role?: unknown } : {};
+  return {
+    ownerName: typeof record.ownerName === "string" ? record.ownerName : "",
+    role: typeof record.role === "string" ? record.role : "",
+  };
+}
+
+async function fillBlankDefaultAlt(
+  asset: MediaAsset,
+  context: { ownerName?: string; filename?: string; role?: string } = {},
+): Promise<MediaAsset> {
+  if (asset.defaultAlt.trim()) return asset;
+  const defaultAlt = resolveImageAlt({
+    currentAlt: asset.defaultAlt,
+    ownerName: context.ownerName,
+    filename: context.filename || asset.originalFilename,
+    role: context.role,
+  });
+  if (!defaultAlt) return asset;
+  const [updated] = await db.update(mediaAssetsTable).set({
+    defaultAlt,
+    updatedAt: new Date(),
+  }).where(eq(mediaAssetsTable.id, asset.id)).returning();
+  return updated ?? asset;
+}
+
 function usageBucket(usage: UsageSummary) {
   if (usage.total === 0) return "unassigned";
   if (usage.published > 0 && usage.draft > 0) return "mixed";
@@ -162,11 +190,12 @@ router.post("/admin/media/upload-request", async (req, res): Promise<void> => {
     const [existing] = await db.select().from(mediaAssetsTable)
       .where(and(eq(mediaAssetsTable.status, "Ready"), eq(mediaAssetsTable.sha256, digest)));
     if (existing) {
-      const usage = (await usageByAssetId([existing.id])).get(existing.id) ?? emptyUsage();
+      const filled = await fillBlankDefaultAlt(existing, { filename: originalFilename });
+      const usage = (await usageByAssetId([filled.id])).get(filled.id) ?? emptyUsage();
       res.status(200).json({
         duplicate: true,
-        asset: toPublicAsset(existing, usage),
-        assetId: existing.id,
+        asset: toPublicAsset(filled, usage),
+        assetId: filled.id,
       });
       return;
     }
@@ -261,13 +290,26 @@ router.post("/admin/media/:id/complete", async (req, res): Promise<void> => {
     if (duplicate) {
       await removeStoredFile(stagingPath);
       await db.delete(mediaAssetsTable).where(eq(mediaAssetsTable.id, id));
-      const usage = (await usageByAssetId([duplicate.id])).get(duplicate.id) ?? emptyUsage();
-      res.status(409).json({ error: "Exact duplicate; reuse existing asset", asset: toPublicAsset(duplicate, usage) });
+      const context = ownerContextFromBody(req.body);
+      const filled = await fillBlankDefaultAlt(duplicate, {
+        ownerName: context.ownerName,
+        filename: asset.originalFilename,
+        role: context.role,
+      });
+      const usage = (await usageByAssetId([filled.id])).get(filled.id) ?? emptyUsage();
+      res.status(409).json({ error: "Exact duplicate; reuse existing asset", asset: toPublicAsset(filled, usage) });
       return;
     }
     const objectPath = mediaObjectPath(id, "image.webp");
     await putStoredFile(objectPath, converted.bytes, "image/webp");
     if (stagingPath !== objectPath) await removeStoredFile(stagingPath);
+    const context = ownerContextFromBody(req.body);
+    const defaultAlt = resolveImageAlt({
+      currentAlt: asset.defaultAlt,
+      ownerName: context.ownerName,
+      filename: asset.originalFilename,
+      role: context.role,
+    });
     const [ready] = await db.update(mediaAssetsTable).set({
       status: "Ready",
       contentType: "image/webp",
@@ -275,6 +317,7 @@ router.post("/admin/media/:id/complete", async (req, res): Promise<void> => {
       width: converted.width,
       height: converted.height,
       sha256: digest,
+      defaultAlt,
       objectPath,
       stagingPath: null,
       failureReason: null,
@@ -318,13 +361,19 @@ router.post("/admin/media/:id/attach", async (req, res): Promise<void> => {
     res.status(409).json({ error: "Restore this product to Draft before attaching an image." });
     return;
   }
+  const photoAlt = resolveImageAlt({
+    currentAlt: asset.defaultAlt,
+    ownerName: product.name,
+    filename: asset.originalFilename,
+    role: "hero",
+  });
   const incoming: ProductPhoto = {
     slot: "Photo 1 · Hero",
     file: asset.originalFilename,
     rating: "",
     src: mediaPublicPath(asset.id),
     assetId: asset.id,
-    alt: asset.defaultAlt || undefined,
+    alt: photoAlt || undefined,
     role: "hero",
     width: asset.width ?? undefined,
     height: asset.height ?? undefined,
@@ -333,16 +382,25 @@ router.post("/admin/media/:id/attach", async (req, res): Promise<void> => {
   };
   const photos = insertHeroPhoto(product.details?.photos, incoming);
   const details = { ...product.details, photos };
+  const nextDefaultAlt = shouldReplaceGeneratedAlt(asset.defaultAlt, asset.originalFilename)
+    ? imageAltFromContext({ ownerName: product.name, filename: asset.originalFilename, role: "hero" })
+    : asset.defaultAlt;
   const updated = await db.transaction(async (tx) => {
     const [saved] = await tx.update(productsTable).set({
       details,
       updatedAt: new Date(),
     }).where(eq(productsTable.id, product.id)).returning();
+    if (nextDefaultAlt !== asset.defaultAlt) {
+      await tx.update(mediaAssetsTable).set({
+        defaultAlt: nextDefaultAlt,
+        updatedAt: new Date(),
+      }).where(eq(mediaAssetsTable.id, asset.id));
+    }
     await syncProductMediaReferences(saved, photos, tx);
     return saved;
   });
   const usage = (await usageByAssetId([asset.id])).get(asset.id) ?? emptyUsage();
-  res.json(toPublicAsset(asset, usage, updated.publishStatus === "Published"));
+  res.json(toPublicAsset({ ...asset, defaultAlt: nextDefaultAlt }, usage, updated.publishStatus === "Published"));
 });
 
 router.get("/admin/media/:id/preview", async (req, res): Promise<void> => {

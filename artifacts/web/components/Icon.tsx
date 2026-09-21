@@ -8,9 +8,11 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
   if (name === "mail") return <svg {...common}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></svg>;
   if (name === "clock") return <svg {...common}><circle cx="12" cy="12" r="8.5" /><path d="M12 7v5l3 2" /></svg>;
   if (name === "arrow-right") return <svg {...common}><path d="M5 12h14m-6-6 6 6-6 6" /></svg>;
+  if (name === "chevron-left") return <svg {...common}><path d="m15 6-6 6 6 6" /></svg>;
   if (name === "chevron-right") return <svg {...common}><path d="m9 6 6 6-6 6" /></svg>;
   if (name === "file-text") return <svg {...common}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>;
   if (name === "map-pin") return <svg {...common}><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>;
+  if (name === "store") return <svg {...common}><path d="M4 10h16v10H4z"/><path d="M4 10 6.2 4h11.6L20 10"/><path d="M10 20v-6h4v6"/><path d="M8 10V7.5m4 2.5V7.5m4 2.5V7.5"/></svg>;
   if (name === "sprout") return <svg {...common}><path d="M12 21V10M12 14c-4.5 0-6.5-2.5-6.5-6.5C9.5 7.5 12 9.5 12 14Zm0-4c0-4.1 2.2-6.2 6.5-6.2 0 3.8-2.1 6.2-6.5 6.2Z" /></svg>;
   if (name === "info") return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>;
   if (name === "leaf") return <svg {...common}><path d="M20.5 3.5C13 3.5 6 7 4 13.5c-1 3.2 1.5 6 4.8 5.2C15.3 17.2 19 10.7 20.5 3.5Z"/><path d="M5.5 18.5c2.4-4.1 6-7.3 10.7-9.5"/></svg>;

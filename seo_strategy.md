@@ -24,5 +24,5 @@
 
 ## Audit record
 
-- The replacement-domain audit dated 16 September 2026 is recorded in [`docs/seo-audit.md`](docs/seo-audit.md).
-- The audit is findings-only; SEO, redirect, catalogue, and legal-content changes remain separate implementation work.
+- The replacement-domain SEO + AEO/GEO audit dated 18 September 2026 is recorded in [`docs/seo-audit.md`](docs/seo-audit.md). It supersedes the 16 September 2026 findings.
+- The audit is findings-only; SEO, AEO, GEO, redirect, catalogue, and legal-content changes remain separate implementation work.

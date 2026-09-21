@@ -5,12 +5,14 @@ import { ProductNewStamp } from "../components/NewStamp";
 import { StatusPill } from "../components/StatusPill";
 import { getCategories, getProducts } from "../lib/catalogue";
 import { CATALOGUE_INDEX_PATH, productPublicPath } from "../lib/catalogue-paths";
-import { expandProductCount, loadSiteSettings, publicMediaSrc, resolveBestSellers } from "../lib/site-settings";
-import { hasProductPhoto, productCardImage } from "./products/product-card-facts";
+import { HomeHero } from "../components/HomeHero";
+import { expandProductCount, FALLBACK_SITE_SETTINGS, loadSiteSettings, publicMediaSrc, resolveBestSellers, resolveHomepageHeroImages } from "../lib/site-settings";
+import { hasProductPhoto, productCardImage, productImageAlt } from "./products/product-card-facts";
 
 export const metadata: Metadata = {
   title: "IH Seeds | Western Australia's Pasture Seed Specialists",
   description: "Western Australian pasture seed, proven varieties, regional mixes and practical advice from the independently owned IH Seeds team.",
+  alternates: { canonical: "/" },
 };
 
 const ABOUT_IMAGE = "https://images.unsplash.com/photo-1530507629858-e4977d30e9e0?auto=format&fit=crop&w=900&q=80";
@@ -19,23 +21,17 @@ export default async function Home() {
   const [products, categories, settings] = await Promise.all([getProducts(), getCategories(), loadSiteSettings()]);
   const visibleProducts = resolveBestSellers(settings.homepage.bestSellerSlugs, products);
   const heroBody = expandProductCount(settings.homepage.heroBody, products.length);
-  const heroImage = publicMediaSrc({ src: settings.homepage.heroImageSrc, assetId: settings.homepage.heroImageAssetId });
   const guideImage = publicMediaSrc({ src: settings.seedGuide.cardImageSrc, assetId: settings.seedGuide.cardImageAssetId });
 
   return (
     <>
-      <section className="hero-wrap">
-        <div className="hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.98) 0%, rgba(29,40,28,.84) 47%, rgba(29,40,28,.42) 100%), url(${heroImage})` }}>
-          <div className="hero-copy">
-            <h1><span>{settings.homepage.heroEyebrow}</span><strong>{settings.homepage.heroHeading}</strong></h1>
-            <p>{heroBody}</p>
-            <div className="hero-actions">
-              <Link href="/contact" className="button button-primary" data-testid="button-advice">Advice</Link>
-              <Link href={CATALOGUE_INDEX_PATH} className="button button-light" data-testid="button-browse-catalogue">Browse the catalogue</Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      <HomeHero
+        eyebrow={settings.homepage.heroEyebrow}
+        heading={settings.homepage.heroHeading}
+        body={heroBody}
+        images={resolveHomepageHeroImages(settings.homepage)}
+        slideshow={settings.homepage.heroSlideshow}
+      />
 
       <section className="pillars" aria-label="Why IH Seeds">
         <div className="three-column">
@@ -57,7 +53,7 @@ export default async function Home() {
             <div className="product-grid">
               {visibleProducts.map((product) => (
                 <Link href={productPublicPath(product, categories)} className="product-card" style={{ textDecoration: "none", color: "inherit" }} key={product.id} data-testid={`card-product-${product.id}`}>
-                  <div className="product-image" style={{ backgroundImage: `linear-gradient(180deg, transparent, rgba(29,40,28,.72)), url(${productCardImage(product)})` }}>
+                  <div className="product-image" role="img" aria-label={productImageAlt(product)} style={{ backgroundImage: `linear-gradient(180deg, transparent, rgba(29,40,28,.72)), url(${productCardImage(product)})` }}>
                     {!hasProductPhoto(product) && <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" />}
                     <StatusPill status={product.status} />
                     <ProductNewStamp listingState={product.listingState} />
@@ -78,7 +74,7 @@ export default async function Home() {
           <div className="feature-image" style={{ backgroundImage: `linear-gradient(90deg, rgba(12,88,60,.12), rgba(12,88,60,.02)), url(${ABOUT_IMAGE})` }} />
           <div className="feature-copy">
             <h2><span>About</span> Us</h2>
-            <p>Irwin Hunter &amp; Co has been Western Australian owned and operated since 1966. We supply true to type seed from credible growers, blended into mixes that suit the paddock they are going into. Our long history across the state means we know which varieties perform in every region.</p>
+            <p>{settings.homepage.aboutBody || FALLBACK_SITE_SETTINGS.homepage.aboutBody}</p>
             <Link href="/about" className="button button-outline" style={{ color: "#fff", borderColor: "#fff" }} data-testid="button-learn-about">Learn more about IH Seeds</Link>
           </div>
         </div>

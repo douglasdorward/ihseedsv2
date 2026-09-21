@@ -12,8 +12,10 @@ import AdminCategories from "./AdminCategories";
 import AdminAdministrators from "./AdminAdministrators";
 import AdminSiteSettings from "./AdminSiteSettings";
 import AdminHomePage from "./AdminHomePage";
+import AdminAbout from "./AdminAbout";
 import AdminRootCategories from "./AdminRootCategories";
 import AdminSeedGuide from "./AdminSeedGuide";
+import AdminCompany from "./AdminCompany";
 import AdminBlog from "./AdminBlog";
 import AdminResellers from "./AdminResellers";
 import { persistLatestProductAndPublish } from "../persist-latest-product";
@@ -942,13 +944,22 @@ function ProductTable() {
     setSaving(true);
     setMessage("");
     try {
-      const selectedIds = [...selected];
-      const patchResults = await Promise.all(selectedIds.map(async (id) => {
+      const selectedProducts = selected
+        .map((id) => products.find((product) => product.id === id))
+        .filter((product): product is AdminProduct => Boolean(product));
+      const updatable = selectedProducts.filter((product) => getListingState(product) !== "Legacy");
+      const skippedLegacy = selectedProducts.length - updatable.length;
+      if (updatable.length === 0) {
+        setMessageTone("error");
+        setMessage("Legacy products cannot have availability. Select current catalogue products to update stock.");
+        return;
+      }
+      const patchResults = await Promise.all(updatable.map(async (product) => {
         try {
-          const result = await updateProduct.mutateAsync({ id, data: { status: bulkStatus } });
-          return { id, ok: true, status: (result as { status?: string }).status, override: (result as { availabilityOverride?: string | null }).availabilityOverride ?? null, keys: Object.keys(result ?? {}) };
+          await updateProduct.mutateAsync({ id: product.id, data: { status: bulkStatus } });
+          return { id: product.id, ok: true as const };
         } catch (error) {
-          return { id, ok: false, error: error instanceof Error ? error.message : String(error) };
+          return { id: product.id, ok: false as const, error: error instanceof Error ? error.message : String(error) };
         }
       }));
       const failed = patchResults.filter((item) => !item.ok);
@@ -957,7 +968,9 @@ function ProductTable() {
       await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
       setSelected([]);
       setMessageTone("success");
-      setMessage("Stock statuses updated.");
+      setMessage(skippedLegacy
+        ? `Stock statuses updated. ${skippedLegacy} legacy product${skippedLegacy === 1 ? " was" : "s were"} skipped.`
+        : "Stock statuses updated.");
     } catch (error) {
       setMessageTone("error");
       setMessage(error instanceof Error ? stripHttpErrorPrefix(error.message) : "Unable to update stock.");
@@ -2137,7 +2150,18 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                       {currentForm.details.photos.map((photo: any, index: number) => (
                         <div className="admin-photo-row" key={photo.slot || index}>
                           <div className="admin-photo-thumb">{photoDisplaySrc(photo) ? <img src={photoDisplaySrc(photo)} alt={photo.alt || photo.file}/> : <Icon name="image" size={24}/>}</div>
-                          <span><small>{photo.slot}</small><strong>{photo.file || "No file selected"}</strong></span>
+                          <span>
+                            <small>{photo.slot}</small>
+                            <strong>{photo.file || "No file selected"}</strong>
+                            <input
+                              className="admin-photo-alt"
+                              value={photo.alt || ""}
+                              placeholder="Alt text"
+                              aria-label={`${photo.slot || "Photo"} alt text`}
+                              onChange={(event) => updatePhoto(index, { alt: event.target.value })}
+                              disabled={viewMode === "live" || isArchived}
+                            />
+                          </span>
                           {viewMode !== "live" && !isArchived && (
                             <label className="admin-text-button">
                               Upload
@@ -2150,7 +2174,13 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                                   event.target.value = "";
                                   if (!file) return;
                                   try {
-                                    updatePhoto(index, { ...await uploadMediaAsset(file), role: index === 0 ? "hero" : photo.role });
+                                    updatePhoto(index, {
+                                      ...await uploadMediaAsset(file, {
+                                        ownerName: form.name,
+                                        role: index === 0 ? "hero" : photo.role,
+                                      }),
+                                      role: index === 0 ? "hero" : photo.role,
+                                    });
                                   } catch (caught) {
                                     setError(caught instanceof Error ? caught.message : "Upload failed.");
                                   }
@@ -2354,7 +2384,9 @@ export default function Admin({ role, accountName, onSignOut }: AdminAccountProp
   const isAdministrators = route === "/admin/administrators";
   const isSiteSettingsHub = route === "/admin/site-settings";
   const isSiteHome = route === "/admin/site-settings/home";
+  const isSiteAbout = route === "/admin/site-settings/about";
   const isSiteGuide = route === "/admin/site-settings/seed-guide";
+  const isSiteCompany = route === "/admin/site-settings/company";
   const isSiteCategories = route === "/admin/site-settings/categories" || route.startsWith("/admin/site-settings/categories/");
   const isEditor = route.startsWith("/admin/products/") && route !== "/admin/products/categories";
 
@@ -2374,8 +2406,10 @@ export default function Admin({ role, accountName, onSignOut }: AdminAccountProp
       {isResellers && <AdminResellers />}
       {isSiteSettingsHub && <AdminSiteSettings />}
       {isSiteHome && <AdminHomePage />}
+      {isSiteAbout && <AdminAbout />}
       {isSiteCategories && <AdminRootCategories />}
       {isSiteGuide && <AdminSeedGuide />}
+      {isSiteCompany && <AdminCompany />}
       {isEditor && (
         <ProductEditor
           isNew={route === "/admin/products/new"}

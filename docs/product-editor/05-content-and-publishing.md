@@ -70,7 +70,7 @@ Public copy, media, FAQs, Also popular, and display flags. Tagline, blurb, at le
 - **Customer website:** First non-blank `src` is the product-page hero and the default social image. Also popular cards use that hero. Category grid cards currently use rotating placeholder images, not these photos.
 - **Public API:** yes
 - **Purpose:** Product photography. The Form tab lists slots. The Product page view uploads or pastes a URL onto the hero (first non-blank `src`).
-- **How to fill:** Upload JPEG, PNG, or WebP from the Product page hero, the Form Photos card, or **Images** at `/admin/images`. Uploads are converted to WebP in the shared library and stored as `src=/api/media/{id}` with an `assetId`. External/WordPress URLs can still be pasted (no `assetId`; they are not converted). AI never fills photos.
+- **How to fill:** Upload JPEG, PNG, or WebP from the Product page hero, the Form Photos card, or **Images** at `/admin/images`. Uploads are converted to WebP in the shared library and stored as `src=/api/media/{id}` with an `assetId`. Alt text is filled from the product name when the image is uploaded or attached; a library-only upload uses a humanized filename until it is assigned to a product. Editors can change the alt on the photo row. External/WordPress URLs can still be pasted (no `assetId`; they are not converted). AI never fills photos.
 
 ## Tech sheet URL
 

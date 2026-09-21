@@ -29,7 +29,10 @@ import type {
   AdministratorStatusInput,
   ApiError,
   Article,
+  ArticleImportReport,
   ArticleInput,
+  ArticlePublishInput,
+  ArticleScheduleInput,
   ArticleUpdate,
   AvailabilityRow,
   CatalogueCategory,
@@ -49,6 +52,7 @@ import type {
   MediaAssetPage,
   MediaAttachInput,
   MediaBackfillResult,
+  MediaCompleteInput,
   MediaDeleteConfirmation,
   MediaInUseError,
   MediaMetadataUpdate,
@@ -80,6 +84,7 @@ import type {
   SeedGuidePdfInput,
   SiteSettings,
   SiteSettingsInput,
+  SitemapProductEntry,
   SuccessResponse,
   TemporaryPasswordResponse,
   WorkbookCommit,
@@ -2340,14 +2345,15 @@ export const getCompleteMediaUploadUrl = (id: string,) => {
 /**
  * @summary Verify uploaded object bytes and mark a library asset ready
  */
-export const completeMediaUpload = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<MediaAsset> => {
+export const completeMediaUpload = async (id: string,
+    mediaCompleteInput?: MediaCompleteInput, options?: Parameters<typeof customFetch>[1]): Promise<MediaAsset> => {
 
   return customFetch<MediaAsset>(getCompleteMediaUploadUrl(id),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(mediaCompleteInput)
   }
 );}
 
@@ -2356,8 +2362,8 @@ export const completeMediaUpload = async (id: string, options?: Parameters<typeo
 
 
 export const getCompleteMediaUploadMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,{id: string}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,{id: string;data?: BodyType<MediaCompleteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,{id: string;data?: BodyType<MediaCompleteInput>}, TContext> => {
 
 const mutationKey = ['completeMediaUpload'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -2369,10 +2375,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeMediaUpload>>, {id: string}> = (props) => {
-          const {id} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeMediaUpload>>, {id: string;data?: BodyType<MediaCompleteInput>}> = (props) => {
+          const {id,data} = props ?? {};
 
-          return  completeMediaUpload(id,requestOptions)
+          return  completeMediaUpload(id,data,requestOptions)
         }
 
 
@@ -2383,18 +2389,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type CompleteMediaUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completeMediaUpload>>>
-
+    export type CompleteMediaUploadMutationBody = BodyType<MediaCompleteInput> | undefined
     export type CompleteMediaUploadMutationError = ErrorType<void>
 
     /**
  * @summary Verify uploaded object bytes and mark a library asset ready
  */
 export const useCompleteMediaUpload = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,{id: string;data?: BodyType<MediaCompleteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof completeMediaUpload>>,
         TError,
-        {id: string},
+        {id: string;data?: BodyType<MediaCompleteInput>},
         TContext
       > => {
       return useMutation(getCompleteMediaUploadMutationOptions(options));
@@ -3001,6 +3007,84 @@ export function useGetProductSitemap<TData = Awaited<ReturnType<typeof getProduc
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetProductSitemapQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetSitemapProductEntriesUrl = () => {
+
+
+
+
+  return `/api/sitemap-product-entries`
+}
+
+/**
+ * Sitemap-only lastmod values for published Active or New products. Does not expose product card payloads.
+ * @summary Indexable product sitemap dates
+ */
+export const getSitemapProductEntries = async ( options?: Parameters<typeof customFetch>[1]): Promise<SitemapProductEntry[]> => {
+
+  return customFetch<SitemapProductEntry[]>(getGetSitemapProductEntriesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSitemapProductEntriesQueryKey = () => {
+    return [
+    `/api/sitemap-product-entries`
+    ] as const;
+    }
+
+
+export const getGetSitemapProductEntriesQueryOptions = <TData = Awaited<ReturnType<typeof getSitemapProductEntries>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSitemapProductEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSitemapProductEntriesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSitemapProductEntries>>> = ({ signal }) => getSitemapProductEntries({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSitemapProductEntries>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSitemapProductEntriesQueryResult = NonNullable<Awaited<ReturnType<typeof getSitemapProductEntries>>>
+export type GetSitemapProductEntriesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Indexable product sitemap dates
+ */
+
+export function useGetSitemapProductEntries<TData = Awaited<ReturnType<typeof getSitemapProductEntries>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSitemapProductEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSitemapProductEntriesQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -5075,6 +5159,302 @@ export const useCreateArticle = <TError = ErrorType<ApiError>,
       return useMutation(getCreateArticleMutationOptions(options));
     }
 
+export const getDownloadArticleImportTemplateUrl = () => {
+
+
+
+
+  return `/api/admin/articles/import/template`
+}
+
+/**
+ * @summary Download the blog article Excel import template
+ */
+export const downloadArticleImportTemplate = async ( options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadArticleImportTemplateUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadArticleImportTemplateQueryKey = () => {
+    return [
+    `/api/admin/articles/import/template`
+    ] as const;
+    }
+
+
+export const getDownloadArticleImportTemplateQueryOptions = <TData = Awaited<ReturnType<typeof downloadArticleImportTemplate>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadArticleImportTemplate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadArticleImportTemplateQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadArticleImportTemplate>>> = ({ signal }) => downloadArticleImportTemplate({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadArticleImportTemplate>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadArticleImportTemplateQueryResult = NonNullable<Awaited<ReturnType<typeof downloadArticleImportTemplate>>>
+export type DownloadArticleImportTemplateQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Download the blog article Excel import template
+ */
+
+export function useDownloadArticleImportTemplate<TData = Awaited<ReturnType<typeof downloadArticleImportTemplate>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadArticleImportTemplate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadArticleImportTemplateQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getExportArticlesWorkbookUrl = () => {
+
+
+
+
+  return `/api/admin/articles/export`
+}
+
+/**
+ * @summary Export all blog articles as an Excel workbook
+ */
+export const exportArticlesWorkbook = async ( options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getExportArticlesWorkbookUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getExportArticlesWorkbookQueryKey = () => {
+    return [
+    `/api/admin/articles/export`
+    ] as const;
+    }
+
+
+export const getExportArticlesWorkbookQueryOptions = <TData = Awaited<ReturnType<typeof exportArticlesWorkbook>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportArticlesWorkbook>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportArticlesWorkbookQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportArticlesWorkbook>>> = ({ signal }) => exportArticlesWorkbook({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportArticlesWorkbook>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ExportArticlesWorkbookQueryResult = NonNullable<Awaited<ReturnType<typeof exportArticlesWorkbook>>>
+export type ExportArticlesWorkbookQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Export all blog articles as an Excel workbook
+ */
+
+export function useExportArticlesWorkbook<TData = Awaited<ReturnType<typeof exportArticlesWorkbook>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportArticlesWorkbook>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getExportArticlesWorkbookQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDryRunArticleImportUrl = () => {
+
+
+
+
+  return `/api/admin/articles/import/dry-run`
+}
+
+/**
+ * @summary Validate a blog article Excel import
+ */
+export const dryRunArticleImport = async (workbookUpload: WorkbookUpload, options?: Parameters<typeof customFetch>[1]): Promise<ArticleImportReport> => {
+
+  return customFetch<ArticleImportReport>(getDryRunArticleImportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(workbookUpload)
+  }
+);}
+
+
+
+
+
+export const getDryRunArticleImportMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dryRunArticleImport>>, TError,{data: BodyType<WorkbookUpload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof dryRunArticleImport>>, TError,{data: BodyType<WorkbookUpload>}, TContext> => {
+
+const mutationKey = ['dryRunArticleImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof dryRunArticleImport>>, {data: BodyType<WorkbookUpload>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  dryRunArticleImport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DryRunArticleImportMutationResult = NonNullable<Awaited<ReturnType<typeof dryRunArticleImport>>>
+    export type DryRunArticleImportMutationBody = BodyType<WorkbookUpload>
+    export type DryRunArticleImportMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Validate a blog article Excel import
+ */
+export const useDryRunArticleImport = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dryRunArticleImport>>, TError,{data: BodyType<WorkbookUpload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof dryRunArticleImport>>,
+        TError,
+        {data: BodyType<WorkbookUpload>},
+        TContext
+      > => {
+      return useMutation(getDryRunArticleImportMutationOptions(options));
+    }
+
+export const getCommitArticleImportUrl = () => {
+
+
+
+
+  return `/api/admin/articles/import/commit`
+}
+
+/**
+ * @summary Commit a validated blog article Excel import
+ */
+export const commitArticleImport = async (workbookCommit: WorkbookCommit, options?: Parameters<typeof customFetch>[1]): Promise<ArticleImportReport> => {
+
+  return customFetch<ArticleImportReport>(getCommitArticleImportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(workbookCommit)
+  }
+);}
+
+
+
+
+
+export const getCommitArticleImportMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof commitArticleImport>>, TError,{data: BodyType<WorkbookCommit>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof commitArticleImport>>, TError,{data: BodyType<WorkbookCommit>}, TContext> => {
+
+const mutationKey = ['commitArticleImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof commitArticleImport>>, {data: BodyType<WorkbookCommit>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  commitArticleImport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CommitArticleImportMutationResult = NonNullable<Awaited<ReturnType<typeof commitArticleImport>>>
+    export type CommitArticleImportMutationBody = BodyType<WorkbookCommit>
+    export type CommitArticleImportMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Commit a validated blog article Excel import
+ */
+export const useCommitArticleImport = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof commitArticleImport>>, TError,{data: BodyType<WorkbookCommit>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof commitArticleImport>>,
+        TError,
+        {data: BodyType<WorkbookCommit>},
+        TContext
+      > => {
+      return useMutation(getCommitArticleImportMutationOptions(options));
+    }
+
 export const getGetAdminArticleUrl = (id: number,) => {
 
 
@@ -5306,14 +5686,15 @@ export const getPublishArticleUrl = (id: number,) => {
 /**
  * @summary Publish a blog article
  */
-export const publishArticle = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<Article> => {
+export const publishArticle = async (id: number,
+    articlePublishInput?: ArticlePublishInput, options?: Parameters<typeof customFetch>[1]): Promise<Article> => {
 
   return customFetch<Article>(getPublishArticleUrl(id),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(articlePublishInput)
   }
 );}
 
@@ -5322,8 +5703,8 @@ export const publishArticle = async (id: number, options?: Parameters<typeof cus
 
 
 export const getPublishArticleMutationOptions = <TError = ErrorType<PublishValidationError | ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishArticle>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof publishArticle>>, TError,{id: number}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishArticle>>, TError,{id: number;data?: BodyType<ArticlePublishInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof publishArticle>>, TError,{id: number;data?: BodyType<ArticlePublishInput>}, TContext> => {
 
 const mutationKey = ['publishArticle'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -5335,10 +5716,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishArticle>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishArticle>>, {id: number;data?: BodyType<ArticlePublishInput>}> = (props) => {
+          const {id,data} = props ?? {};
 
-          return  publishArticle(id,requestOptions)
+          return  publishArticle(id,data,requestOptions)
         }
 
 
@@ -5349,18 +5730,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PublishArticleMutationResult = NonNullable<Awaited<ReturnType<typeof publishArticle>>>
-
+    export type PublishArticleMutationBody = BodyType<ArticlePublishInput> | undefined
     export type PublishArticleMutationError = ErrorType<PublishValidationError | ApiError>
 
     /**
  * @summary Publish a blog article
  */
 export const usePublishArticle = <TError = ErrorType<PublishValidationError | ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishArticle>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishArticle>>, TError,{id: number;data?: BodyType<ArticlePublishInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof publishArticle>>,
         TError,
-        {id: number},
+        {id: number;data?: BodyType<ArticlePublishInput>},
         TContext
       > => {
       return useMutation(getPublishArticleMutationOptions(options));
@@ -5437,6 +5818,78 @@ export const useUnpublishArticle = <TError = ErrorType<ApiError>,
       return useMutation(getUnpublishArticleMutationOptions(options));
     }
 
+export const getScheduleArticleUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/articles/${id}/schedule`
+}
+
+/**
+ * @summary Schedule a blog article for future publishing
+ */
+export const scheduleArticle = async (id: number,
+    articleScheduleInput: ArticleScheduleInput, options?: Parameters<typeof customFetch>[1]): Promise<Article> => {
+
+  return customFetch<Article>(getScheduleArticleUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(articleScheduleInput)
+  }
+);}
+
+
+
+
+
+export const getScheduleArticleMutationOptions = <TError = ErrorType<PublishValidationError | ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scheduleArticle>>, TError,{id: number;data: BodyType<ArticleScheduleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof scheduleArticle>>, TError,{id: number;data: BodyType<ArticleScheduleInput>}, TContext> => {
+
+const mutationKey = ['scheduleArticle'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof scheduleArticle>>, {id: number;data: BodyType<ArticleScheduleInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  scheduleArticle(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ScheduleArticleMutationResult = NonNullable<Awaited<ReturnType<typeof scheduleArticle>>>
+    export type ScheduleArticleMutationBody = BodyType<ArticleScheduleInput>
+    export type ScheduleArticleMutationError = ErrorType<PublishValidationError | ApiError>
+
+    /**
+ * @summary Schedule a blog article for future publishing
+ */
+export const useScheduleArticle = <TError = ErrorType<PublishValidationError | ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scheduleArticle>>, TError,{id: number;data: BodyType<ArticleScheduleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof scheduleArticle>>,
+        TError,
+        {id: number;data: BodyType<ArticleScheduleInput>},
+        TContext
+      > => {
+      return useMutation(getScheduleArticleMutationOptions(options));
+    }
+
 export const getGetPublicSiteSettingsUrl = () => {
 
 
@@ -5446,7 +5899,7 @@ export const getGetPublicSiteSettingsUrl = () => {
 }
 
 /**
- * @summary Get public homepage and seed guide settings
+ * @summary Get public homepage, about page, company and seed guide settings
  */
 export const getPublicSiteSettings = async ( options?: Parameters<typeof customFetch>[1]): Promise<SiteSettings> => {
 
@@ -5493,7 +5946,7 @@ export type GetPublicSiteSettingsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Get public homepage and seed guide settings
+ * @summary Get public homepage, about page, company and seed guide settings
  */
 
 export function useGetPublicSiteSettings<TData = Awaited<ReturnType<typeof getPublicSiteSettings>>, TError = ErrorType<unknown>>(
@@ -5600,7 +6053,7 @@ export const getGetAdminSiteSettingsUrl = () => {
 }
 
 /**
- * @summary Get homepage and seed guide settings for editing
+ * @summary Get homepage, about page, company and seed guide settings for editing
  */
 export const getAdminSiteSettings = async ( options?: Parameters<typeof customFetch>[1]): Promise<SiteSettings> => {
 
@@ -5647,7 +6100,7 @@ export type GetAdminSiteSettingsQueryError = ErrorType<ApiError>
 
 
 /**
- * @summary Get homepage and seed guide settings for editing
+ * @summary Get homepage, about page, company and seed guide settings for editing
  */
 
 export function useGetAdminSiteSettings<TData = Awaited<ReturnType<typeof getAdminSiteSettings>>, TError = ErrorType<ApiError>>(
@@ -5677,7 +6130,7 @@ export const getUpdateSiteSettingsUrl = () => {
 }
 
 /**
- * @summary Save homepage and seed guide settings
+ * @summary Save homepage, about page, company and seed guide settings
  */
 export const updateSiteSettings = async (siteSettingsInput: SiteSettingsInput, options?: Parameters<typeof customFetch>[1]): Promise<SiteSettings> => {
 
@@ -5726,7 +6179,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateSiteSettingsMutationError = ErrorType<ApiError>
 
     /**
- * @summary Save homepage and seed guide settings
+ * @summary Save homepage, about page, company and seed guide settings
  */
 export const useUpdateSiteSettings = <TError = ErrorType<ApiError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSiteSettings>>, TError,{data: BodyType<SiteSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}

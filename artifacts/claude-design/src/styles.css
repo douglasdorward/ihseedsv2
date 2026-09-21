@@ -56,6 +56,17 @@ h1 span,h2 span { display:block; font-weight:300; }
 h1 strong { display:block; font-weight:800; }
 .hero-copy p { max-width:640px; font-size:20px; line-height:1.6; margin:26px 0 32px; }
 .hero-actions { display:flex; gap:16px; }
+.hero-slideshow { position:relative; overflow:hidden; }
+.hero-slide { position:absolute; inset:0; background-position:center; background-size:cover; opacity:0; transition:opacity .8s ease; }
+.hero-slide.is-active { opacity:1; }
+.hero-slideshow .hero-copy { position:relative; z-index:1; }
+.hero-slideshow-controls { position:absolute; right:28px; bottom:28px; z-index:2; display:flex; flex-direction:column; align-items:flex-end; gap:12px; }
+.hero-slideshow-dots { display:flex; gap:8px; }
+.hero-slideshow-dot { width:10px; height:10px; border:0; border-radius:50%; background:rgba(255,255,255,.45); }
+.hero-slideshow-dot.is-active { background:var(--yellow); }
+.hero-slideshow-arrows { display:flex; gap:8px; }
+.hero-slideshow-arrow { width:40px; height:40px; border:0; border-radius:50%; background:var(--yellow); color:var(--green); display:grid; place-items:center; }
+@media (prefers-reduced-motion: reduce) { .hero-slide { transition:none; } }
 .pillars { background:var(--sage); border-bottom:1px solid var(--line); }
 .three-column { max-width:1180px; margin:auto; padding:40px; display:grid; grid-template-columns:repeat(3,1fr); gap:32px; }
 .pillar { display:flex; flex-direction:column; gap:10px; }
@@ -385,6 +396,7 @@ h1 strong { display:block; font-weight:800; }
 .admin-photo-row small { color:#7b827d; font-size:9px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
 .admin-photo-row strong { overflow:hidden; color:#174e37; font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
 .admin-photo-row em { color:#7b827d; font-size:10px; font-style:normal; }
+.admin-photo-alt { width:100%; border:1px solid #c8cec9; border-radius:6px; padding:6px 8px; background:#fff; color:#174e37; font-size:12px; font-weight:600; }
 .admin-photo-row > button { border:0; padding:6px; background:transparent; color:#0c6c49; font-size:12px; font-weight:750; }
 .admin-publishing-card { display:flex; flex-direction:column; gap:15px; border:0; padding:25px; background:#e9eeea; }
 .admin-publishing-card h2 { color:#174e37; font-size:20px; }
@@ -481,7 +493,7 @@ h1 strong { display:block; font-weight:800; }
   .desktop-nav { display:none; position:absolute; left:0; right:0; top:86px; padding:14px 20px 22px; background:#fff; box-shadow:0 12px 20px rgba(29,40,28,.12); flex-direction:column; align-items:stretch; gap:4px; }
   .desktop-nav.mobile-nav-open { display:flex; }.nav-link { text-align:left; padding:14px 4px; font-size:16px; }.nav-cta { margin:10px 0 4px; text-align:center; }.utility-button { display:none; }
   .mobile-menu-button { display:grid; }.search-bar { padding:14px 20px; align-items:stretch; flex-direction:column; gap:8px; }.search-bar button { align-self:flex-start; }
-  .hero-wrap { padding:0 12px; }.hero { min-height:600px; border-radius:16px; background-position:65% center; }.hero-copy { margin:0; padding:30px 26px; align-self:flex-end; }.hero-copy h1 { font-size:45px; }.hero-copy p { font-size:16px; margin:18px 0 24px; }.hero-actions { flex-wrap:wrap; }.button { padding-inline:24px; }
+  .hero-wrap { padding:0 12px; }.hero { min-height:600px; border-radius:16px; background-position:65% center; }.hero-copy { margin:0; padding:30px 26px; align-self:flex-end; }.hero-copy h1 { font-size:45px; }.hero-copy p { font-size:16px; margin:18px 0 24px; }.hero-actions { flex-wrap:wrap; }.button { padding-inline:24px; }.hero-slideshow-controls { right:16px; bottom:16px; }
   .three-column { grid-template-columns:1fr; padding:34px 24px; gap:28px; }.pillar p { max-width:42ch; }
   .content-width { padding:64px 20px; }.section-heading { align-items:flex-start; gap:18px; flex-direction:column; }.section-heading h2,.feature-copy h2,.contact-intro h2 { font-size:42px; }.section-heading .button { align-self:flex-start; }
   .page-hero-grid { grid-template-columns:1fr !important; gap:32px !important; padding:56px 20px !important; }

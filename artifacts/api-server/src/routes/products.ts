@@ -25,19 +25,56 @@ import {
 import { insertProductSchema } from "@workspace/db";
 import { publicRedirectTo } from "../lib/public-redirect";
 import { productPublicPath } from "../lib/product-path";
+import { absolutePublicUrl, canonicalPublicPath } from "../lib/public-site-url";
 import { clearProductMediaReferences, syncProductMediaReferences } from "../lib/media-usage";
 
 const router: IRouter = Router();
-const publicSiteBaseUrl = (process.env.PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "");
 
 function escapeXml(value: string) {
   return value.replace(/[<>&'"]/g, (character) =>
     ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", "\"": "&quot;" })[character]!);
 }
 
-function canonicalProductUrl(slug: string, categorySlug: string) {
-  const path = `/products/${encodeURIComponent(categorySlug)}/${encodeURIComponent(slug)}`;
-  return publicSiteBaseUrl ? `${publicSiteBaseUrl}${path}` : path;
+function allowsSearchIndex(details: unknown) {
+  if (!details || typeof details !== "object" || Array.isArray(details)) return true;
+  return (details as { robotsIndex?: boolean }).robotsIndex !== false;
+}
+
+function productCanonicalOverride(details: unknown) {
+  if (!details || typeof details !== "object" || Array.isArray(details)) return undefined;
+  const value = (details as { canonicalUrl?: unknown }).canonicalUrl;
+  return typeof value === "string" ? value : undefined;
+}
+
+function xmlUrlTag(loc: string, lastModified: Date) {
+  return `<url><loc>${escapeXml(loc)}</loc><lastmod>${escapeXml(lastModified.toISOString())}</lastmod></url>`;
+}
+
+type SitemapProductEntry = {
+  slug: string;
+  path: string;
+  lastModified: Date;
+};
+
+async function listIndexableSitemapProducts(): Promise<SitemapProductEntry[]> {
+  const [products, categories] = await Promise.all([
+    db.select().from(productsTable).where(eq(productsTable.publishStatus, "Published")),
+    db.select({
+      parentId: catalogueCategoriesTable.parentId,
+      slug: catalogueCategoriesTable.slug,
+      name: catalogueCategoriesTable.name,
+    }).from(catalogueCategoriesTable),
+  ]);
+  return products
+    .filter((product) => isActiveListing(product) && allowsSearchIndex(product.details))
+    .map((product) => {
+      const fallbackPath = productPublicPath(product.slug, product.category, categories);
+      return {
+        slug: product.slug,
+        path: canonicalPublicPath(productCanonicalOverride(product.details), fallbackPath),
+        lastModified: product.updatedAt,
+      };
+    });
 }
 
 type PublicProduct = {
@@ -110,6 +147,36 @@ function compareSaleLines(
 async function liveSaleLines(productId: number): Promise<SaleLine[]> {
   return (await db.select().from(saleLinesTable).where(eq(saleLinesTable.productId, productId)))
     .sort(compareSaleLines).map(toSaleLine);
+}
+
+const STATUS_TO_AVAILABILITY = {
+  "in-stock": "Good stock",
+  low: "Low stock",
+  "very-low": "Very low",
+  unavailable: "Unavailable",
+} as const;
+
+type ProductStockStatus = keyof typeof STATUS_TO_AVAILABILITY;
+type StockAvailability = (typeof STATUS_TO_AVAILABILITY)[ProductStockStatus];
+
+function availabilityFromStatus(status: string): StockAvailability | null {
+  return Object.hasOwn(STATUS_TO_AVAILABILITY, status)
+    ? STATUS_TO_AVAILABILITY[status as ProductStockStatus]
+    : null;
+}
+
+function applyStockToDraftSnapshot(
+  snapshot: ProductEditablePayload,
+  status: ProductEditablePayload["status"],
+  availability: StockAvailability,
+  hasLiveSaleLines: boolean,
+): ProductEditablePayload {
+  return {
+    ...snapshot,
+    status,
+    availabilityOverride: hasLiveSaleLines ? null : availability,
+    saleLines: (snapshot.saleLines ?? []).map((line) => ({ ...line, availability })),
+  };
 }
 
 function toPublicProduct(product: Product, productLines: SaleLine[]): PublicProduct {
@@ -378,22 +445,18 @@ router.get("/redirects/lookup", async (req, res): Promise<void> => {
   res.json({ toPath });
 });
 
+router.get("/sitemap-product-entries", async (_req, res): Promise<void> => {
+  const entries = await listIndexableSitemapProducts();
+  res.json(entries.map((entry) => ({
+    slug: entry.slug,
+    lastModified: entry.lastModified.toISOString(),
+  })));
+});
+
 router.get("/sitemap-products", async (_req, res): Promise<void> => {
-  const [products, categories] = await Promise.all([
-    db.select().from(productsTable).where(eq(productsTable.publishStatus, "Published")),
-    db.select({
-      parentId: catalogueCategoriesTable.parentId,
-      slug: catalogueCategoriesTable.slug,
-      name: catalogueCategoriesTable.name,
-    }).from(catalogueCategoriesTable),
-  ]);
+  const entries = await listIndexableSitemapProducts();
   res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${
-    products.filter((product) => isActiveListing(product))
-      .map((product) => {
-        const path = productPublicPath(product.slug, product.category, categories);
-        const rootSlug = path.split("/")[2];
-        return `<url><loc>${escapeXml(canonicalProductUrl(product.slug, rootSlug))}</loc></url>`;
-      }).join("")
+    entries.map((entry) => xmlUrlTag(absolutePublicUrl(entry.path), entry.lastModified)).join("")
   }</urlset>`);
 });
 
@@ -837,21 +900,48 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
       .where(eq(productsTable.id, id)).for("update");
     if (!lockedProduct) return { kind: "not-found" as const };
     if (lockedProduct.publishStatus === "Archived") return { kind: "archived" as const };
-    if (lockedProduct.publishStatus === "Published" && Object.keys(changes).some((key) => key !== "status")) {
+    const listingState = resolveListingState({ ...lockedProduct, ...changes });
+    const requestedStatus = changes.status;
+    const stockAvailability = requestedStatus
+      ? availabilityFromStatus(listingState === "Legacy" ? "unavailable" : requestedStatus)
+      : null;
+    const applyLiveStock = Boolean(stockAvailability) && listingState !== "Legacy";
+    let liveLineCount = 0;
+    if (applyLiveStock && stockAvailability) {
+      const lines = await tx.select({ id: saleLinesTable.id }).from(saleLinesTable)
+        .where(eq(saleLinesTable.productId, id));
+      liveLineCount = lines.length;
+      changes.availabilityOverride = liveLineCount > 0 ? null : stockAvailability;
+    }
+    const allowedPublishedKeys = new Set(["status", "availabilityOverride"]);
+    if (lockedProduct.publishStatus === "Published" && Object.keys(changes).some((key) => !allowedPublishedKeys.has(key))) {
       return { kind: "published-content" as const };
     }
     const [updated] = await tx.update(productsTable)
       .set({ ...changes, updatedAt: new Date() })
       .where(eq(productsTable.id, id)).returning();
+    if (applyLiveStock && stockAvailability && liveLineCount > 0) {
+      await tx.update(saleLinesTable)
+        .set({ availability: stockAvailability, updatedAt: new Date() })
+        .where(eq(saleLinesTable.productId, id));
+    }
     if (changes.details) {
       await syncProductMediaReferences(updated, updated.details.photos, tx);
     }
-    if (lockedProduct.publishStatus === "Published" && changes.status) {
+    if (requestedStatus && lockedProduct.publishStatus === "Published") {
       const [draft] = await tx.select().from(productDraftsTable)
         .where(eq(productDraftsTable.productId, id));
       if (draft) {
+        const snapshot = applyLiveStock && stockAvailability
+          ? applyStockToDraftSnapshot(
+            draft.snapshot,
+            requestedStatus,
+            stockAvailability,
+            liveLineCount > 0,
+          )
+          : { ...draft.snapshot, status: requestedStatus };
         await tx.update(productDraftsTable)
-          .set({ snapshot: { ...draft.snapshot, status: changes.status }, updatedAt: new Date() })
+          .set({ snapshot, updatedAt: new Date() })
           .where(eq(productDraftsTable.id, draft.id));
       }
     }

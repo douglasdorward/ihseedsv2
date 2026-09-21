@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import {
+  DEFAULT_ABOUT_SETTINGS,
+  DEFAULT_COMPANY_SETTINGS,
   DEFAULT_HOMEPAGE_SETTINGS,
   DEFAULT_SEED_GUIDE_SETTINGS,
   SEED_GUIDE_PDF_STORAGE_KEY,
@@ -10,8 +12,12 @@ import {
   seedGuidePublicPdfUrl,
   siteSettingsTable,
   updateSiteSettingsSchema,
+  withAboutDefaults,
+  withCompanyDefaults,
   withHomepageDefaults,
   withSeedGuideDefaults,
+  type SiteAboutSettings,
+  type SiteCompanySettings,
   type SiteHomepageSettings,
   type SiteSeedGuideSettings,
   type SiteSettingsRow,
@@ -42,9 +48,12 @@ function toPublicHomepage(homepage: SiteHomepageSettings) {
   return {
     heroImageSrc: homepage.heroImageSrc,
     heroImageAssetId: homepage.heroImageAssetId,
+    heroImages: homepage.heroImages,
+    heroSlideshow: homepage.heroSlideshow,
     heroEyebrow: homepage.heroEyebrow,
     heroHeading: homepage.heroHeading,
     heroBody: homepage.heroBody,
+    aboutBody: homepage.aboutBody,
     bestSellerSlugs: homepage.bestSellerSlugs,
   };
 }
@@ -64,12 +73,44 @@ function toPublicSeedGuide(seedGuide: SiteSeedGuideSettings) {
   };
 }
 
+function toPublicAbout(about: SiteAboutSettings) {
+  return {
+    heroEyebrow: about.heroEyebrow,
+    heroHeading: about.heroHeading,
+    heroHeadingEmphasis: about.heroHeadingEmphasis,
+    heroIntro: about.heroIntro,
+    heroImageSrc: about.heroImageSrc,
+    heroImageAssetId: about.heroImageAssetId,
+    storyLead: about.storyLead,
+    storyParagraphs: about.storyParagraphs,
+    valuesHeading: about.valuesHeading,
+    valuesHeadingEmphasis: about.valuesHeadingEmphasis,
+    values: about.values,
+  };
+}
+
+function toPublicCompany(company: SiteCompanySettings) {
+  return {
+    legalName: company.legalName,
+    tradingName: company.tradingName,
+    phone: company.phone,
+    email: company.email,
+    address: company.address,
+    officeHours: company.officeHours,
+    abn: company.abn,
+  };
+}
+
 function toPublicSettings(row: SiteSettingsRow) {
   const homepage = withHomepageDefaults(row.homepage);
   const seedGuide = withSeedGuideDefaults(row.seedGuide);
+  const about = withAboutDefaults(row.about);
+  const company = withCompanyDefaults(row.company);
   return {
     homepage: toPublicHomepage(homepage),
     seedGuide: toPublicSeedGuide(seedGuide),
+    about: toPublicAbout(about),
+    company: toPublicCompany(company),
     updatedAt: row.updatedAt.toISOString(),
   };
 }
@@ -81,6 +122,8 @@ async function ensureSettings(): Promise<SiteSettingsRow> {
     id: SITE_SETTINGS_ID,
     homepage: DEFAULT_HOMEPAGE_SETTINGS,
     seedGuide: DEFAULT_SEED_GUIDE_SETTINGS,
+    about: DEFAULT_ABOUT_SETTINGS,
+    company: DEFAULT_COMPANY_SETTINGS,
   }).onConflictDoNothing().returning();
   if (created) return created;
   const [retry] = await db.select().from(siteSettingsTable).where(eq(siteSettingsTable.id, SITE_SETTINGS_ID));
@@ -109,16 +152,20 @@ router.put("/admin/site-settings", async (req, res): Promise<void> => {
     pdfFilename: current.seedGuide?.pdfFilename || DEFAULT_SEED_GUIDE_SETTINGS.pdfFilename,
     pdfStorageKey: current.seedGuide?.pdfStorageKey || DEFAULT_SEED_GUIDE_SETTINGS.pdfStorageKey,
   });
+  const about = withAboutDefaults(parsed.data.about ?? current.about);
+  const company = withCompanyDefaults(parsed.data.company ?? current.company);
   const updated = await db.transaction(async (tx) => {
     const [saved] = await tx.update(siteSettingsTable).set({
       homepage,
       seedGuide,
+      about,
+      company,
       updatedAt: new Date(),
     }).where(eq(siteSettingsTable.id, SITE_SETTINGS_ID)).returning();
-    await syncStaticSiteMediaReferences(homepage, seedGuide, tx);
+    await syncStaticSiteMediaReferences(homepage, seedGuide, about, tx);
     return saved;
   });
-  res.json(toPublicSettings(updated ?? { ...current, homepage, seedGuide, updatedAt: new Date() }));
+  res.json(toPublicSettings(updated ?? { ...current, homepage, seedGuide, about, company, updatedAt: new Date() }));
 });
 
 router.post("/admin/site-settings/seed-guide-pdf", async (req, res): Promise<void> => {
@@ -143,15 +190,17 @@ router.post("/admin/site-settings/seed-guide-pdf", async (req, res): Promise<voi
     pdfStorageKey: SEED_GUIDE_PDF_STORAGE_KEY,
   });
   const homepage = withHomepageDefaults(current.homepage);
+  const about = withAboutDefaults(current.about);
+  const company = withCompanyDefaults(current.company);
   const updated = await db.transaction(async (tx) => {
     const [saved] = await tx.update(siteSettingsTable).set({
       seedGuide,
       updatedAt: new Date(),
     }).where(eq(siteSettingsTable.id, SITE_SETTINGS_ID)).returning();
-    await syncStaticSiteMediaReferences(homepage, seedGuide, tx);
+    await syncStaticSiteMediaReferences(homepage, seedGuide, about, tx);
     return saved;
   });
-  res.status(200).json(toPublicSettings(updated ?? { ...current, homepage, seedGuide, updatedAt: new Date() }));
+  res.status(200).json(toPublicSettings(updated ?? { ...current, homepage, seedGuide, about, company, updatedAt: new Date() }));
 });
 
 router.get("/site/seed-guide.pdf", async (_req, res): Promise<void> => {

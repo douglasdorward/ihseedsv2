@@ -1,245 +1,437 @@
-# IH Seeds replacement-domain SEO audit
+# IH Seeds replacement-domain SEO + AEO/GEO audit
 
-**Audit date:** 16 September 2026  
-**Scope:** Public IH Seeds website as the replacement for `www.irwinhunter.com.au`  
-**Environment:** Local development workflows and the attached current-site workbook. Google Search Console, Analytics, backlink data, and the production edge were not accessed.
+**Audit date:** 18 September 2026  
+**Supersedes:** 16 September 2026 findings-only audit in this file  
+**Scope:** Public IH Seeds website as the replacement for `www.irwinhunter.com.au`, including answer-engine (AEO) and generative-engine (GEO) citation readiness  
+**Environment:** Local Next.js (`http://127.0.0.1:3000`) and API (`http://127.0.0.1:8080`) against the current development catalogue. Google Search Console, Analytics, backlink data, and the production edge were not accessed.
 
-This document records audit findings only. No SEO, catalogue, redirect, or content fixes were implemented as part of the audit.
+This document records audit findings only. No SEO, AEO, GEO, catalogue, redirect, or content fixes were implemented as part of the audit.
+
+**Follow-up (18 September 2026):** Public `/robots.txt` and `/sitemap.xml` now exist. Robots names the canonical `www` sitemap and disallows `/admin` and `/api`. The public sitemap uses absolute `www` locations, includes published blog posts, omits noindex URLs, and emits `<lastmod>` for products and articles. `/llms.txt` is still missing.
 
 ## Executive summary
 
-The public Next.js routes are server-rendered and the current active catalogue has 18 root category records and 71 public product records. The normal product and category pages return SSR HTML with a title, one H1, and visible content. The migration redirect register also matches the attached workbook at the source-list level: 77 workbook URLs produce 77 stored redirect rows.
+The public Next.js routes are still server-rendered. The current catalogue has **11 active root categories**, **103 public products**, and **6 published articles**. Normal product, category, and article pages return SSR HTML with a title, one H1, and visible body copy.
 
-The replacement site is not ready to preserve search visibility because the standard crawl signals are incomplete and several imported redirects do not reach an indexable canonical page:
+The replacement site is still not ready to preserve search visibility or to be cited reliably by answer/generative engines. Standard crawl endpoints remain missing, the canonical host is still non-`www`, and the workbook legacy-URL register has **regressed**: 70 of 77 current-site `/product/{slug}` URLs now 404.
 
-- `/robots.txt` and `/sitemap.xml` both return `404`.
-- Canonical URLs observed in HTML use `https://irwinhunter.com.au`, not the required `https://www.irwinhunter.com.au`.
-- Static pages and category pages do not emit complete social metadata, and the public site has no Organization/WebSite structured data.
-- The API sitemap is not a public sitemap, contains only product URLs, emits relative locations when `PUBLIC_SITE_URL` is unset, and does not exclude products whose SEO setting is `noindex`.
-- Six of 77 imported product redirects fail at the destination: two return `404`, and four return a `308` redirect to the same URL.
-- Eight active empty root categories in the current development catalogue are crawlable; seven have browser-generated names and blank descriptions. They are not linked from the main category navigation.
-- `/admin` returns a `200` authenticated application shell, while no robots policy exists to keep it out of the public crawl surface.
+Headline results:
+
+- `/llms.txt` and `/llms-full.txt` return `404` HTML. `/robots.txt` and `/sitemap.xml` now exist (see the follow-up note above).
+- Canonical URLs still use `https://irwinhunter.com.au`, not `https://www.irwinhunter.com.au`. Home, About, Availability, Guide, Resources, and Contact still omit canonicals.
+- 70 of 77 workbook `website_url` paths have no redirect row and return `404`. The six destinations that failed on 16 September now `301` to live category pages.
+- Three published products (`tall-fescue`, `puccinellia`, `carpet-grass`) cannot be reached at their canonical nested URLs: middleware `301`s those paths to the parent category, while `/api/sitemap-products` still lists them.
+- Product and article pages emit Open Graph, Twitter, and relevant JSON-LD. Static and category pages still do not. No page emits site-level Organization or WebSite schema.
+- No product or category FAQ is populated, so FAQPage schema never appears. Contact NAP is visible but uses a placeholder phone number and has no LocalBusiness schema.
+- `/admin` still returns `200` with no robots policy.
+
+## What changed since 16 September 2026
+
+| Area | 16 September | 18 September |
+| --- | --- | --- |
+| Public products | 71 | 103 |
+| Active root categories | 18, including seven `browser-*` empties | 11; browser-generated roots are gone |
+| Articles | Not in the public route inventory | 6 indexable `/resources/{slug}` pages with Article JSON-LD |
+| `/products` canonical | Missing | Present (`https://irwinhunter.com.au/products`) |
+| Workbook `/product/{slug}` redirects | 77 sources `301`; 6 destinations failed | 7 sources `301` to live pages; **70 sources `404`** |
+| Empty crawlable roots | 8 | 1 (`/products/other`) |
+| Public FAQ content | Not sampled as a zero-count | **0** product FAQs and **0** category FAQs |
 
 ## Route and rendering inventory
 
 | Surface | Route pattern | Expected indexability | Audit result |
 | --- | --- | --- | --- |
-| Home | `/` | Index | `200`; SSR heading and body content present |
-| Catalogue index | `/products` | Index | `200`; SSR listing, one H1 |
-| Root categories | `/products/{category}` | Index when active and useful | 18 active roots returned `200`; one H1 and two JSON-LD blocks each |
-| Product details | `/products/{category}/{product}` | Index when Published and Active/New, unless explicitly noindex | 71 current product paths returned `200`; one H1 and product/breadcrumb JSON-LD |
-| Availability | `/availability` | Index | `200`; SSR product links and availability text |
-| Resources | `/resources` | Index | `200`; SSR resource and tech-sheet content |
-| Guide | `/guide` | Index | `200`; SSR guide copy and PDF link |
-| About | `/about` | Index | `200`; SSR company copy and one H1 |
-| Contact | `/contact` | Index | `200`; SSR contact copy and one H1 |
-| Catalogue alias | `/products/categories` | Redirect | `308` to `/products` |
-| Legacy products | `/product/{slug}` | Redirect only when registered | Registered sources are middleware/API redirects; unknown paths return `404` |
-| Admin | `/admin` | Authenticated, not indexable | `200` admin shell; no public robots policy currently blocks it |
-| API | `/api/*` | Not an HTML index surface | API-only; excluded from the public route inventory |
+| Home | `/` | Index | `200`; SSR heading and body; no canonical; no OG/JSON-LD |
+| Catalogue index | `/products` | Index | `200`; SSR listing; canonical present; ~724 KB HTML |
+| Root categories | `/products/{category}` | Index when active and useful | 11 active roots `200`; one H1; BreadcrumbList + ItemList; no OG |
+| Product details | `/products/{category}/{product}` | Index when Published and Active/New, unless noindex | 100 of 103 canonical paths `200` with Product JSON-LD; 3 collide with child-category redirects and `301` to the parent |
+| Availability | `/availability` | Index | `200`; SSR product links; ~638 KB; no canonical/OG |
+| Resources index | `/resources` | Index | `200`; SSR article and tech-sheet listing; no canonical/OG |
+| Resource article | `/resources/{slug}` | Index unless `robotsIndex` is false | 6 published articles `200`; canonical, OG `article`, Twitter, Article + BreadcrumbList JSON-LD |
+| Guide | `/guide` | Index | `200`; SSR copy and PDF link; no canonical/OG |
+| About | `/about` | Index | `200`; SSR company copy; no canonical/OG |
+| Contact | `/contact` | Index | `200`; SSR NAP and enquiry form; no LocalBusiness schema |
+| Catalogue alias | `/products/categories` | Redirect | `301` to `/products` |
+| Legacy products | `/product/{slug}` | Redirect when registered | 8 registered `/product/` rows `301`; unknown paths, including 70 workbook URLs, `404` |
+| Trailing slash | `/{path}/` | Redirect to no slash | Next `308` to the non-slash path |
+| Policy URLs | `/privacy`, `/terms-and-conditions` | Real policy content or documented retirement | `308` to `/contact` |
+| Admin | `/admin` | Authenticated, not indexable | `200` Express HTML shell; title `Admin — IH Seeds`; no noindex |
+| `robots.txt` / `sitemap.xml` | Standard crawler files | Public, correct type | Implemented after this audit: `robots.ts` and `sitemap.ts` |
+| `llms.txt` | Standard crawler files | Public, correct type | `404` `text/html` |
+| API sitemaps | `/api/sitemap-products`, `/api/sitemap-articles` | Not the public sitemap | Fragment XML; robots now disallows `/api` |
 
-The six category paths linked by the catalogue page are `mixes`, `clovers`, `ryegrass`, `forage-grain-crops`, `sub-tropical-grasses`, and `fescues-other-grasses`. Other active category records can be reached from some product/category relationships, but empty browser-generated roots have no useful internal discovery path.
+Featured header navigation links six roots: `mixes`, `clovers`, `forage-grain-crops`, `ryegrass`, `sub-tropical-grasses`, `fescues-other-grasses`. `serradella`, `lucerne`, `herbs`, `biologicals`, and empty `other` are omitted from that menu but remain reachable from `/products` except where empty.
 
 ## Confirmed findings
 
-Severity uses **Critical** for a migration-blocking crawl/indexability failure, **High** for a defect that can directly lose indexed URLs or social/search signals, and **Medium** for a material quality, performance, or maintenance risk.
+Severity uses **Critical** for a migration-blocking crawl/indexability failure, **High** for a defect that can directly lose indexed URLs or social/search/citation signals, and **Medium** for a material quality, performance, or maintenance risk.
+
+Status is relative to the 16 September audit: **still open**, **regressed**, **partially fixed**, or **new**.
 
 ### SEO-001 — Standard robots and sitemap endpoints are missing
 
 **Severity:** Critical  
-**Status:** Confirmed defect  
+**Status:** Implemented after this audit  
 **Affected routes:** `/robots.txt`, `/sitemap.xml`
 
 **Evidence:**
 
-- `artifacts/web/app/robots.ts` does not exist.
-- `artifacts/web/app/sitemap.ts` does not exist.
-- Live requests to both routes returned `404 Not Found` with `text/html`, not their required content types.
-- The API exposes `/api/sitemap-products`, but it is not the standard public sitemap route.
+- `artifacts/web/app/robots.ts` and `artifacts/web/app/sitemap.ts` now exist.
+- `/robots.txt` names the canonical HTTPS `www` host and `/sitemap.xml`, and disallows `/admin` and `/api`.
+- `/sitemap.xml` is the public crawl inventory: absolute `www` locations, static marketing URLs, active non-empty root categories, indexable products, and published articles, with `<lastmod>` on products and articles.
 
-**Search/user impact:** Search engines receive neither a crawl policy nor a discoverable URL inventory. This is especially risky during a domain replacement because the replacement host has no reliable way to communicate its preferred sitemap and the admin surface is not disallowed.
+**Search/user impact:** Search engines and AI crawlers have a crawl policy and a discoverable URL inventory. `/llms.txt` remains missing.
 
-**Recommended implementation:** Add public Next metadata routes for `robots.txt` and `sitemap.xml`. The robots response should identify the canonical HTTPS `www` host and sitemap, and disallow authenticated/admin and API paths. The sitemap should include only canonical, indexable public pages and use the same host and trailing-slash policy everywhere.
+**Recommended implementation:** Add public Next metadata routes for `robots.txt` and `sitemap.xml`. Robots should name the canonical HTTPS `www` host and sitemap, allow major search and AI crawlers, and disallow `/admin` and `/api` (except any intentional public files). The sitemap should include only canonical, indexable, `200` public URLs.
 
 ### SEO-002 — Canonical host policy is wrong and incomplete
 
 **Severity:** High  
-**Status:** Confirmed defect  
+**Status:** Partially fixed  
 **Affected routes:** All pages with a canonical; all static pages without one
 
 **Evidence:**
 
-- `artifacts/web/lib/site-url.ts` defaults to `https://irwinhunter.com.au`, without `www`.
-- A live `/products` response emitted `<link rel="canonical" href="https://irwinhunter.com.au/products">`.
-- Live category and product responses emitted the same non-`www` host.
-- Home, About, Availability, Guide, Resources, and Contact have titles/descriptions but no `alternates.canonical`, so they emit no canonical link.
-- `artifacts/web/lib/product-url.ts` accepts an absolute HTTP(S) product canonical override, including an external host. That can bypass the same-domain policy when populated.
+- `artifacts/web/lib/site-url.ts` still defaults to `https://irwinhunter.com.au` (no `www`). Live canonicals used that host.
+- `/products`, all 11 category pages, 103 product-route responses, and 6 articles now emit `<link rel="canonical">`.
+- Home, About, Availability, Guide, Resources, and Contact still have titles/descriptions only — no `alternates.canonical`.
+- `productCanonicalUrl()` still accepts an absolute HTTP(S) override on any host. Current rows have no override populated.
+- Trailing-slash policy is consistent: `/products/` and `/about/` `308` to the non-slash path; canonicals omit the slash.
 
-**Search/user impact:** Search engines can treat the non-`www` host as the preferred replacement, while pages without canonicals rely on inference. An external product override can split signals outside the replacement site.
+**Search/user impact:** Search engines and citation systems can treat the non-`www` host as the preferred replacement. Pages without canonicals rely on inference. External overrides can still split signals.
 
-**Recommended implementation:** Make the production URL policy explicit and fail validation when it is not HTTPS `www.irwinhunter.com.au`. Emit canonical URLs for every indexable public page. Restrict or validate product canonical overrides against the approved same-domain policy, and document the selected no-trailing-slash convention.
+**Recommended implementation:** Fail validation unless `PUBLIC_SITE_URL` is `https://www.irwinhunter.com.au`. Emit canonicals on every indexable public page. Restrict product canonical overrides to that origin.
 
 ### SEO-003 — Social metadata and site-level structured data are incomplete
 
 **Severity:** High  
-**Status:** Confirmed defect  
-**Affected routes:** Home, About, Availability, Guide, Resources, Contact, all category pages
+**Status:** Partially fixed  
+**Affected routes:** Home, About, Availability, Guide, Resources, Contact, all category pages; site-wide entity graph
 
 **Evidence:**
 
-- Static page metadata defines only `title` and `description`; no `openGraph` or `twitter` fields are declared.
-- Category metadata defines title, description, and canonical only.
-- Live category responses contain no Open Graph/Twitter tags.
-- Product pages do emit Open Graph and Twitter metadata, plus `Product` and `BreadcrumbList` JSON-LD.
-- Category pages emit `BreadcrumbList` and `ItemList` JSON-LD, and optional FAQ JSON-LD.
-- No public page emits Organization or WebSite JSON-LD. Contact has no LocalBusiness/Organization schema.
+- Product pages emit Open Graph (`og:type` is `website`, not product), Twitter `summary_large_image`, Product + BreadcrumbList JSON-LD, and optional FAQPage (unused; see AEO-001). Sample `/products/ryegrass/safeguard-annual-ryegrass` JSON-LD image still points at `https://irwinhunter.com.au/wp-content/uploads/...`.
+- Article pages emit OG `article` (with published/modified times), Twitter, Article + BreadcrumbList JSON-LD. Author and publisher are Organization `IH Seeds` with no `sameAs`, logo, or person byline.
+- Category pages emit BreadcrumbList and ItemList only. No Open Graph or Twitter.
+- Static marketing pages define title and description only.
+- No public page emits Organization, WebSite, or LocalBusiness JSON-LD.
 
-**Search/user impact:** Shared links for the core marketing, resource, guide, availability, and category pages have no controlled title, description, or image. The replacement site also lacks a stable entity/site graph for search engines.
+**Search/user impact:** Shared links for core marketing and category URLs have no controlled image or social title. The site still lacks a stable entity graph for search and answer engines.
 
-**Recommended implementation:** Add page-appropriate Open Graph/Twitter metadata and same-domain image URLs to public marketing and category pages. Add a site-level Organization/WebSite graph, then add BreadcrumbList or other schema only where it accurately represents visible page content. Keep FAQ schema synchronized with visible FAQs.
+**Recommended implementation:** Add OG/Twitter and same-domain images to static and category pages. Add a site-level Organization/WebSite graph (and LocalBusiness on Contact if the NAP is real). Keep Product `og:type` and image URLs aligned with the canonical host.
 
-### SEO-004 — Sitemap generation can publish non-canonical or noindex URLs
+### SEO-004 — Sitemap generation can publish non-canonical, relative, or redirecting URLs
 
 **Severity:** High  
-**Status:** Confirmed code defect; current dataset has no false noindex rows
-
-**Affected surface:** `/api/sitemap-products` and the future public sitemap
-
-**Evidence:**
-
-- `artifacts/api-server/src/routes/products.ts` filters the API sitemap to Published and Active listings, but does not filter `details.robotsIndex === false`.
-- The API sitemap contains only product URLs; it does not include the home, catalogue, active category, guide, resources, availability, about, or contact pages.
-- `canonicalProductUrl()` returns relative `<loc>` values when `PUBLIC_SITE_URL` is empty.
-- In the current development data, 71 active products were returned and none had `robotsIndex: false`; this means the defect is latent rather than observed in the current rows.
-
-**Search/user impact:** A future noindex product can be submitted in the sitemap, and relative locations are not a complete same-domain sitemap contract. Important public pages would be omitted from discovery.
-
-**Recommended implementation:** Make one canonical sitemap source that applies the same Published/Active-or-New/noindex/canonical rules as page rendering. Include the full public route inventory and emit absolute `https://www.irwinhunter.com.au` locations only.
-
-### SEO-005 — Six imported product redirects do not reach an indexable canonical page
-
-**Severity:** High  
-**Status:** Confirmed defect  
-**Affected legacy sources:** Six of the 77 workbook URLs
+**Status:** Implemented after this audit for the public `/sitemap.xml` contract  
+**Affected surface:** `/sitemap.xml`; `/api/sitemap-products` and `/api/sitemap-articles` remain internal fragments
 
 **Evidence:**
 
-The attached `1 Products` workbook contains 77 current-site `website_url` values. Development data contains 77 matching redirect rows. A direct HTTP check of every normalized source path found 77 `301` responses, but the following destinations fail:
+- Public `/sitemap.xml` now uses absolute `www` locations, includes marketing URLs, categories, indexable products, and articles, and excludes `robotsIndex === false`.
+- Product and article entries emit `<lastmod>`. Product lastmod comes from a sitemap-only inventory, not the public product card payload.
+- Product sitemap locations use the same same-origin canonical helper as the product page.
+- `/api/sitemap-products` and `/api/sitemap-articles` still exist as fragments and are disallowed in `robots.txt`.
+
+**Search/user impact:** The submitted sitemap is the Next `/sitemap.xml` inventory rather than the incomplete API fragments.
+
+**Recommended implementation:** One canonical sitemap source, absolute `www` locations only, the full indexable inventory, noindex excluded, and no URL that does not return `200` with a matching canonical.
+
+### SEO-005 — Most imported product redirects no longer reach the replacement site
+
+**Severity:** Critical  
+**Status:** Regressed  
+**Affected legacy sources:** 77 workbook `website_url` values on `irwinhunter.com.au/product/...`
+
+**Evidence:**
+
+The current seed/workbook still contains 77 unique `websiteUrlLegacy` paths. Live redirect lookup and HTTP checks found:
+
+| Result | Count | Notes |
+| --- | --- | --- |
+| Lookup missing, HTTP `404` | 70 | Includes live products such as `/product/maximix`, `/product/safeguard-annual-ryegrass`, `/product/urana-sub-clover` |
+| `301` to a live `200` page | 7 | The previous six broken sources now land on category pages; `/product/souwest-pasture-mix-2` lands on the SouWest product |
+| Canonical SouWest legacy URL | `/product/souwest-pasture-mix` | `404`; only the `-2` alias is registered |
+
+The six destinations that failed on 16 September now succeed as category landings:
 
 | Legacy source | Redirect destination | Destination result |
 | --- | --- | --- |
-| `/product/avalon-persistent-perennial-ryegrass` | `/products/ryegrass/avalon-perennial-ryegrass` | `404` |
-| `/product/hard-seeded-persian-clover` | `/products/clovers/persian-clover` | `404` |
-| `/product/anywhere-tall-fescue` | `/products/fescues-other-grasses/anywhere-tall-fescue` | `308` to itself |
-| `/product/icon-lucerne` | `/products/lucerne/icon-lucerne` | `308` to itself |
-| `/product/nemnuke-biofumigant` | `/products/forage-grain-crops/nemnuke-biofumigant` | `308` to itself |
-| `/product/parafield-peas` | `/products/forage-grain-crops/parafield-peas` | `308` to itself |
+| `/product/avalon-persistent-perennial-ryegrass` | `/products/ryegrass` | `200` |
+| `/product/hard-seeded-persian-clover` | `/products/clovers` | `200` |
+| `/product/anywhere-tall-fescue` | `/products/fescues-other-grasses` | `200` |
+| `/product/icon-lucerne` | `/products/lucerne` | `200` |
+| `/product/nemnuke-biofumigant` | `/products/forage-grain-crops` | `200` |
+| `/product/parafield-peas` | `/products/forage-grain-crops` | `200` |
 
-The remaining 71 workbook sources returned `301` and reached a `200` product or category response. Database comparison found zero source omissions, extras, self-redirect rows, legacy `/product/...` targets, or calculated destination mismatches; the defect is in the live destination resolution for these six records.
+All 70 missing sources correspond to a currently published public product. The defect is missing redirect rows, not missing products.
 
-**Search/user impact:** Six current-site URLs either lose users and link equity at a 404 or cannot complete a redirect chain. This is a direct migration visibility failure.
+**Search/user impact:** Almost the entire current-site product URL inventory 404s on the replacement host. This is a direct migration visibility failure and is worse than 16 September.
 
-**Recommended implementation:** Resolve each source to an existing canonical product route or an intentional category destination, then verify both slash variants, one-hop completion, `200` destination status, canonical tag, and absence of loops. Keep the attached workbook/current-site export as the source of truth; do not add unrelated historical redirects.
+**Recommended implementation:** Restore a `301` from every workbook `/product/{slug}` (and slash variant) to the live nested canonical, or to an intentional category landing when the product no longer exists. Verify one-hop completion, `200` destination, canonical tag, and no loops. Keep `/product/souwest-pasture-mix` in that register.
 
-### SEO-006 — Empty and browser-generated category roots are crawlable and thin
+### SEO-006 — Empty category root is still crawlable
 
 **Severity:** Medium  
-**Status:** Confirmed in the development catalogue; production confirmation required
-
-**Affected routes:** `/products/other` and seven `browser-*` root category paths
+**Status:** Partially fixed  
+**Affected routes:** `/products/other`
 
 **Evidence:**
 
-- The current API response contains 18 active root categories.
-- Eight have no current product count: `other` plus seven roots named `Browser media category ...` or `Browser photo category ...`.
-- The browser-generated roots have blank `lead`, `seoTitle`, and `seoDescription` values. Their live pages still return `200`, an indexable page shell, and a fallback title such as `Browser media category ... Seed | IH Seeds`.
-- The catalogue page links only six root category routes, so these empty roots are not part of the main category discovery path.
+- Seven `browser-*` empty roots from 16 September are gone.
+- `/products/other` remains active, returns `200`, uses the fallback title `Other Products Seed | IH Seeds`, has blank `seoTitle` / `seoDescription`, and has product count 0.
+- It is not in the featured nav. `/products` only links roots that currently have products, so discovery is weak but the URL is still crawlable.
 
-**Search/user impact:** If these development records reach production, search engines can crawl thin, test-named pages with no useful catalogue content. They also create orphaned crawlable URLs.
+**Search/user impact:** A thin, empty category can still be indexed if discovered via sitemap, leftover links, or direct URL.
 
-**Recommended implementation:** Before generating a sitemap, remove or deactivate test-only taxonomy records and decide whether an intentionally empty business category should be indexable. Give every retained indexable category useful copy, a canonical, internal links, and a product/content threshold.
+**Recommended implementation:** Deactivate or noindex empty roots before publishing a sitemap. Give every retained indexable category unique SEO title, description, and useful copy.
 
 ### SEO-007 — Image text and product imagery are incomplete
 
 **Severity:** Medium  
-**Status:** Confirmed quality gap
-
+**Status:** Still open  
 **Evidence:**
 
-- Important marketing imagery in About, Home, category features, and resource cards is rendered as CSS `backgroundImage`, so it has no image `alt` text.
-- The live current catalogue has 40 of 71 products without a product photo. Product cards and hero sections fall back to the IH Seeds logo with an empty `alt` attribute.
-- The guide page has a real `<img>` with `alt="Seed Guide Cover"`, and the brand logo has descriptive alt text.
+- Home, About, category features, article heroes, and resource cards still use CSS `backgroundImage`, so those photos have no `alt`.
+- 55 of 103 products have no product photo. Listing cards and product heroes fall back to a logo/`product-fallback.svg` with an empty `alt`. `/products` HTML contained 55 empty alts.
+- Of the 48 products with photos, 42 use `irwinhunter.com.au` WordPress URLs and 6 use same-origin `/api/media/...`. No product has `socialImage` set.
+- All 11 category images are Unsplash URLs. Five of six article heroes are Unsplash; one uses `/api/media/...`.
+- Guide cover remains a real `<img>` with a descriptive alt. Brand logo alt remains `IH Seeds — Irwin Hunter & Co`.
 
-**Search/user impact:** Image search and assistive technology receive little descriptive context for key content images; generic logo fallbacks do not help product discovery.
+**Search/user impact:** Image search and assistive technology get little product context. Social and schema images often point at the old WordPress host or at generic stock photos, which weakens both SEO and citation.
 
-**Recommended implementation:** Decide which imagery is decorative. Use semantic images with useful alt text for informative photos, add editor validation for product social/hero imagery where required, and provide stable same-domain social images. This does not require adding alt text to decorative background layers.
+**Recommended implementation:** Use semantic images with useful alt text for informative photos. Host social/schema images on the canonical `www` origin. Treat Unsplash and empty logo fallbacks as decorative or replace them before launch.
 
 ### SEO-008 — Policy URLs redirect to Contact instead of providing policy content
 
 **Severity:** Medium  
-**Status:** Confirmed route behavior
-
+**Status:** Still open  
 **Affected routes:** `/terms-and-conditions`, `/privacy`
 
-**Evidence:** `artifacts/web/next.config.mjs` permanently redirects both policy paths to `/contact`; there are no policy page modules in the public route inventory.
+**Evidence:** `artifacts/web/next.config.mjs` still permanently redirects both paths to `/contact`. Live responses are `308` to `/contact`. There are no policy page modules.
 
-**Search/user impact:** Existing users or crawlers following policy URLs arrive at an unrelated contact page. This creates a content mismatch and leaves privacy/terms information undiscoverable.
+**Search/user impact:** Crawlers and users following policy URLs arrive at an unrelated contact page.
 
-**Recommended implementation:** Confirm the legal content and migration requirement with the owner. Either provide real policy pages with their own metadata and internal links or intentionally retire the old URLs with a documented status and destination. This audit did not change legal content.
+**Recommended implementation:** Confirm the legal requirement. Provide real policy pages with their own metadata, or retire the old URLs with a documented status.
 
 ### SEO-009 — Public response caching and asset delivery create performance risk
 
 **Severity:** Medium  
-**Status:** Confirmed implementation risk; production Web Vitals not measured
-
+**Status:** Still open  
 **Evidence:**
 
-- Catalogue fetches use `cache: "no-store"` in `artifacts/web/lib/catalogue.ts`.
-- Live public HTML responses use `Cache-Control: no-store, must-revalidate`.
-- Measured local SSR response sizes included approximately 853 KB for `/products`, 764 KB for `/resources`, and 458 KB for `/availability`.
-- The public app uses CSS background images and direct external Unsplash URLs rather than a responsive image pipeline. Production output has not been tested with real-device Web Vitals.
+- Catalogue fetches still use `cache: "no-store"` in `artifacts/web/lib/catalogue.ts`.
+- Public HTML responses use `Cache-Control: no-store, must-revalidate`.
+- Measured local SSR sizes: `/products` ~724 KB, `/availability` ~638 KB, `/resources` ~614 KB, product pages typically ~140 KB (max ~177 KB for `/products/mixes/maximix`).
+- CSS background images and direct Unsplash/WordPress URLs are still used instead of a responsive same-origin image pipeline.
+- Production Web Vitals were not measured.
 
-**Search/user impact:** Large HTML/data payloads, uncached catalogue reads, and unoptimized responsive imagery can increase mobile LCP/INP/TTFB and make crawls more expensive, even though the mobile screenshot rendered without an obvious layout break.
+**Search/user impact:** Large uncached HTML and unoptimized images increase TTFB/LCP and crawl cost.
 
-**Recommended implementation:** Preserve freshness where required, but add bounded caching/revalidation and invalidate it on published catalogue changes. Measure production Core Web Vitals on representative mobile routes, then optimize image dimensions/formats, loading priority, and resource caching based on those measurements.
+**Recommended implementation:** Add bounded revalidation for published catalogue reads, then measure mobile Web Vitals on representative routes before optimizing images.
 
 ### SEO-010 — Public security/header posture is not documented or consistently enforced
 
 **Severity:** Medium  
-**Status:** Confirmed implementation gap
+**Status:** Still open  
+**Evidence:**
+
+- `artifacts/web/next.config.mjs` still defines no security headers.
+- Public Next responses include `X-Powered-By: Next.js` and no HSTS, CSP, Referrer-Policy, or Permissions-Policy.
+- `/admin` is `X-Powered-By: Express` with `Cache-Control: public, max-age=0`.
+
+**Search/user impact:** Primarily a trust/security gap; inconsistent headers also affect crawler and social fetch reliability.
+
+**Recommended implementation:** Set the header policy at the public edge/Next layer, hide framework disclosure, and verify HTTPS/HSTS on both hosts in production.
+
+### SEO-011 — Three published products are unreachable at their canonical nested URLs
+
+**Severity:** High  
+**Status:** New  
+**Affected routes:**
+
+- `/products/fescues-other-grasses/tall-fescue`
+- `/products/fescues-other-grasses/puccinellia`
+- `/products/sub-tropical-grasses/carpet-grass`
 
 **Evidence:**
 
-- `artifacts/web/next.config.mjs` defines no response security headers.
-- Live Next public responses include `X-Powered-By: Next.js` and no observed HSTS, CSP, Referrer-Policy, or Permissions-Policy headers.
-- The API response has different header behavior from the public Next response.
+- Each slug is both a published Active product and an active child category under the same root.
+- `GET /api/redirects/lookup` returns the parent category. Middleware therefore `301`s the nested product URL before the product page can render.
+- `/api/sitemap-products` still lists all three paths.
+- `0014_nested_product_urls.sql` skipped *inserting* child-category redirects when a live product owned the slug, but earlier taxonomy redirects remain and win.
 
-**Search/user impact:** This is primarily a security and trust risk, but inconsistent edge/header behavior can affect resource loading, mixed-content safety, and the reliability of crawler/social fetches. The public admin shell is also not separated by a robots policy (see SEO-001).
+**Search/user impact:** Three indexable catalogue products have no reachable canonical URL. The sitemap advertises destinations that never show the product.
 
-**Recommended implementation:** Establish the production header policy at the public edge/Next layer, remove framework disclosure where appropriate, and verify CSP allows only the intended API, media, image, and analytics origins. Validate HTTPS redirect/HSTS behavior on both `www` and the non-`www` host in production.
+**Recommended implementation:** Prefer the product page at `/products/{root}/{slug}` when a live product owns that slug; keep child taxonomy off the public nested path (already the intended contract). Remove or override the colliding redirect rows, then confirm the three URLs `200` with Product JSON-LD.
+
+### SEO-012 — Category SEO fields are blank, so titles collapse to a shared pattern
+
+**Severity:** Medium  
+**Status:** New  
+**Affected routes:** All 11 `/products/{category}` pages
+
+**Evidence:**
+
+- Every active root has empty `seoTitle`, `seoDescription`, and `pageHeading`.
+- Live titles fall back to `{name} Seed | IH Seeds` (for example `Ryegrasses Seed | IH Seeds`).
+- Category `rainfall` is present in the API (`500–900+ mm` for ryegrass) but the category intro only renders `lead`.
+- Duplicate titles were observed where colliding product URLs `301` onto the category page (`Fescues & Other Grasses Seed | IH Seeds`, `Sub-Tropical Grasses Seed | IH Seeds`).
+
+**Search/user impact:** Category SERP titles are generic and similar. Useful rainfall facts are not in the category lead, which also weakens AEO.
+
+**Recommended implementation:** Fill unique category SEO titles, descriptions, and headings. Surface rainfall and other category facts in visible copy before adding them to schema.
+
+## AEO findings (answer engines)
+
+### AEO-001 — FAQ schema is implemented but the catalogue has no FAQs
+
+**Severity:** High  
+**Status:** New  
+**Affected routes:** Product and category pages
+
+**Evidence:**
+
+- Product and category templates emit visible `<details>` FAQs and matching `FAQPage` JSON-LD when question and answer are both present.
+- Live API data: **0 / 103** products and **0 / 11** categories have a complete FAQ. No live page emitted `FAQPage`.
+- Product copy is otherwise extractable: 103/103 have `description`, 101 have `blurb` and `keyAttributes`, 103 have sowing rates, 97 have min rainfall, and Quick facts render as HTML plus Product `additionalProperty`.
+
+**Answer-engine impact:** People Also Ask, FAQ rich results, and AI Overviews have no on-page Q&A to quote. The implementation is fine; the content is missing.
+
+**Recommended implementation:** Add a small set of unique, visible FAQs per category and for high-traffic products (sowing rate, rainfall, livestock, persistence). Keep schema limited to FAQs that appear on the page.
+
+### AEO-002 — Site entity, NAP, and Contact schema are incomplete or unsafe to cite
+
+**Severity:** High  
+**Status:** New  
+**Affected routes:** All pages; especially `/contact` and `/about`
+
+**Evidence:**
+
+- Visible Contact NAP: `(08) 9123 4567`, `info@irwinhunter.com.au`, `Unit 5, 75 Robinson Avenue, Belmont, WA 6104`, Monday–Friday 8am–5pm AWST.
+- The phone number is a `+61891234567` placeholder in `ContactPage.tsx`, not an editor-managed setting.
+- No LocalBusiness, Organization, or WebSite JSON-LD. Footer identifies `Irwin Hunter & Co` and Australian Seed Federation membership; titles use `IH Seeds`; canonical host is `irwinhunter.com.au`.
+- Article JSON-LD author is Organization `IH Seeds` with no expert byline, credentials, or `sameAs` profile links.
+
+**Answer-engine impact:** Answer engines that quote a phone number, legal name, or “who is IH Seeds / Irwin Hunter” can cite a placeholder or split the brand across three labels.
+
+**Recommended implementation:** Publish one legal entity string, real NAP, Organization/`sameAs` links, and LocalBusiness only after the phone/address are confirmed. Add an expert byline on agronomic articles.
+
+### AEO-003 — Answer-first structure is uneven outside product pages
+
+**Severity:** Medium  
+**Status:** New  
+
+**Evidence:**
+
+- Product pages have a single H1, blurb, key attributes, description, and Quick facts — a strong extractable pattern.
+- Category intros are one lead sentence and do not use stored rainfall values.
+- Home H1 is split across `<span>` + `<strong>` (`Western Australia's` / `Pasture Seed Specialists.`) and concatenates without a space in the accessible string.
+- Articles are short (about 1,400–1,500 characters). `/resources/annual-or-perennial-ryegrass` is a good question-style H1; most other article bodies have few intermediate headings. One article body is only 240 characters (`autumn-sowing-window`).
+- Availability copy says warehouse levels are “updated weekly” but there is no `dateModified` on that page.
+- Growing notes on products sit in `<details>` summaries, which remain in SSR HTML and are usable, but they are not framed as questions.
+
+**Answer-engine impact:** Product specs can be quoted; category and marketing pages are weaker answers to “which ryegrass for X mm rainfall” or “who is IH Seeds”.
+
+**Recommended implementation:** Put one concise answer sentence under each H1. Surface category rainfall. Add dated freshness on Availability. Expand the thinnest article or noindex it.
+
+## GEO findings (generative engines)
+
+### GEO-001 — No AI crawler policy and no `llms.txt`
+
+**Severity:** High  
+**Status:** New  
+**Affected routes:** `/robots.txt`, `/llms.txt`, `/llms-full.txt`
+
+**Evidence:**
+
+- All three files `404` as HTML.
+- There is no allow/deny policy for Googlebot, GPTBot, ClaudeBot, PerplexityBot, Google-Extended, or similar.
+- Public content is in SSR HTML (positive), but crawlers have no machine-readable site map or publisher policy.
+
+**Generative-engine impact:** Some AI crawlers treat a missing robots file as allowed, others as unknown. There is no `llms.txt` summary for citation, and `/admin` is not excluded.
+
+**Recommended implementation:** Ship `robots.txt` that allows the chosen search/AI crawlers, blocks `/admin`, and points at `/sitemap.xml`. Add a short `llms.txt` listing canonical pages, entity name, and contact — after the host policy is fixed.
+
+### GEO-002 — Citation graph is split across hosts, brands, and image origins
+
+**Severity:** High  
+**Status:** New  
+
+**Evidence:**
+
+- Canonical host `irwinhunter.com.au` vs required `www.irwinhunter.com.au`.
+- Brand strings: IH Seeds, Irwin Hunter & Co, `info@irwinhunter.com.au`.
+- Product schema/OG images on the old WordPress host; category/article heroes on `images.unsplash.com`; some media on `/api/media/...`.
+- Product JSON-LD `url` uses the non-`www` host; at least one product `image` is a relative `/api/media/...` path.
+- No `sameAs` set for the company, seed-federation membership, or social/profile URLs.
+
+**Generative-engine impact:** Models grounding on URL + entity + image can treat the old WordPress site, Unsplash, and the replacement site as different sources, or refuse to cite a page whose media lives elsewhere.
+
+**Recommended implementation:** One `www` origin for page, canonical, schema `url`, and images. One Organization node with aliases (`IH Seeds`, `Irwin Hunter & Co`) and `sameAs`.
+
+### GEO-003 — Thin, colliding, or admin URLs can be retrieved as if they were answers
+
+**Severity:** High  
+**Status:** New  
+
+**Evidence:**
+
+- `/products/other` is an empty indexable shell.
+- Three product sitemap URLs `301` to category pages, so a crawler following the sitemap never sees those products.
+- `/admin` returns `200` titled `Admin — IH Seeds` with description `IH Seeds catalogue administration.` and no noindex.
+- Policy URLs resolve to Contact, so a model asked for “IH Seeds privacy policy” can cite the enquiry page.
+
+**Generative-engine impact:** Retrieval systems may ingest the admin shell, empty Other Products page, or Contact-as-policy page as site truth.
+
+**Recommended implementation:** Noindex/disallow `/admin`, remove empty taxonomy from the sitemap, and do not let policy or product URLs land on the wrong template.
+
+### GEO-004 — E-E-A-T and freshness signals are thin for generative citation
+
+**Severity:** Medium  
+**Status:** New  
+
+**Evidence:**
+
+- Articles include `datePublished` / `dateModified` in OG and JSON-LD (good). Other indexable pages do not.
+- No named agronomist/author, no review date on product specs, no visible source for trial claims (“trial data behind them” on Home/About).
+- 55 products have no photo; 0 social images; 5/6 articles use Unsplash.
+- Product Offers often omit `price` even when a display price exists (Maximix Offer had availability only), so shopping/citation cards lack a grounded price.
+
+**Generative-engine impact:** Models prefer attributable, dated, expert-authored pages with first-party media. The catalogue facts are strong; the trust layer around them is not.
+
+**Recommended implementation:** Named authors or reviewers on articles, visible last-updated on Availability and key products, first-party images, and Offer price only when it is a real numeric price.
 
 ## Passed checks and non-defects
 
-- The active product and category pages rendered meaningful content in the initial HTML response; they do not depend on client-side JavaScript for their primary text.
-- All 18 crawled active root category routes returned `200`, one H1, and category/breadcrumb structured data.
-- All 71 crawled active product routes returned `200`, one H1, product/breadcrumb structured data, Open Graph tags, and Twitter tags.
-- Current static page titles and descriptions are distinct and useful at a basic level.
-- Current product titles and fallback descriptions were distinct in the 71-row development API sample.
-- The registered redirect table is source-complete against the attached workbook at the row/path level. The six destination failures are the remaining issue.
-- The mobile home screenshot showed a responsive header, menu control, readable hero content, and no obvious horizontal overflow at 390px wide. This is not a substitute for production device or Web Vitals testing.
-- No duplicate-content defect was confirmed from the local route/content sample. Production duplicate checks and historical URL coverage remain outside this local audit.
+- Active product, category, and article pages render primary text in the initial HTML; they do not depend on client JavaScript for that copy.
+- 100 reachable product pages returned `200`, one H1, Product + BreadcrumbList JSON-LD, Open Graph, and Twitter tags.
+- All 11 active root category pages returned `200`, one H1, and BreadcrumbList/ItemList JSON-LD.
+- All 6 article pages returned `200`, one H1, Article JSON-LD, OG `article`, and Twitter tags. Current article `robotsIndex` values are all true; the article sitemap already filters noindex.
+- Static titles and descriptions are distinct from each other (Contact is reused only because policy URLs redirect there).
+- Product SEO titles in the 103-row sample were unique. 77 products have an explicit `seoTitle`; 101 have `seoDescription` or blurb fallback.
+- Trailing-slash canonicalisation is consistent (no-slash).
+- `/products/categories` correctly `301`s to `/products`.
+- Hardcoded WordPress marketing redirects in `next.config.mjs` (`/about-us` → `/about`, `/news` → `/resources`, `/lucerne` → `/products/lucerne`, and the rest of that list) return `308` to the intended public path.
+- HTML language is `lang="en"`. 404 pages emit `noindex`.
+- Browser-generated empty taxonomy roots from 16 September are no longer present.
+- This local pass did not confirm a duplicate-content defect among the `200` canonical product/article titles. Production duplicate and historical-URL coverage remain outside the local audit.
 
 ## Recommended implementation work, in priority order
 
-1. Correct the six redirect destinations and verify the complete workbook source list with a one-hop HTTP test.
-2. Set and enforce the canonical production origin as `https://www.irwinhunter.com.au`; add canonicals to every indexable static and category page.
-3. Add public `robots.txt` and `sitemap.xml` routes, with absolute same-domain URLs and the full indexable route inventory.
-4. Keep noindex products out of the sitemap and define the exact Published/Active/New inclusion rule.
-5. Remove or deactivate browser-generated/empty taxonomy roots before publishing the sitemap.
-6. Add static/category Open Graph, Twitter, Organization, WebSite, and applicable breadcrumb/site schema.
-7. Resolve policy URL content and confirm whether the existing hardcoded non-product redirects remain within the approved migration scope.
-8. Run production-edge checks for host/protocol redirects, headers, image delivery, mobile Core Web Vitals, and connected Search Console coverage after implementation.
+1. Restore the 77 workbook `/product/{slug}` redirects (including `/product/souwest-pasture-mix`) and verify one-hop HTTP to a `200` canonical page.
+2. Fix the three product/child-category slug collisions so those products `200` at their nested URLs and drop out of any redirect table that points at the parent category.
+3. Set and enforce `https://www.irwinhunter.com.au`; add canonicals to every remaining indexable static page.
+4. Add public `/robots.txt` and `/sitemap.xml` with absolute `www` URLs, the full indexable inventory, noindex/admin excluded, and no redirecting product locs. Add `llms.txt` only after that host policy is stable.
+5. Deactivate or noindex `/products/other`; fill category SEO titles/descriptions; decide AI-crawler allow/disallow explicitly.
+6. Add Organization/WebSite/LocalBusiness schema from confirmed NAP; replace the placeholder phone before it can be cited. Add OG/Twitter to static and category pages.
+7. Populate visible FAQs on categories and key products; keep FAQ schema in sync.
+8. Resolve policy URL content; noindex `/admin`.
+9. Replace WordPress/Unsplash social and schema images with same-origin assets; add product photos or honest decorative treatment.
+10. Run production-edge checks for host/protocol redirects, headers, mobile Core Web Vitals, Search Console coverage, and AI-crawler `robots.txt` behaviour after the work above.
 
 ## Limitations and handoff
 
-This audit did not access production, Google Search Console, Analytics, backlink tools, or the live old site. It cannot confirm DNS/edge behavior, existing indexed URL counts, ranking changes, canonical behavior under production environment variables, or production Web Vitals. Those checks should be run after the implementation work above and before the DNS/domain cutover.
+This audit did not access production, Google Search Console, Analytics, backlink tools, or the live old site. It cannot confirm DNS/edge behaviour, indexed URL counts, ranking changes, canonical behaviour under production `PUBLIC_SITE_URL`, or production Web Vitals. Those checks should run after the implementation work above and before DNS/domain cutover.
+
+AEO/GEO conclusions are based on SSR HTML, schema, entity consistency, and crawler files. They are not based on live ChatGPT, Perplexity, Gemini, or Google AI Overview sampling.

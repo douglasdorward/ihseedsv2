@@ -7136,6 +7136,17 @@ export const CompleteMediaUploadParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const completeMediaUploadBodyOwnerNameMax = 300;
+
+export const completeMediaUploadBodyRoleMax = 40;
+
+
+
+export const CompleteMediaUploadBody = zod.object({
+  "ownerName": zod.string().max(completeMediaUploadBodyOwnerNameMax).optional(),
+  "role": zod.string().max(completeMediaUploadBodyRoleMax).optional()
+})
+
 export const completeMediaUploadResponseBytesMultipleOf = 1;
 
 export const completeMediaUploadResponseWidthMultipleOf = 1;
@@ -7356,6 +7367,17 @@ export const LookupRedirectResponse = zod.object({
  * @summary Active product sitemap
  */
 export const GetProductSitemapResponse = zod.unknown()
+
+
+/**
+ * Sitemap-only lastmod values for published Active or New products. Does not expose product card payloads.
+ * @summary Indexable product sitemap dates
+ */
+export const GetSitemapProductEntriesResponseItem = zod.object({
+  "slug": zod.string(),
+  "lastModified": zod.coerce.date()
+})
+export const GetSitemapProductEntriesResponse = zod.array(GetSitemapProductEntriesResponseItem)
 
 
 /**
@@ -8545,8 +8567,9 @@ export const ListAdminArticlesResponseItem = zod.object({
   "heroImageSrc": zod.string(),
   "heroImageAssetId": zod.string().nullable(),
   "relatedProductSlugs": zod.array(zod.string().max(listAdminArticlesResponseRelatedProductSlugsItemMax)).max(listAdminArticlesResponseRelatedProductSlugsMax),
-  "publishStatus": zod.enum(['Draft', 'Published']),
+  "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
   "publishedAt": zod.coerce.date().nullable(),
+  "scheduledPublishAt": zod.coerce.date().nullable(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
   "socialTitle": zod.string(),
@@ -8635,8 +8658,9 @@ export const CreateArticleResponse = zod.object({
   "heroImageSrc": zod.string(),
   "heroImageAssetId": zod.string().nullable(),
   "relatedProductSlugs": zod.array(zod.string().max(createArticleResponseRelatedProductSlugsItemMax)).max(createArticleResponseRelatedProductSlugsMax),
-  "publishStatus": zod.enum(['Draft', 'Published']),
+  "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
   "publishedAt": zod.coerce.date().nullable(),
+  "scheduledPublishAt": zod.coerce.date().nullable(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
   "socialTitle": zod.string(),
@@ -8645,6 +8669,88 @@ export const CreateArticleResponse = zod.object({
   "robotsIndex": zod.boolean(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Download the blog article Excel import template
+ */
+export const DownloadArticleImportTemplateResponse = zod.unknown()
+
+
+/**
+ * @summary Export all blog articles as an Excel workbook
+ */
+export const ExportArticlesWorkbookResponse = zod.unknown()
+
+
+/**
+ * @summary Validate a blog article Excel import
+ */
+export const DryRunArticleImportBody = zod.object({
+  "workbookBase64": zod.string()
+})
+
+export const dryRunArticleImportResponseRowsMultipleOf = 1;
+
+export const dryRunArticleImportResponseCreatedMultipleOf = 1;
+
+export const dryRunArticleImportResponseUpdatedMultipleOf = 1;
+
+export const dryRunArticleImportResponseSkippedMultipleOf = 1;
+
+export const dryRunArticleImportResponseIssuesItemRowMultipleOf = 1;
+
+
+
+export const DryRunArticleImportResponse = zod.object({
+  "token": zod.string(),
+  "rows": zod.number().multipleOf(dryRunArticleImportResponseRowsMultipleOf),
+  "created": zod.number().multipleOf(dryRunArticleImportResponseCreatedMultipleOf),
+  "updated": zod.number().multipleOf(dryRunArticleImportResponseUpdatedMultipleOf),
+  "skipped": zod.number().multipleOf(dryRunArticleImportResponseSkippedMultipleOf),
+  "issues": zod.array(zod.object({
+  "row": zod.number().multipleOf(dryRunArticleImportResponseIssuesItemRowMultipleOf),
+  "column": zod.string(),
+  "problem": zod.string()
+})),
+  "plannedChanges": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Commit a validated blog article Excel import
+ */
+export const CommitArticleImportBody = zod.object({
+  "workbookBase64": zod.string()
+}).and(zod.object({
+  "token": zod.string()
+}))
+
+export const commitArticleImportResponseRowsMultipleOf = 1;
+
+export const commitArticleImportResponseCreatedMultipleOf = 1;
+
+export const commitArticleImportResponseUpdatedMultipleOf = 1;
+
+export const commitArticleImportResponseSkippedMultipleOf = 1;
+
+export const commitArticleImportResponseIssuesItemRowMultipleOf = 1;
+
+
+
+export const CommitArticleImportResponse = zod.object({
+  "token": zod.string(),
+  "rows": zod.number().multipleOf(commitArticleImportResponseRowsMultipleOf),
+  "created": zod.number().multipleOf(commitArticleImportResponseCreatedMultipleOf),
+  "updated": zod.number().multipleOf(commitArticleImportResponseUpdatedMultipleOf),
+  "skipped": zod.number().multipleOf(commitArticleImportResponseSkippedMultipleOf),
+  "issues": zod.array(zod.object({
+  "row": zod.number().multipleOf(commitArticleImportResponseIssuesItemRowMultipleOf),
+  "column": zod.string(),
+  "problem": zod.string()
+})),
+  "plannedChanges": zod.array(zod.string())
 })
 
 
@@ -8681,8 +8787,9 @@ export const GetAdminArticleResponse = zod.object({
   "heroImageSrc": zod.string(),
   "heroImageAssetId": zod.string().nullable(),
   "relatedProductSlugs": zod.array(zod.string().max(getAdminArticleResponseRelatedProductSlugsItemMax)).max(getAdminArticleResponseRelatedProductSlugsMax),
-  "publishStatus": zod.enum(['Draft', 'Published']),
+  "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
   "publishedAt": zod.coerce.date().nullable(),
+  "scheduledPublishAt": zod.coerce.date().nullable(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
   "socialTitle": zod.string(),
@@ -8753,7 +8860,8 @@ export const UpdateArticleBody = zod.object({
   "socialTitle": zod.string().max(updateArticleBodySocialTitleMax).optional(),
   "socialDescription": zod.string().max(updateArticleBodySocialDescriptionMax).optional(),
   "socialImage": zod.string().max(updateArticleBodySocialImageMax).optional(),
-  "robotsIndex": zod.boolean().optional()
+  "robotsIndex": zod.boolean().optional(),
+  "publishedAt": zod.coerce.date().optional()
 })
 
 export const updateArticleResponseIdMultipleOf = 1;
@@ -8778,8 +8886,9 @@ export const UpdateArticleResponse = zod.object({
   "heroImageSrc": zod.string(),
   "heroImageAssetId": zod.string().nullable(),
   "relatedProductSlugs": zod.array(zod.string().max(updateArticleResponseRelatedProductSlugsItemMax)).max(updateArticleResponseRelatedProductSlugsMax),
-  "publishStatus": zod.enum(['Draft', 'Published']),
+  "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
   "publishedAt": zod.coerce.date().nullable(),
+  "scheduledPublishAt": zod.coerce.date().nullable(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
   "socialTitle": zod.string(),
@@ -8816,6 +8925,10 @@ export const PublishArticleParams = zod.object({
   "id": zod.coerce.number().min(1).multipleOf(publishArticlePathIdMultipleOf)
 })
 
+export const PublishArticleBody = zod.object({
+  "publishedAt": zod.coerce.date().optional()
+})
+
 export const publishArticleResponseIdMultipleOf = 1;
 
 export const publishArticleResponseTagsItemMax = 80;
@@ -8838,8 +8951,9 @@ export const PublishArticleResponse = zod.object({
   "heroImageSrc": zod.string(),
   "heroImageAssetId": zod.string().nullable(),
   "relatedProductSlugs": zod.array(zod.string().max(publishArticleResponseRelatedProductSlugsItemMax)).max(publishArticleResponseRelatedProductSlugsMax),
-  "publishStatus": zod.enum(['Draft', 'Published']),
+  "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
   "publishedAt": zod.coerce.date().nullable(),
+  "scheduledPublishAt": zod.coerce.date().nullable(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
   "socialTitle": zod.string(),
@@ -8884,8 +8998,9 @@ export const UnpublishArticleResponse = zod.object({
   "heroImageSrc": zod.string(),
   "heroImageAssetId": zod.string().nullable(),
   "relatedProductSlugs": zod.array(zod.string().max(unpublishArticleResponseRelatedProductSlugsItemMax)).max(unpublishArticleResponseRelatedProductSlugsMax),
-  "publishStatus": zod.enum(['Draft', 'Published']),
+  "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
   "publishedAt": zod.coerce.date().nullable(),
+  "scheduledPublishAt": zod.coerce.date().nullable(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
   "socialTitle": zod.string(),
@@ -8898,17 +9013,76 @@ export const UnpublishArticleResponse = zod.object({
 
 
 /**
- * @summary Get public homepage and seed guide settings
+ * @summary Schedule a blog article for future publishing
+ */
+export const scheduleArticlePathIdMultipleOf = 1;
+
+
+
+export const ScheduleArticleParams = zod.object({
+  "id": zod.coerce.number().min(1).multipleOf(scheduleArticlePathIdMultipleOf)
+})
+
+export const ScheduleArticleBody = zod.object({
+  "scheduledPublishAt": zod.coerce.date()
+})
+
+export const scheduleArticleResponseIdMultipleOf = 1;
+
+export const scheduleArticleResponseTagsItemMax = 80;
+
+export const scheduleArticleResponseTagsMax = 12;
+
+export const scheduleArticleResponseRelatedProductSlugsItemMax = 180;
+
+export const scheduleArticleResponseRelatedProductSlugsMax = 3;
+
+
+
+export const ScheduleArticleResponse = zod.object({
+  "id": zod.number().multipleOf(scheduleArticleResponseIdMultipleOf),
+  "slug": zod.string(),
+  "title": zod.string(),
+  "excerpt": zod.string(),
+  "body": zod.string(),
+  "tags": zod.array(zod.string().max(scheduleArticleResponseTagsItemMax)).max(scheduleArticleResponseTagsMax),
+  "heroImageSrc": zod.string(),
+  "heroImageAssetId": zod.string().nullable(),
+  "relatedProductSlugs": zod.array(zod.string().max(scheduleArticleResponseRelatedProductSlugsItemMax)).max(scheduleArticleResponseRelatedProductSlugsMax),
+  "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
+  "publishedAt": zod.coerce.date().nullable(),
+  "scheduledPublishAt": zod.coerce.date().nullable(),
+  "seoTitle": zod.string(),
+  "seoDescription": zod.string(),
+  "socialTitle": zod.string(),
+  "socialDescription": zod.string(),
+  "socialImage": zod.string(),
+  "robotsIndex": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get public homepage, about page, company and seed guide settings
  */
 export const getPublicSiteSettingsResponseHomepageHeroImageSrcMax = 500;
 
 export const getPublicSiteSettingsResponseHomepageHeroImageAssetIdMax = 80;
+
+export const getPublicSiteSettingsResponseHomepageHeroImagesItemSrcMax = 500;
+
+export const getPublicSiteSettingsResponseHomepageHeroImagesItemAssetIdMax = 80;
+
+export const getPublicSiteSettingsResponseHomepageHeroImagesMax = 6;
 
 export const getPublicSiteSettingsResponseHomepageHeroEyebrowMax = 120;
 
 export const getPublicSiteSettingsResponseHomepageHeroHeadingMax = 180;
 
 export const getPublicSiteSettingsResponseHomepageHeroBodyMax = 2000;
+
+export const getPublicSiteSettingsResponseHomepageAboutBodyMax = 2000;
 
 export const getPublicSiteSettingsResponseHomepageBestSellerSlugsItemMax = 160;
 
@@ -8934,15 +9108,63 @@ export const getPublicSiteSettingsResponseSeedGuidePageIntroMax = 2000;
 
 export const getPublicSiteSettingsResponseSeedGuidePageButtonLabelMax = 120;
 
+export const getPublicSiteSettingsResponseAboutHeroEyebrowMax = 120;
+
+export const getPublicSiteSettingsResponseAboutHeroHeadingMax = 180;
+
+export const getPublicSiteSettingsResponseAboutHeroHeadingEmphasisMax = 80;
+
+export const getPublicSiteSettingsResponseAboutHeroIntroMax = 500;
+
+export const getPublicSiteSettingsResponseAboutHeroImageSrcMax = 500;
+
+export const getPublicSiteSettingsResponseAboutHeroImageAssetIdMax = 80;
+
+export const getPublicSiteSettingsResponseAboutStoryLeadMax = 2000;
+
+export const getPublicSiteSettingsResponseAboutStoryParagraphsItemMax = 4000;
+
+export const getPublicSiteSettingsResponseAboutStoryParagraphsMax = 3;
+
+export const getPublicSiteSettingsResponseAboutValuesHeadingMax = 80;
+
+export const getPublicSiteSettingsResponseAboutValuesHeadingEmphasisMax = 80;
+
+export const getPublicSiteSettingsResponseAboutValuesItemTitleMax = 80;
+
+export const getPublicSiteSettingsResponseAboutValuesItemBodyMax = 500;
+
+export const getPublicSiteSettingsResponseAboutValuesMax = 3;
+
+export const getPublicSiteSettingsResponseCompanyLegalNameMax = 160;
+
+export const getPublicSiteSettingsResponseCompanyTradingNameMax = 160;
+
+export const getPublicSiteSettingsResponseCompanyPhoneMax = 40;
+
+export const getPublicSiteSettingsResponseCompanyEmailMax = 180;
+
+export const getPublicSiteSettingsResponseCompanyAddressMax = 240;
+
+export const getPublicSiteSettingsResponseCompanyOfficeHoursMax = 120;
+
+export const getPublicSiteSettingsResponseCompanyAbnMax = 20;
+
 
 
 export const GetPublicSiteSettingsResponse = zod.object({
   "homepage": zod.object({
   "heroImageSrc": zod.string().max(getPublicSiteSettingsResponseHomepageHeroImageSrcMax),
   "heroImageAssetId": zod.string().max(getPublicSiteSettingsResponseHomepageHeroImageAssetIdMax).nullable(),
+  "heroImages": zod.array(zod.object({
+  "src": zod.string().max(getPublicSiteSettingsResponseHomepageHeroImagesItemSrcMax),
+  "assetId": zod.string().max(getPublicSiteSettingsResponseHomepageHeroImagesItemAssetIdMax).nullable()
+})).max(getPublicSiteSettingsResponseHomepageHeroImagesMax),
+  "heroSlideshow": zod.boolean(),
   "heroEyebrow": zod.string().max(getPublicSiteSettingsResponseHomepageHeroEyebrowMax),
   "heroHeading": zod.string().max(getPublicSiteSettingsResponseHomepageHeroHeadingMax),
   "heroBody": zod.string().max(getPublicSiteSettingsResponseHomepageHeroBodyMax),
+  "aboutBody": zod.string().max(getPublicSiteSettingsResponseHomepageAboutBodyMax),
   "bestSellerSlugs": zod.array(zod.string().max(getPublicSiteSettingsResponseHomepageBestSellerSlugsItemMax)).max(getPublicSiteSettingsResponseHomepageBestSellerSlugsMax)
 }),
   "seedGuide": zod.object({
@@ -8957,6 +9179,31 @@ export const GetPublicSiteSettingsResponse = zod.object({
   "pageIntro": zod.string().max(getPublicSiteSettingsResponseSeedGuidePageIntroMax),
   "pageButtonLabel": zod.string().max(getPublicSiteSettingsResponseSeedGuidePageButtonLabelMax)
 }),
+  "about": zod.object({
+  "heroEyebrow": zod.string().max(getPublicSiteSettingsResponseAboutHeroEyebrowMax),
+  "heroHeading": zod.string().max(getPublicSiteSettingsResponseAboutHeroHeadingMax),
+  "heroHeadingEmphasis": zod.string().max(getPublicSiteSettingsResponseAboutHeroHeadingEmphasisMax),
+  "heroIntro": zod.string().max(getPublicSiteSettingsResponseAboutHeroIntroMax),
+  "heroImageSrc": zod.string().max(getPublicSiteSettingsResponseAboutHeroImageSrcMax),
+  "heroImageAssetId": zod.string().max(getPublicSiteSettingsResponseAboutHeroImageAssetIdMax).nullable(),
+  "storyLead": zod.string().max(getPublicSiteSettingsResponseAboutStoryLeadMax),
+  "storyParagraphs": zod.array(zod.string().max(getPublicSiteSettingsResponseAboutStoryParagraphsItemMax)).max(getPublicSiteSettingsResponseAboutStoryParagraphsMax),
+  "valuesHeading": zod.string().max(getPublicSiteSettingsResponseAboutValuesHeadingMax),
+  "valuesHeadingEmphasis": zod.string().max(getPublicSiteSettingsResponseAboutValuesHeadingEmphasisMax),
+  "values": zod.array(zod.object({
+  "title": zod.string().max(getPublicSiteSettingsResponseAboutValuesItemTitleMax),
+  "body": zod.string().max(getPublicSiteSettingsResponseAboutValuesItemBodyMax)
+})).max(getPublicSiteSettingsResponseAboutValuesMax)
+}),
+  "company": zod.object({
+  "legalName": zod.string().max(getPublicSiteSettingsResponseCompanyLegalNameMax),
+  "tradingName": zod.string().max(getPublicSiteSettingsResponseCompanyTradingNameMax),
+  "phone": zod.string().max(getPublicSiteSettingsResponseCompanyPhoneMax),
+  "email": zod.string().max(getPublicSiteSettingsResponseCompanyEmailMax),
+  "address": zod.string().max(getPublicSiteSettingsResponseCompanyAddressMax),
+  "officeHours": zod.string().max(getPublicSiteSettingsResponseCompanyOfficeHoursMax),
+  "abn": zod.string().max(getPublicSiteSettingsResponseCompanyAbnMax)
+}),
   "updatedAt": zod.coerce.date()
 })
 
@@ -8968,17 +9215,25 @@ export const DownloadSeedGuidePdfResponse = zod.unknown()
 
 
 /**
- * @summary Get homepage and seed guide settings for editing
+ * @summary Get homepage, about page, company and seed guide settings for editing
  */
 export const getAdminSiteSettingsResponseHomepageHeroImageSrcMax = 500;
 
 export const getAdminSiteSettingsResponseHomepageHeroImageAssetIdMax = 80;
+
+export const getAdminSiteSettingsResponseHomepageHeroImagesItemSrcMax = 500;
+
+export const getAdminSiteSettingsResponseHomepageHeroImagesItemAssetIdMax = 80;
+
+export const getAdminSiteSettingsResponseHomepageHeroImagesMax = 6;
 
 export const getAdminSiteSettingsResponseHomepageHeroEyebrowMax = 120;
 
 export const getAdminSiteSettingsResponseHomepageHeroHeadingMax = 180;
 
 export const getAdminSiteSettingsResponseHomepageHeroBodyMax = 2000;
+
+export const getAdminSiteSettingsResponseHomepageAboutBodyMax = 2000;
 
 export const getAdminSiteSettingsResponseHomepageBestSellerSlugsItemMax = 160;
 
@@ -9004,15 +9259,63 @@ export const getAdminSiteSettingsResponseSeedGuidePageIntroMax = 2000;
 
 export const getAdminSiteSettingsResponseSeedGuidePageButtonLabelMax = 120;
 
+export const getAdminSiteSettingsResponseAboutHeroEyebrowMax = 120;
+
+export const getAdminSiteSettingsResponseAboutHeroHeadingMax = 180;
+
+export const getAdminSiteSettingsResponseAboutHeroHeadingEmphasisMax = 80;
+
+export const getAdminSiteSettingsResponseAboutHeroIntroMax = 500;
+
+export const getAdminSiteSettingsResponseAboutHeroImageSrcMax = 500;
+
+export const getAdminSiteSettingsResponseAboutHeroImageAssetIdMax = 80;
+
+export const getAdminSiteSettingsResponseAboutStoryLeadMax = 2000;
+
+export const getAdminSiteSettingsResponseAboutStoryParagraphsItemMax = 4000;
+
+export const getAdminSiteSettingsResponseAboutStoryParagraphsMax = 3;
+
+export const getAdminSiteSettingsResponseAboutValuesHeadingMax = 80;
+
+export const getAdminSiteSettingsResponseAboutValuesHeadingEmphasisMax = 80;
+
+export const getAdminSiteSettingsResponseAboutValuesItemTitleMax = 80;
+
+export const getAdminSiteSettingsResponseAboutValuesItemBodyMax = 500;
+
+export const getAdminSiteSettingsResponseAboutValuesMax = 3;
+
+export const getAdminSiteSettingsResponseCompanyLegalNameMax = 160;
+
+export const getAdminSiteSettingsResponseCompanyTradingNameMax = 160;
+
+export const getAdminSiteSettingsResponseCompanyPhoneMax = 40;
+
+export const getAdminSiteSettingsResponseCompanyEmailMax = 180;
+
+export const getAdminSiteSettingsResponseCompanyAddressMax = 240;
+
+export const getAdminSiteSettingsResponseCompanyOfficeHoursMax = 120;
+
+export const getAdminSiteSettingsResponseCompanyAbnMax = 20;
+
 
 
 export const GetAdminSiteSettingsResponse = zod.object({
   "homepage": zod.object({
   "heroImageSrc": zod.string().max(getAdminSiteSettingsResponseHomepageHeroImageSrcMax),
   "heroImageAssetId": zod.string().max(getAdminSiteSettingsResponseHomepageHeroImageAssetIdMax).nullable(),
+  "heroImages": zod.array(zod.object({
+  "src": zod.string().max(getAdminSiteSettingsResponseHomepageHeroImagesItemSrcMax),
+  "assetId": zod.string().max(getAdminSiteSettingsResponseHomepageHeroImagesItemAssetIdMax).nullable()
+})).max(getAdminSiteSettingsResponseHomepageHeroImagesMax),
+  "heroSlideshow": zod.boolean(),
   "heroEyebrow": zod.string().max(getAdminSiteSettingsResponseHomepageHeroEyebrowMax),
   "heroHeading": zod.string().max(getAdminSiteSettingsResponseHomepageHeroHeadingMax),
   "heroBody": zod.string().max(getAdminSiteSettingsResponseHomepageHeroBodyMax),
+  "aboutBody": zod.string().max(getAdminSiteSettingsResponseHomepageAboutBodyMax),
   "bestSellerSlugs": zod.array(zod.string().max(getAdminSiteSettingsResponseHomepageBestSellerSlugsItemMax)).max(getAdminSiteSettingsResponseHomepageBestSellerSlugsMax)
 }),
   "seedGuide": zod.object({
@@ -9027,22 +9330,55 @@ export const GetAdminSiteSettingsResponse = zod.object({
   "pageIntro": zod.string().max(getAdminSiteSettingsResponseSeedGuidePageIntroMax),
   "pageButtonLabel": zod.string().max(getAdminSiteSettingsResponseSeedGuidePageButtonLabelMax)
 }),
+  "about": zod.object({
+  "heroEyebrow": zod.string().max(getAdminSiteSettingsResponseAboutHeroEyebrowMax),
+  "heroHeading": zod.string().max(getAdminSiteSettingsResponseAboutHeroHeadingMax),
+  "heroHeadingEmphasis": zod.string().max(getAdminSiteSettingsResponseAboutHeroHeadingEmphasisMax),
+  "heroIntro": zod.string().max(getAdminSiteSettingsResponseAboutHeroIntroMax),
+  "heroImageSrc": zod.string().max(getAdminSiteSettingsResponseAboutHeroImageSrcMax),
+  "heroImageAssetId": zod.string().max(getAdminSiteSettingsResponseAboutHeroImageAssetIdMax).nullable(),
+  "storyLead": zod.string().max(getAdminSiteSettingsResponseAboutStoryLeadMax),
+  "storyParagraphs": zod.array(zod.string().max(getAdminSiteSettingsResponseAboutStoryParagraphsItemMax)).max(getAdminSiteSettingsResponseAboutStoryParagraphsMax),
+  "valuesHeading": zod.string().max(getAdminSiteSettingsResponseAboutValuesHeadingMax),
+  "valuesHeadingEmphasis": zod.string().max(getAdminSiteSettingsResponseAboutValuesHeadingEmphasisMax),
+  "values": zod.array(zod.object({
+  "title": zod.string().max(getAdminSiteSettingsResponseAboutValuesItemTitleMax),
+  "body": zod.string().max(getAdminSiteSettingsResponseAboutValuesItemBodyMax)
+})).max(getAdminSiteSettingsResponseAboutValuesMax)
+}),
+  "company": zod.object({
+  "legalName": zod.string().max(getAdminSiteSettingsResponseCompanyLegalNameMax),
+  "tradingName": zod.string().max(getAdminSiteSettingsResponseCompanyTradingNameMax),
+  "phone": zod.string().max(getAdminSiteSettingsResponseCompanyPhoneMax),
+  "email": zod.string().max(getAdminSiteSettingsResponseCompanyEmailMax),
+  "address": zod.string().max(getAdminSiteSettingsResponseCompanyAddressMax),
+  "officeHours": zod.string().max(getAdminSiteSettingsResponseCompanyOfficeHoursMax),
+  "abn": zod.string().max(getAdminSiteSettingsResponseCompanyAbnMax)
+}),
   "updatedAt": zod.coerce.date()
 })
 
 
 /**
- * @summary Save homepage and seed guide settings
+ * @summary Save homepage, about page, company and seed guide settings
  */
 export const updateSiteSettingsBodyHomepageHeroImageSrcMax = 500;
 
 export const updateSiteSettingsBodyHomepageHeroImageAssetIdMax = 80;
+
+export const updateSiteSettingsBodyHomepageHeroImagesItemSrcMax = 500;
+
+export const updateSiteSettingsBodyHomepageHeroImagesItemAssetIdMax = 80;
+
+export const updateSiteSettingsBodyHomepageHeroImagesMax = 6;
 
 export const updateSiteSettingsBodyHomepageHeroEyebrowMax = 120;
 
 export const updateSiteSettingsBodyHomepageHeroHeadingMax = 180;
 
 export const updateSiteSettingsBodyHomepageHeroBodyMax = 2000;
+
+export const updateSiteSettingsBodyHomepageAboutBodyMax = 2000;
 
 export const updateSiteSettingsBodyHomepageBestSellerSlugsItemMax = 160;
 
@@ -9064,15 +9400,63 @@ export const updateSiteSettingsBodySeedGuidePageIntroMax = 2000;
 
 export const updateSiteSettingsBodySeedGuidePageButtonLabelMax = 120;
 
+export const updateSiteSettingsBodyAboutHeroEyebrowMax = 120;
+
+export const updateSiteSettingsBodyAboutHeroHeadingMax = 180;
+
+export const updateSiteSettingsBodyAboutHeroHeadingEmphasisMax = 80;
+
+export const updateSiteSettingsBodyAboutHeroIntroMax = 500;
+
+export const updateSiteSettingsBodyAboutHeroImageSrcMax = 500;
+
+export const updateSiteSettingsBodyAboutHeroImageAssetIdMax = 80;
+
+export const updateSiteSettingsBodyAboutStoryLeadMax = 2000;
+
+export const updateSiteSettingsBodyAboutStoryParagraphsItemMax = 4000;
+
+export const updateSiteSettingsBodyAboutStoryParagraphsMax = 3;
+
+export const updateSiteSettingsBodyAboutValuesHeadingMax = 80;
+
+export const updateSiteSettingsBodyAboutValuesHeadingEmphasisMax = 80;
+
+export const updateSiteSettingsBodyAboutValuesItemTitleMax = 80;
+
+export const updateSiteSettingsBodyAboutValuesItemBodyMax = 500;
+
+export const updateSiteSettingsBodyAboutValuesMax = 3;
+
+export const updateSiteSettingsBodyCompanyLegalNameMax = 160;
+
+export const updateSiteSettingsBodyCompanyTradingNameMax = 160;
+
+export const updateSiteSettingsBodyCompanyPhoneMax = 40;
+
+export const updateSiteSettingsBodyCompanyEmailMax = 180;
+
+export const updateSiteSettingsBodyCompanyAddressMax = 240;
+
+export const updateSiteSettingsBodyCompanyOfficeHoursMax = 120;
+
+export const updateSiteSettingsBodyCompanyAbnMax = 20;
+
 
 
 export const UpdateSiteSettingsBody = zod.object({
   "homepage": zod.object({
   "heroImageSrc": zod.string().max(updateSiteSettingsBodyHomepageHeroImageSrcMax),
   "heroImageAssetId": zod.string().max(updateSiteSettingsBodyHomepageHeroImageAssetIdMax).nullable(),
+  "heroImages": zod.array(zod.object({
+  "src": zod.string().max(updateSiteSettingsBodyHomepageHeroImagesItemSrcMax),
+  "assetId": zod.string().max(updateSiteSettingsBodyHomepageHeroImagesItemAssetIdMax).nullable()
+})).max(updateSiteSettingsBodyHomepageHeroImagesMax),
+  "heroSlideshow": zod.boolean(),
   "heroEyebrow": zod.string().max(updateSiteSettingsBodyHomepageHeroEyebrowMax),
   "heroHeading": zod.string().max(updateSiteSettingsBodyHomepageHeroHeadingMax),
   "heroBody": zod.string().max(updateSiteSettingsBodyHomepageHeroBodyMax),
+  "aboutBody": zod.string().max(updateSiteSettingsBodyHomepageAboutBodyMax),
   "bestSellerSlugs": zod.array(zod.string().max(updateSiteSettingsBodyHomepageBestSellerSlugsItemMax)).max(updateSiteSettingsBodyHomepageBestSellerSlugsMax)
 }),
   "seedGuide": zod.object({
@@ -9084,18 +9468,51 @@ export const UpdateSiteSettingsBody = zod.object({
   "pageTitle": zod.string().max(updateSiteSettingsBodySeedGuidePageTitleMax),
   "pageIntro": zod.string().max(updateSiteSettingsBodySeedGuidePageIntroMax),
   "pageButtonLabel": zod.string().max(updateSiteSettingsBodySeedGuidePageButtonLabelMax)
-})
+}),
+  "about": zod.object({
+  "heroEyebrow": zod.string().max(updateSiteSettingsBodyAboutHeroEyebrowMax),
+  "heroHeading": zod.string().max(updateSiteSettingsBodyAboutHeroHeadingMax),
+  "heroHeadingEmphasis": zod.string().max(updateSiteSettingsBodyAboutHeroHeadingEmphasisMax),
+  "heroIntro": zod.string().max(updateSiteSettingsBodyAboutHeroIntroMax),
+  "heroImageSrc": zod.string().max(updateSiteSettingsBodyAboutHeroImageSrcMax),
+  "heroImageAssetId": zod.string().max(updateSiteSettingsBodyAboutHeroImageAssetIdMax).nullable(),
+  "storyLead": zod.string().max(updateSiteSettingsBodyAboutStoryLeadMax),
+  "storyParagraphs": zod.array(zod.string().max(updateSiteSettingsBodyAboutStoryParagraphsItemMax)).max(updateSiteSettingsBodyAboutStoryParagraphsMax),
+  "valuesHeading": zod.string().max(updateSiteSettingsBodyAboutValuesHeadingMax),
+  "valuesHeadingEmphasis": zod.string().max(updateSiteSettingsBodyAboutValuesHeadingEmphasisMax),
+  "values": zod.array(zod.object({
+  "title": zod.string().max(updateSiteSettingsBodyAboutValuesItemTitleMax),
+  "body": zod.string().max(updateSiteSettingsBodyAboutValuesItemBodyMax)
+})).max(updateSiteSettingsBodyAboutValuesMax)
+}).optional(),
+  "company": zod.object({
+  "legalName": zod.string().max(updateSiteSettingsBodyCompanyLegalNameMax),
+  "tradingName": zod.string().max(updateSiteSettingsBodyCompanyTradingNameMax),
+  "phone": zod.string().max(updateSiteSettingsBodyCompanyPhoneMax),
+  "email": zod.string().max(updateSiteSettingsBodyCompanyEmailMax),
+  "address": zod.string().max(updateSiteSettingsBodyCompanyAddressMax),
+  "officeHours": zod.string().max(updateSiteSettingsBodyCompanyOfficeHoursMax),
+  "abn": zod.string().max(updateSiteSettingsBodyCompanyAbnMax)
+}).optional()
 })
 
 export const updateSiteSettingsResponseHomepageHeroImageSrcMax = 500;
 
 export const updateSiteSettingsResponseHomepageHeroImageAssetIdMax = 80;
 
+export const updateSiteSettingsResponseHomepageHeroImagesItemSrcMax = 500;
+
+export const updateSiteSettingsResponseHomepageHeroImagesItemAssetIdMax = 80;
+
+export const updateSiteSettingsResponseHomepageHeroImagesMax = 6;
+
 export const updateSiteSettingsResponseHomepageHeroEyebrowMax = 120;
 
 export const updateSiteSettingsResponseHomepageHeroHeadingMax = 180;
 
 export const updateSiteSettingsResponseHomepageHeroBodyMax = 2000;
+
+export const updateSiteSettingsResponseHomepageAboutBodyMax = 2000;
 
 export const updateSiteSettingsResponseHomepageBestSellerSlugsItemMax = 160;
 
@@ -9121,15 +9538,63 @@ export const updateSiteSettingsResponseSeedGuidePageIntroMax = 2000;
 
 export const updateSiteSettingsResponseSeedGuidePageButtonLabelMax = 120;
 
+export const updateSiteSettingsResponseAboutHeroEyebrowMax = 120;
+
+export const updateSiteSettingsResponseAboutHeroHeadingMax = 180;
+
+export const updateSiteSettingsResponseAboutHeroHeadingEmphasisMax = 80;
+
+export const updateSiteSettingsResponseAboutHeroIntroMax = 500;
+
+export const updateSiteSettingsResponseAboutHeroImageSrcMax = 500;
+
+export const updateSiteSettingsResponseAboutHeroImageAssetIdMax = 80;
+
+export const updateSiteSettingsResponseAboutStoryLeadMax = 2000;
+
+export const updateSiteSettingsResponseAboutStoryParagraphsItemMax = 4000;
+
+export const updateSiteSettingsResponseAboutStoryParagraphsMax = 3;
+
+export const updateSiteSettingsResponseAboutValuesHeadingMax = 80;
+
+export const updateSiteSettingsResponseAboutValuesHeadingEmphasisMax = 80;
+
+export const updateSiteSettingsResponseAboutValuesItemTitleMax = 80;
+
+export const updateSiteSettingsResponseAboutValuesItemBodyMax = 500;
+
+export const updateSiteSettingsResponseAboutValuesMax = 3;
+
+export const updateSiteSettingsResponseCompanyLegalNameMax = 160;
+
+export const updateSiteSettingsResponseCompanyTradingNameMax = 160;
+
+export const updateSiteSettingsResponseCompanyPhoneMax = 40;
+
+export const updateSiteSettingsResponseCompanyEmailMax = 180;
+
+export const updateSiteSettingsResponseCompanyAddressMax = 240;
+
+export const updateSiteSettingsResponseCompanyOfficeHoursMax = 120;
+
+export const updateSiteSettingsResponseCompanyAbnMax = 20;
+
 
 
 export const UpdateSiteSettingsResponse = zod.object({
   "homepage": zod.object({
   "heroImageSrc": zod.string().max(updateSiteSettingsResponseHomepageHeroImageSrcMax),
   "heroImageAssetId": zod.string().max(updateSiteSettingsResponseHomepageHeroImageAssetIdMax).nullable(),
+  "heroImages": zod.array(zod.object({
+  "src": zod.string().max(updateSiteSettingsResponseHomepageHeroImagesItemSrcMax),
+  "assetId": zod.string().max(updateSiteSettingsResponseHomepageHeroImagesItemAssetIdMax).nullable()
+})).max(updateSiteSettingsResponseHomepageHeroImagesMax),
+  "heroSlideshow": zod.boolean(),
   "heroEyebrow": zod.string().max(updateSiteSettingsResponseHomepageHeroEyebrowMax),
   "heroHeading": zod.string().max(updateSiteSettingsResponseHomepageHeroHeadingMax),
   "heroBody": zod.string().max(updateSiteSettingsResponseHomepageHeroBodyMax),
+  "aboutBody": zod.string().max(updateSiteSettingsResponseHomepageAboutBodyMax),
   "bestSellerSlugs": zod.array(zod.string().max(updateSiteSettingsResponseHomepageBestSellerSlugsItemMax)).max(updateSiteSettingsResponseHomepageBestSellerSlugsMax)
 }),
   "seedGuide": zod.object({
@@ -9143,6 +9608,31 @@ export const UpdateSiteSettingsResponse = zod.object({
   "pageTitle": zod.string().max(updateSiteSettingsResponseSeedGuidePageTitleMax),
   "pageIntro": zod.string().max(updateSiteSettingsResponseSeedGuidePageIntroMax),
   "pageButtonLabel": zod.string().max(updateSiteSettingsResponseSeedGuidePageButtonLabelMax)
+}),
+  "about": zod.object({
+  "heroEyebrow": zod.string().max(updateSiteSettingsResponseAboutHeroEyebrowMax),
+  "heroHeading": zod.string().max(updateSiteSettingsResponseAboutHeroHeadingMax),
+  "heroHeadingEmphasis": zod.string().max(updateSiteSettingsResponseAboutHeroHeadingEmphasisMax),
+  "heroIntro": zod.string().max(updateSiteSettingsResponseAboutHeroIntroMax),
+  "heroImageSrc": zod.string().max(updateSiteSettingsResponseAboutHeroImageSrcMax),
+  "heroImageAssetId": zod.string().max(updateSiteSettingsResponseAboutHeroImageAssetIdMax).nullable(),
+  "storyLead": zod.string().max(updateSiteSettingsResponseAboutStoryLeadMax),
+  "storyParagraphs": zod.array(zod.string().max(updateSiteSettingsResponseAboutStoryParagraphsItemMax)).max(updateSiteSettingsResponseAboutStoryParagraphsMax),
+  "valuesHeading": zod.string().max(updateSiteSettingsResponseAboutValuesHeadingMax),
+  "valuesHeadingEmphasis": zod.string().max(updateSiteSettingsResponseAboutValuesHeadingEmphasisMax),
+  "values": zod.array(zod.object({
+  "title": zod.string().max(updateSiteSettingsResponseAboutValuesItemTitleMax),
+  "body": zod.string().max(updateSiteSettingsResponseAboutValuesItemBodyMax)
+})).max(updateSiteSettingsResponseAboutValuesMax)
+}),
+  "company": zod.object({
+  "legalName": zod.string().max(updateSiteSettingsResponseCompanyLegalNameMax),
+  "tradingName": zod.string().max(updateSiteSettingsResponseCompanyTradingNameMax),
+  "phone": zod.string().max(updateSiteSettingsResponseCompanyPhoneMax),
+  "email": zod.string().max(updateSiteSettingsResponseCompanyEmailMax),
+  "address": zod.string().max(updateSiteSettingsResponseCompanyAddressMax),
+  "officeHours": zod.string().max(updateSiteSettingsResponseCompanyOfficeHoursMax),
+  "abn": zod.string().max(updateSiteSettingsResponseCompanyAbnMax)
 }),
   "updatedAt": zod.coerce.date()
 })
@@ -9165,11 +9655,19 @@ export const uploadSeedGuidePdfResponseHomepageHeroImageSrcMax = 500;
 
 export const uploadSeedGuidePdfResponseHomepageHeroImageAssetIdMax = 80;
 
+export const uploadSeedGuidePdfResponseHomepageHeroImagesItemSrcMax = 500;
+
+export const uploadSeedGuidePdfResponseHomepageHeroImagesItemAssetIdMax = 80;
+
+export const uploadSeedGuidePdfResponseHomepageHeroImagesMax = 6;
+
 export const uploadSeedGuidePdfResponseHomepageHeroEyebrowMax = 120;
 
 export const uploadSeedGuidePdfResponseHomepageHeroHeadingMax = 180;
 
 export const uploadSeedGuidePdfResponseHomepageHeroBodyMax = 2000;
+
+export const uploadSeedGuidePdfResponseHomepageAboutBodyMax = 2000;
 
 export const uploadSeedGuidePdfResponseHomepageBestSellerSlugsItemMax = 160;
 
@@ -9195,15 +9693,63 @@ export const uploadSeedGuidePdfResponseSeedGuidePageIntroMax = 2000;
 
 export const uploadSeedGuidePdfResponseSeedGuidePageButtonLabelMax = 120;
 
+export const uploadSeedGuidePdfResponseAboutHeroEyebrowMax = 120;
+
+export const uploadSeedGuidePdfResponseAboutHeroHeadingMax = 180;
+
+export const uploadSeedGuidePdfResponseAboutHeroHeadingEmphasisMax = 80;
+
+export const uploadSeedGuidePdfResponseAboutHeroIntroMax = 500;
+
+export const uploadSeedGuidePdfResponseAboutHeroImageSrcMax = 500;
+
+export const uploadSeedGuidePdfResponseAboutHeroImageAssetIdMax = 80;
+
+export const uploadSeedGuidePdfResponseAboutStoryLeadMax = 2000;
+
+export const uploadSeedGuidePdfResponseAboutStoryParagraphsItemMax = 4000;
+
+export const uploadSeedGuidePdfResponseAboutStoryParagraphsMax = 3;
+
+export const uploadSeedGuidePdfResponseAboutValuesHeadingMax = 80;
+
+export const uploadSeedGuidePdfResponseAboutValuesHeadingEmphasisMax = 80;
+
+export const uploadSeedGuidePdfResponseAboutValuesItemTitleMax = 80;
+
+export const uploadSeedGuidePdfResponseAboutValuesItemBodyMax = 500;
+
+export const uploadSeedGuidePdfResponseAboutValuesMax = 3;
+
+export const uploadSeedGuidePdfResponseCompanyLegalNameMax = 160;
+
+export const uploadSeedGuidePdfResponseCompanyTradingNameMax = 160;
+
+export const uploadSeedGuidePdfResponseCompanyPhoneMax = 40;
+
+export const uploadSeedGuidePdfResponseCompanyEmailMax = 180;
+
+export const uploadSeedGuidePdfResponseCompanyAddressMax = 240;
+
+export const uploadSeedGuidePdfResponseCompanyOfficeHoursMax = 120;
+
+export const uploadSeedGuidePdfResponseCompanyAbnMax = 20;
+
 
 
 export const UploadSeedGuidePdfResponse = zod.object({
   "homepage": zod.object({
   "heroImageSrc": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroImageSrcMax),
   "heroImageAssetId": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroImageAssetIdMax).nullable(),
+  "heroImages": zod.array(zod.object({
+  "src": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroImagesItemSrcMax),
+  "assetId": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroImagesItemAssetIdMax).nullable()
+})).max(uploadSeedGuidePdfResponseHomepageHeroImagesMax),
+  "heroSlideshow": zod.boolean(),
   "heroEyebrow": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroEyebrowMax),
   "heroHeading": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroHeadingMax),
   "heroBody": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroBodyMax),
+  "aboutBody": zod.string().max(uploadSeedGuidePdfResponseHomepageAboutBodyMax),
   "bestSellerSlugs": zod.array(zod.string().max(uploadSeedGuidePdfResponseHomepageBestSellerSlugsItemMax)).max(uploadSeedGuidePdfResponseHomepageBestSellerSlugsMax)
 }),
   "seedGuide": zod.object({
@@ -9217,6 +9763,31 @@ export const UploadSeedGuidePdfResponse = zod.object({
   "pageTitle": zod.string().max(uploadSeedGuidePdfResponseSeedGuidePageTitleMax),
   "pageIntro": zod.string().max(uploadSeedGuidePdfResponseSeedGuidePageIntroMax),
   "pageButtonLabel": zod.string().max(uploadSeedGuidePdfResponseSeedGuidePageButtonLabelMax)
+}),
+  "about": zod.object({
+  "heroEyebrow": zod.string().max(uploadSeedGuidePdfResponseAboutHeroEyebrowMax),
+  "heroHeading": zod.string().max(uploadSeedGuidePdfResponseAboutHeroHeadingMax),
+  "heroHeadingEmphasis": zod.string().max(uploadSeedGuidePdfResponseAboutHeroHeadingEmphasisMax),
+  "heroIntro": zod.string().max(uploadSeedGuidePdfResponseAboutHeroIntroMax),
+  "heroImageSrc": zod.string().max(uploadSeedGuidePdfResponseAboutHeroImageSrcMax),
+  "heroImageAssetId": zod.string().max(uploadSeedGuidePdfResponseAboutHeroImageAssetIdMax).nullable(),
+  "storyLead": zod.string().max(uploadSeedGuidePdfResponseAboutStoryLeadMax),
+  "storyParagraphs": zod.array(zod.string().max(uploadSeedGuidePdfResponseAboutStoryParagraphsItemMax)).max(uploadSeedGuidePdfResponseAboutStoryParagraphsMax),
+  "valuesHeading": zod.string().max(uploadSeedGuidePdfResponseAboutValuesHeadingMax),
+  "valuesHeadingEmphasis": zod.string().max(uploadSeedGuidePdfResponseAboutValuesHeadingEmphasisMax),
+  "values": zod.array(zod.object({
+  "title": zod.string().max(uploadSeedGuidePdfResponseAboutValuesItemTitleMax),
+  "body": zod.string().max(uploadSeedGuidePdfResponseAboutValuesItemBodyMax)
+})).max(uploadSeedGuidePdfResponseAboutValuesMax)
+}),
+  "company": zod.object({
+  "legalName": zod.string().max(uploadSeedGuidePdfResponseCompanyLegalNameMax),
+  "tradingName": zod.string().max(uploadSeedGuidePdfResponseCompanyTradingNameMax),
+  "phone": zod.string().max(uploadSeedGuidePdfResponseCompanyPhoneMax),
+  "email": zod.string().max(uploadSeedGuidePdfResponseCompanyEmailMax),
+  "address": zod.string().max(uploadSeedGuidePdfResponseCompanyAddressMax),
+  "officeHours": zod.string().max(uploadSeedGuidePdfResponseCompanyOfficeHoursMax),
+  "abn": zod.string().max(uploadSeedGuidePdfResponseCompanyAbnMax)
 }),
   "updatedAt": zod.coerce.date()
 })

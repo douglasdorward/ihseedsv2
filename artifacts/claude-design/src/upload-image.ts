@@ -1,3 +1,5 @@
+import { resolveImageAlt } from "./image-alt.ts";
+
 export type UploadedMediaPhoto = {
   assetId: string;
   src: string;
@@ -17,6 +19,8 @@ export type UploadMediaProgress =
 
 type UploadMediaOptions = {
   onProgress?: (progress: UploadMediaProgress) => void;
+  ownerName?: string;
+  role?: string;
 };
 
 type MediaAssetPayload = {
@@ -38,7 +42,7 @@ function errorMessage(body: unknown, fallback: string) {
   return fallback;
 }
 
-function photoFromAsset(asset: MediaAssetPayload, filename: string): UploadedMediaPhoto {
+function photoFromAsset(asset: MediaAssetPayload, filename: string, options: UploadMediaOptions = {}): UploadedMediaPhoto {
   return {
     assetId: asset.id,
     src: `/api/media/${asset.id}`,
@@ -47,7 +51,12 @@ function photoFromAsset(asset: MediaAssetPayload, filename: string): UploadedMed
     width: asset.width ?? undefined,
     height: asset.height ?? undefined,
     objectPath: asset.objectPath,
-    alt: asset.defaultAlt,
+    alt: resolveImageAlt({
+      currentAlt: asset.defaultAlt,
+      ownerName: options.ownerName,
+      filename: filename || asset.originalFilename,
+      role: options.role,
+    }) || undefined,
   };
 }
 
@@ -104,7 +113,7 @@ export async function uploadMediaAsset(file: File, options: UploadMediaOptions =
   if (!request.ok) throw new Error(errorMessage(requested, `Upload failed (${request.status})`));
   if (requested?.duplicate && requested.asset?.id) {
     options.onProgress?.({ stage: "complete", percent: 100 });
-    return photoFromAsset(requested.asset, file.name);
+    return photoFromAsset(requested.asset, file.name, options);
   }
 
   const assetId = String(requested.assetId ?? requested.asset?.id ?? "");
@@ -112,16 +121,23 @@ export async function uploadMediaAsset(file: File, options: UploadMediaOptions =
   await putFileWithProgress(uploadURL, file, options.onProgress);
 
   options.onProgress?.({ stage: "processing", percent: 100 });
-  const complete = await fetch(`/api/admin/media/${assetId}/complete`, { method: "POST" });
+  const completeBody = options.ownerName || options.role
+    ? JSON.stringify({ ownerName: options.ownerName ?? "", role: options.role ?? "" })
+    : undefined;
+  const complete = await fetch(`/api/admin/media/${assetId}/complete`, {
+    method: "POST",
+    headers: completeBody ? { "Content-Type": "application/json" } : undefined,
+    body: completeBody,
+  });
   const completed = await complete.json().catch(() => null);
   if (complete.status === 401 || complete.status === 403) window.dispatchEvent(new Event("admin:unauthorized"));
   if (complete.status === 409 && completed?.asset?.id) {
     options.onProgress?.({ stage: "complete", percent: 100 });
-    return photoFromAsset(completed.asset, file.name);
+    return photoFromAsset(completed.asset, file.name, options);
   }
   if (!complete.ok) throw new Error(errorMessage(completed, `Upload failed (${complete.status})`));
   options.onProgress?.({ stage: "complete", percent: 100 });
-  return photoFromAsset(completed, file.name);
+  return photoFromAsset(completed, file.name, options);
 }
 
 export function photoDisplaySrc(photo: { src?: string; assetId?: string } | undefined) {

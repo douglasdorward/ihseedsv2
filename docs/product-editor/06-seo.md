@@ -80,6 +80,6 @@ Search and sharing metadata. SEO title and SEO description are required to publi
 - **API path:** `details.robotsIndex`
 - **Workbook:** `7 Website SEO.robots_index` (`N` publishes noindex; NULL restores the default of indexed)
 - **Required:** no (defaults to indexed)
-- **Customer website:** When false, the page is published with `noindex, nofollow`. The live page still exists. The sitemap is Published + Active or New and does **not** exclude noindexed products.
+- **Customer website:** When false, the page is published with `noindex, nofollow`. The live page still exists. The public sitemap includes Published + Active or New products except those with search indexing turned off.
 - **Public API:** yes
 - **How to fill:** Leave on for normal catalogue pages. Turn off only when the page must stay out of search results.

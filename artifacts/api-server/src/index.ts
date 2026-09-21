@@ -3,6 +3,7 @@ import { appStorageBackend } from "./lib/app-storage";
 import { logger } from "./lib/logger";
 import { configureSimpleAdminAccounts } from "./lib/admin-accounts";
 import { setAdminAuthReady } from "./lib/admin-readiness";
+import { startArticlePublishScheduler } from "./lib/article-publish";
 
 const rawPort = process.env["PORT"];
 
@@ -38,4 +39,5 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port, storageBackend }, "Server listening");
+  startArticlePublishScheduler();
 });

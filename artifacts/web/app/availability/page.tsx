@@ -8,6 +8,7 @@ import { productPublicPath } from "../../lib/catalogue-paths";
 export const metadata: Metadata = {
   title: "Seed Availability | IH Seeds",
   description: "Check current IH Seeds warehouse availability for pasture seed varieties and mixes supplied through rural resellers across Western Australia.",
+  alternates: { canonical: "/availability" },
 };
 
 export default async function Availability() {

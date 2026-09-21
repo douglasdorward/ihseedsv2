@@ -12,4 +12,5 @@ export type ArticlePublishStatus = typeof ArticlePublishStatus[keyof typeof Arti
 export const ArticlePublishStatus = {
   Draft: 'Draft',
   Published: 'Published',
+  Scheduled: 'Scheduled',
 } as const;

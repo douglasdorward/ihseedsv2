@@ -39,6 +39,7 @@ try {
     { cwd: workspaceRoot, env: isolatedEnv, input: schemaDump, stdio: ["pipe", "inherit", "inherit"] },
   );
   run(process.execPath, ["--test", "artifacts/claude-design/test/site-settings.test.mjs"], isolatedEnv);
+  run(process.execPath, ["--test", "lib/db/test/site-settings.test.ts"], isolatedEnv);
   run(process.execPath, ["--test", "artifacts/api-server/test/site-settings.test.mjs"], isolatedEnv);
 } finally {
   run("dropdb", [`--maintenance-db=${process.env.DATABASE_URL}`, "--if-exists", databaseName]);

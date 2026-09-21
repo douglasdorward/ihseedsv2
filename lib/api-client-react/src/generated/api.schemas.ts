@@ -1239,6 +1239,13 @@ export interface MediaUploadInput {
   sha256?: string;
 }
 
+export interface MediaCompleteInput {
+  /** @maxLength 300 */
+  ownerName?: string;
+  /** @maxLength 40 */
+  role?: string;
+}
+
 export interface MediaAttachInput {
   /** @minimum 1 */
   productId: number;
@@ -1451,6 +1458,11 @@ export interface RedirectLookup {
   toPath: string;
 }
 
+export interface SitemapProductEntry {
+  slug: string;
+  lastModified: string;
+}
+
 export interface EnquiryInput {
   /**
      * @minLength 2
@@ -1479,17 +1491,29 @@ export interface EnquiryCreated {
   createdAt: string;
 }
 
+export interface SiteHeroImage {
+  /** @maxLength 500 */
+  src: string;
+  /** @maxLength 80 */
+  assetId: string | null;
+}
+
 export interface SiteHomepageSettings {
   /** @maxLength 500 */
   heroImageSrc: string;
   /** @maxLength 80 */
   heroImageAssetId: string | null;
+  /** @maxItems 6 */
+  heroImages: SiteHeroImage[];
+  heroSlideshow: boolean;
   /** @maxLength 120 */
   heroEyebrow: string;
   /** @maxLength 180 */
   heroHeading: string;
   /** @maxLength 2000 */
   heroBody: string;
+  /** @maxLength 2000 */
+  aboutBody: string;
   /**
      * @maxItems 4
      * @items.maxLength 160
@@ -1520,9 +1544,63 @@ export interface SiteSeedGuideSettings {
   pageButtonLabel: string;
 }
 
+export interface SiteAboutValue {
+  /** @maxLength 80 */
+  title: string;
+  /** @maxLength 500 */
+  body: string;
+}
+
+export interface SiteAboutSettings {
+  /** @maxLength 120 */
+  heroEyebrow: string;
+  /** @maxLength 180 */
+  heroHeading: string;
+  /** @maxLength 80 */
+  heroHeadingEmphasis: string;
+  /** @maxLength 500 */
+  heroIntro: string;
+  /** @maxLength 500 */
+  heroImageSrc: string;
+  /** @maxLength 80 */
+  heroImageAssetId: string | null;
+  /** @maxLength 2000 */
+  storyLead: string;
+  /**
+     * @maxItems 3
+     * @items.maxLength 4000
+     */
+  storyParagraphs: string[];
+  /** @maxLength 80 */
+  valuesHeading: string;
+  /** @maxLength 80 */
+  valuesHeadingEmphasis: string;
+  /** @maxItems 3 */
+  values: SiteAboutValue[];
+}
+
+export interface SiteCompanySettings {
+  /** @maxLength 160 */
+  legalName: string;
+  /** @maxLength 160 */
+  tradingName: string;
+  /** @maxLength 40 */
+  phone: string;
+  /** @maxLength 180 */
+  email: string;
+  /** @maxLength 240 */
+  address: string;
+  /** @maxLength 120 */
+  officeHours: string;
+  /** @maxLength 20 */
+  abn: string;
+}
+
 export interface SiteSettings {
   homepage: SiteHomepageSettings;
   seedGuide: SiteSeedGuideSettings;
+  about: SiteAboutSettings;
+  company: SiteCompanySettings;
   updatedAt: string;
 }
 
@@ -1548,6 +1626,8 @@ export interface SiteSeedGuideInput {
 export interface SiteSettingsInput {
   homepage: SiteHomepageSettings;
   seedGuide: SiteSeedGuideInput;
+  about?: SiteAboutSettings;
+  company?: SiteCompanySettings;
 }
 
 export interface SeedGuidePdfInput {
@@ -1566,6 +1646,7 @@ export type ArticlePublishStatus = typeof ArticlePublishStatus[keyof typeof Arti
 export const ArticlePublishStatus = {
   Draft: 'Draft',
   Published: 'Published',
+  Scheduled: 'Scheduled',
 } as const;
 
 export interface Article {
@@ -1590,6 +1671,8 @@ export interface Article {
   publishStatus: ArticlePublishStatus;
   /** @nullable */
   publishedAt: string | null;
+  /** @nullable */
+  scheduledPublishAt: string | null;
   seoTitle: string;
   seoDescription: string;
   socialTitle: string;
@@ -1717,6 +1800,31 @@ export interface ArticleUpdate {
   /** @maxLength 500 */
   socialImage?: string;
   robotsIndex?: boolean;
+  publishedAt?: string;
+}
+
+export interface ArticlePublishInput {
+  publishedAt?: string;
+}
+
+export interface ArticleScheduleInput {
+  scheduledPublishAt: string;
+}
+
+export interface ArticleImportIssue {
+  row: number;
+  column: string;
+  problem: string;
+}
+
+export interface ArticleImportReport {
+  token: string;
+  rows: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  issues: ArticleImportIssue[];
+  plannedChanges: string[];
 }
 
 export type ResellerKind = typeof ResellerKind[keyof typeof ResellerKind];

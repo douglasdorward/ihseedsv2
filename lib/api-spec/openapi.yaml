@@ -602,6 +602,11 @@ paths:
       tags: [admin]
       summary: Verify uploaded object bytes and mark a library asset ready
       security: [{ clerkSession: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MediaCompleteInput" }
       responses:
         "200": { description: Verified ready asset, content: { application/json: { schema: { $ref: "#/components/schemas/MediaAsset" } } } }
         "400": { description: "Missing, corrupt, unsupported, or oversized object" }
@@ -717,10 +722,24 @@ paths:
       summary: Active product sitemap
       responses:
         "200":
-          description: XML sitemap
+          description: XML sitemap of indexable product canonical URLs with lastmod
           content:
             application/xml:
               schema: { type: string }
+  /sitemap-product-entries:
+    get:
+      operationId: getSitemapProductEntries
+      tags: [catalogue]
+      summary: Indexable product sitemap dates
+      description: Sitemap-only lastmod values for published Active or New products. Does not expose product card payloads.
+      responses:
+        "200":
+          description: Product lastmod inventory
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SitemapProductEntry" }
   /sitemap-articles:
     get:
       operationId: getArticleSitemap
@@ -728,7 +747,7 @@ paths:
       summary: Published article sitemap
       responses:
         "200":
-          description: XML sitemap
+          description: XML sitemap of indexable article URLs with lastmod
           content:
             application/xml:
               schema: { type: string }
@@ -1199,6 +1218,66 @@ paths:
         "400": { description: Invalid article, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
         "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
         "409": { description: Article slug already exists, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/articles/import/template:
+    get:
+      operationId: downloadArticleImportTemplate
+      tags: [admin]
+      summary: Download the blog article Excel import template
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: XLSX template
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
+  /admin/articles/export:
+    get:
+      operationId: exportArticlesWorkbook
+      tags: [admin]
+      summary: Export all blog articles as an Excel workbook
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: XLSX export
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
+  /admin/articles/import/dry-run:
+    post:
+      operationId: dryRunArticleImport
+      tags: [admin]
+      summary: Validate a blog article Excel import
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WorkbookUpload" }
+      responses:
+        "200":
+          description: Dry-run report
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleImportReport" }
+        "400": { description: Invalid workbook, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/articles/import/commit:
+    post:
+      operationId: commitArticleImport
+      tags: [admin]
+      summary: Commit a validated blog article Excel import
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WorkbookCommit" }
+      responses:
+        "200":
+          description: Import committed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleImportReport" }
+        "400": { description: Invalid or stale token, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
   /admin/articles/{id}:
     parameters:
       - name: id
@@ -1258,6 +1337,11 @@ paths:
       tags: [admin]
       summary: Publish a blog article
       security: [{ clerkSession: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticlePublishInput" }
       responses:
         "200":
           description: Published article
@@ -1286,11 +1370,36 @@ paths:
               schema: { $ref: "#/components/schemas/Article" }
         "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
         "404": { description: Article not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/articles/{id}/schedule:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: number, multipleOf: 1, minimum: 1 }
+    post:
+      operationId: scheduleArticle
+      tags: [admin]
+      summary: Schedule a blog article for future publishing
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticleScheduleInput" }
+      responses:
+        "200":
+          description: Scheduled article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { description: Article is incomplete or the date is invalid, content: { application/json: { schema: { $ref: "#/components/schemas/PublishValidationError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: Article not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
   /site-settings:
     get:
       operationId: getPublicSiteSettings
       tags: [catalogue]
-      summary: Get public homepage and seed guide settings
+      summary: Get public homepage, about page, company and seed guide settings
       responses:
         "200":
           description: Current public site settings
@@ -1313,7 +1422,7 @@ paths:
     get:
       operationId: getAdminSiteSettings
       tags: [admin]
-      summary: Get homepage and seed guide settings for editing
+      summary: Get homepage, about page, company and seed guide settings for editing
       security: [{ clerkSession: [] }]
       responses:
         "200":
@@ -1326,7 +1435,7 @@ paths:
     put:
       operationId: updateSiteSettings
       tags: [admin]
-      summary: Save homepage and seed guide settings
+      summary: Save homepage, about page, company and seed guide settings
       security: [{ clerkSession: [] }]
       requestBody:
         required: true
@@ -2005,6 +2114,11 @@ components:
         contentType: { type: string, enum: [image/jpeg, image/png, image/webp] }
         bytes: { type: number, multipleOf: 1, minimum: 1, maximum: 12582912 }
         sha256: { type: string, pattern: "^[a-fA-F0-9]{64}$" }
+    MediaCompleteInput:
+      type: object
+      properties:
+        ownerName: { type: string, maxLength: 300 }
+        role: { type: string, maxLength: 40 }
     MediaAttachInput:
       type: object
       required: [productId]
@@ -2203,6 +2317,12 @@ components:
       properties:
         toPath: { type: string }
       required: [toPath]
+    SitemapProductEntry:
+      type: object
+      required: [slug, lastModified]
+      properties:
+        slug: { type: string }
+        lastModified: { type: string, format: date-time }
     EnquiryInput:
       type: object
       properties:
@@ -2219,15 +2339,27 @@ components:
         id: { type: number }
         createdAt: { type: string, format: date-time }
       required: [ok, id, createdAt]
+    SiteHeroImage:
+      type: object
+      required: [src, assetId]
+      properties:
+        src: { type: string, maxLength: 500 }
+        assetId: { type: string, nullable: true, maxLength: 80 }
     SiteHomepageSettings:
       type: object
-      required: [heroImageSrc, heroImageAssetId, heroEyebrow, heroHeading, heroBody, bestSellerSlugs]
+      required: [heroImageSrc, heroImageAssetId, heroImages, heroSlideshow, heroEyebrow, heroHeading, heroBody, aboutBody, bestSellerSlugs]
       properties:
         heroImageSrc: { type: string, maxLength: 500 }
         heroImageAssetId: { type: string, nullable: true, maxLength: 80 }
+        heroImages:
+          type: array
+          maxItems: 6
+          items: { $ref: "#/components/schemas/SiteHeroImage" }
+        heroSlideshow: { type: boolean }
         heroEyebrow: { type: string, maxLength: 120 }
         heroHeading: { type: string, maxLength: 180 }
         heroBody: { type: string, maxLength: 2000 }
+        aboutBody: { type: string, maxLength: 2000 }
         bestSellerSlugs:
           type: array
           maxItems: 4
@@ -2246,12 +2378,52 @@ components:
         pageTitle: { type: string, maxLength: 180 }
         pageIntro: { type: string, maxLength: 2000 }
         pageButtonLabel: { type: string, maxLength: 120 }
+    SiteAboutValue:
+      type: object
+      required: [title, body]
+      properties:
+        title: { type: string, maxLength: 80 }
+        body: { type: string, maxLength: 500 }
+    SiteAboutSettings:
+      type: object
+      required: [heroEyebrow, heroHeading, heroHeadingEmphasis, heroIntro, heroImageSrc, heroImageAssetId, storyLead, storyParagraphs, valuesHeading, valuesHeadingEmphasis, values]
+      properties:
+        heroEyebrow: { type: string, maxLength: 120 }
+        heroHeading: { type: string, maxLength: 180 }
+        heroHeadingEmphasis: { type: string, maxLength: 80 }
+        heroIntro: { type: string, maxLength: 500 }
+        heroImageSrc: { type: string, maxLength: 500 }
+        heroImageAssetId: { type: string, nullable: true, maxLength: 80 }
+        storyLead: { type: string, maxLength: 2000 }
+        storyParagraphs:
+          type: array
+          maxItems: 3
+          items: { type: string, maxLength: 4000 }
+        valuesHeading: { type: string, maxLength: 80 }
+        valuesHeadingEmphasis: { type: string, maxLength: 80 }
+        values:
+          type: array
+          maxItems: 3
+          items: { $ref: "#/components/schemas/SiteAboutValue" }
+    SiteCompanySettings:
+      type: object
+      required: [legalName, tradingName, phone, email, address, officeHours, abn]
+      properties:
+        legalName: { type: string, maxLength: 160 }
+        tradingName: { type: string, maxLength: 160 }
+        phone: { type: string, maxLength: 40 }
+        email: { type: string, maxLength: 180 }
+        address: { type: string, maxLength: 240 }
+        officeHours: { type: string, maxLength: 120 }
+        abn: { type: string, maxLength: 20 }
     SiteSettings:
       type: object
-      required: [homepage, seedGuide, updatedAt]
+      required: [homepage, seedGuide, about, company, updatedAt]
       properties:
         homepage: { $ref: "#/components/schemas/SiteHomepageSettings" }
         seedGuide: { $ref: "#/components/schemas/SiteSeedGuideSettings" }
+        about: { $ref: "#/components/schemas/SiteAboutSettings" }
+        company: { $ref: "#/components/schemas/SiteCompanySettings" }
         updatedAt: { type: string, format: date-time }
     SiteSeedGuideInput:
       type: object
@@ -2271,6 +2443,8 @@ components:
       properties:
         homepage: { $ref: "#/components/schemas/SiteHomepageSettings" }
         seedGuide: { $ref: "#/components/schemas/SiteSeedGuideInput" }
+        about: { $ref: "#/components/schemas/SiteAboutSettings" }
+        company: { $ref: "#/components/schemas/SiteCompanySettings" }
     SeedGuidePdfInput:
       type: object
       required: [filename, data]
@@ -2279,7 +2453,7 @@ components:
         data: { type: string, minLength: 1 }
     Article:
       type: object
-      required: [id, slug, title, excerpt, body, tags, heroImageSrc, heroImageAssetId, relatedProductSlugs, publishStatus, publishedAt, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, robotsIndex, createdAt, updatedAt]
+      required: [id, slug, title, excerpt, body, tags, heroImageSrc, heroImageAssetId, relatedProductSlugs, publishStatus, publishedAt, scheduledPublishAt, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, robotsIndex, createdAt, updatedAt]
       properties:
         id: { type: number, multipleOf: 1 }
         slug: { type: string }
@@ -2290,8 +2464,9 @@ components:
         heroImageSrc: { type: string }
         heroImageAssetId: { type: [string, "null"] }
         relatedProductSlugs: { type: array, maxItems: 3, items: { type: string, maxLength: 180 } }
-        publishStatus: { type: string, enum: [Draft, Published] }
+        publishStatus: { type: string, enum: [Draft, Published, Scheduled] }
         publishedAt: { type: [string, "null"], format: date-time }
+        scheduledPublishAt: { type: [string, "null"], format: date-time }
         seoTitle: { type: string }
         seoDescription: { type: string }
         socialTitle: { type: string }
@@ -2355,6 +2530,38 @@ components:
         socialDescription: { type: string, maxLength: 2000 }
         socialImage: { type: string, maxLength: 500 }
         robotsIndex: { type: boolean }
+        publishedAt: { type: string, format: date-time }
+    ArticlePublishInput:
+      type: object
+      properties:
+        publishedAt: { type: string, format: date-time }
+    ArticleScheduleInput:
+      type: object
+      required: [scheduledPublishAt]
+      properties:
+        scheduledPublishAt: { type: string, format: date-time }
+    ArticleImportIssue:
+      type: object
+      required: [row, column, problem]
+      properties:
+        row: { type: number, multipleOf: 1 }
+        column: { type: string }
+        problem: { type: string }
+    ArticleImportReport:
+      type: object
+      required: [token, rows, created, updated, skipped, issues, plannedChanges]
+      properties:
+        token: { type: string }
+        rows: { type: number, multipleOf: 1 }
+        created: { type: number, multipleOf: 1 }
+        updated: { type: number, multipleOf: 1 }
+        skipped: { type: number, multipleOf: 1 }
+        issues:
+          type: array
+          items: { $ref: "#/components/schemas/ArticleImportIssue" }
+        plannedChanges:
+          type: array
+          items: { type: string }
     ResellerKind:
       type: string
       enum: [elders, nutrien, independent]

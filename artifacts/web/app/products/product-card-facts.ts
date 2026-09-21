@@ -11,6 +11,11 @@ export function productCardImage(product: CatalogueProduct) {
   return attached || PRODUCT_FALLBACK_IMAGE;
 }
 
+export function productImageAlt(product: CatalogueProduct) {
+  const photo = product.details.photos?.find((item) => item.src?.trim());
+  return photo?.alt?.trim() || product.name;
+}
+
 export function getFactChips(product: CatalogueProduct, subcategoryName?: string) {
   const category = product.category;
   const details = product.details;

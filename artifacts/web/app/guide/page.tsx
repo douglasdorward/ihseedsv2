@@ -7,6 +7,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${settings.seedGuide.pageTitle} | IH Seeds`,
     description: settings.seedGuide.pageIntro,
+    alternates: { canonical: "/guide" },
   };
 }
 

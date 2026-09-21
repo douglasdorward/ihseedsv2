@@ -14,7 +14,7 @@
     "test:admin-password-recovery-browser": "pnpm --filter @workspace/claude-design run build && pnpm run build && node --test ./test/admin-password-recovery-browser.test.mjs",
     "test:clerk-proxy": "tsx --test ./test/clerk-proxy.test.ts",
     "test:lifecycle": "node ./scripts/run-lifecycle-tests.mjs",
-    "test:media": "tsx --test ./test/media-image-validation.test.ts && node --test ./test/media-library.test.mjs"
+    "test:media": "tsx --test ./test/media-image-validation.test.ts ./test/image-alt.test.ts && node --test ./test/media-library.test.mjs"
   },
   "dependencies": {
     "@clerk/express": "^2.1.67",
