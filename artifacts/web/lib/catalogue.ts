@@ -251,8 +251,25 @@ function apiUrl(path: string) {
   return `${base}${path}`;
 }
 
+function fetchCause(error: unknown) {
+  if (error && typeof error === "object" && "cause" in error) {
+    const cause = (error as { cause?: { code?: string; message?: string } }).cause;
+    if (cause?.code) return cause.code;
+    if (cause?.message) return cause.message;
+  }
+  return error instanceof Error ? error.message : "unknown error";
+}
+
+async function catalogueRequest(url: string, init?: RequestInit) {
+  try {
+    return await fetch(url, init);
+  } catch (error) {
+    throw new Error(`Catalogue API could not be reached at ${url} (${fetchCause(error)})`, { cause: error });
+  }
+}
+
 async function catalogueFetch<T>(path: string): Promise<T> {
-  const response = await fetch(apiUrl(path), { cache: "no-store" });
+  const response = await catalogueRequest(apiUrl(path), { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Catalogue request failed (${response.status}) for ${path}`);
   }
@@ -264,7 +281,7 @@ export function getProducts() {
 }
 
 export async function getProductBySlug(slug: string) {
-  const response = await fetch(apiUrl(`/api/products/slug/${encodeURIComponent(slug)}`), {
+  const response = await catalogueRequest(apiUrl(`/api/products/slug/${encodeURIComponent(slug)}`), {
     cache: "no-store",
   });
   if (response.status === 404) return null;
@@ -273,7 +290,7 @@ export async function getProductBySlug(slug: string) {
 }
 
 export async function getRedirect(fromPath: string) {
-  const response = await fetch(apiUrl(`/api/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), {
+  const response = await catalogueRequest(apiUrl(`/api/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), {
     next: { revalidate: 300 },
   });
   if (response.status === 404) return null;
@@ -299,7 +316,7 @@ export function getSitemapProductEntries() {
 }
 
 export async function getArticleBySlug(slug: string) {
-  const response = await fetch(apiUrl(`/api/articles/slug/${encodeURIComponent(slug)}`), {
+  const response = await catalogueRequest(apiUrl(`/api/articles/slug/${encodeURIComponent(slug)}`), {
     cache: "no-store",
   });
   if (response.status === 404) return null;

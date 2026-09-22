@@ -596,7 +596,7 @@ function AdminLayout({ children, mobileOpen, setMobileOpen, role, accountName, o
     { label: "Dashboard", icon: "dashboard", href: "/admin", enabled: true },
     { label: "Products & mixes", icon: "sprout", href: "/admin/products", enabled: true },
     { label: "Images", icon: "image", href: "/admin/images", enabled: true },
-    { label: "Tech sheets", icon: "file-text", href: "/admin/tech-sheets", enabled: true },
+    { label: "Uploads", icon: "file-text", href: "/admin/tech-sheets", enabled: true },
     { label: "Blog", icon: "newspaper", href: "/admin/blog", enabled: true },
     { label: "Resellers", icon: "map-pin", href: "/admin/resellers", enabled: true },
     ...(role === "superadmin"
@@ -719,7 +719,7 @@ function Dashboard() {
             ) : <div className="admin-empty">Everything is up to date.</div>}
           </section>
           <section className="admin-panel admin-quick-panel">
-            <div><span className="admin-feature-icon"><Icon name="file-text" size={24}/></span><h2>Fill from PDFs</h2><p>Upload tech sheets, match them to products, then review suggested fields in the editor. Nothing publishes automatically.</p><button className="admin-button outline" onClick={() => navigate("/admin/tech-sheets")}>Open tech sheets</button></div>
+            <div><span className="admin-feature-icon"><Icon name="file-text" size={24}/></span><h2>Fill from PDFs</h2><p>Upload documents that inform product creation and our own tech sheets, match them to products, then review suggested fields in the editor. Nothing publishes automatically.</p><button className="admin-button outline" onClick={() => navigate("/admin/tech-sheets")}>Open uploads</button></div>
             <div><span className="admin-feature-icon"><Icon name="sprout" size={24}/></span><h2>Bulk stock update</h2><p>Select multiple products and change their availability in one action.</p><button className="admin-button outline" onClick={() => navigate("/admin/products")}>Open the product table</button></div>
             <div><h2>Recently updated</h2>{summary?.recentProducts.slice(0, 4).map((product) => <button key={product.id} onClick={() => navigate(`/admin/products/${product.id}`)}><span><strong>{product.name}</strong><small>{product.category}</small></span><small>{formatDate(product.updatedAt)}</small></button>)}</div>
           </section>
