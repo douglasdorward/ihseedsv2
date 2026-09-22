@@ -1045,9 +1045,9 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [hero-download]
+    customerSurfaces: []
     workbook: 1 Products.tech_sheet_pdf_path
-    fillGuidance: PDF path or URL. Fill from PDF on Basics can set this to /api/admin/tech-sheets/{id}/file after review. AI never publishes.
+    fillGuidance: Optional source PDF path or URL. Fill from PDF on Basics can set this to /api/admin/tech-sheets/{id}/file after review. The customer Download tech sheet button is a generated PDF, not this URL. AI never publishes.
 
   - id: faqs
     tab: 5

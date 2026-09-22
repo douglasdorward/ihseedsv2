@@ -44,6 +44,14 @@ body:has(.pdf-preview-root) main {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.pdf-toolbar-download {
+  margin-left: auto;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #f9b617;
+  color: #1d281c !important;
+  text-decoration: none;
+}
 
 .pdf-desk {
   display: flex;
@@ -402,7 +410,9 @@ body:has(.pdf-preview-root) main {
   body:has(.pdf-preview-root) {
     background: #fff;
   }
-  .pdf-toolbar {
+  .pdf-toolbar,
+  .pdf-measure,
+  .pdf-measure-page {
     display: none !important;
   }
   .pdf-desk {
@@ -411,10 +421,12 @@ body:has(.pdf-preview-root) main {
   }
   .pdf-page {
     box-shadow: none;
+  }
+  article.pdf-page {
     page-break-after: always;
     break-after: page;
   }
-  .pdf-page:last-child {
+  article.pdf-page:last-of-type {
     page-break-after: auto;
     break-after: auto;
   }

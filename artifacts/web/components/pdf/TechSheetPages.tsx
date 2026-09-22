@@ -124,6 +124,7 @@ export function TechSheetPages({ view }: { view: TechSheetView }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [aboutOnFirst, setAboutOnFirst] = useState(view.about);
   const [pages, setPages] = useState<PageContent[]>([]);
+  const [measured, setMeasured] = useState(false);
 
   const mixRows = useMemo(
     () => view.components.map((component, index) => ({ ...component, index })),
@@ -225,23 +226,35 @@ export function TechSheetPages({ view }: { view: TechSheetView }) {
       flush();
       setAboutOnFirst(firstAbout);
       setPages(packed);
+      setMeasured(true);
     };
 
     const run = () => {
       requestAnimationFrame(() => {
-        pack();
-        fitQuickFactsToPage();
+        if (!cancelled) pack();
       });
     };
-    const fonts = document.fonts?.ready;
-    if (fonts) void fonts.then(run);
-    else run();
+    const start = async () => {
+      document.querySelector(".pdf-preview-root")?.removeAttribute("data-pdf-ready");
+      setMeasured(false);
+      await document.fonts?.ready;
+      const images = [...document.querySelectorAll<HTMLImageElement>(".pdf-preview-root img")];
+      await Promise.all(images.map((image) => (image.complete ? undefined : image.decode().catch(() => undefined))));
+      if (!cancelled) run();
+    };
+    void start();
     window.addEventListener("resize", run);
     return () => {
       cancelled = true;
       window.removeEventListener("resize", run);
     };
   }, [mixRows, showSold, view]);
+
+  useLayoutEffect(() => {
+    if (!measured) return;
+    fitQuickFactsToPage();
+    document.querySelector(".pdf-preview-root")?.setAttribute("data-pdf-ready", "true");
+  }, [measured, pages, aboutOnFirst]);
 
   const pageCount = 1 + pages.length;
 

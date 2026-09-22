@@ -40,7 +40,13 @@ app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 // PDF extract/tech-sheet uploads need a higher bound than the workbook path.
 app.use((req, res, next) => {
   const path = req.originalUrl.split("?")[0];
-  if (req.method === "PUT" && /^\/api\/admin\/media\/[^/]+\/object$/.test(path)) {
+  if (
+    req.method === "PUT"
+    && (
+      /^\/api\/admin\/media\/[^/]+\/object$/.test(path)
+      || /^\/api\/generated-tech-sheets\/[^/]+$/.test(path)
+    )
+  ) {
     express.raw({ type: "*/*", limit: "12mb" })(req, res, next);
     return;
   }
@@ -52,7 +58,13 @@ app.use((req, res, next) => {
 });
 app.use((req, res, next) => {
   const requestPath = req.originalUrl.split("?")[0];
-  if (req.method === "PUT" && /^\/api\/admin\/media\/[^/]+\/object$/.test(requestPath)) {
+  if (
+    req.method === "PUT"
+    && (
+      /^\/api\/admin\/media\/[^/]+\/object$/.test(requestPath)
+      || /^\/api\/generated-tech-sheets\/[^/]+$/.test(requestPath)
+    )
+  ) {
     next();
     return;
   }

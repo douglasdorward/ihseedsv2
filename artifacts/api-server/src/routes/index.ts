@@ -11,6 +11,7 @@ import mediaRouter from "./media";
 import siteSettingsRouter from "./site-settings";
 import articlesRouter from "./articles";
 import resellersRouter from "./resellers";
+import generatedTechSheetsRouter from "./generated-tech-sheets";
 
 const router: IRouter = Router();
 
@@ -25,6 +26,7 @@ router.use(mediaRouter);
 router.use(siteSettingsRouter);
 router.use(articlesRouter);
 router.use(resellersRouter);
+router.use(generatedTechSheetsRouter);
 router.use(administratorsRouter);
 
 export default router;

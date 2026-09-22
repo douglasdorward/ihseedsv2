@@ -61,11 +61,13 @@ export function TechSheetDocument({
   productUrl,
   year,
   maxFacts = false,
+  downloadHref,
 }: {
   product: CatalogueProduct;
   productUrl: string;
   year: number;
   maxFacts?: boolean;
+  downloadHref?: string;
 }) {
   const details = product.details;
   const packLabels = saleLinePackLabels(product);
@@ -75,18 +77,27 @@ export function TechSheetDocument({
 
   return (
     <div className="pdf-preview-root">
-      <nav className="pdf-toolbar" aria-label="PDF preview samples">
-        <strong>Tech sheet preview</strong>
-        <span>Not indexed. Screen layout at A4 size.</span>
-        {SAMPLE_LINKS.map((sample) => (
-          <a
-            key={sample.href}
-            href={sample.href}
-            aria-current={sample.href === currentHref ? "page" : undefined}
-          >
-            {sample.label}
-          </a>
-        ))}
+      <nav className="pdf-toolbar" aria-label={downloadHref ? "Technical sheet" : "PDF preview samples"}>
+        {downloadHref ? (
+          <>
+            <strong>Technical sheet</strong>
+            <a className="pdf-toolbar-download" href={downloadHref} download>Download PDF</a>
+          </>
+        ) : (
+          <>
+            <strong>Tech sheet preview</strong>
+            <span>Not indexed. Screen layout at A4 size.</span>
+            {SAMPLE_LINKS.map((sample) => (
+              <a
+                key={sample.href}
+                href={sample.href}
+                aria-current={sample.href === currentHref ? "page" : undefined}
+              >
+                {sample.label}
+              </a>
+            ))}
+          </>
+        )}
       </nav>
       <div className="pdf-desk">
         <TechSheetPages
