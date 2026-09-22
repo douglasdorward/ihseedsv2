@@ -1,3 +1,5 @@
+import { unstable_rethrow } from "next/navigation";
+
 export type CatalogueProduct = {
   id: number;
   name: string;
@@ -264,6 +266,7 @@ async function catalogueRequest(url: string, init?: RequestInit) {
   try {
     return await fetch(url, init);
   } catch (error) {
+    unstable_rethrow(error);
     throw new Error(`Catalogue API could not be reached at ${url} (${fetchCause(error)})`, { cause: error });
   }
 }
