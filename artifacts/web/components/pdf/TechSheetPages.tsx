@@ -79,6 +79,80 @@ function pageHasContent(page: PageContent) {
 }
 
 const FACTS_FIT_MIN = 0.7;
+const PAGE_FIT_FUDGE_PX = 4;
+
+function occupiedHeight(el: HTMLElement) {
+  const style = getComputedStyle(el);
+  return el.getBoundingClientRect().height
+    + (parseFloat(style.marginTop) || 0)
+    + (parseFloat(style.marginBottom) || 0);
+}
+
+function wordsOf(text: string) {
+  return text.trim().split(/\s+/).filter(Boolean);
+}
+
+/** Keep the longest word prefix whose border box ends at or above limitBottom. */
+function splitByBottom(node: HTMLElement, text: string, limitBottom: number) {
+  const words = wordsOf(text);
+  const original = node.textContent;
+  if (words.length === 0) return { fit: "", rest: "" };
+  try {
+    if (node.getBoundingClientRect().top > limitBottom) return { fit: "", rest: text };
+    const fits = (count: number) => {
+      node.textContent = words.slice(0, count).join(" ");
+      return node.getBoundingClientRect().bottom <= limitBottom;
+    };
+    if (fits(words.length)) return { fit: text.trim(), rest: "" };
+    let lo = 0;
+    let hi = words.length;
+    let best = 0;
+    while (lo <= hi) {
+      const mid = Math.floor((lo + hi) / 2);
+      if (mid > 0 && fits(mid)) {
+        best = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    if (best <= 0) return { fit: "", rest: text };
+    if (best >= words.length) return { fit: text.trim(), rest: "" };
+    return {
+      fit: words.slice(0, best).join(" "),
+      rest: words.slice(best).join(" "),
+    };
+  } finally {
+    node.textContent = original;
+  }
+}
+
+function splitByHeight(probe: HTMLElement, text: string, maxHeight: number) {
+  const words = wordsOf(text);
+  if (words.length === 0 || maxHeight <= 0) return { fit: "", rest: text.trim() };
+  const heightFor = (count: number) => {
+    probe.textContent = words.slice(0, count).join(" ");
+    return occupiedHeight(probe);
+  };
+  if (heightFor(words.length) <= maxHeight) return { fit: text.trim(), rest: "" };
+  let lo = 1;
+  let hi = words.length - 1;
+  let best = 0;
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    if (heightFor(mid) <= maxHeight) {
+      best = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  if (best <= 0) return { fit: "", rest: words.join(" ") };
+  return {
+    fit: words.slice(0, best).join(" "),
+    rest: words.slice(best).join(" "),
+  };
+}
 
 function fitQuickFactsToPage() {
   const page = document.querySelector<HTMLElement>(".pdf-page.is-first");
@@ -122,6 +196,7 @@ function fitQuickFactsToPage() {
 export function TechSheetPages({ view }: { view: TechSheetView }) {
   const measureRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const aboutSourceRef = useRef<HTMLDivElement>(null);
   const [aboutOnFirst, setAboutOnFirst] = useState(view.about);
   const [pages, setPages] = useState<PageContent[]>([]);
   const [measured, setMeasured] = useState(false);
@@ -144,16 +219,62 @@ export function TechSheetPages({ view }: { view: TechSheetView }) {
       const body = bodyRef.current;
       if (!measure || !body) return;
 
-      const maxHeight = body.clientHeight;
+      const bodyStyle = getComputedStyle(body);
+      const maxHeight = Math.max(
+        0,
+        body.clientHeight
+          - (parseFloat(bodyStyle.paddingTop) || 0)
+          - (parseFloat(bodyStyle.paddingBottom) || 0)
+          - PAGE_FIT_FUDGE_PX,
+      );
       const gap = parseFloat(getComputedStyle(measure).rowGap || "0") || 0;
       const heightOf = (name: string) => measure.querySelector(`[data-pack="${name}"]`)?.getBoundingClientRect().height ?? 0;
 
-      const firstCol = document.querySelector(".pdf-page.is-first .pdf-col-main");
-      const aboutNodes = firstCol ? [...firstCol.querySelectorAll(".pdf-about p")] : [];
-      const colBottom = firstCol?.getBoundingClientRect().bottom ?? 0;
-      const overflowAt = aboutNodes.findIndex((node) => node.getBoundingClientRect().bottom > colBottom + 1);
-      const firstAbout = overflowAt < 0 ? view.about : view.about.slice(0, overflowAt);
-      const leftoverAbout = overflowAt < 0 ? [] : view.about.slice(overflowAt);
+      const firstPage = document.querySelector<HTMLElement>(".pdf-page.is-first");
+      const firstCol = firstPage?.querySelector<HTMLElement>(".pdf-col-main");
+      const aboutSource = aboutSourceRef.current;
+      let firstAbout: string[] = [];
+      let leftoverAbout: string[] = [];
+
+      if (aboutSource && firstPage && firstCol && view.about.length > 0) {
+        aboutSource.style.width = `${firstCol.clientWidth}px`;
+        const aboutBox = aboutSource.querySelector<HTMLElement>(".pdf-about");
+        const sourceParagraphs = aboutBox ? [...aboutBox.querySelectorAll<HTMLElement>("p")] : [];
+        const beforeAbout = [...firstCol.children].filter((el) => !el.classList.contains("pdf-about"));
+        const lastBefore = beforeAbout.at(-1) as HTMLElement | undefined;
+        const colGap = parseFloat(getComputedStyle(firstCol).rowGap || "0") || 0;
+        const aboutStart = lastBefore
+          ? lastBefore.getBoundingClientRect().bottom + colGap
+          : firstCol.getBoundingClientRect().top;
+        const pageStyle = getComputedStyle(firstPage);
+        const pageBottom = firstPage.getBoundingClientRect().bottom - (parseFloat(pageStyle.paddingBottom) || 0);
+        const footerTop = firstPage.querySelector(".pdf-footer")?.getBoundingClientRect().top ?? pageBottom;
+        const available = Math.min(pageBottom, footerTop) - aboutStart - PAGE_FIT_FUDGE_PX;
+        const sourceTop = aboutBox?.getBoundingClientRect().top ?? 0;
+        const fitLimit = sourceTop + Math.max(0, available);
+        const heading = aboutBox?.querySelector("h2");
+        const headingFits = !heading || heading.getBoundingClientRect().bottom <= fitLimit;
+
+        if (!headingFits || sourceParagraphs.length === 0) {
+          leftoverAbout = [...view.about];
+        } else {
+          for (let index = 0; index < sourceParagraphs.length; index += 1) {
+            const node = sourceParagraphs[index];
+            const paragraph = view.about[index] ?? "";
+            if (node.getBoundingClientRect().bottom <= fitLimit) {
+              firstAbout.push(paragraph);
+              continue;
+            }
+            const split = splitByBottom(node, paragraph, fitLimit);
+            if (split.fit) firstAbout.push(split.fit);
+            if (split.rest) leftoverAbout.push(split.rest);
+            leftoverAbout.push(...view.about.slice(index + 1));
+            break;
+          }
+        }
+      } else {
+        firstAbout = [...view.about];
+      }
 
       const packed: PageContent[] = [];
       let current = emptyPage();
@@ -173,13 +294,62 @@ export function TechSheetPages({ view }: { view: TechSheetView }) {
         apply();
       };
 
-      leftoverAbout.forEach((paragraph, index) => {
-        const heading = index === 0 ? heightOf("about-cont-h") : 0;
-        addBlock(heading + heightOf(`about-p-${overflowAt + index}`), () => {
-          if (current.about.length === 0) current.aboutContinued = true;
-          current.about.push(paragraph);
-        });
-      });
+      const aboutHeading = measure.querySelector<HTMLElement>("[data-pack='about-cont-h']");
+      const aboutProbe = measure.querySelector<HTMLElement>("[data-pack='about-probe']");
+      const aboutQueue = leftoverAbout.map((paragraph) => paragraph.trim()).filter(Boolean);
+      let aboutStarted = firstAbout.length > 0;
+      let aboutGuard = 0;
+      while (aboutQueue.length > 0 && aboutGuard < 400) {
+        aboutGuard += 1;
+        const opening = current.about.length === 0;
+        const sectionGap = opening && used > 0 ? gap : 0;
+        const headingH = opening && aboutHeading ? occupiedHeight(aboutHeading) : 0;
+        const room = maxHeight - used - sectionGap - headingH;
+        if (room <= 1 && used > 0) {
+          flush();
+          continue;
+        }
+        const split = aboutProbe
+          ? splitByHeight(aboutProbe, aboutQueue[0], Math.max(room, 0))
+          : { fit: "", rest: aboutQueue[0] };
+        if (!split.fit) {
+          if (used > 0) {
+            flush();
+            continue;
+          }
+          const words = wordsOf(aboutQueue[0]);
+          const forced = words[0] ?? aboutQueue[0];
+          const rest = words.slice(1).join(" ");
+          if (aboutProbe) aboutProbe.textContent = forced;
+          if (opening) {
+            current.aboutContinued = aboutStarted;
+            used += headingH;
+          }
+          current.about.push(forced);
+          used += aboutProbe ? occupiedHeight(aboutProbe) : maxHeight;
+          aboutStarted = true;
+          if (rest) aboutQueue[0] = rest;
+          else aboutQueue.shift();
+          flush();
+          continue;
+        }
+        if (opening) {
+          current.aboutContinued = aboutStarted;
+          used += sectionGap + headingH;
+        }
+        if (aboutProbe) {
+          aboutProbe.textContent = split.fit;
+          used += occupiedHeight(aboutProbe);
+        }
+        current.about.push(split.fit);
+        aboutStarted = true;
+        if (split.rest) {
+          aboutQueue[0] = split.rest;
+          flush();
+        } else {
+          aboutQueue.shift();
+        }
+      }
 
       if (view.keyAttributes.length > 0) {
         addBlock(heightOf("attributes"), () => {
@@ -272,8 +442,8 @@ export function TechSheetPages({ view }: { view: TechSheetView }) {
             {aboutOnFirst.length > 0 && (
               <section className="pdf-about">
                 <h2>About this variety</h2>
-                {aboutOnFirst.map((paragraph) => (
-                  <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+                {aboutOnFirst.map((paragraph, index) => (
+                  <p key={`first-about-${index}`}>{paragraph}</p>
                 ))}
               </section>
             )}
@@ -309,6 +479,16 @@ export function TechSheetPages({ view }: { view: TechSheetView }) {
           </aside>
         </div>
         <SheetFooter productUrl={view.productUrl} page={1} pageCount={pageCount} />
+        {view.about.length > 0 && (
+          <div className="pdf-about-source" ref={aboutSourceRef} aria-hidden="true">
+            <section className="pdf-about">
+              <h2>About this variety</h2>
+              {view.about.map((paragraph, index) => (
+                <p key={`source-about-${index}`}>{paragraph}</p>
+              ))}
+            </section>
+          </div>
+        )}
       </article>
 
       {pages.map((page, index) => (
@@ -322,16 +502,17 @@ export function TechSheetPages({ view }: { view: TechSheetView }) {
       ))}
 
       <div className="pdf-page pdf-measure-page" aria-hidden="true">
-        <SheetHeader year={view.year} />
+        <SheetHeader continued heading={view.heading} />
         <div className="pdf-page-body pdf-follow-on" ref={bodyRef} />
         <SheetFooter productUrl={view.productUrl} page={1} pageCount={1} />
       </div>
 
       <div className="pdf-measure pdf-follow-on" ref={measureRef} aria-hidden="true">
-        <h2 data-pack="about-cont-h">About this variety (continued)</h2>
-        {view.about.map((paragraph, index) => (
-          <p data-pack={`about-p-${index}`} key={`about-${index}`}>{paragraph}</p>
-        ))}
+        <section className="pdf-about">
+          <h2 data-pack="about-cont-h">About this variety (continued)</h2>
+          <p data-pack="about-probe" />
+          <span data-pack="about-probe-end" />
+        </section>
         {view.keyAttributes.length > 0 && (
           <section className="pdf-key-attributes" data-pack="attributes">
             <h2>Key attributes</h2>
@@ -420,8 +601,8 @@ function FollowOnBlocks({
       {page.about.length > 0 && (
         <section className="pdf-about">
           <h2>{page.aboutContinued ? "About this variety (continued)" : "About this variety"}</h2>
-          {page.about.map((paragraph) => (
-            <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+          {page.about.map((paragraph, index) => (
+            <p key={`about-${index}`}>{paragraph}</p>
           ))}
         </section>
       )}

@@ -121,15 +121,18 @@ body:has(.pdf-preview-root) main {
 .pdf-page-body {
   flex: 1 1 auto;
   min-height: 0;
+  overflow: hidden;
 }
 
 .pdf-page-1 {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) 68mm;
+  grid-template-rows: minmax(0, 1fr);
   gap: 8mm;
   padding-top: 8mm;
   min-height: 0;
   height: 100%;
+  overflow: hidden;
 }
 
 .pdf-col-main,
@@ -138,10 +141,20 @@ body:has(.pdf-preview-root) main {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
 }
 
 .pdf-col-main {
   gap: 5mm;
+  overflow: hidden;
+}
+
+.pdf-about-source {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 .pdf-col-side {
   gap: 5mm;
@@ -203,6 +216,7 @@ body:has(.pdf-preview-root) main {
   margin: 0 0 3mm;
   font-size: 13px;
   line-height: 1.5;
+  overflow-wrap: break-word;
 }
 .pdf-about p:last-child,
 .pdf-note p:last-child {
@@ -412,7 +426,8 @@ body:has(.pdf-preview-root) main {
   }
   .pdf-toolbar,
   .pdf-measure,
-  .pdf-measure-page {
+  .pdf-measure-page,
+  .pdf-about-source {
     display: none !important;
   }
   .pdf-desk {
