@@ -27,6 +27,7 @@ import { publicRedirectTo } from "../lib/public-redirect";
 import { productPublicPath } from "../lib/product-path";
 import { absolutePublicUrl, canonicalPublicPath } from "../lib/public-site-url";
 import { clearProductMediaReferences, syncProductMediaReferences } from "../lib/media-usage";
+import { scheduleGeneratedTechSheet } from "../lib/generated-tech-sheet";
 
 const router: IRouter = Router();
 
@@ -682,6 +683,7 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       await syncProductMediaReferences(published, published.details.photos, tx);
       return published;
     });
+    scheduleGeneratedTechSheet(updated.slug);
     res.json(await getAdminProduct(updated));
   } catch (error) {
     if (error instanceof Error && error.message === "PRODUCT_NOT_FOUND") {

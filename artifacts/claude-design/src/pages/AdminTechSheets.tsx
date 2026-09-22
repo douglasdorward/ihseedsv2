@@ -57,12 +57,12 @@ export default function AdminTechSheets() {
   const refresh = async () => {
     const response = await fetch("/api/admin/tech-sheets");
     const body = await response.json().catch(() => null);
-    if (!response.ok) throw new Error(body?.error ?? "Could not load tech sheets.");
+    if (!response.ok) throw new Error(body?.error ?? "Could not load uploads.");
     setItems(body as QueueItem[]);
   };
 
   useEffect(() => {
-    refresh().catch((caught) => setError(caught instanceof Error ? caught.message : "Could not load tech sheets.")).finally(() => setLoading(false));
+    refresh().catch((caught) => setError(caught instanceof Error ? caught.message : "Could not load uploads.")).finally(() => setLoading(false));
   }, []);
 
   const uploadFiles = async (files: FileList | File[]) => {
@@ -154,7 +154,7 @@ export default function AdminTechSheets() {
       <header className="admin-page-header">
         <div>
           <p>Content</p>
-          <h1>Tech <strong>sheets</strong></h1>
+          <h1><strong>Uploads</strong></h1>
         </div>
       </header>
       <div className="admin-content">
@@ -162,7 +162,7 @@ export default function AdminTechSheets() {
           <div className="admin-section-heading">
             <div>
               <h2>PDF queue</h2>
-              <p className="admin-field-hint">Drop tech sheets here. Matched files open in the product editor for review. Unmatched files wait until you pick or create a Draft. AI never publishes.</p>
+              <p className="admin-field-hint">Drop documents here to inform product creation and our own tech sheets. Matched files open in the product editor for review. Unmatched files wait until you pick or create a Draft. AI never publishes.</p>
             </div>
           </div>
           <label className="admin-techsheet-drop">
@@ -193,7 +193,7 @@ export default function AdminTechSheets() {
             </thead>
             <tbody>
               {loading && <tr><td colSpan={4} className="admin-empty">Loading queue…</td></tr>}
-              {!loading && items.length === 0 && <tr><td colSpan={4} className="admin-empty">No tech sheets in the queue yet.</td></tr>}
+              {!loading && items.length === 0 && <tr><td colSpan={4} className="admin-empty">No uploads in the queue yet.</td></tr>}
               {items.map((item) => {
                 const product = item.productId ? productsById.get(item.productId) : undefined;
                 return (

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Icon } from "../components/Icon";
 import { ProductNewStamp } from "../components/NewStamp";
 import { StatusPill } from "../components/StatusPill";
-import { getCategories, getProducts } from "../lib/catalogue";
+import { getArticles, getCategories, getProducts, type CatalogueArticle } from "../lib/catalogue";
 import { CATALOGUE_INDEX_PATH, productPublicPath } from "../lib/catalogue-paths";
 import { HomeHero } from "../components/HomeHero";
 import { expandProductCount, FALLBACK_SITE_SETTINGS, loadSiteSettings, publicMediaSrc, resolveBestSellers, resolveHomepageHeroImages } from "../lib/site-settings";
@@ -17,8 +17,19 @@ export const metadata: Metadata = {
 
 const ABOUT_IMAGE = "https://images.unsplash.com/photo-1530507629858-e4977d30e9e0?auto=format&fit=crop&w=900&q=80";
 
+function formatArticleDate(value: string) {
+  return new Date(value).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function latestArticles(articles: CatalogueArticle[], count = 3) {
+  return [...articles]
+    .sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt) || right.id - left.id)
+    .slice(0, count);
+}
+
 export default async function Home() {
-  const [products, categories, settings] = await Promise.all([getProducts(), getCategories(), loadSiteSettings()]);
+  const [products, categories, settings, articles] = await Promise.all([getProducts(), getCategories(), loadSiteSettings(), getArticles()]);
+  const seedShedArticles = latestArticles(articles);
   const visibleProducts = resolveBestSellers(settings.homepage.bestSellerSlugs, products);
   const heroBody = expandProductCount(settings.homepage.heroBody, products.length);
   const guideImage = publicMediaSrc({ src: settings.seedGuide.cardImageSrc, assetId: settings.seedGuide.cardImageAssetId });
@@ -79,6 +90,30 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {seedShedArticles.length > 0 && (
+        <section id="seed-shed" className="section seed-shed-section" aria-labelledby="seed-shed-heading">
+          <div className="content-width">
+            <div className="section-heading">
+              <h2 id="seed-shed-heading"><span>From the</span> Seed Shed</h2>
+              <Link href="/resources" className="button button-outline" data-testid="button-view-articles">View all articles</Link>
+            </div>
+            <div className="article-grid">
+              {seedShedArticles.map((article) => (
+                <article className="article-card" key={article.id} data-testid={`card-home-article-${article.slug}`}>
+                  <div className="article-image" style={article.heroImageSrc ? { backgroundImage: `url(${article.heroImageSrc})` } : undefined} />
+                  <div className="article-copy">
+                    <small>{[article.tags[0], formatArticleDate(article.publishedAt)].filter(Boolean).join(" · ")}</small>
+                    <h3>{article.title}</h3>
+                    <p>{article.excerpt}</p>
+                    <Link href={`/resources/${article.slug}`} className="text-link">Read article <span>↗</span></Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section id="guide" className="section guide-section">
         <div className="guide-banner" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.92), rgba(29,40,28,.44)), url(${guideImage})` }}>

@@ -58,18 +58,6 @@ function productImage(photos: Array<{ src?: string; assetId?: string }> | undefi
   return photoDisplaySrc(photo) || FALLBACK_IMAGE;
 }
 
-function techSheetHref(techSheet: string | undefined) {
-  const value = techSheet?.trim();
-  if (!value) return null;
-  if (value.startsWith("/") && !value.startsWith("//")) return value;
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
-  } catch {
-    return `/tech-sheets/${value.replace(/^\/+/, "")}`;
-  }
-}
-
 function defaultSaleLine(saleLines: SaleLine[] | undefined) {
   return saleLines?.find((line) => line.isDefault) ?? saleLines?.[0];
 }
@@ -190,7 +178,6 @@ export function ProductPageEditor(props: ProductPageEditorProps) {
   const { form, readOnly } = props;
   const details = form.details;
   const image = productImage(details.photos);
-  const techSheet = techSheetHref(form.techSheet);
   const status = publicStatus(derivedAvailability(form), form.status || "unavailable");
   const defaultLine = defaultSaleLine(form.saleLines);
   const listedPrice = defaultLine?.priceDisplay?.trim() || "";
@@ -259,7 +246,7 @@ export function ProductPageEditor(props: ProductPageEditorProps) {
             )}
             <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
               <PublicStatusPill status={status} />
-              {techSheet && <a className="button button-primary" href={techSheet} target="_blank" rel="noreferrer">Download tech sheet</a>}
+              {form.slug && <a className="button button-primary" href={`/tech-sheets/${form.slug}/view`} target="_blank" rel="noreferrer">Download tech sheet</a>}
             </div>
           </div>
           <HeroUpload photos={details.photos} updatePhoto={props.updatePhoto} readOnly={readOnly} ownerName={form.name} />

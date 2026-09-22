@@ -77,11 +77,11 @@ Public copy, media, FAQs, Also popular, and display flags. Tagline, blurb, at le
 - **API path:** `techSheet`
 - **Workbook:** `1 Products.tech_sheet_pdf_path`
 - **Required:** no
-- **Customer website:** “Download tech sheet” on the hero when the stored path/URL resolves.
+- **Customer website:** “Download tech sheet” is on every published product hero and on the Tech Sheets Hub. It downloads a PDF generated from the product’s catalogue fields in the approved sheet layout. This URL is not that download.
 - **Public API:** yes (`techSheet`)
-- **Purpose:** Link to the PDF fact sheet.
+- **Purpose:** Optional source document used to fill product fields. Not the customer download.
 - **Constraints:** max 240 characters.
-- **How to fill:** Paste an external URL, or use **Fill from PDF** on Form → Basics. That uploads the PDF to durable storage and can set this field to `/api/admin/tech-sheets/{id}/file` after you accept the suggestion. The bulk queue at `/admin/tech-sheets` stores the same files; Open editor applies suggestions into the Basics tab. AI never saves or publishes.
+- **How to fill:** Paste an external URL, or use **Fill from PDF** on Form → Basics. That uploads the PDF to durable storage and can set this field to `/api/admin/tech-sheets/{id}/file` after you accept the suggestion. The bulk queue at `/admin/tech-sheets` stores the same files; Open editor applies suggestions into the Basics tab. AI never saves or publishes. Publishing stores a separate generated sheet for customers.
 
 ## FAQs
 

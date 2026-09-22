@@ -10,6 +10,7 @@ import {
   getProductBySlug,
   getProducts,
   getRedirect,
+  getResellers,
   productPageHeading,
   saleLinePackLabels,
   type CatalogueCategory,
@@ -18,10 +19,18 @@ import {
 import { CATALOGUE_INDEX_PATH, categoryPublicPath, productPublicPath, rootCategoryForProduct } from "../../lib/catalogue-paths";
 import { resolveAlsoPopular } from "../../lib/also-popular";
 import { getProductQuickFacts } from "../../lib/product-quick-facts";
-import { productCanonicalUrl, techSheetHref } from "../../lib/product-url";
+import { productCanonicalUrl } from "../../lib/product-url";
 import { forSearchMetadata } from "../../lib/search-metadata";
+import { companyTelHref } from "../../lib/company";
+import { loadSiteSettings } from "../../lib/site-settings";
 import { absoluteSiteUrl } from "../../lib/site-url";
 import { hasProductPhoto, PRODUCT_FALLBACK_IMAGE, productImageAlt } from "./product-card-facts";
+
+const PUBLISHED_OFFICE_PHONE = "(08) 9383 4708";
+
+function independentShopRound(count: number) {
+  return Math.floor(count / 5) * 5;
+}
 
 type RouteParams = { category: string; product: string };
 
@@ -97,17 +106,24 @@ export async function productMetadata(params: RouteParams): Promise<Metadata> {
 
 export async function NestedProductPage({ params }: { params: RouteParams }) {
   const { product, categories, canonical } = await productForNestedRoute(params);
-  const [allProducts, quickFacts] = await Promise.all([
+  const [allProducts, quickFacts, settings, resellers] = await Promise.all([
     getProducts(),
     Promise.resolve(getProductQuickFacts(product)),
+    loadSiteSettings(),
+    getResellers().catch(() => []),
   ]);
+  const independentShops = independentShopRound(
+    resellers.filter((brand) => brand.kind === "independent").reduce((total, brand) => total + brand.outlets.length, 0),
+  );
+  const configuredPhone = settings.company.phone.trim();
+  const officePhone = configuredPhone && companyTelHref(configuredPhone) ? configuredPhone : PUBLISHED_OFFICE_PHONE;
+  const officeTel = companyTelHref(officePhone);
   const details = product.details;
   const image = productImage(product);
   const heroOverlay = hasProductPhoto(product)
     ? "linear-gradient(rgba(29,40,28,.55), rgba(29,40,28,.72))"
     : "linear-gradient(rgba(39,45,42,.38), rgba(39,45,42,.56))";
   const canonicalHref = productCanonicalUrl(details.canonicalUrl, canonical);
-  const techSheet = techSheetHref(product.techSheet);
   const root = rootCategoryForProduct(product, categories);
   const categoryUrl = root ? categoryPublicPath(root) : CATALOGUE_INDEX_PATH;
   const defaultLine = defaultSaleLine(product);
@@ -167,7 +183,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
           <h1 style={{ color: "#fff", fontSize: "clamp(44px,6vw,64px)", lineHeight: 1.05, fontWeight: 700, maxWidth: "20ch" }}>{productPageHeading(product)}</h1>
           {details.tagline && <p className="product-hero-tagline">{details.tagline}</p>}
           {details.botanicalName && <p style={{ color: "#C5CCC5", fontSize: 20, fontStyle: "italic" }}>{details.botanicalName}</p>}
-          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><StatusPill status={product.status} />{techSheet && <a className="button button-primary" href={techSheet} target="_blank" rel="noreferrer">Download tech sheet</a>}</div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><StatusPill status={product.status} /><a className="button button-primary" href={`/tech-sheets/${product.slug}/view`} target="_blank" rel="noreferrer">Download tech sheet</a></div>
         </div>
       </section>
       <section>
@@ -186,7 +202,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
           <aside className="product-sidebar-col">
             <div className="product-sidebar-card mobile-order-2">
               {quickFacts.length > 0 && <section className="quick-facts-section"><h2 className="sidebar-card-heading">Quick facts</h2><div className="quick-facts-list">{quickFacts.map((fact) => <div className="quick-fact-item" key={fact.label}><span className="quick-fact-icon"><Icon name={fact.icon} size={22} /></span><div className="quick-fact-content"><span className="quick-fact-label">{fact.label}</span><span className="quick-fact-value">{fact.value}</span></div></div>)}</div></section>}
-              <div className="pricing-section"><StatusPill status={product.status} /><div className="pricing-details"><strong className="pricing-amount">{listedPrice || "Contact for pricing"}</strong>{packLabels.length > 0 && <span className="pricing-unit">Available in {packLabels.join(", ")}</span>}</div><Link href="/contact" className="button button-primary" style={{ width: "100%", textAlign: "center" }}>Ask about an order</Link><div className="pricing-reseller-logos"><img className="pricing-reseller-logo" src="/elders-logo.webp" alt="Elders" /><img className="pricing-reseller-logo" src="/nutrien-logo.webp" alt="Nutrien Ag Solutions" /></div><small className="pricing-disclaimer">We supply through rural resellers across Western Australia.</small></div>
+              <div className="pricing-section"><StatusPill status={product.status} /><div className="pricing-details"><strong className="pricing-amount">{listedPrice || "Contact for pricing"}</strong>{packLabels.length > 0 && <span className="pricing-unit">Available in {packLabels.join(", ")}</span>}</div><div className="pricing-actions"><Link href="/contact" className="button button-primary pricing-action-order">Ask about an order</Link><a className="button button-outline pricing-action-call" href={officeTel} aria-label={`Call IH Seeds on ${officePhone}`}><Icon name="phone" size={20} /></a></div><Link href="/contact#locations" className="pricing-reseller"><span className="pricing-reseller-logos"><img className="pricing-reseller-logo" src="/elders-logo.webp" alt="Elders" /><img className="pricing-reseller-logo" src="/nutrien-logo.webp" alt="Nutrien Ag Solutions" /></span>{independentShops > 0 && <span className="pricing-reseller-subhead">& over {independentShops} independent farm shops</span>}</Link><small className="pricing-disclaimer">We supply through rural resellers across Western Australia.</small></div>
             </div>
             <div className="product-sidebar-bottom mobile-order-5">
               {(details.certification?.length || details.pbrProtected) && <div className="product-meta-section">{details.certification?.length ? <div>Certification: {details.certification.join(", ")}</div> : null}{details.pbrProtected ? <div>PBR: {details.pbrDetails || "Protected"}</div> : null}</div>}

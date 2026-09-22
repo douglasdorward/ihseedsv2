@@ -19,22 +19,93 @@ function directionsUrl(outlet: { address: string; suburb: string; postcode: stri
   return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : "";
 }
 
+function outletPoint(mapsUrl: string) {
+  try {
+    const query = new URL(mapsUrl).searchParams.get("query") ?? "";
+    const match = query.match(/^(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)$/);
+    if (!match) return null;
+    const lat = Number(match[1]);
+    const lng = Number(match[2]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+    return { lat, lng };
+  } catch {
+    return null;
+  }
+}
+
+function distanceKm(from: { lat: number; lng: number }, to: { lat: number; lng: number }) {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const dLat = toRad(to.lat - from.lat);
+  const dLng = toRad(to.lng - from.lng);
+  const lat1 = toRad(from.lat);
+  const lat2 = toRad(to.lat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+function formatDistance(km: number) {
+  return km < 10 ? `${km.toFixed(1)} km` : `${Math.round(km)} km`;
+}
+
+function listingSortName(brand: CatalogueResellerBrand, outlet: { name: string }) {
+  if (brand.kind === "elders" || brand.kind === "nutrien") return outlet.name;
+  return `${brand.name} ${outlet.name}`;
+}
+
+function compareListingNames(
+  a: { brand: CatalogueResellerBrand; outlet: { name: string } },
+  b: { brand: CatalogueResellerBrand; outlet: { name: string } },
+) {
+  return listingSortName(a.brand, a.outlet).localeCompare(listingSortName(b.brand, b.outlet), "en-AU", { sensitivity: "base" });
+}
+
 export function ContactPage({ resellers, company }: { resellers: CatalogueResellerBrand[]; company: CompanyContact }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitState, setSubmitState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [details, setDetails] = useState(EMPTY_DETAILS);
   const [region, setRegion] = useState("All");
   const [showAll, setShowAll] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState("");
   const hasOfficePhone = Boolean(company.phone.trim() && companyTelHref(company.phone));
-  const listings = useMemo(
-    () => resellers
-      .flatMap((brand) => brand.outlets.map((outlet) => ({ brand, outlet })))
-      .sort((a, b) =>
-        a.outlet.name.localeCompare(b.outlet.name, "en-AU", { sensitivity: "base" })
-        || a.brand.name.localeCompare(b.brand.name, "en-AU", { sensitivity: "base" }),
-      ),
-    [resellers],
-  );
+  const listings = useMemo(() => {
+    const rows = resellers.flatMap((brand) => brand.outlets.map((outlet) => {
+      const point = outletPoint(outlet.mapsUrl);
+      return { brand, outlet, distanceKm: userLocation && point ? distanceKm(userLocation, point) : null };
+    }));
+    if (userLocation) {
+      return rows.sort((a, b) => {
+        if (a.distanceKm == null && b.distanceKm == null) return compareListingNames(a, b);
+        if (a.distanceKm == null) return 1;
+        if (b.distanceKm == null) return -1;
+        return a.distanceKm - b.distanceKm;
+      });
+    }
+    return rows.sort(compareListingNames);
+  }, [resellers, userLocation]);
+
+  const shareLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("This browser can’t share a location. Filter by region instead.");
+      return;
+    }
+    setLocating(true);
+    setLocationError("");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setRegion("All");
+        setShowAll(false);
+        setLocating(false);
+      },
+      () => {
+        setLocating(false);
+        setLocationError("Location wasn’t shared. You can still filter by region.");
+      },
+      { enableHighAccuracy: false, timeout: 12000, maximumAge: 60_000 },
+    );
+  };
   const regions = ["All", ...Array.from(new Set(listings.map((listing) => listing.outlet.region).filter(Boolean)))];
   const filteredResellers = useMemo(
     () => (region === "All" ? listings : listings.filter((listing) => listing.outlet.region === region)),
@@ -116,20 +187,21 @@ export function ContactPage({ resellers, company }: { resellers: CatalogueResell
         </div>
       </section>
 
-      <section className="reseller-section">
+      <section className="reseller-section" id="locations">
         <div className="reseller-content">
           <div className="reseller-heading">
             <div><div className="eyebrow">Reseller</div><h2>near you</h2></div>
-            <button className="button button-outline" type="button" onClick={() => setRegion("All")}><Icon name="map-pin" size={18} /> Show all resellers</button>
+            <button className="button button-outline" type="button" onClick={shareLocation} disabled={locating}><Icon name="map-pin" size={18} /> {locating ? "Locating…" : "Share location"}</button>
           </div>
-          <p className="reseller-lead">We sell through rural resellers across Western Australia. Filter by region to find your closest store{hasOfficePhone ? ", or call the office and we will point you the right way" : ""}.</p>
+          {locationError ? <p className="reseller-location-status" role="alert">{locationError}</p> : null}
+          <p className="reseller-lead">{userLocation ? "Closest stores first, from the location you shared." : `We sell through rural resellers across Western Australia. Filter by region to find your closest store${hasOfficePhone ? ", or call the office and we will point you the right way" : ""}.`}</p>
           {regions.length > 1 && (
             <div className="region-chips" aria-label="Filter resellers by region">
               {regions.map((currentRegion) => <button key={currentRegion} className={region === currentRegion ? "active" : ""} type="button" onClick={() => { setRegion(currentRegion); setShowAll(false); }}>{currentRegion}</button>)}
             </div>
           )}
           <div className="reseller-list">
-            {visibleResellers.map(({ brand, outlet }) => {
+            {visibleResellers.map(({ brand, outlet, distanceKm: distance }) => {
               const address = outletAddress(outlet);
               const maps = directionsUrl(outlet);
               const logo = publicMediaSrc({ src: brand.logoSrc, assetId: brand.logoAssetId })
@@ -149,7 +221,7 @@ export function ContactPage({ resellers, company }: { resellers: CatalogueResell
                       <span>{address || (hasOfficePhone ? "Call the office for this store’s address." : "Address on request.")}</span>
                     </div>
                   </div>
-                  <span>{outlet.region || "Western Australia"}</span>
+                  <span>{outlet.region || "Western Australia"}{distance != null ? ` · ${formatDistance(distance)}` : ""}</span>
                   <div className="reseller-contacts">
                     {outlet.phone ? <a href={`tel:${outlet.phone.replace(/[^\d+]/g, "")}`}>{outlet.phone}</a> : <span>Phone on request</span>}
                     {outlet.email ? <a href={`mailto:${outlet.email}`}>{outlet.email}</a> : null}

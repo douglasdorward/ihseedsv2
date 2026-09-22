@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getArticles, getCategories, getProducts } from "../../lib/catalogue";
+import { getArticles, getProducts } from "../../lib/catalogue";
 import { loadSiteSettings } from "../../lib/site-settings";
 import { ResourcesContent } from "./ResourcesContent";
 
@@ -10,10 +10,9 @@ export const metadata: Metadata = {
 };
 
 export default async function Resources() {
-  const [articles, products, categories, settings] = await Promise.all([
+  const [articles, products, settings] = await Promise.all([
     getArticles(),
     getProducts(),
-    getCategories(),
     loadSiteSettings(),
   ]);
 
@@ -21,7 +20,6 @@ export default async function Resources() {
     <ResourcesContent
       articles={articles}
       products={products}
-      categories={categories}
       seedGuide={settings.seedGuide}
       intro={
         <div className="page-content resource-intro" style={{ maxWidth: 1180, margin: "0 auto", padding: "64px 40px 40px", display: "flex", flexDirection: "column", gap: 16 }}>

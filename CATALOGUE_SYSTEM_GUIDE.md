@@ -565,7 +565,7 @@ The Category page:
 
 The current public hierarchy is:
 
-1. Breadcrumbs, H1 (SEO H1 or product name), tagline, botanical name, stock state, photo and optional tech sheet
+1. Breadcrumbs, H1 (SEO H1 or product name), tagline, botanical name, stock state, photo and Download tech sheet
 2. Quick facts
 3. Blurb
 4. Key attributes
