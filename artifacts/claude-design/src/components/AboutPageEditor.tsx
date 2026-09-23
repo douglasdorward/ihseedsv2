@@ -298,7 +298,7 @@ export default function AdminAboutPage() {
       </header>
       <div className="admin-editor-title">
         <h1>Edit About us</h1>
-        <div className="admin-editor-version">Saved changes appear on the public About us page immediately.</div>
+        <div className="admin-editor-version">Saved changes appear on the public About us page immediately. The hero photo also appears on the home page About Us panel.</div>
       </div>
       {error && <div className="admin-notice admin-notice-error" role="alert"><p>{error}</p></div>}
       <AboutPageEditor about={about} seedGuide={data.seedGuide} productCount={products.length} onChange={setAbout} />

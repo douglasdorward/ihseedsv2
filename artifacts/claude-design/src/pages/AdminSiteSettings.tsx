@@ -31,14 +31,14 @@ const sections = [
     href: "/admin/site-settings/about",
     icon: "users",
     title: "About us",
-    body: "Preview the public About us page and edit the hero, story and values copy in place.",
+    body: "Preview the public About us page and edit the hero, story and values copy in place. The hero photo also appears on the home page About Us panel.",
     action: "Edit About us",
   },
   {
     href: "/admin/site-settings/categories",
     icon: "sprout",
     title: "Root categories",
-    body: "Edit search titles, meta descriptions and ten general FAQs for every root category page.",
+    body: "Edit search titles, meta descriptions and ten general FAQs for every root category page, or import FAQs from a template that lists those categories.",
     action: "Open root editor",
   },
   {

@@ -9,18 +9,25 @@ export const metadata: Metadata = {
   alternates: { canonical: "/resources" },
 };
 
-export default async function Resources() {
-  const [articles, products, settings] = await Promise.all([
+export default async function Resources({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [articles, products, settings, query] = await Promise.all([
     getArticles(),
     getProducts(),
     loadSiteSettings(),
+    searchParams,
   ]);
+  const tab = query.tab === "sheets" ? "sheets" : "articles";
 
   return (
     <ResourcesContent
       articles={articles}
       products={products}
       seedGuide={settings.seedGuide}
+      initialTab={tab}
       intro={
         <div className="page-content resource-intro" style={{ maxWidth: 1180, margin: "0 auto", padding: "64px 40px 40px", display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--green)" }}>Resources</div>

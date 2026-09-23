@@ -8477,6 +8477,89 @@ export const ReorderCategoriesResponse = zod.array(ReorderCategoriesResponseItem
 
 
 /**
+ * The template lists every root category so FAQ copy can be written for those pages.
+ * @summary Download the root category FAQ Excel import template
+ */
+export const DownloadCategoryFaqImportTemplateResponse = zod.unknown()
+
+
+/**
+ * @summary Download the root category FAQ import agent prompt
+ */
+export const DownloadCategoryFaqImportPromptResponse = zod.string()
+
+
+/**
+ * @summary Validate a root category FAQ Excel import
+ */
+export const DryRunCategoryFaqImportBody = zod.object({
+  "workbookBase64": zod.string()
+})
+
+export const dryRunCategoryFaqImportResponseRowsMultipleOf = 1;
+
+export const dryRunCategoryFaqImportResponseCreatedMultipleOf = 1;
+
+export const dryRunCategoryFaqImportResponseUpdatedMultipleOf = 1;
+
+export const dryRunCategoryFaqImportResponseSkippedMultipleOf = 1;
+
+export const dryRunCategoryFaqImportResponseIssuesItemRowMultipleOf = 1;
+
+
+
+export const DryRunCategoryFaqImportResponse = zod.object({
+  "token": zod.string(),
+  "rows": zod.number().multipleOf(dryRunCategoryFaqImportResponseRowsMultipleOf),
+  "created": zod.number().multipleOf(dryRunCategoryFaqImportResponseCreatedMultipleOf),
+  "updated": zod.number().multipleOf(dryRunCategoryFaqImportResponseUpdatedMultipleOf),
+  "skipped": zod.number().multipleOf(dryRunCategoryFaqImportResponseSkippedMultipleOf),
+  "issues": zod.array(zod.object({
+  "row": zod.number().multipleOf(dryRunCategoryFaqImportResponseIssuesItemRowMultipleOf),
+  "column": zod.string(),
+  "problem": zod.string()
+})),
+  "plannedChanges": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Commit a validated root category FAQ Excel import
+ */
+export const CommitCategoryFaqImportBody = zod.object({
+  "workbookBase64": zod.string()
+}).and(zod.object({
+  "token": zod.string()
+}))
+
+export const commitCategoryFaqImportResponseRowsMultipleOf = 1;
+
+export const commitCategoryFaqImportResponseCreatedMultipleOf = 1;
+
+export const commitCategoryFaqImportResponseUpdatedMultipleOf = 1;
+
+export const commitCategoryFaqImportResponseSkippedMultipleOf = 1;
+
+export const commitCategoryFaqImportResponseIssuesItemRowMultipleOf = 1;
+
+
+
+export const CommitCategoryFaqImportResponse = zod.object({
+  "token": zod.string(),
+  "rows": zod.number().multipleOf(commitCategoryFaqImportResponseRowsMultipleOf),
+  "created": zod.number().multipleOf(commitCategoryFaqImportResponseCreatedMultipleOf),
+  "updated": zod.number().multipleOf(commitCategoryFaqImportResponseUpdatedMultipleOf),
+  "skipped": zod.number().multipleOf(commitCategoryFaqImportResponseSkippedMultipleOf),
+  "issues": zod.array(zod.object({
+  "row": zod.number().multipleOf(commitCategoryFaqImportResponseIssuesItemRowMultipleOf),
+  "column": zod.string(),
+  "problem": zod.string()
+})),
+  "plannedChanges": zod.array(zod.string())
+})
+
+
+/**
  * @summary Update a catalogue category or its active state
  */
 export const UpdateCategoryParams = zod.object({

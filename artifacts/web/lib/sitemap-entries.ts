@@ -10,6 +10,7 @@ export const SITEMAP_STATIC_PATHS = [
   "/availability",
   "/resources",
   "/guide",
+  "/pasture-selector",
   "/about",
   "/contact",
   "/privacy",

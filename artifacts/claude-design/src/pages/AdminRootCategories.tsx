@@ -2,10 +2,13 @@ import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import {
   getListAdminCategoriesQueryKey,
   getListCategoriesQueryKey,
+  useCommitCategoryFaqImport,
+  useDryRunCategoryFaqImport,
   useListAdminCategories,
   useUpdateCategory,
   type CatalogueCategory,
   type CatalogueCategoryFaq,
+  type CategoryFaqImportReport,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Icon } from "../components/ui";
@@ -61,6 +64,122 @@ function snapshot(category: CatalogueCategory, pageHeading: string, seoTitle: st
     seoDescription: forSearchMetadata(seoDescription),
     faqs: completeFaqs(faqs),
   });
+}
+
+function errorMessage(error: unknown, fallback: string) {
+  if (error && typeof error === "object" && "error" in error && typeof error.error === "string") return error.error;
+  if (error instanceof Error) return error.message.replace(/^HTTP \d+ [^:]+:\s*/, "");
+  return fallback;
+}
+
+function FaqImportDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const dryRun = useDryRunCategoryFaqImport();
+  const commit = useCommitCategoryFaqImport();
+  const [filename, setFilename] = useState("");
+  const [workbookBase64, setWorkbookBase64] = useState("");
+  const [report, setReport] = useState<CategoryFaqImportReport | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const reset = () => {
+    setFilename("");
+    setWorkbookBase64("");
+    setReport(null);
+    setError("");
+  };
+
+  const close = () => {
+    if (busy) return;
+    reset();
+    onClose();
+  };
+
+  const handleFile = async (file: File) => {
+    setFilename(file.name);
+    setReport(null);
+    setError("");
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("Could not read that file."));
+      reader.readAsDataURL(file);
+    });
+    setWorkbookBase64(dataUrl.split(",")[1] ?? "");
+  };
+
+  const handleDryRun = async () => {
+    if (!workbookBase64) return;
+    setBusy(true);
+    setError("");
+    try {
+      setReport(await dryRun.mutateAsync({ data: { workbookBase64 } }));
+    } catch (caught) {
+      setError(errorMessage(caught, "Could not validate that workbook."));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleCommit = async () => {
+    if (!report) return;
+    setBusy(true);
+    setError("");
+    try {
+      await commit.mutateAsync({ data: { workbookBase64, token: report.token } });
+      await queryClient.invalidateQueries({ queryKey: getListAdminCategoriesQueryKey(), refetchType: "all" });
+      await queryClient.invalidateQueries({ queryKey: getListCategoriesQueryKey(), refetchType: "all" });
+      reset();
+      onClose();
+    } catch (caught) {
+      setError(errorMessage(caught, "Could not import those FAQs."));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!open) return null;
+  return (
+    <div className="admin-dialog-backdrop" role="presentation" onMouseDown={close}>
+      <section className="admin-dialog admin-import-dialog" role="dialog" aria-modal="true" aria-labelledby="category-faq-import-title" onMouseDown={(event) => event.stopPropagation()}>
+        <h2 id="category-faq-import-title">Import root category FAQs</h2>
+        <p>Upload an Excel workbook with one FAQ per row on the FAQs sheet. The template lists every root category. A category is updated only when the file includes at least one complete question and answer for its slug, and those rows replace its FAQs. Blank starter rows are ignored.</p>
+        {!report ? (
+          <div className="admin-import-file-row">
+            <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" data-testid="category-faq-import-file" onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file) void handleFile(file);
+            }} />
+            <button className="admin-button outline small" type="button" onClick={() => { void handleDryRun(); }} disabled={!workbookBase64 || busy} data-testid="category-faq-dry-run-btn">
+              {busy ? "Checking…" : "Dry run import"}
+            </button>
+          </div>
+        ) : (
+          <div className="admin-import-report">
+            <p>
+              <strong>{filename || "Workbook"}:</strong> {report.updated} categor{report.updated === 1 ? "y" : "ies"} updated, {report.skipped} blank rows skipped.
+            </p>
+            {report.plannedChanges.length > 0 && (
+              <ul>{report.plannedChanges.map((change) => <li key={change}>{change}</li>)}</ul>
+            )}
+            {report.issues.length > 0 && (
+              <ul>{report.issues.map((issue) => <li key={`${issue.row}-${issue.column}`} style={{ color: "red" }}>Row {issue.row} {issue.column}: {issue.problem}</li>)}</ul>
+            )}
+          </div>
+        )}
+        {error && <p className="admin-inline-field-error">{error}</p>}
+        <div className="admin-import-actions">
+          <button className="admin-button ghost" type="button" onClick={close} disabled={busy}>Cancel</button>
+          {report && report.issues.length === 0 && report.updated > 0 && (
+            <button className="admin-button primary" type="button" onClick={() => { void handleCommit(); }} disabled={busy} data-testid="category-faq-commit-import-btn">
+              {busy ? "Importing…" : "Confirm import"}
+            </button>
+          )}
+        </div>
+      </section>
+    </div>
+  );
 }
 
 function seoStatus(category: CatalogueCategory) {
@@ -259,6 +378,7 @@ function RootCategoryEditor({ category }: { category: CatalogueCategory }) {
 export default function AdminRootCategories() {
   const { slug } = useParams();
   const routeId = Number(slug);
+  const [importOpen, setImportOpen] = useState(false);
   const { data: categories = [], isLoading, error: loadError, refetch } = useListAdminCategories();
   const roots = useMemo(
     () => categories.filter((category) => category.parentId === null).sort((left, right) => left.sortOrder - right.sortOrder),
@@ -301,11 +421,17 @@ export default function AdminRootCategories() {
         eyebrow="Site settings"
         title={<>Root <strong>categories</strong></>}
         onBack={() => navigate("/admin/site-settings")}
+        action={(
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button className="admin-button outline" type="button" onClick={() => { window.location.href = "/api/admin/categories/faqs/import/template"; }}>Download FAQ template</button>
+            <button className="admin-button outline" type="button" onClick={() => setImportOpen(true)} data-testid="category-faq-import-btn">Import FAQs</button>
+          </div>
+        )}
       />
       <div className="admin-content">
         <div className="admin-notice">
           <Icon name="info" size={20} />
-          <p>Edit search titles, page headings and FAQs here. Names, URLs and subcategories stay in Products &amp; mixes.</p>
+          <p>Edit search titles, page headings and FAQs here. Download the FAQ template to see every root category, then import completed questions and answers. Names, URLs and subcategories stay in Products &amp; mixes.</p>
         </div>
         <div className="admin-root-category-list">
           {roots.map((root) => {
@@ -331,6 +457,7 @@ export default function AdminRootCategories() {
           {roots.length === 0 && <div className="admin-empty">No root categories yet.</div>}
         </div>
       </div>
+      <FaqImportDialog open={importOpen} onClose={() => setImportOpen(false)} />
     </>
   );
 }

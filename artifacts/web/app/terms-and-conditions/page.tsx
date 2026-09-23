@@ -18,7 +18,6 @@ export default async function TermsPage() {
       <header className="legal-hero">
         <p className="eyebrow">Legal</p>
         <h1>Terms and <strong>Conditions</strong></h1>
-        <p>This is a first-draft statement for the public website. It is not a substitute for legal review or a supply contract.</p>
       </header>
       <div className="legal-body">
         <p>

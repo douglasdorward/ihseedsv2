@@ -174,6 +174,7 @@ export async function CategoryPage({ params }: { params: RouteParams }) {
         <div className="category-intro" style={{ maxWidth: 1180, margin: "0 auto", padding: "12px 40px 48px", display: "flex", flexDirection: "column", gap: 20 }}>
           <h1 style={{ margin: 0, fontSize: 48, lineHeight: 1.2, fontWeight: 300, color: "var(--green)" }}>{title.light} <span style={{ fontWeight: 700 }}>{title.bold}</span></h1>
           <p style={{ margin: 0, fontSize: 18, lineHeight: 1.6, color: "var(--black-green)", maxWidth: "64ch" }}>{description}</p>
+          <p className="pasture-selector-banner">Not sure where to start? <Link href="/pasture-selector">Try the Pasture Selector</Link></p>
         </div>
       </section>
 

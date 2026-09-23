@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getResellers } from "../../lib/catalogue";
 import { DEFAULT_COMPANY } from "../../lib/company";
+import { pageSearchParams, selectorEnquiryPrefill } from "../../lib/pasture-selector";
 import { FALLBACK_SITE_SETTINGS, loadSiteSettings } from "../../lib/site-settings";
 import { ContactPage } from "./ContactPage";
 
@@ -10,10 +11,21 @@ export const metadata: Metadata = {
   alternates: { canonical: "/contact" },
 };
 
-export default async function Contact() {
-  const [resellers, settings] = await Promise.all([
+export default async function Contact({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [resellers, settings, params] = await Promise.all([
     getResellers().catch(() => []),
     loadSiteSettings().catch(() => FALLBACK_SITE_SETTINGS),
+    searchParams.then(pageSearchParams),
   ]);
-  return <ContactPage resellers={resellers} company={settings.company ?? DEFAULT_COMPANY} />;
+  return (
+    <ContactPage
+      resellers={resellers}
+      company={settings.company ?? DEFAULT_COMPANY}
+      enquiry={selectorEnquiryPrefill(params)}
+    />
+  );
 }
