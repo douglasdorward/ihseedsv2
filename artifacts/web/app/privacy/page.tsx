@@ -18,7 +18,6 @@ export default async function PrivacyPage() {
       <header className="legal-hero">
         <p className="eyebrow">Legal</p>
         <h1>Privacy <strong>Policy</strong></h1>
-        <p>This is a first-draft policy for the IH Seeds public website. It is not a substitute for legal review.</p>
       </header>
       <div className="legal-body">
         <p>

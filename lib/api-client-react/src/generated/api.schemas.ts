@@ -1829,6 +1829,16 @@ export interface ArticleImportIssue {
   problem: string;
 }
 
+export interface CategoryFaqImportReport {
+  token: string;
+  rows: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  issues: ArticleImportIssue[];
+  plannedChanges: string[];
+}
+
 export interface ArticleImportReport {
   token: string;
   rows: number;

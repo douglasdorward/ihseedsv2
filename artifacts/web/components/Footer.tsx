@@ -54,6 +54,7 @@ export function Footer({ company = DEFAULT_COMPANY }: { company?: CompanyContact
           <div>
             <h4>Resources</h4>
             <Link href="/resources" className="footer-link" data-testid="footer-resources">Tips &amp; Advice</Link>
+            <Link href="/resources?tab=sheets" className="footer-link" data-testid="footer-tech-sheets">Tech sheets</Link>
             <Link href="/guide" className="footer-link" data-testid="footer-guide">Pasture Seed Guide</Link>
             <Link href="/availability" className="footer-link" data-testid="footer-availability">Seed Availability</Link>
           </div>
@@ -61,6 +62,7 @@ export function Footer({ company = DEFAULT_COMPANY }: { company?: CompanyContact
             <h4>Company</h4>
             <Link href="/about" className="footer-link" data-testid="footer-story">Our Story</Link>
             <Link href="/contact" className="footer-link" data-testid="footer-contact">Contact</Link>
+            <Link href="/contact#locations" className="footer-link" data-testid="footer-reseller">Find a reseller</Link>
             <Link href="/privacy" className="footer-link" data-testid="footer-privacy">Privacy</Link>
             <Link href="/terms-and-conditions" className="footer-link" data-testid="footer-terms">Terms</Link>
           </div>

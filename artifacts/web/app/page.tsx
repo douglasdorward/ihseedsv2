@@ -15,8 +15,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const ABOUT_IMAGE = "https://images.unsplash.com/photo-1530507629858-e4977d30e9e0?auto=format&fit=crop&w=900&q=80";
-
 function formatArticleDate(value: string) {
   return new Date(value).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
 }
@@ -32,6 +30,9 @@ export default async function Home() {
   const seedShedArticles = latestArticles(articles);
   const visibleProducts = resolveBestSellers(settings.homepage.bestSellerSlugs, products);
   const heroBody = expandProductCount(settings.homepage.heroBody, products.length);
+  const about = settings.about ?? FALLBACK_SITE_SETTINGS.about;
+  const aboutImage = publicMediaSrc({ src: about.heroImageSrc, assetId: about.heroImageAssetId })
+    || FALLBACK_SITE_SETTINGS.about.heroImageSrc;
   const guideImage = publicMediaSrc({ src: settings.seedGuide.cardImageSrc, assetId: settings.seedGuide.cardImageAssetId });
 
   return (
@@ -82,7 +83,7 @@ export default async function Home() {
 
       <section id="about" className="section about-section">
         <div className="feature-panel">
-          <div className="feature-image" style={{ backgroundImage: `linear-gradient(90deg, rgba(12,88,60,.12), rgba(12,88,60,.02)), url(${ABOUT_IMAGE})` }} />
+          <div className="feature-image" style={{ backgroundImage: `linear-gradient(90deg, rgba(12,88,60,.12), rgba(12,88,60,.02)), url(${aboutImage})` }} />
           <div className="feature-copy">
             <h2><span>About</span> Us</h2>
             <p>{settings.homepage.aboutBody || FALLBACK_SITE_SETTINGS.homepage.aboutBody}</p>

@@ -34,8 +34,23 @@ function independentShopRound(count: number) {
 
 type RouteParams = { category: string; product: string };
 
+function attachedPhotos(product: CatalogueProduct) {
+  return (product.details.photos ?? []).flatMap((photo) => {
+    const src = photo.src?.trim();
+    return src ? [{ ...photo, src }] : [];
+  });
+}
+
 function productImage(product: CatalogueProduct) {
-  return product.details.photos?.find((photo) => photo.src?.trim())?.src || PRODUCT_FALLBACK_IMAGE;
+  return attachedPhotos(product)[0]?.src || PRODUCT_FALLBACK_IMAGE;
+}
+
+function photoAltText(productName: string, photo: { alt?: string }) {
+  return photo.alt?.trim() || productName;
+}
+
+function photoDimension(value: number | undefined) {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 ? value : undefined;
 }
 
 function offerAvailability(status: string) {
@@ -133,6 +148,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
   const alsoPopular = resolveAlsoPopular(product, details.relatedProducts, allProducts);
   const faqs = completeProductFaqs(details.faqs);
   const price = listedPrice ? priceValue(listedPrice) : undefined;
+  const photos = attachedPhotos(product);
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -140,7 +156,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
     sku: defaultLine?.stockCode || product.slug,
     brand: { "@type": "Brand", name: "IH Seeds" },
     description: forSearchMetadata(details.seoDescription || details.blurb || product.note),
-    image,
+    image: photos.length > 0 ? photos.map((photo) => absoluteSiteUrl(photo.src)) : image,
     url: absoluteSiteUrl(canonicalHref),
     offers: {
       "@type": "Offer",
@@ -173,7 +189,6 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([productJsonLd, breadcrumbJsonLd, ...(faqJsonLd ? [faqJsonLd] : [])]).replace(/</g, "\\u003c") }} />
       <section className="product-hero" style={{ minHeight: 520, backgroundImage: `${heroOverlay}, url(${image})`, backgroundSize: "cover", backgroundPosition: "center" }}>
-        {hasProductPhoto(product) && <img className="visually-hidden" src={image} alt={productImageAlt(product)} />}
         {!hasProductPhoto(product) && <img className="product-hero-fallback-logo" src="/ih-seeds-logo.png" alt="" />}
         <ProductNewStamp listingState={product.listingState} size="hero" />
         <div className="product-hero-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "150px 40px 64px", display: "flex", flexDirection: "column", gap: 20 }}>
@@ -191,23 +206,30 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
           <article className="product-main-col">
             {details.blurb && <p className="product-blurb mobile-order-1">{details.blurb}</p>}
             {(details.keyAttributes ?? []).filter(Boolean).length > 0 && <section className="product-key-attributes mobile-order-3"><h2>Key attributes</h2><ul>{details.keyAttributes!.filter(Boolean).map((attribute, index) => <li key={`${attribute}-${index}`}>{attribute}</li>)}</ul></section>}
-            <div className="product-main-rest mobile-order-4">
+            {(details.distributionNote || details.recordType === "Mix" || details.description) && <div className="product-main-rest mobile-order-4">
             {details.distributionNote && <aside className="product-distribution-note"><Icon name="info" size={22} /><p>{details.distributionNote}</p></aside>}
             {details.recordType === "Mix" && <section style={{ display: "grid", gap: 16 }}><h2 style={{ color: "var(--green)", fontSize: 28 }}>Mix components</h2>{details.formulationYear && <p style={{ color: "var(--muted)" }}>Formulation {details.formulationYear}</p>}<div className="product-table-wrap" style={{ border: "1px solid var(--line)", borderRadius: 16 }}><table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}><thead><tr style={{ background: "var(--sage)", color: "var(--green)", fontSize: 14 }}><th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Component</th>{hasComponentRates && <th style={{ padding: "12px 16px", borderBottom: "2px solid #C5CCC5" }}>Rate</th>}</tr></thead><tbody>{(details.components ?? []).map((component, index) => { const componentProduct = allProducts.find((candidate) => candidate.slug === component.productLink); const componentDescription = component.description?.trim(); return <tr key={`${component.speciesName}-${index}`} style={{ borderBottom: "1px solid var(--line)" }}><td className="mix-component-cell"><div className="mix-component-name">{componentProduct ? <Link href={productPublicPath(componentProduct, categories)}>{component.speciesName}</Link> : component.speciesName}</div>{componentDescription && <div className="mix-component-description">{componentDescription}</div>}</td>{hasComponentRates && <td style={{ padding: "12px 16px" }}>{component.inclusionRate != null ? `${component.inclusionRate}${component.unit ? `${component.unit === "%" ? "" : " "}${component.unit}` : ""}` : "—"}</td>}</tr>; })}</tbody></table></div></section>}
             {details.description && <section style={{ display: "grid", gap: 16 }}><h2 style={{ color: "var(--green)", fontSize: 30 }}>About this variety</h2>{details.description.split(/\n\s*\n/).filter((paragraph) => paragraph.trim()).map((paragraph, index) => <p key={index} style={{ fontSize: 17, lineHeight: 1.7, maxWidth: "64ch" }}>{paragraph.trim()}</p>)}</section>}
+            </div>}
+            <div className="product-main-rest mobile-order-6">
             {(details.grazingManagementNotes || details.diseasePestResistance || details.standLifeNotes) && <section style={{ display: "grid", gap: 16 }} aria-label="Product growing notes">{details.grazingManagementNotes && <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}><summary style={{ color: "var(--green)", cursor: "pointer", fontSize: 20, fontWeight: 700 }}>Planting &amp; grazing notes</summary><p style={{ margin: "16px 0 0", lineHeight: 1.6 }}>{details.grazingManagementNotes}</p></details>}{details.diseasePestResistance && <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}><summary style={{ color: "var(--green)", cursor: "pointer", fontSize: 20, fontWeight: 700 }}>Disease &amp; pest resistance</summary><p style={{ margin: "16px 0 0", lineHeight: 1.6 }}>{details.diseasePestResistance}</p></details>}{details.standLifeNotes && <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}><summary style={{ color: "var(--green)", cursor: "pointer", fontSize: 20, fontWeight: 700 }}>Stand life</summary><p style={{ margin: "16px 0 0", lineHeight: 1.6 }}>{details.standLifeNotes}</p></details>}</section>}
             <section style={{ display: "grid", gap: 16 }}><h2 style={{ color: "var(--green)", fontSize: 28 }}>How it&apos;s sold</h2><div className="product-table-wrap sold-table"><table><thead><tr><th>Form</th><th>Pack</th><th>Status</th></tr></thead><tbody>{product.saleLines?.map((line) => <tr key={line.stockCode}><td>{line.seedForm || "Bare"}</td><td>{line.packKg ? `${line.packKg} ${line.packUnit}` : product.packSize}</td><td className="sold-status"><StatusPill status={({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" }[line.availability ?? "Unavailable"] ?? product.status)} /></td></tr>)}</tbody></table></div></section>
             </div>
           </article>
-          <aside className="product-sidebar-col">
-            <div className="product-sidebar-card mobile-order-2">
-              {quickFacts.length > 0 && <section className="quick-facts-section"><h2 className="sidebar-card-heading">Quick facts</h2><div className="quick-facts-list">{quickFacts.map((fact) => <div className="quick-fact-item" key={fact.label}><span className="quick-fact-icon"><Icon name={fact.icon} size={22} /></span><div className="quick-fact-content"><span className="quick-fact-label">{fact.label}</span><span className="quick-fact-value">{fact.value}</span></div></div>)}</div></section>}
-              <div className="pricing-section"><StatusPill status={product.status} /><div className="pricing-details"><strong className="pricing-amount">{listedPrice || "Contact for pricing"}</strong>{packLabels.length > 0 && <span className="pricing-unit">Available in {packLabels.join(", ")}</span>}</div><div className="pricing-actions"><Link href="/contact" className="button button-primary pricing-action-order">Ask about an order</Link><a className="button button-outline pricing-action-call" href={officeTel} aria-label={`Call IH Seeds on ${officePhone}`}><Icon name="phone" size={20} /></a></div><Link href="/contact#locations" className="pricing-reseller"><span className="pricing-reseller-logos"><img className="pricing-reseller-logo" src="/nutrien-logo.webp" alt="Nutrien Ag Solutions" /><img className="pricing-reseller-logo" src="/elders-logo.webp" alt="Elders" /></span>{independentShops > 0 && <span className="pricing-reseller-subhead">& over {independentShops} independent farm shops</span>}</Link><small className="pricing-disclaimer">We supply through rural resellers across Western Australia.</small></div>
+          <div className="product-rail">
+            <div className="product-sidebar-sticky-slot">
+              <aside className="product-sidebar-col">
+                <div className="product-sidebar-card mobile-order-2">
+                  {quickFacts.length > 0 && <section className="quick-facts-section"><h2 className="sidebar-card-heading">Quick facts</h2><div className="quick-facts-list">{quickFacts.map((fact) => <div className="quick-fact-item" key={fact.label}><span className="quick-fact-icon"><Icon name={fact.icon} size={22} /></span><div className="quick-fact-content"><span className="quick-fact-label">{fact.label}</span><span className="quick-fact-value">{fact.value}</span></div></div>)}</div></section>}
+                  <div className="pricing-section"><StatusPill status={product.status} /><div className="pricing-details"><strong className="pricing-amount">{listedPrice || "Contact for pricing"}</strong>{packLabels.length > 0 && <span className="pricing-unit">Available in {packLabels.join(", ")}</span>}</div><div className="pricing-actions"><Link href="/contact" className="button button-primary pricing-action-order">Ask about an order</Link><a className="button button-outline pricing-action-call" href={officeTel} aria-label={`Call IH Seeds on ${officePhone}`}><Icon name="phone" size={20} /></a></div><Link href="/contact#locations" className="pricing-reseller"><span className="pricing-reseller-logos"><img className="pricing-reseller-logo" src="/nutrien-logo.webp" alt="Nutrien Ag Solutions" /><img className="pricing-reseller-logo" src="/elders-logo.webp" alt="Elders" /></span>{independentShops > 0 && <span className="pricing-reseller-subhead">& over {independentShops} independent farm shops</span>}</Link><small className="pricing-disclaimer">We supply through rural resellers across Western Australia.</small></div>
+                </div>
+                <div className="product-sidebar-bottom mobile-order-7">
+                  {(details.certification?.length || details.pbrProtected) && <div className="product-meta-section">{details.certification?.length ? <div>Certification: {details.certification.join(", ")}</div> : null}{details.pbrProtected ? <div>PBR: {details.pbrDetails || "Protected"}</div> : null}</div>}
+                </div>
+              </aside>
             </div>
-            <div className="product-sidebar-bottom mobile-order-5">
-              {(details.certification?.length || details.pbrProtected) && <div className="product-meta-section">{details.certification?.length ? <div>Certification: {details.certification.join(", ")}</div> : null}{details.pbrProtected ? <div>PBR: {details.pbrDetails || "Protected"}</div> : null}</div>}
-            </div>
-          </aside>
+            {photos.length > 0 && <section className="product-photos mobile-order-5" aria-labelledby="product-photos-heading"><h2 id="product-photos-heading" className="sidebar-card-heading">Photos</h2><div className="product-photos-list">{photos.map((photo, index) => <img key={`${photo.src}-${index}`} src={photo.src} alt={photoAltText(product.name, photo)} loading="lazy" width={photoDimension(photo.width)} height={photoDimension(photo.height)} />)}</div></section>}
+          </div>
         </div>
       </section>
       {faqs.length > 0 && (

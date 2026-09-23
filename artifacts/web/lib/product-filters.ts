@@ -27,6 +27,10 @@ export const RAINFALL_OPTIONS = [350, 400, 450, 500, 550, 600, 700, 800, 1000];
 
 const SOIL_RANK: Record<string, number> = { LS: 0, S: 1, L: 2, H: 3 };
 
+export const PASTURE_PERSISTENCE_VALUES = ["annual", "self-regenerating", "lasting"] as const;
+
+export type PasturePersistence = (typeof PASTURE_PERSISTENCE_VALUES)[number];
+
 export type ProductListingFilters = {
   category: string[];
   endUse: string[];
@@ -35,6 +39,7 @@ export type ProductListingFilters = {
   rainfall: number | null;
   soil: string[];
   sowing: string[];
+  persistence: PasturePersistence | null;
 };
 
 export const EMPTY_FILTERS: ProductListingFilters = {
@@ -45,10 +50,18 @@ export const EMPTY_FILTERS: ProductListingFilters = {
   rainfall: null,
   soil: [],
   sowing: [],
+  persistence: null,
 };
 
 function readList(params: URLSearchParams, key: string) {
   return params.getAll(key).flatMap((value) => value.split(",")).map((value) => value.trim()).filter(Boolean);
+}
+
+function readPersistence(params: URLSearchParams): PasturePersistence | null {
+  const raw = params.get("persistence");
+  if (raw === "perennial") return "lasting";
+  if (raw === "annual" || raw === "self-regenerating" || raw === "lasting") return raw;
+  return null;
 }
 
 export function filtersFromSearchParams(params: URLSearchParams): ProductListingFilters {
@@ -62,6 +75,7 @@ export function filtersFromSearchParams(params: URLSearchParams): ProductListing
     rainfall,
     soil: readList(params, "soil"),
     sowing: readList(params, "sowing"),
+    persistence: readPersistence(params),
   };
 }
 
@@ -77,12 +91,14 @@ export function searchParamsFromFilters(filters: ProductListingFilters) {
   if (filters.rainfall != null) params.set("rainfall", String(filters.rainfall));
   append("soil", filters.soil);
   append("sowing", filters.sowing);
+  if (filters.persistence) params.set("persistence", filters.persistence);
   return params;
 }
 
 export function filtersAreEmpty(filters: ProductListingFilters) {
   return !filters.category.length && !filters.endUse.length && !filters.livestock.length
-    && !filters.tolerance.length && filters.rainfall == null && !filters.soil.length && !filters.sowing.length;
+    && !filters.tolerance.length && filters.rainfall == null && !filters.soil.length
+    && !filters.sowing.length && filters.persistence == null;
 }
 
 function intersects(selected: string[], values: string[] | undefined) {
@@ -90,7 +106,7 @@ function intersects(selected: string[], values: string[] | undefined) {
   return (values ?? []).some((value) => selected.includes(value));
 }
 
-function soilMatches(product: CatalogueProduct, selected: string[]) {
+export function soilMatches(product: CatalogueProduct, selected: string[]) {
   if (!selected.length) return true;
   const light = SOIL_RANK[product.details.soilRangeLightest ?? ""];
   const heavy = SOIL_RANK[product.details.soilRangeHeaviest ?? ""];
@@ -136,7 +152,7 @@ export type CatalogueFilterOptions = {
   sowing: string[];
 };
 
-export type FilterOptionDimension = Exclude<keyof ProductListingFilters, never>;
+export type FilterOptionDimension = Exclude<keyof ProductListingFilters, "persistence">;
 
 function keepOrdered<T extends string | number>(
   canonical: readonly T[],

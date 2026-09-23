@@ -34,6 +34,7 @@ export * from './catalogueCategoryInput';
 export * from './catalogueCategoryReorder';
 export * from './catalogueCategoryReorderItemsItem';
 export * from './catalogueCategoryUpdate';
+export * from './categoryFaqImportReport';
 export * from './createAdministratorInput';
 export * from './deleteProductImageRequest';
 export * from './enquiryCreated';

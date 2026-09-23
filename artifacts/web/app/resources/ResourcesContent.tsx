@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { Icon } from "../../components/Icon";
 import type { CatalogueArticle, CatalogueProduct, PublicSiteSeedGuide } from "../../lib/catalogue";
 import { publicMediaSrc } from "../../lib/site-settings";
@@ -22,24 +23,36 @@ export function ResourcesContent({
   products,
   seedGuide,
   intro,
+  initialTab = "articles",
 }: {
   articles: CatalogueArticle[];
   products: CatalogueProduct[];
   seedGuide: PublicSiteSeedGuide;
   intro: ReactNode;
+  initialTab?: "articles" | "sheets";
 }) {
-  const [tab, setTab] = useState<"articles" | "sheets">("articles");
+  const router = useRouter();
+  const [tab, setTab] = useState<"articles" | "sheets">(initialTab);
   const [articleCat, setArticleCat] = useState("All");
   const articleCats = ["All", ...Array.from(new Set(articles.flatMap((article) => article.tags).filter(Boolean)))];
   const filteredArticles = articleCat === "All" ? articles : articles.filter((article) => article.tags.includes(articleCat));
+
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
+
+  function selectTab(next: "articles" | "sheets") {
+    setTab(next);
+    router.replace(next === "sheets" ? "/resources?tab=sheets" : "/resources", { scroll: false });
+  }
 
   return (
     <>
       <section style={{ background: "var(--sage)" }}>
         <Fragment key="intro">{intro}</Fragment>
         <div className="resource-tabs" style={{ maxWidth: 1180, margin: "0 auto", padding: "0 40px 32px", display: "flex", gap: 12 }}>
-          <button onClick={() => setTab("articles")} style={{ padding: "12px 24px", borderRadius: 999, fontSize: 16, fontWeight: 700, cursor: "pointer", border: `2px solid ${tab === "articles" ? "var(--green)" : "transparent"}`, background: tab === "articles" ? "var(--green)" : "transparent", color: tab === "articles" ? "#fff" : "var(--green)" }}>Articles & Publications</button>
-          <button onClick={() => setTab("sheets")} style={{ padding: "12px 24px", borderRadius: 999, fontSize: 16, fontWeight: 700, cursor: "pointer", border: `2px solid ${tab === "sheets" ? "var(--green)" : "transparent"}`, background: tab === "sheets" ? "var(--green)" : "transparent", color: tab === "sheets" ? "#fff" : "var(--green)" }}>Tech Sheets Hub</button>
+          <button onClick={() => selectTab("articles")} style={{ padding: "12px 24px", borderRadius: 999, fontSize: 16, fontWeight: 700, cursor: "pointer", border: `2px solid ${tab === "articles" ? "var(--green)" : "transparent"}`, background: tab === "articles" ? "var(--green)" : "transparent", color: tab === "articles" ? "#fff" : "var(--green)" }}>Articles & Publications</button>
+          <button onClick={() => selectTab("sheets")} style={{ padding: "12px 24px", borderRadius: 999, fontSize: 16, fontWeight: 700, cursor: "pointer", border: `2px solid ${tab === "sheets" ? "var(--green)" : "transparent"}`, background: tab === "sheets" ? "var(--green)" : "transparent", color: tab === "sheets" ? "#fff" : "var(--green)" }}>Tech Sheets Hub</button>
         </div>
       </section>
 

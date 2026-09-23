@@ -2,14 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CATALOGUE_INDEX_PATH, categoryPublicPath, type NavCategory } from "../lib/catalogue-paths";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
+import { SiteSearch } from "./SiteSearch";
 
 export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 2026" }: { productCategories?: NavCategory[]; seedGuideTitle?: string }) {
   const location = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
+  const closeSearchAndMenu = useCallback(() => {
+    setMenuOpen(false);
+    setSearchOpen(false);
+  }, []);
+
+  useEffect(() => {
+    setMenuOpen(false);
+    setSearchOpen(false);
+  }, [location]);
 
   const isActive = (path: string) => {
     if (path === "/products") {
@@ -46,8 +58,9 @@ export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 20
         <Link href="/resources" className={navItemClass("/resources")} aria-current={isActive("/resources") ? "page" : undefined} onClick={closeMenu} data-testid="link-resources">Resources</Link>
         <Link href="/about" className={navItemClass("/about")} aria-current={isActive("/about") ? "page" : undefined} onClick={closeMenu} data-testid="link-about">About</Link>
         <Link href="/contact" className="button button-accent nav-cta" onClick={closeMenu} data-testid="button-get-in-touch">Get in Touch</Link>
-        <Link href={CATALOGUE_INDEX_PATH} className="utility-button" onClick={closeMenu} data-testid="button-search" aria-label="Search catalogue"><Icon name="search" size={18} /></Link>
+        <button type="button" className="utility-button" data-testid="button-search" aria-label="Search catalogue" aria-expanded={searchOpen} aria-controls="site-search-dialog" onClick={() => setSearchOpen(true)}><Icon name="search" size={18} /></button>
       </nav>
+      <SiteSearch open={searchOpen} onClose={closeSearch} onNavigate={closeSearchAndMenu} />
       <button className="mobile-menu-button" onClick={() => setMenuOpen((open) => !open)} data-testid="button-mobile-menu" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen}><Icon name={menuOpen ? "close" : "menu"} size={26} /></button>
     </header>
   );

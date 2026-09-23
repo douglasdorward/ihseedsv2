@@ -170,6 +170,10 @@
   font-size: 13px;
   font-weight: 650;
 }
+.hpe-page .about-section .hpe-readonly-note {
+  max-width: 1360px;
+  margin: 16px auto 0;
+}
 .hpe-page .product-fallback-logo {
   position: absolute;
   left: 50%;

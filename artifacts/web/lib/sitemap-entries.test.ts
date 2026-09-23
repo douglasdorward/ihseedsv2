@@ -71,6 +71,7 @@ test("public sitemap uses the product page canonical and article lastmod", () =>
     productDates: [{ slug: "safeguard-annual-ryegrass", lastModified: "2026-09-17T12:00:00.000Z" }],
   });
   const urls = entries.map((entry) => entry.url);
+  assert.equal(urls.includes("https://www.irwinhunter.com.au/pasture-selector"), true);
   assert.equal(urls.includes("https://www.irwinhunter.com.au/privacy"), true);
   assert.equal(urls.includes("https://www.irwinhunter.com.au/terms-and-conditions"), true);
   assert.equal(urls.includes("https://www.irwinhunter.com.au/products/ryegrass"), true);

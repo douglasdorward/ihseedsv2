@@ -5,6 +5,7 @@ import {
   useListAdminProducts,
   useUpdateSiteSettings,
   type AdminProduct,
+  type SiteAboutSettings,
   type SiteHomepageSettings,
   type SiteSettings,
 } from "@workspace/api-client-react";
@@ -17,6 +18,7 @@ import { navigate } from "../router";
 import {
   BEST_SELLER_LIMIT,
   HERO_IMAGE_LIMIT,
+  aboutHeroDisplaySrc,
   expandProductCount,
   heroDisplaySrc,
   homepageHeroImages,
@@ -27,7 +29,6 @@ import {
 import "../homepage-editor.css";
 
 const PRODUCT_FALLBACK = "/ih-seeds-logo.png";
-const ABOUT_IMAGE = "https://images.unsplash.com/photo-1530507629858-e4977d30e9e0?auto=format&fit=crop&w=900&q=80";
 const HERO_OVERLAY = "linear-gradient(90deg, rgba(29,40,28,.98) 0%, rgba(29,40,28,.84) 47%, rgba(29,40,28,.42) 100%)";
 const GUIDE_OVERLAY = "linear-gradient(90deg, rgba(29,40,28,.92), rgba(29,40,28,.44))";
 const ABOUT_OVERLAY = "linear-gradient(90deg, rgba(12,88,60,.12), rgba(12,88,60,.02))";
@@ -51,11 +52,13 @@ function groupedOptions(products: AdminProduct[]) {
 
 export function HomePageEditor({
   homepage,
+  about,
   seedGuide,
   products,
   onChange,
 }: {
   homepage: SiteHomepageSettings;
+  about: SiteAboutSettings;
   seedGuide: SiteSettings["seedGuide"];
   products: AdminProduct[];
   onChange: (homepage: SiteHomepageSettings) => void;
@@ -69,6 +72,7 @@ export function HomePageEditor({
   const selectedIndex = Math.min(selectedHero, Math.max(heroImages.length - 1, 0));
   const selectedImage = heroImages[selectedIndex] ?? heroImages[0];
   const heroSrc = heroDisplaySrc(selectedImage ?? { src: homepage.heroImageSrc, assetId: homepage.heroImageAssetId }, true);
+  const aboutSrc = aboutHeroDisplaySrc({ src: about.heroImageSrc, assetId: about.heroImageAssetId }, true);
   const guideSrc = guideCardDisplaySrc({ src: seedGuide.cardImageSrc, assetId: seedGuide.cardImageAssetId }, true);
   const addInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
@@ -295,7 +299,7 @@ export function HomePageEditor({
 
       <section id="about" className="section about-section">
         <div className="feature-panel">
-          <div className="feature-image" style={{ backgroundImage: `${ABOUT_OVERLAY}, url(${ABOUT_IMAGE})` }} />
+          <div className="feature-image" style={{ backgroundImage: `${ABOUT_OVERLAY}, url(${aboutSrc})` }} />
           <div className="feature-copy">
             <h2><span>About</span> Us</h2>
             <textarea
@@ -309,6 +313,7 @@ export function HomePageEditor({
             <span className="button button-outline" style={{ color: "#fff", borderColor: "#fff" }}>Learn more about IH Seeds</span>
           </div>
         </div>
+        <p className="hpe-readonly-note">This photo is the About us hero. Change it in Site settings → About us.</p>
       </section>
 
       <section id="guide" className="section guide-section">
@@ -411,7 +416,7 @@ export default function AdminHomePage() {
         <div className="admin-editor-version">Saved changes appear on the public homepage immediately.</div>
       </div>
       {error && <div className="admin-notice admin-notice-error" role="alert"><p>{error}</p></div>}
-      <HomePageEditor homepage={homepage} seedGuide={data.seedGuide} products={products} onChange={setHomepage} />
+      <HomePageEditor homepage={homepage} about={data.about} seedGuide={data.seedGuide} products={products} onChange={setHomepage} />
       {showUnsaved && (
         <div className="admin-dialog-backdrop" role="presentation" onMouseDown={() => setShowUnsaved(false)}>
           <section className="admin-dialog" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>

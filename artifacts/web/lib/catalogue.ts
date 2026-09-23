@@ -75,7 +75,7 @@ export type CatalogueProduct = {
     faqs?: Array<{ question?: string; answer?: string }>;
     relatedProducts?: string[];
     formulationYear?: string;
-    photos?: Array<{ src?: string; file?: string; slot?: string; rating?: string; alt?: string }>;
+    photos?: Array<{ src?: string; file?: string; slot?: string; rating?: string; alt?: string; width?: number; height?: number }>;
     h1?: string;
     seoTitle?: string;
     seoDescription?: string;

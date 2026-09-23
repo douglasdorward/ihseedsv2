@@ -9,7 +9,7 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **Workbook:** `2 Sowing rates`
 - **Required:** no (completion counts at least one row when the category is not Biologicals)
 - **Shown when:** category is not Biologicals
-- **Customer website:** Product Quick facts “Sowing rate” (all rates that have a min or max). Category comparison table uses the first rate. Mix category cards may chip the first rate range. Category fact chips for some categories use the first rate’s context.
+- **Customer website:** Product Quick facts “Sowing rate” (all rates that have a min or max). Category comparison table uses the first rate. Mix category cards may chip the first rate range. Forage cards chip the first rate range when growing season, weeks to first grazing, and subcategory leave an empty pill slot. Category fact chips for some categories use the first rate’s context.
 - **Public API:** yes
 - **Purpose:** Recommended sowing amount by situation.
 - **How to fill:** Add one row per context. Contexts: Monoculture, In a mix, Dryland, Irrigation, Pasture, Turf, General, Podded, De-hulled, Coated. Enter min and/or max and a unit, usually `kg/ha`.
@@ -21,7 +21,7 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **Workbook:** `1 Products.rainfall_min_mm`
 - **Required:** no
 - **Shown when:** category is not Biologicals
-- **Customer website:** Quick facts “Min rainfall” as `{n} mm+`. Category cards (several categories) and comparison table.
+- **Customer website:** Quick facts “Min rainfall” as `{n} mm+`. Category cards (several categories) and comparison table. Forage cards chip it when growing season, weeks to first grazing, and subcategory leave an empty pill slot.
 - **Public API:** yes
 - **Purpose:** Lowest annual rainfall the product is recommended for.
 - **How to fill:** Choose from the dropdown in 50 mm steps from 150 to 800, e.g. `450`. Leave as Not set if unknown.
@@ -102,7 +102,7 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **Workbook:** `1 Products.persistency_type`
 - **Required:** no
 - **Shown when:** always (including Biologicals)
-- **Customer website:** Quick facts “Type & persistency” when set. Herbs category cards chip it.
+- **Customer website:** Quick facts “Type & persistency” when set. Herbs category cards chip it. Forage cards chip it when growing season, weeks to first grazing, and subcategory leave an empty pill slot.
 - **Public API:** yes
 - **Purpose:** How long the stand is expected to last.
 - **How to fill:** Annual, Biennial, Perennial, Hybrid perennial, or Short-term (1–2 years).

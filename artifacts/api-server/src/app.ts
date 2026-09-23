@@ -53,7 +53,8 @@ app.use((req, res, next) => {
   const large = path.startsWith("/api/admin/ai")
     || path.startsWith("/api/admin/tech-sheets")
     || path.startsWith("/api/admin/site-settings")
-    || path.startsWith("/api/admin/articles/import");
+    || path.startsWith("/api/admin/articles/import")
+    || path.startsWith("/api/admin/categories/faqs/import");
   express.json({ limit: large ? "25mb" : "10mb" })(req, res, next);
 });
 app.use((req, res, next) => {

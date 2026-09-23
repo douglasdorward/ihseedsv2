@@ -474,7 +474,7 @@ The following matrix groups related fields. “Publish required” means require
 | Default sale line | `is_default` | Selling | No | At most one | Controls preferred sales presentation |
 | PBR/certification | product fields | Selling | No | No | Limited public metadata below the order panel |
 | Tech-sheet URL | `tech_sheet_pdf_path` | Content & publishing | No | No | Conditional download link |
-| Photos | `photo_1` exported; `photo_2` and `photo_3` import-only | Content & publishing | No | No | The first nonblank photo is the hero; extra stored slots remain available in the editor |
+| Photos | `photo_1` exported; `photo_2` and `photo_3` import-only | Content & publishing | No | No | The first nonblank photo is the hero background. Every photo with a src is shown in a Photos card under the sidebar on desktop and after About this variety on mobile, using its alt text or the product name. The card is omitted when none have a src |
 | FAQs | `10 Product FAQs` | Content & publishing (Form and Product page) | No | No | Accordion band above Also popular, max ten. Incomplete question/answer cards are hidden. Imported products receive exactly the FAQ rows supplied |
 | Also popular | `relatedProducts` slugs | Content & publishing (Form and Product page) | No | No | Chosen Active or New published products on the Also popular band, max three. A Legacy or missing pick is replaced in that slot with another current product from the same category. An empty list uses three other same-category Active or New products |
 | Legacy URL | `website_url` | Content & publishing | No | No | Old current-site URL; its path redirects to the imported category-and-slug product path |
@@ -484,7 +484,7 @@ The following matrix groups related fields. “Publish required” means require
 | Canonical URL | `canonical_url` | SEO | No | No | Optional override of the product URL |
 | Search indexing | `robots_index` | SEO | No | No | `N` publishes with noindex |
 | Category metadata | back office | Categories admin | No | No | Managed outside the workbook |
-| Category FAQs | taxonomy admin | Categories admin | No | No | Accordion band above “Also in our catalogue” |
+| Category FAQs | root category FAQ workbook, or the root category editor | Site settings → Root categories | No | No | Accordion band above “Also in our catalogue”. Import replaces FAQs only for root slugs that have at least one complete question and answer. The downloadable template lists every root category |
 | Lifecycle status | `status` | Product list/import | New defaults Draft | Explicit publication validated | Controls public eligibility |
 | Listing state | listing fields | Basics | Active | No | Manual Active/New/Legacy listing; public output shows Active and New products. New renders a NEW stamp |
 
@@ -545,7 +545,7 @@ Trademark marks belong on the product name. The Basics tab includes a TM button 
 
 ### Product directory
 
-`/products` lists every Published + Active or New product, with a left sidebar for Category, End-use, Livestock, Tolerance, Rainfall, soil type and sowing-rate context. Filter state is stored in the query string. Category landings stay at `/products/{category}` and are not this listing.
+`/products` lists every Published + Active or New product, with a left sidebar for Category, End-use, Livestock, Tolerance, Rainfall, soil type and sowing-rate context. Filter state is stored in the query string. Cards use the same fact chips as category pages, and omit any chip longer than 40 characters. Category landings stay at `/products/{category}` and are not this listing.
 
 ### Category page
 
@@ -554,12 +554,12 @@ The Category page:
 - Resolves an active root and its active children
 - Supports child-category filtering
 - Provides grid and comparison-table views
-- Shows cards with stock state, name, subcategory, tagline and selected fact chips
+- Shows cards with stock state, name, subcategory, tagline and selected fact chips. A chip is omitted when its text is longer than 40 characters, so paragraph-length values such as a full application rate stay on the product page
 - Compares rainfall, soil, pH, first sowing rate and tolerance values
 - Separates Published Legacy names into “Also in our catalogue”
 - Shows a conditional “FAQs” accordion above that band when the root category has complete question/answer pairs
 
-“FAQs” is omitted when the category has no complete items. Incomplete editor rows are dropped on save, not stored. Legacy entries are deliberately name-only and are not presented as currently saleable product cards.
+“FAQs” is omitted when the category has no complete items. Incomplete editor rows are dropped on save, not stored. Administrators can also download a root-category FAQ template, which lists every root category, and import a completed workbook. A category’s stored FAQs are replaced only when that import contains at least one complete question and answer for its slug. Blank template rows do not clear existing FAQs. Legacy entries are deliberately name-only and are not presented as currently saleable product cards.
 
 ### Product detail page
 
@@ -576,8 +576,9 @@ The current public hierarchy is:
 9. “How it’s sold”
 10. Order/contact panel
 11. Certification/PBR metadata
-12. Conditional “FAQs” accordion (complete question/answer pairs only, max ten)
-13. “Also popular”
+12. Conditional Photos card, when at least one photo has a src. On desktop it is its own card under the sidebar, after the order panel and certification/PBR. On mobile it follows About this variety and comes before the growing-note accordions. Each image is a visible `img` with the stored alt text, or the product name when alt is blank
+13. Conditional “FAQs” accordion (complete question/answer pairs only, max ten)
+14. “Also popular”
 
 “FAQs” is omitted when no stored item has both a question and an answer. Incomplete editor cards stay stored and stay hidden from customers.
 
@@ -588,7 +589,7 @@ The current public hierarchy is:
 - Document title and meta description use the stored SEO fields with safe content fallbacks.
 - `™` and `®` stay on the visible product name (cards, JSON-LD Product `name`) and on the page H1 (product name, or the SEO H1 override). They are stripped from document title, meta description, Open Graph title/description, and JSON-LD description.
 - Canonical product paths use `/products/{category}/{slug}`. A legacy address redirects there only when that exact current-site URL is supplied in `1 Products.website_url`.
-- Product JSON-LD contains the public name, IH Seeds brand, public description, optional real image and selected Quick facts.
+- Product JSON-LD contains the public name, IH Seeds brand, public description, image URLs for every attached photo (or the single hero/fallback image when there are none), and selected Quick facts.
 - When a product has complete FAQs, the page also emits FAQPage JSON-LD for those question/answer pairs.
 - When a category page has complete FAQs, it also emits FAQPage JSON-LD for those question/answer pairs.
 - The sitemap contains the same Published + Active or New product set as the main catalogue, excluding products with search indexing turned off.

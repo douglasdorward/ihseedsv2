@@ -133,9 +133,9 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, comparison-table, some-category-chips]
+    customerSurfaces: [quick-facts, comparison-table, some-category-chips, forage-chips]
     workbook: 2 Sowing rates
-    fillGuidance: One row per context with min/max and unit, usually kg/ha.
+    fillGuidance: One row per context with min/max and unit, usually kg/ha. Forage cards chip the first range only when earlier forage pills leave a slot.
 
   - id: rainfallMinMm
     tab: 2
@@ -149,9 +149,9 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, category-chips, comparison-table]
+    customerSurfaces: [quick-facts, category-chips, comparison-table, forage-chips]
     workbook: 1 Products.rainfall_min_mm
-    fillGuidance: Dropdown 150–800 mm in 50 mm steps. Leave unset if unknown.
+    fillGuidance: Dropdown 150–800 mm in 50 mm steps. Leave unset if unknown. Forage cards chip it only when earlier forage pills leave a slot.
 
   - id: soilPhMin
     tab: 2
@@ -303,9 +303,9 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, herbs-category-chips]
+    customerSurfaces: [quick-facts, herbs-category-chips, forage-chips]
     workbook: 1 Products.persistency_type
-    fillGuidance: How long the stand lasts.
+    fillGuidance: How long the stand lasts. Forage cards chip it only when earlier forage pills leave a slot.
 
   - id: australianBred
     tab: 2
@@ -754,7 +754,7 @@ fields:
     visibility: customer
     customerSurfaces: [quick-facts, biologicals-chips]
     workbook: 3 Category specifics.application_rate
-    fillGuidance: Public rate text, not internal notes.
+    fillGuidance: Public rate text, not internal notes. Listing cards chip it only at 40 characters or fewer; longer text stays on Quick facts.
 
   - id: saleLines
     tab: 4
@@ -1030,9 +1030,9 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [product-hero, related-cards, also-popular, social-fallback]
+    customerSurfaces: [product-hero, product-photos, related-cards, also-popular, social-fallback]
     workbook: 1 Products.photo_1
-    fillGuidance: First non-blank src is the hero. Upload JPEG/PNG/WebP to the Images library (converted to WebP) or paste an external URL. Alt is filled from the product name on upload or attach (filename only while unassigned). AI never fills photos. Deleting from Images removes in-use files and compacts remaining product photos. Category grids currently use placeholders.
+    fillGuidance: First non-blank src is the hero background. Every src is also a Photos card image with its alt (or the product name); desktop under the sidebar, mobile after About this variety. Omitted when no src. Upload JPEG/PNG/WebP to the Images library (converted to WebP) or paste an external URL. Alt is filled from the product name on upload or attach (filename only while unassigned). AI never fills photos. Deleting from Images removes in-use files and compacts remaining product photos. Category grids currently use placeholders.
 
   - id: techSheet
     tab: 5

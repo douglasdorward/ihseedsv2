@@ -1157,6 +1157,67 @@ paths:
                 items: { $ref: "#/components/schemas/CatalogueCategory" }
         "400": { description: Invalid reorder request }
         "404": { description: Category not found }
+  /admin/categories/faqs/import/template:
+    get:
+      operationId: downloadCategoryFaqImportTemplate
+      tags: [admin]
+      summary: Download the root category FAQ Excel import template
+      description: The template lists every root category so FAQ copy can be written for those pages.
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: XLSX template
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
+  /admin/categories/faqs/import/prompt:
+    get:
+      operationId: downloadCategoryFaqImportPrompt
+      tags: [admin]
+      summary: Download the root category FAQ import agent prompt
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Plain-text agent prompt
+          content:
+            text/plain:
+              schema: { type: string }
+  /admin/categories/faqs/import/dry-run:
+    post:
+      operationId: dryRunCategoryFaqImport
+      tags: [admin]
+      summary: Validate a root category FAQ Excel import
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WorkbookUpload" }
+      responses:
+        "200":
+          description: Dry-run report
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CategoryFaqImportReport" }
+        "400": { description: Invalid workbook, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/categories/faqs/import/commit:
+    post:
+      operationId: commitCategoryFaqImport
+      tags: [admin]
+      summary: Commit a validated root category FAQ Excel import
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WorkbookCommit" }
+      responses:
+        "200":
+          description: Import committed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CategoryFaqImportReport" }
+        "400": { description: Invalid or stale token, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
   /admin/categories/{id}:
     parameters:
       - name: id
@@ -2567,6 +2628,21 @@ components:
         row: { type: number, multipleOf: 1 }
         column: { type: string }
         problem: { type: string }
+    CategoryFaqImportReport:
+      type: object
+      required: [token, rows, created, updated, skipped, issues, plannedChanges]
+      properties:
+        token: { type: string }
+        rows: { type: number, multipleOf: 1 }
+        created: { type: number, multipleOf: 1 }
+        updated: { type: number, multipleOf: 1 }
+        skipped: { type: number, multipleOf: 1 }
+        issues:
+          type: array
+          items: { $ref: "#/components/schemas/ArticleImportIssue" }
+        plannedChanges:
+          type: array
+          items: { type: string }
     ArticleImportReport:
       type: object
       required: [token, rows, created, updated, skipped, issues, plannedChanges]

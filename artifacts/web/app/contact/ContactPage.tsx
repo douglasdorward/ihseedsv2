@@ -59,10 +59,22 @@ function compareListingNames(
   return listingSortName(a.brand, a.outlet).localeCompare(listingSortName(b.brand, b.outlet), "en-AU", { sensitivity: "base" });
 }
 
-export function ContactPage({ resellers, company }: { resellers: CatalogueResellerBrand[]; company: CompanyContact }) {
-  const [form, setForm] = useState(EMPTY_FORM);
+export function ContactPage({
+  resellers,
+  company,
+  enquiry,
+}: {
+  resellers: CatalogueResellerBrand[];
+  company: CompanyContact;
+  enquiry?: { topic: string; message: string; soil: string; rainfall: string } | null;
+}) {
+  const [form, setForm] = useState(enquiry
+    ? { ...EMPTY_FORM, topic: enquiry.topic, message: enquiry.message }
+    : EMPTY_FORM);
   const [submitState, setSubmitState] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const [details, setDetails] = useState(EMPTY_DETAILS);
+  const [details, setDetails] = useState(enquiry
+    ? { ...EMPTY_DETAILS, soil: enquiry.soil, rainfall: enquiry.rainfall }
+    : EMPTY_DETAILS);
   const [region, setRegion] = useState("All");
   const [showAll, setShowAll] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);

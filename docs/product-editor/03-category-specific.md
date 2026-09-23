@@ -131,12 +131,14 @@ Ploidy is offered for Mixes in the editor but Quick facts only print ploidy for 
 
 ## Forage & Grain Crops
 
+Forage cards chip growing season (`{value} crop`), weeks to first grazing (`Graze {value} wks`), and on a category page the subcategory name. Those come first. Empty pill slots then fall back to minimum rainfall (`{n} mm+`), persistency type, and the first sowing-rate range. A card shows at most three pills.
+
 ### Growing season
 
 - **API path:** `details.growingSeason`
 - **Workbook:** `3 Category specifics.growing_season`
 - **Required:** no
-- **Customer website:** Quick facts “Growing season”. Forage cards chip `{value} crop`.
+- **Customer website:** Quick facts “Growing season”. Forage cards chip `{value} crop` ahead of the rainfall, persistency, and sowing-rate fallbacks.
 - **Public API:** yes
 - **How to fill:** Summer, Winter, Either.
 
@@ -145,7 +147,7 @@ Ploidy is offered for Mixes in the editor but Quick facts only print ploidy for 
 - **API path:** `details.weeksToFirstGrazing`
 - **Workbook:** `3 Category specifics.weeks_to_first_grazing`
 - **Required:** no
-- **Customer website:** Quick facts “Weeks to first grazing”. Forage cards chip `Graze {value} wks`.
+- **Customer website:** Quick facts “Weeks to first grazing”. Forage cards chip `Graze {value} wks` ahead of the rainfall, persistency, and sowing-rate fallbacks.
 - **Public API:** yes
 - **How to fill:** Short text such as `6-8`.
 
@@ -247,6 +249,6 @@ Each card is one public ingredient row. Do not substitute the linked product’s
 - **API path:** `details.applicationRate`
 - **Workbook:** `3 Category specifics.application_rate`
 - **Required:** no (completion counts it for Biologicals, including on tab 2)
-- **Customer website:** Quick facts “Application rate”. Biologicals cards chip it.
+- **Customer website:** Quick facts “Application rate”. Biologicals cards chip it only when the text is 40 characters or fewer. Longer rates stay on the product page and are omitted from listing pills.
 - **Public API:** yes
 - **How to fill:** Public rate text. Not the stored Application notes field (that field is not shown in the editor).

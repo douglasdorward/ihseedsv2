@@ -16,12 +16,18 @@ export function productImageAlt(product: CatalogueProduct) {
   return photo?.alt?.trim() || product.name;
 }
 
+/** Listing pills stay one short label. Longer copy remains on the product page. */
+export const LISTING_FACT_CHIP_MAX_LENGTH = 40;
+
 export function getFactChips(product: CatalogueProduct, subcategoryName?: string) {
   const category = product.category;
   const details = product.details;
   const chips: string[] = [];
   const add = (value: unknown, suffix = "", prefix = "") => {
-    if (value && value !== "None" && value !== "Nil") chips.push(`${prefix}${value}${suffix}`);
+    if (!value || value === "None" || value === "Nil") return;
+    const chip = `${prefix}${value}${suffix}`.replace(/\s+/g, " ").trim();
+    if (!chip || chip.length > LISTING_FACT_CHIP_MAX_LENGTH) return;
+    chips.push(chip);
   };
 
   if (category === "Ryegrasses") {
@@ -59,6 +65,10 @@ export function getFactChips(product: CatalogueProduct, subcategoryName?: string
     add(details.growingSeason, " crop");
     add(details.weeksToFirstGrazing, " wks", "Graze ");
     if (subcategoryName) add(subcategoryName);
+    add(details.rainfallMinMm, " mm+");
+    add(details.persistencyType);
+    const forageRate = details.sowingRates?.[0];
+    if (forageRate?.min && forageRate.max && forageRate.unit) add(`${forageRate.min}–${forageRate.max} ${forageRate.unit}`);
   } else if (category === "Mixes") {
     if (subcategoryName) add(subcategoryName);
     const rate = details.sowingRates?.[0];

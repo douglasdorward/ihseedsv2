@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Response } from "express";
 import { asc, eq, inArray } from "drizzle-orm";
 import {
   catalogueCategoriesTable,
@@ -11,6 +11,12 @@ import {
   reorderCatalogueCategoriesSchema,
   updateCatalogueCategorySchema,
 } from "@workspace/db";
+import {
+  CATEGORY_FAQ_AGENT_PROMPT,
+  categoryFaqTemplateFile,
+  commitCategoryFaqImport,
+  dryRunCategoryFaqImport,
+} from "../lib/category-faq-import";
 
 const router: IRouter = Router();
 const RESERVED_ROOT_SLUGS = new Set(["categories"]);
@@ -96,6 +102,47 @@ router.get("/categories", async (_req, res): Promise<void> => {
 
 router.get("/admin/categories", async (_req, res): Promise<void> => {
   res.json(await orderedCategories());
+});
+
+function workbookFromBody(body: unknown) {
+  return typeof (body as { workbookBase64?: unknown })?.workbookBase64 === "string"
+    ? Buffer.from((body as { workbookBase64: string }).workbookBase64, "base64")
+    : null;
+}
+
+function sendWorkbook(res: Response, filename: string, file: Buffer) {
+  res.type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet").attachment(filename).send(file);
+}
+
+router.get("/admin/categories/faqs/import/template", async (_req, res): Promise<void> => {
+  sendWorkbook(res, "root-category-faqs-template.xlsx", await categoryFaqTemplateFile());
+});
+
+router.get("/admin/categories/faqs/import/prompt", (_req, res): void => {
+  res.type("text/plain; charset=utf-8").send(CATEGORY_FAQ_AGENT_PROMPT);
+});
+
+router.post("/admin/categories/faqs/import/dry-run", async (req, res): Promise<void> => {
+  const file = workbookFromBody(req.body);
+  if (!file) {
+    res.status(400).json({ error: "workbookBase64 is required." });
+    return;
+  }
+  res.json(await dryRunCategoryFaqImport(file));
+});
+
+router.post("/admin/categories/faqs/import/commit", async (req, res): Promise<void> => {
+  const file = workbookFromBody(req.body);
+  const token = typeof req.body?.token === "string" ? req.body.token : "";
+  if (!file || !token) {
+    res.status(400).json({ error: "workbookBase64 and token are required." });
+    return;
+  }
+  try {
+    res.json(await commitCategoryFaqImport(file, token));
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Import failed" });
+  }
 });
 
 router.post("/admin/categories", async (req, res): Promise<void> => {
