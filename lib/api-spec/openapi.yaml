@@ -2663,7 +2663,7 @@ components:
       enum: [elders, nutrien, independent]
     ResellerOutlet:
       type: object
-      required: [id, brandId, name, address, suburb, postcode, region, phone, email, mapsUrl, sortOrder, active, createdAt, updatedAt]
+      required: [id, brandId, name, address, suburb, postcode, region, phone, email, mapsUrl, latitude, longitude, sortOrder, active, createdAt, updatedAt]
       properties:
         id: { type: number, multipleOf: 1 }
         brandId: { type: number, multipleOf: 1 }
@@ -2675,13 +2675,15 @@ components:
         phone: { type: string }
         email: { type: string }
         mapsUrl: { type: string }
+        latitude: { type: number, minimum: -90, maximum: 90, nullable: true }
+        longitude: { type: number, minimum: -180, maximum: 180, nullable: true }
         sortOrder: { type: number, multipleOf: 1 }
         active: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     PublicResellerOutlet:
       type: object
-      required: [id, name, address, suburb, postcode, region, phone, email, mapsUrl]
+      required: [id, name, address, suburb, postcode, region, phone, email, mapsUrl, latitude, longitude]
       properties:
         id: { type: number, multipleOf: 1 }
         name: { type: string }
@@ -2692,6 +2694,8 @@ components:
         phone: { type: string }
         email: { type: string }
         mapsUrl: { type: string }
+        latitude: { type: number, minimum: -90, maximum: 90, nullable: true }
+        longitude: { type: number, minimum: -180, maximum: 180, nullable: true }
     ResellerBrand:
       type: object
       required: [id, name, kind, website, logoSrc, logoAssetId, sortOrder, active, createdAt, updatedAt, outlets]
@@ -2755,6 +2759,8 @@ components:
         phone: { type: string, maxLength: 80 }
         email: { type: string, maxLength: 180 }
         mapsUrl: { type: string, maxLength: 1000 }
+        latitude: { type: number, minimum: -90, maximum: 90, nullable: true }
+        longitude: { type: number, minimum: -180, maximum: 180, nullable: true }
         sortOrder: { type: number, minimum: 0, multipleOf: 1 }
         active: { type: boolean }
     ResellerOutletUpdate:
@@ -2768,6 +2774,8 @@ components:
         phone: { type: string, maxLength: 80 }
         email: { type: string, maxLength: 180 }
         mapsUrl: { type: string, maxLength: 1000 }
+        latitude: { type: number, minimum: -90, maximum: 90, nullable: true }
+        longitude: { type: number, minimum: -180, maximum: 180, nullable: true }
         sortOrder: { type: number, minimum: 0, multipleOf: 1 }
         active: { type: boolean }
     ResellerReorder:

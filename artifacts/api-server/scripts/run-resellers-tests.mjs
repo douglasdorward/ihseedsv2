@@ -39,11 +39,13 @@ try {
     { cwd: workspaceRoot, env: isolatedEnv, input: schemaDump, stdio: ["pipe", "inherit", "inherit"] },
   );
   run(process.execPath, ["artifacts/api-server/build.mjs"]);
-  execFileSync("psql", [isolatedEnv.DATABASE_URL, "-X", "-v", "ON_ERROR_STOP=1", "-f", "lib/db/drizzle/0026_resellers.sql"], {
-    cwd: workspaceRoot,
-    env: isolatedEnv,
-    stdio: "inherit",
-  });
+  for (const file of ["lib/db/drizzle/0026_resellers.sql", "lib/db/drizzle/0035_reseller_outlet_coordinates.sql"]) {
+    execFileSync("psql", [isolatedEnv.DATABASE_URL, "-X", "-v", "ON_ERROR_STOP=1", "-f", file], {
+      cwd: workspaceRoot,
+      env: isolatedEnv,
+      stdio: "inherit",
+    });
+  }
   run(process.execPath, ["--test", "artifacts/api-server/test/resellers.test.mjs"], isolatedEnv);
 } finally {
   run("dropdb", [`--maintenance-db=${process.env.DATABASE_URL}`, "--if-exists", databaseName]);

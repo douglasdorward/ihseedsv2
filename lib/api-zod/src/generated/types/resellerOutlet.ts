@@ -17,6 +17,16 @@ export interface ResellerOutlet {
   phone: string;
   email: string;
   mapsUrl: string;
+  /**
+     * @minimum -90
+     * @maximum 90
+     */
+  latitude: number | null;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  longitude: number | null;
   sortOrder: number;
   active: boolean;
   createdAt: Date;

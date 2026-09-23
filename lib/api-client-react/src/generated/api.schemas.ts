@@ -1869,6 +1869,16 @@ export interface ResellerOutlet {
   phone: string;
   email: string;
   mapsUrl: string;
+  /**
+     * @minimum -90
+     * @maximum 90
+     */
+  latitude: number | null;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  longitude: number | null;
   sortOrder: number;
   active: boolean;
   createdAt: string;
@@ -1885,6 +1895,16 @@ export interface PublicResellerOutlet {
   phone: string;
   email: string;
   mapsUrl: string;
+  /**
+     * @minimum -90
+     * @maximum 90
+     */
+  latitude: number | null;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  longitude: number | null;
 }
 
 export interface ResellerBrand {
@@ -1975,6 +1995,16 @@ export interface ResellerOutletInput {
   email?: string;
   /** @maxLength 1000 */
   mapsUrl?: string;
+  /**
+     * @minimum -90
+     * @maximum 90
+     */
+  latitude?: number | null;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  longitude?: number | null;
   /** @minimum 0 */
   sortOrder?: number;
   active?: boolean;
@@ -2000,6 +2030,16 @@ export interface ResellerOutletUpdate {
   email?: string;
   /** @maxLength 1000 */
   mapsUrl?: string;
+  /**
+     * @minimum -90
+     * @maximum 90
+     */
+  latitude?: number | null;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  longitude?: number | null;
   /** @minimum 0 */
   sortOrder?: number;
   active?: boolean;

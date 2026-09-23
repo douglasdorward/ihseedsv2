@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { Icon } from "../../components/Icon";
 import type { CatalogueResellerBrand } from "../../lib/catalogue";
 import { companyMapsUrl, companyTelHref, type CompanyContact } from "../../lib/company";
+import { resellerPoint } from "../../lib/reseller-distance";
 import { publicMediaSrc } from "../../lib/site-settings";
 
 const EMPTY_DETAILS = { location: "", soil: "", rainfall: "", landSize: "" };
@@ -17,20 +18,6 @@ function directionsUrl(outlet: { address: string; suburb: string; postcode: stri
   if (outlet.mapsUrl.trim()) return outlet.mapsUrl.trim();
   const query = outletAddress(outlet);
   return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : "";
-}
-
-function outletPoint(mapsUrl: string) {
-  try {
-    const query = new URL(mapsUrl).searchParams.get("query") ?? "";
-    const match = query.match(/^(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)$/);
-    if (!match) return null;
-    const lat = Number(match[1]);
-    const lng = Number(match[2]);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-    return { lat, lng };
-  } catch {
-    return null;
-  }
 }
 
 function distanceKm(from: { lat: number; lng: number }, to: { lat: number; lng: number }) {
@@ -83,7 +70,7 @@ export function ContactPage({
   const hasOfficePhone = Boolean(company.phone.trim() && companyTelHref(company.phone));
   const listings = useMemo(() => {
     const rows = resellers.flatMap((brand) => brand.outlets.map((outlet) => {
-      const point = outletPoint(outlet.mapsUrl);
+      const point = resellerPoint(outlet);
       return { brand, outlet, distanceKm: userLocation && point ? distanceKm(userLocation, point) : null };
     }));
     if (userLocation) {
@@ -124,6 +111,7 @@ export function ContactPage({
     [listings, region],
   );
   const visibleResellers = showAll ? filteredResellers : filteredResellers.slice(0, 6);
+  const locatedCount = listings.filter((listing) => listing.distanceKm != null).length;
 
   const updateDetail = (key: keyof typeof EMPTY_DETAILS, value: string) => setDetails((current) => ({ ...current, [key]: value }));
 
@@ -206,6 +194,9 @@ export function ContactPage({
             <button className="button button-outline" type="button" onClick={shareLocation} disabled={locating}><Icon name="map-pin" size={18} /> {locating ? "Locating…" : "Share location"}</button>
           </div>
           {locationError ? <p className="reseller-location-status" role="alert">{locationError}</p> : null}
+          {userLocation && !locationError && locatedCount === 0 ? (
+            <p className="reseller-location-status">Location shared. These stores don’t have coordinates yet, so the list stays in name order.</p>
+          ) : null}
           <p className="reseller-lead">{userLocation ? "Closest stores first, from the location you shared." : `We sell through rural resellers across Western Australia. Filter by region to find your closest store${hasOfficePhone ? ", or call the office and we will point you the right way" : ""}.`}</p>
           {regions.length > 1 && (
             <div className="region-chips" aria-label="Filter resellers by region">

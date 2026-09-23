@@ -7512,6 +7512,12 @@ export const listResellersResponseIdMultipleOf = 1;
 
 export const listResellersResponseOutletsItemIdMultipleOf = 1;
 
+export const listResellersResponseOutletsItemLatitudeMin = -90;
+export const listResellersResponseOutletsItemLatitudeMax = 90;
+
+export const listResellersResponseOutletsItemLongitudeMin = -180;
+export const listResellersResponseOutletsItemLongitudeMax = 180;
+
 
 
 export const ListResellersResponseItem = zod.object({
@@ -7530,7 +7536,9 @@ export const ListResellersResponseItem = zod.object({
   "region": zod.string(),
   "phone": zod.string(),
   "email": zod.string(),
-  "mapsUrl": zod.string()
+  "mapsUrl": zod.string(),
+  "latitude": zod.number().min(listResellersResponseOutletsItemLatitudeMin).max(listResellersResponseOutletsItemLatitudeMax).nullable(),
+  "longitude": zod.number().min(listResellersResponseOutletsItemLongitudeMin).max(listResellersResponseOutletsItemLongitudeMax).nullable()
 }))
 })
 export const ListResellersResponse = zod.array(ListResellersResponseItem)
@@ -7546,6 +7554,12 @@ export const listAdminResellerBrandsResponseSortOrderMultipleOf = 1;
 export const listAdminResellerBrandsResponseOutletsItemIdMultipleOf = 1;
 
 export const listAdminResellerBrandsResponseOutletsItemBrandIdMultipleOf = 1;
+
+export const listAdminResellerBrandsResponseOutletsItemLatitudeMin = -90;
+export const listAdminResellerBrandsResponseOutletsItemLatitudeMax = 90;
+
+export const listAdminResellerBrandsResponseOutletsItemLongitudeMin = -180;
+export const listAdminResellerBrandsResponseOutletsItemLongitudeMax = 180;
 
 export const listAdminResellerBrandsResponseOutletsItemSortOrderMultipleOf = 1;
 
@@ -7573,6 +7587,8 @@ export const ListAdminResellerBrandsResponseItem = zod.object({
   "phone": zod.string(),
   "email": zod.string(),
   "mapsUrl": zod.string(),
+  "latitude": zod.number().min(listAdminResellerBrandsResponseOutletsItemLatitudeMin).max(listAdminResellerBrandsResponseOutletsItemLatitudeMax).nullable(),
+  "longitude": zod.number().min(listAdminResellerBrandsResponseOutletsItemLongitudeMin).max(listAdminResellerBrandsResponseOutletsItemLongitudeMax).nullable(),
   "sortOrder": zod.number().multipleOf(listAdminResellerBrandsResponseOutletsItemSortOrderMultipleOf),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -7616,6 +7632,12 @@ export const createResellerBrandResponseOutletsItemIdMultipleOf = 1;
 
 export const createResellerBrandResponseOutletsItemBrandIdMultipleOf = 1;
 
+export const createResellerBrandResponseOutletsItemLatitudeMin = -90;
+export const createResellerBrandResponseOutletsItemLatitudeMax = 90;
+
+export const createResellerBrandResponseOutletsItemLongitudeMin = -180;
+export const createResellerBrandResponseOutletsItemLongitudeMax = 180;
+
 export const createResellerBrandResponseOutletsItemSortOrderMultipleOf = 1;
 
 
@@ -7642,6 +7664,8 @@ export const CreateResellerBrandResponse = zod.object({
   "phone": zod.string(),
   "email": zod.string(),
   "mapsUrl": zod.string(),
+  "latitude": zod.number().min(createResellerBrandResponseOutletsItemLatitudeMin).max(createResellerBrandResponseOutletsItemLatitudeMax).nullable(),
+  "longitude": zod.number().min(createResellerBrandResponseOutletsItemLongitudeMin).max(createResellerBrandResponseOutletsItemLongitudeMax).nullable(),
   "sortOrder": zod.number().multipleOf(createResellerBrandResponseOutletsItemSortOrderMultipleOf),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -7676,6 +7700,12 @@ export const reorderResellerBrandsResponseOutletsItemIdMultipleOf = 1;
 
 export const reorderResellerBrandsResponseOutletsItemBrandIdMultipleOf = 1;
 
+export const reorderResellerBrandsResponseOutletsItemLatitudeMin = -90;
+export const reorderResellerBrandsResponseOutletsItemLatitudeMax = 90;
+
+export const reorderResellerBrandsResponseOutletsItemLongitudeMin = -180;
+export const reorderResellerBrandsResponseOutletsItemLongitudeMax = 180;
+
 export const reorderResellerBrandsResponseOutletsItemSortOrderMultipleOf = 1;
 
 
@@ -7702,6 +7732,8 @@ export const ReorderResellerBrandsResponseItem = zod.object({
   "phone": zod.string(),
   "email": zod.string(),
   "mapsUrl": zod.string(),
+  "latitude": zod.number().min(reorderResellerBrandsResponseOutletsItemLatitudeMin).max(reorderResellerBrandsResponseOutletsItemLatitudeMax).nullable(),
+  "longitude": zod.number().min(reorderResellerBrandsResponseOutletsItemLongitudeMin).max(reorderResellerBrandsResponseOutletsItemLongitudeMax).nullable(),
   "sortOrder": zod.number().multipleOf(reorderResellerBrandsResponseOutletsItemSortOrderMultipleOf),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -7737,6 +7769,12 @@ export const reorderResellerOutletsResponseOutletsItemIdMultipleOf = 1;
 
 export const reorderResellerOutletsResponseOutletsItemBrandIdMultipleOf = 1;
 
+export const reorderResellerOutletsResponseOutletsItemLatitudeMin = -90;
+export const reorderResellerOutletsResponseOutletsItemLatitudeMax = 90;
+
+export const reorderResellerOutletsResponseOutletsItemLongitudeMin = -180;
+export const reorderResellerOutletsResponseOutletsItemLongitudeMax = 180;
+
 export const reorderResellerOutletsResponseOutletsItemSortOrderMultipleOf = 1;
 
 
@@ -7763,6 +7801,8 @@ export const ReorderResellerOutletsResponseItem = zod.object({
   "phone": zod.string(),
   "email": zod.string(),
   "mapsUrl": zod.string(),
+  "latitude": zod.number().min(reorderResellerOutletsResponseOutletsItemLatitudeMin).max(reorderResellerOutletsResponseOutletsItemLatitudeMax).nullable(),
+  "longitude": zod.number().min(reorderResellerOutletsResponseOutletsItemLongitudeMin).max(reorderResellerOutletsResponseOutletsItemLongitudeMax).nullable(),
   "sortOrder": zod.number().multipleOf(reorderResellerOutletsResponseOutletsItemSortOrderMultipleOf),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -7873,6 +7913,12 @@ export const getAdminResellerBrandResponseOutletsItemIdMultipleOf = 1;
 
 export const getAdminResellerBrandResponseOutletsItemBrandIdMultipleOf = 1;
 
+export const getAdminResellerBrandResponseOutletsItemLatitudeMin = -90;
+export const getAdminResellerBrandResponseOutletsItemLatitudeMax = 90;
+
+export const getAdminResellerBrandResponseOutletsItemLongitudeMin = -180;
+export const getAdminResellerBrandResponseOutletsItemLongitudeMax = 180;
+
 export const getAdminResellerBrandResponseOutletsItemSortOrderMultipleOf = 1;
 
 
@@ -7899,6 +7945,8 @@ export const GetAdminResellerBrandResponse = zod.object({
   "phone": zod.string(),
   "email": zod.string(),
   "mapsUrl": zod.string(),
+  "latitude": zod.number().min(getAdminResellerBrandResponseOutletsItemLatitudeMin).max(getAdminResellerBrandResponseOutletsItemLatitudeMax).nullable(),
+  "longitude": zod.number().min(getAdminResellerBrandResponseOutletsItemLongitudeMin).max(getAdminResellerBrandResponseOutletsItemLongitudeMax).nullable(),
   "sortOrder": zod.number().multipleOf(getAdminResellerBrandResponseOutletsItemSortOrderMultipleOf),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -7949,6 +7997,12 @@ export const updateResellerBrandResponseOutletsItemIdMultipleOf = 1;
 
 export const updateResellerBrandResponseOutletsItemBrandIdMultipleOf = 1;
 
+export const updateResellerBrandResponseOutletsItemLatitudeMin = -90;
+export const updateResellerBrandResponseOutletsItemLatitudeMax = 90;
+
+export const updateResellerBrandResponseOutletsItemLongitudeMin = -180;
+export const updateResellerBrandResponseOutletsItemLongitudeMax = 180;
+
 export const updateResellerBrandResponseOutletsItemSortOrderMultipleOf = 1;
 
 
@@ -7975,6 +8029,8 @@ export const UpdateResellerBrandResponse = zod.object({
   "phone": zod.string(),
   "email": zod.string(),
   "mapsUrl": zod.string(),
+  "latitude": zod.number().min(updateResellerBrandResponseOutletsItemLatitudeMin).max(updateResellerBrandResponseOutletsItemLatitudeMax).nullable(),
+  "longitude": zod.number().min(updateResellerBrandResponseOutletsItemLongitudeMin).max(updateResellerBrandResponseOutletsItemLongitudeMax).nullable(),
   "sortOrder": zod.number().multipleOf(updateResellerBrandResponseOutletsItemSortOrderMultipleOf),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -8024,6 +8080,12 @@ export const createResellerOutletBodyEmailMax = 180;
 
 export const createResellerOutletBodyMapsUrlMax = 1000;
 
+export const createResellerOutletBodyLatitudeMin = -90;
+export const createResellerOutletBodyLatitudeMax = 90;
+
+export const createResellerOutletBodyLongitudeMin = -180;
+export const createResellerOutletBodyLongitudeMax = 180;
+
 export const createResellerOutletBodySortOrderMin = 0;
 export const createResellerOutletBodySortOrderMultipleOf = 1;
 
@@ -8038,6 +8100,8 @@ export const CreateResellerOutletBody = zod.object({
   "phone": zod.string().max(createResellerOutletBodyPhoneMax).optional(),
   "email": zod.string().max(createResellerOutletBodyEmailMax).optional(),
   "mapsUrl": zod.string().max(createResellerOutletBodyMapsUrlMax).optional(),
+  "latitude": zod.number().min(createResellerOutletBodyLatitudeMin).max(createResellerOutletBodyLatitudeMax).nullish(),
+  "longitude": zod.number().min(createResellerOutletBodyLongitudeMin).max(createResellerOutletBodyLongitudeMax).nullish(),
   "sortOrder": zod.number().min(createResellerOutletBodySortOrderMin).multipleOf(createResellerOutletBodySortOrderMultipleOf).optional(),
   "active": zod.boolean().optional()
 })
@@ -8045,6 +8109,12 @@ export const CreateResellerOutletBody = zod.object({
 export const createResellerOutletResponseIdMultipleOf = 1;
 
 export const createResellerOutletResponseBrandIdMultipleOf = 1;
+
+export const createResellerOutletResponseLatitudeMin = -90;
+export const createResellerOutletResponseLatitudeMax = 90;
+
+export const createResellerOutletResponseLongitudeMin = -180;
+export const createResellerOutletResponseLongitudeMax = 180;
 
 export const createResellerOutletResponseSortOrderMultipleOf = 1;
 
@@ -8061,6 +8131,8 @@ export const CreateResellerOutletResponse = zod.object({
   "phone": zod.string(),
   "email": zod.string(),
   "mapsUrl": zod.string(),
+  "latitude": zod.number().min(createResellerOutletResponseLatitudeMin).max(createResellerOutletResponseLatitudeMax).nullable(),
+  "longitude": zod.number().min(createResellerOutletResponseLongitudeMin).max(createResellerOutletResponseLongitudeMax).nullable(),
   "sortOrder": zod.number().multipleOf(createResellerOutletResponseSortOrderMultipleOf),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -8098,6 +8170,12 @@ export const updateResellerOutletBodyEmailMax = 180;
 
 export const updateResellerOutletBodyMapsUrlMax = 1000;
 
+export const updateResellerOutletBodyLatitudeMin = -90;
+export const updateResellerOutletBodyLatitudeMax = 90;
+
+export const updateResellerOutletBodyLongitudeMin = -180;
+export const updateResellerOutletBodyLongitudeMax = 180;
+
 export const updateResellerOutletBodySortOrderMin = 0;
 export const updateResellerOutletBodySortOrderMultipleOf = 1;
 
@@ -8112,6 +8190,8 @@ export const UpdateResellerOutletBody = zod.object({
   "phone": zod.string().max(updateResellerOutletBodyPhoneMax).optional(),
   "email": zod.string().max(updateResellerOutletBodyEmailMax).optional(),
   "mapsUrl": zod.string().max(updateResellerOutletBodyMapsUrlMax).optional(),
+  "latitude": zod.number().min(updateResellerOutletBodyLatitudeMin).max(updateResellerOutletBodyLatitudeMax).nullish(),
+  "longitude": zod.number().min(updateResellerOutletBodyLongitudeMin).max(updateResellerOutletBodyLongitudeMax).nullish(),
   "sortOrder": zod.number().min(updateResellerOutletBodySortOrderMin).multipleOf(updateResellerOutletBodySortOrderMultipleOf).optional(),
   "active": zod.boolean().optional()
 })
@@ -8119,6 +8199,12 @@ export const UpdateResellerOutletBody = zod.object({
 export const updateResellerOutletResponseIdMultipleOf = 1;
 
 export const updateResellerOutletResponseBrandIdMultipleOf = 1;
+
+export const updateResellerOutletResponseLatitudeMin = -90;
+export const updateResellerOutletResponseLatitudeMax = 90;
+
+export const updateResellerOutletResponseLongitudeMin = -180;
+export const updateResellerOutletResponseLongitudeMax = 180;
 
 export const updateResellerOutletResponseSortOrderMultipleOf = 1;
 
@@ -8135,6 +8221,8 @@ export const UpdateResellerOutletResponse = zod.object({
   "phone": zod.string(),
   "email": zod.string(),
   "mapsUrl": zod.string(),
+  "latitude": zod.number().min(updateResellerOutletResponseLatitudeMin).max(updateResellerOutletResponseLatitudeMax).nullable(),
+  "longitude": zod.number().min(updateResellerOutletResponseLongitudeMin).max(updateResellerOutletResponseLongitudeMax).nullable(),
   "sortOrder": zod.number().multipleOf(updateResellerOutletResponseSortOrderMultipleOf),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date(),
