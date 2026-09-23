@@ -373,16 +373,84 @@ function GooglePin({ url, name }: { url: string; name: string }) {
   );
 }
 
+function rowKey(row: StoreRow) {
+  return `${row.brand.id}-${row.outlet.id}`;
+}
+
 function StoreList() {
+  const queryClient = useQueryClient();
   const { data: brands = [], isLoading, error } = useListAdminResellerBrands();
+  const deleteOutlet = useDeleteResellerOutlet();
+  const deleteBrand = useDeleteResellerBrand();
   const [importOpen, setImportOpen] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const selectAllRef = useRef<HTMLInputElement>(null);
   const stores = useMemo(() => flattenStores(brands), [brands]);
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
+  const selectedRows = useMemo(() => stores.filter((row) => selectedSet.has(rowKey(row))), [stores, selectedSet]);
+  const allSelected = stores.length > 0 && selectedRows.length === stores.length;
+
+  useEffect(() => {
+    const keys = new Set(stores.map(rowKey));
+    setSelected((current) => {
+      const next = current.filter((key) => keys.has(key));
+      return next.length === current.length ? current : next;
+    });
+  }, [stores]);
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = selectedRows.length > 0 && !allSelected;
+    }
+  }, [selectedRows.length, allSelected]);
 
   const openStore = (row: StoreRow) => navigate(`/admin/resellers/${row.brand.id}/${row.outlet.id}`);
   const onRowKey = (event: KeyboardEvent<HTMLTableRowElement>, row: StoreRow) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       openStore(row);
+    }
+  };
+
+  const toggleRow = (key: string) => {
+    setSelected((current) => (current.includes(key) ? current.filter((id) => id !== key) : [...current, key]));
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedRows.length === 0) return;
+    setBusy(true);
+    setDeleteError("");
+    const deletedIds = new Map<number, Set<number>>();
+    try {
+      for (const row of selectedRows) {
+        await deleteOutlet.mutateAsync({ brandId: row.brand.id, id: row.outlet.id });
+        const ids = deletedIds.get(row.brand.id) ?? new Set<number>();
+        ids.add(row.outlet.id);
+        deletedIds.set(row.brand.id, ids);
+      }
+      for (const [brandId, outletIds] of deletedIds) {
+        const brand = brands.find((item) => item.id === brandId);
+        if (!brand || brand.kind !== "independent") continue;
+        if (brand.outlets.every((outlet) => outletIds.has(outlet.id))) {
+          await deleteBrand.mutateAsync({ id: brandId });
+        }
+      }
+      await queryClient.invalidateQueries({ queryKey: getListAdminResellerBrandsQueryKey() });
+      setSelected([]);
+      setConfirmDelete(false);
+    } catch (caught) {
+      await queryClient.invalidateQueries({ queryKey: getListAdminResellerBrandsQueryKey() });
+      const removed = new Set(
+        [...deletedIds.entries()].flatMap(([brandId, ids]) => [...ids].map((id) => `${brandId}-${id}`)),
+      );
+      setSelected((current) => current.filter((key) => !removed.has(key)));
+      setDeleteError(errorMessage(caught, "Could not delete the selected stores."));
+      setConfirmDelete(false);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -404,16 +472,42 @@ function StoreList() {
       <div className="admin-content">
         <div className="admin-notice">
           <Icon name="info" size={20} />
-          <p>Listed stores appear in the Reseller near you section on the contact page. Select a row to edit it. Hidden stores stay in this list only.</p>
+          <p>Listed stores appear in the Reseller near you section on the contact page. Select a row to edit it. Tick stores to delete them. Hidden stores stay in this list only.</p>
         </div>
         {error && <div className="admin-notice" style={{ background: "#fef3f2", color: "#b42318" }}><p>{errorMessage(error, "Could not load resellers.")}</p></div>}
+        {deleteError && <div className="admin-notice" style={{ background: "#fef3f2", color: "#b42318" }}><p>{deleteError}</p></div>}
         {isLoading ? <p className="admin-empty">Loading stores…</p> : null}
         {!isLoading && stores.length === 0 && <p className="admin-empty">No stores yet. Add one, or import a CSV.</p>}
+        {selectedRows.length > 0 && (
+          <div className="admin-bulk-bar">
+            <strong>{selectedRows.length} selected</strong>
+            <button
+              className="admin-button outline small admin-button-danger"
+              type="button"
+              disabled={busy}
+              onClick={() => setConfirmDelete(true)}
+              data-testid="reseller-delete-selected"
+            >
+              Delete selected
+            </button>
+            <button className="admin-text-button" type="button" disabled={busy} onClick={() => setSelected([])}>Clear</button>
+          </div>
+        )}
         {stores.length > 0 && (
           <div className="admin-table-card admin-reseller-table">
             <table>
               <thead>
                 <tr>
+                  <th aria-label="Select">
+                    <input
+                      ref={selectAllRef}
+                      type="checkbox"
+                      checked={allSelected}
+                      disabled={busy}
+                      aria-label={allSelected ? "Clear store selection" : "Select all stores"}
+                      onChange={() => setSelected(allSelected ? [] : stores.map(rowKey))}
+                    />
+                  </th>
                   <th>Brand</th>
                   <th>Name</th>
                   <th>Town</th>
@@ -423,20 +517,35 @@ function StoreList() {
               </thead>
               <tbody>
                 {stores.map((row) => {
+                  const key = rowKey(row);
                   const brandLogo = brandLogoDisplaySrc(
                     photoDisplaySrc({ src: row.brand.logoSrc, assetId: row.brand.logoAssetId ?? undefined }),
                     row.brand.kind,
                   );
+                  const hidden = !(row.brand.active && row.outlet.active);
                   return (
                   <tr
-                    key={`${row.brand.id}-${row.outlet.id}`}
-                    className={row.brand.active && row.outlet.active ? undefined : "is-hidden"}
+                    key={key}
+                    className={[hidden ? "is-hidden" : "", selectedSet.has(key) ? "is-selected" : ""].filter(Boolean).join(" ") || undefined}
                     tabIndex={0}
                     role="link"
                     onClick={() => openStore(row)}
                     onKeyDown={(event) => onRowKey(event, row)}
                     data-testid={`reseller-store-row-${row.outlet.id}`}
                   >
+                    <td
+                      className="admin-reseller-select"
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => event.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedSet.has(key)}
+                        disabled={busy}
+                        aria-label={`Select ${row.brand.name} ${row.outlet.name}`}
+                        onChange={() => toggleRow(key)}
+                      />
+                    </td>
                     <td>
                       <div className="admin-reseller-brand-cell">
                         <span
@@ -466,6 +575,17 @@ function StoreList() {
         )}
       </div>
       <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} />
+      {confirmDelete && (
+        <ConfirmDialog
+          title={selectedRows.length === 1 ? "Delete this store?" : `Delete ${selectedRows.length} stores?`}
+          body="This removes the selected stores from admin and the public contact page. This cannot be undone."
+          confirmLabel={selectedRows.length === 1 ? "Delete store" : "Delete stores"}
+          busyLabel="Deleting…"
+          busy={busy}
+          onCancel={() => { if (!busy) setConfirmDelete(false); }}
+          onConfirm={() => { void handleBulkDelete(); }}
+        />
+      )}
     </>
   );
 }

@@ -425,8 +425,8 @@ export function ProductPageEditor(props: ProductPageEditorProps) {
                   </div>
                   <span className="button button-primary" style={{ width: "100%", textAlign: "center" }}>Ask about an order</span>
                   <div className="pricing-reseller-logos">
-                    <img className="pricing-reseller-logo" src={`${import.meta.env.BASE_URL}elders-logo.webp`} alt="Elders" />
                     <img className="pricing-reseller-logo" src={`${import.meta.env.BASE_URL}nutrien-logo.webp`} alt="Nutrien Ag Solutions" />
+                    <img className="pricing-reseller-logo" src={`${import.meta.env.BASE_URL}elders-logo.webp`} alt="Elders" />
                   </div>
                   <small className="pricing-disclaimer">We supply through rural resellers across Western Australia.</small>
                 </div>
