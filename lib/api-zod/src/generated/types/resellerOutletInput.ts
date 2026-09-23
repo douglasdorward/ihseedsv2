@@ -26,6 +26,16 @@ export interface ResellerOutletInput {
   email?: string;
   /** @maxLength 1000 */
   mapsUrl?: string;
+  /**
+     * @minimum -90
+     * @maximum 90
+     */
+  latitude?: number | null;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  longitude?: number | null;
   /** @minimum 0 */
   sortOrder?: number;
   active?: boolean;

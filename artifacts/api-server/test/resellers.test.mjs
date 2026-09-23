@@ -172,10 +172,10 @@ describe("reseller API", { concurrency: false }, () => {
     const before = assertStatus(await request("GET", "/admin/resellers"), 200);
     const hadElders = before.some((brand) => brand.name === "Elders");
     const csvText = [
-      "brand,kind,website,outlet_name,address,suburb,postcode,region,phone,email,google_pin,listed",
-      `Elders,elders,,Katanning ${testRunId},15 Clive St,Katanning,6317,Great Southern,(08) 9821 1455,katanning@example.test,https://maps.google.com/?q=Katanning,yes`,
-      `CRT ${testRunId},independent,https://crt.example.test,Esperance,2 Dempster St,Esperance,6450,Esperance,(08) 9071 3300,,https://maps.app.goo.gl/example,yes`,
-      `CRT ${testRunId},independent,,Esperance,2 Dempster Street,Esperance,6450,Esperance,(08) 9071 3300,esperance@example.test,,yes`,
+      "brand,kind,website,outlet_name,address,suburb,postcode,region,phone,email,google_pin,coordinates,listed",
+      `Elders,elders,,Katanning ${testRunId},15 Clive St,Katanning,6317,Great Southern,(08) 9821 1455,katanning@example.test,https://maps.google.com/?q=Katanning,"-33.689, 117.555",yes`,
+      `CRT ${testRunId},independent,https://crt.example.test,Esperance,2 Dempster St,Esperance,6450,Esperance,(08) 9071 3300,,https://maps.app.goo.gl/example,,yes`,
+      `CRT ${testRunId},independent,,Esperance,2 Dempster Street,Esperance,6450,Esperance,(08) 9071 3300,esperance@example.test,,"-33.861, 121.891",yes`,
     ].join("\n");
 
     const dryRun = assertStatus(await request("POST", "/admin/resellers/import/dry-run", { csvText }), 200);
@@ -210,6 +210,12 @@ describe("reseller API", { concurrency: false }, () => {
     assert.equal(crt.outlets.length, 1);
     assert.equal(crt.outlets[0].address, "2 Dempster Street");
     assert.equal(crt.outlets[0].email, "esperance@example.test");
+    assert.ok(Math.abs(crt.outlets[0].latitude - -33.861) < 0.000001);
+    assert.ok(Math.abs(crt.outlets[0].longitude - 121.891) < 0.000001);
+    const katanning = elders.outlets.find((outlet) => outlet.name === `Katanning ${testRunId}`);
+    assert.ok(katanning);
+    assert.ok(Math.abs(katanning.latitude - -33.689) < 0.000001);
+    assert.ok(Math.abs(katanning.longitude - 117.555) < 0.000001);
   });
 
   test("deleting a brand removes its outlets from the public list", async () => {
@@ -268,9 +274,14 @@ describe("reseller API", { concurrency: false }, () => {
     assert.match(String(template.data), /brand,kind,website,outlet_name/);
 
     const invalid = assertStatus(await request("POST", "/admin/resellers/import/dry-run", {
-      csvText: "brand,kind,website,outlet_name,address,suburb,postcode,region,phone,email,google_pin,listed\n,independent,,Town,,,,,,,",
+      csvText: "brand,kind,website,outlet_name,address,suburb,postcode,region,phone,email,google_pin,coordinates,listed\n,independent,,Town,,,,,,,,",
     }), 200);
     assert.ok(invalid.issues.some((issue) => issue.column === "brand"));
+
+    const badCoordinates = assertStatus(await request("POST", "/admin/resellers/import/dry-run", {
+      csvText: "brand,kind,website,outlet_name,address,suburb,postcode,region,phone,email,google_pin,coordinates,listed\nBad Coords,independent,,Town,,,,,,,,,not-a-place,yes",
+    }), 200);
+    assert.ok(badCoordinates.issues.some((issue) => issue.column === "coordinates"));
 
     const created = assertStatus(await request("POST", "/admin/resellers", {
       name: `Unique ${testRunId}`,

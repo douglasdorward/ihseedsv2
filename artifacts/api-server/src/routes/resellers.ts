@@ -55,6 +55,8 @@ function toPublicOutlet(outlet: ResellerOutlet) {
     phone: outlet.phone,
     email: outlet.email,
     mapsUrl: outlet.mapsUrl,
+    latitude: outlet.latitude,
+    longitude: outlet.longitude,
   };
 }
 

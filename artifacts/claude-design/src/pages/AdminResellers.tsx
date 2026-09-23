@@ -111,6 +111,7 @@ type OutletForm = {
   phone: string;
   email: string;
   mapsUrl: string;
+  coordinates: string;
   active: boolean;
 };
 
@@ -123,8 +124,25 @@ const emptyOutletForm: OutletForm = {
   phone: "",
   email: "",
   mapsUrl: "",
+  coordinates: "",
   active: true,
 };
+
+function formatCoordinates(latitude: number, longitude: number) {
+  const format = (value: number) => String(Math.round(value * 1e6) / 1e6);
+  return `${format(latitude)}, ${format(longitude)}`;
+}
+
+function coordinatesFromForm(raw: string) {
+  const value = raw.trim();
+  if (!value) return { latitude: null, longitude: null };
+  const match = value.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+  if (!match) return null;
+  const latitude = Number(match[1]);
+  const longitude = Number(match[2]);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return null;
+  return { latitude, longitude };
+}
 
 function formFromOutlet(outlet: ResellerOutlet): OutletForm {
   return {
@@ -136,11 +154,14 @@ function formFromOutlet(outlet: ResellerOutlet): OutletForm {
     phone: outlet.phone,
     email: outlet.email,
     mapsUrl: outlet.mapsUrl,
+    coordinates: outlet.latitude != null && outlet.longitude != null
+      ? formatCoordinates(outlet.latitude, outlet.longitude)
+      : "",
     active: outlet.active,
   };
 }
 
-function toOutletInput(form: OutletForm): ResellerOutletInput {
+function toOutletInput(form: OutletForm, coordinates: { latitude: number | null; longitude: number | null }): ResellerOutletInput {
   return {
     name: form.name.trim(),
     address: form.address.trim(),
@@ -150,6 +171,8 @@ function toOutletInput(form: OutletForm): ResellerOutletInput {
     phone: form.phone.trim(),
     email: form.email.trim(),
     mapsUrl: form.mapsUrl.trim(),
+    latitude: coordinates.latitude,
+    longitude: coordinates.longitude,
     active: form.active,
   };
 }
@@ -314,7 +337,7 @@ function ImportDialog({
     <div className="admin-dialog-backdrop" role="presentation" onMouseDown={close}>
       <section className="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="reseller-import-title" onMouseDown={(event) => event.stopPropagation()}>
         <h2 id="reseller-import-title">Import resellers</h2>
-        <p>Upload a CSV with one row per store. Matching brand and store names update existing rows. Logos are added in the store editor after import.</p>
+        <p>Upload a CSV with one row per store. Matching brand and store names update existing rows. Put latitude and longitude in <code>coordinates</code>, for example <code>-33.3512, 117.1234</code>. That is what Share location uses. <code>google_pin</code> stays the Maps link for directions. A blank coordinates cell clears stored coordinates. Logos are added in the store editor after import.</p>
         {!report ? (
           <div className="admin-import-file-row">
             <input type="file" accept=".csv,text/csv" data-testid="reseller-import-file" onChange={(event) => {
@@ -512,6 +535,7 @@ function StoreList() {
                   <th>Name</th>
                   <th>Town</th>
                   <th>Region</th>
+                  <th>Coordinates</th>
                   <th>Pin</th>
                 </tr>
               </thead>
@@ -565,6 +589,7 @@ function StoreList() {
                     </td>
                     <td>{row.outlet.suburb || "—"}</td>
                     <td>{row.outlet.region || "—"}</td>
+                    <td>{row.outlet.latitude != null && row.outlet.longitude != null ? formatCoordinates(row.outlet.latitude, row.outlet.longitude) : "—"}</td>
                     <td><GooglePin url={row.outlet.mapsUrl} name={`${row.brand.name} ${row.outlet.name}`} /></td>
                   </tr>
                   );
@@ -687,7 +712,11 @@ function StoreFields({
       </datalist>
       <label>Google pin
         <input type="url" maxLength={1000} placeholder="https://maps.app.goo.gl/…" value={form.mapsUrl} onChange={(event) => setForm({ ...form, mapsUrl: event.target.value })} data-testid="reseller-outlet-pin" />
-        <small>Paste a Google Maps share link. If this is blank, the public page falls back to an address search.</small>
+        <small>Paste a Google Maps share link. This opens directions. It does not sort the near-you list.</small>
+      </label>
+      <label>Coordinates
+        <input placeholder="-33.3512, 117.1234" value={form.coordinates} onChange={(event) => setForm({ ...form, coordinates: event.target.value })} data-testid="reseller-outlet-coordinates" />
+        <small>Latitude, longitude. Share location uses these to sort stores.</small>
       </label>
       <label>Address
         <input maxLength={300} value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
@@ -851,7 +880,13 @@ function StoreEditor({ brandId, outletId }: { brandId: number | "new"; outletId:
     setError("");
     setMessage("");
     try {
-      const outletData = toOutletInput(outletForm);
+      const coordinates = coordinatesFromForm(outletForm.coordinates);
+      if (!coordinates) {
+        setError("Coordinates must be latitude, longitude, for example -33.3512, 117.1234.");
+        setBusy(false);
+        return;
+      }
+      const outletData = toOutletInput(outletForm, coordinates);
       if (isNew) {
         const resolvedBrandId = await resolveBrandId();
         const created = await createOutlet.mutateAsync({ id: resolvedBrandId, data: outletData });

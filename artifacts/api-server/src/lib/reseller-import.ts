@@ -23,6 +23,7 @@ export const RESELLER_IMPORT_HEADERS = [
   "phone",
   "email",
   "google_pin",
+  "coordinates",
   "listed",
 ] as const;
 
@@ -65,6 +66,8 @@ type PlannedOutlet = {
   phone: string;
   email: string;
   mapsUrl: string;
+  latitude: number | null;
+  longitude: number | null;
   active: boolean;
   existingId: number | null;
 };
@@ -129,6 +132,19 @@ function parseKind(raw: string): ResellerKind | null {
   return null;
 }
 
+function parseCoordinates(raw: string) {
+  const value = raw.trim();
+  if (!value) return { ok: true as const, latitude: null, longitude: null };
+  const match = value.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+  if (!match) return { ok: false as const };
+  const latitude = Number(match[1]);
+  const longitude = Number(match[2]);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+    return { ok: false as const };
+  }
+  return { ok: true as const, latitude, longitude };
+}
+
 function parseListed(raw: string) {
   const value = raw.trim().toLowerCase();
   if (!value) return true;
@@ -169,6 +185,7 @@ function parseRows(csvText: string) {
       phone: cell(source, indexes.get("phone")),
       email: cell(source, indexes.get("email")),
       google_pin: cell(source, indexes.get("google_pin")),
+      coordinates: cell(source, indexes.get("coordinates")),
       listed: cell(source, indexes.get("listed")),
     });
   }
@@ -242,6 +259,15 @@ export async function dryRunResellerImport(csvText: string): Promise<ResellerImp
       issues.push({ row: rowNumber, column: "listed", problem: "Listed must be yes or no." });
       return;
     }
+    const coordinates = parseCoordinates(row.coordinates);
+    if (!coordinates.ok) {
+      issues.push({
+        row: rowNumber,
+        column: "coordinates",
+        problem: "Coordinates must be latitude, longitude, for example -33.3512, 117.1234.",
+      });
+      return;
+    }
 
     const brandInput = insertResellerBrandSchema.safeParse({
       name: row.brand,
@@ -263,11 +289,17 @@ export async function dryRunResellerImport(csvText: string): Promise<ResellerImp
       phone: row.phone,
       email: row.email,
       mapsUrl: row.google_pin,
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
       active: listed,
     });
     if (!outletInput.success) {
       const first = outletInput.error.issues[0];
-      const column = first?.path[0] === "mapsUrl" ? "google_pin" : String(first?.path[0] ?? "outlet_name");
+      const column = first?.path[0] === "mapsUrl"
+        ? "google_pin"
+        : first?.path[0] === "latitude" || first?.path[0] === "longitude"
+          ? "coordinates"
+          : String(first?.path[0] ?? "outlet_name");
       issues.push({ row: rowNumber, column, problem: first?.message ?? "Outlet fields are invalid." });
       return;
     }
@@ -303,6 +335,8 @@ export async function dryRunResellerImport(csvText: string): Promise<ResellerImp
       phone: outletInput.data.phone,
       email: outletInput.data.email,
       mapsUrl: outletInput.data.mapsUrl,
+      latitude: outletInput.data.latitude,
+      longitude: outletInput.data.longitude,
       active: outletInput.data.active,
       existingId: existingOutlet?.id ?? (isUpdate ? 0 : null),
     });
@@ -364,6 +398,8 @@ export async function commitResellerImport(csvText: string, token: string) {
       }
 
       const listed = parseListed(row.listed) ?? true;
+      const coordinates = parseCoordinates(row.coordinates);
+      if (!coordinates.ok) continue;
       const [existingOutlet] = await tx.select().from(resellerOutletsTable).where(and(
         eq(resellerOutletsTable.brandId, brand.id),
         sql`lower(${resellerOutletsTable.name}) = ${row.outlet_name.trim().toLowerCase()}`,
@@ -377,6 +413,8 @@ export async function commitResellerImport(csvText: string, token: string) {
         phone: row.phone,
         email: row.email,
         mapsUrl: row.google_pin,
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
         active: listed,
         updatedAt: new Date(),
       };

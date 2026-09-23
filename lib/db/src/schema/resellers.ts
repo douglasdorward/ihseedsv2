@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, doublePrecision, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 
 export const RESELLER_KINDS = ["elders", "nutrien", "independent"] as const;
@@ -40,6 +40,8 @@ export const resellerOutletsTable = pgTable("ih_reseller_outlets", {
   phone: text("phone").notNull().default(""),
   email: text("email").notNull().default(""),
   mapsUrl: text("maps_url").notNull().default(""),
+  latitude: doublePrecision("latitude"),
+  longitude: doublePrecision("longitude"),
   sortOrder: integer("sort_order").notNull().default(0),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -86,9 +88,18 @@ const outletFieldsSchema = z.object({
   phone: z.string().trim().max(80),
   email: optionalEmail,
   mapsUrl: optionalHttpUrl(1000),
+  latitude: z.number().gte(-90).lte(90).nullable(),
+  longitude: z.number().gte(-180).lte(180).nullable(),
   sortOrder: z.number().int().min(0),
   active: z.boolean(),
 });
+
+function withCoordinatePair<T extends z.ZodType<{ latitude?: number | null; longitude?: number | null }>>(schema: T) {
+  return schema.refine(
+    (value) => (value.latitude == null) === (value.longitude == null),
+    { message: "Enter both latitude and longitude, or leave both blank.", path: ["latitude"] },
+  );
+}
 
 export const insertResellerBrandSchema = brandFieldsSchema.extend({
   website: brandFieldsSchema.shape.website.default(""),
@@ -99,7 +110,7 @@ export const insertResellerBrandSchema = brandFieldsSchema.extend({
 });
 export const updateResellerBrandSchema = brandFieldsSchema.partial();
 
-export const insertResellerOutletSchema = outletFieldsSchema.extend({
+export const insertResellerOutletSchema = withCoordinatePair(outletFieldsSchema.extend({
   address: outletFieldsSchema.shape.address.default(""),
   suburb: outletFieldsSchema.shape.suburb.default(""),
   postcode: outletFieldsSchema.shape.postcode.default(""),
@@ -107,10 +118,12 @@ export const insertResellerOutletSchema = outletFieldsSchema.extend({
   phone: outletFieldsSchema.shape.phone.default(""),
   email: outletFieldsSchema.shape.email.default(""),
   mapsUrl: outletFieldsSchema.shape.mapsUrl.default(""),
+  latitude: outletFieldsSchema.shape.latitude.default(null),
+  longitude: outletFieldsSchema.shape.longitude.default(null),
   sortOrder: outletFieldsSchema.shape.sortOrder.default(0),
   active: outletFieldsSchema.shape.active.default(true),
-});
-export const updateResellerOutletSchema = outletFieldsSchema.partial();
+}));
+export const updateResellerOutletSchema = withCoordinatePair(outletFieldsSchema.partial());
 
 export const reorderResellerItemsSchema = z.object({
   items: z.array(z.object({

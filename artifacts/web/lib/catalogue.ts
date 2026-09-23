@@ -212,6 +212,8 @@ export type CatalogueResellerOutlet = {
   phone: string;
   email: string;
   mapsUrl: string;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 export type CatalogueResellerBrand = {
