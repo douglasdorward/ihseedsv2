@@ -10,4 +10,6 @@ export interface EnquiryCreated {
   ok: boolean;
   id: number;
   createdAt: Date;
+  /** Whether the email provider accepted the enquiry notification. */
+  emailSent?: boolean;
 }

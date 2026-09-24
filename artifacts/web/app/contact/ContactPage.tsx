@@ -58,7 +58,7 @@ export function ContactPage({
   const [form, setForm] = useState(enquiry
     ? { ...EMPTY_FORM, topic: enquiry.topic, message: enquiry.message }
     : EMPTY_FORM);
-  const [submitState, setSubmitState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [submitState, setSubmitState] = useState<"idle" | "sending" | "sent" | "saved" | "error">("idle");
   const [details, setDetails] = useState(enquiry
     ? { ...EMPTY_DETAILS, soil: enquiry.soil, rainfall: enquiry.rainfall }
     : EMPTY_DETAILS);
@@ -128,8 +128,10 @@ export function ContactPage({
       const message = [form.message, extraContext].filter(Boolean).join("\n\n");
       const response = await fetch("/api/enquiries", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...form, message }) });
       if (!response.ok) throw new Error("Unable to send enquiry");
-      setSubmitState("sent");
+      const result = await response.json();
+      setSubmitState(result.emailSent === false ? "saved" : "sent");
       setForm(EMPTY_FORM);
+      setDetails(EMPTY_DETAILS);
     } catch {
       setSubmitState("error");
     }
@@ -181,6 +183,7 @@ export function ContactPage({
             <div className="form-submit-row">
               <button className="button button-primary" type="submit" disabled={submitState === "sending"} data-testid="button-submit-enquiry">{submitState === "sending" ? "Sending…" : "Send enquiry"}</button>
               {submitState === "sent" && <p className="form-status success" data-testid="status-enquiry-sent">Thanks — your enquiry is with the IH Seeds team.</p>}
+              {submitState === "saved" && <p className="form-status error" role="status" data-testid="status-enquiry-saved">Your enquiry was saved, but we couldn’t email the team just now. For urgent enquiries, please use the contact details on this page. You don’t need to submit it again.</p>}
               {submitState === "error" && <p className="form-status error" data-testid="status-enquiry-error">We couldn’t send that just now. Please try again.</p>}
             </div>
           </form>
