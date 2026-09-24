@@ -47,9 +47,9 @@ export default async function Home() {
 
       <section className="pillars" aria-label="Why IH Seeds">
         <div className="three-column">
-          <div className="pillar"><Icon name="map-pin" size={27} /><h3>Regional expertise</h3><p>Local conditions, understood and applied. Sixty years of sowing across every WA rainfall zone.</p></div>
-          <div className="pillar"><Icon name="sprout" size={27} /><h3>Proven performance</h3><p>Varieties and mixes proven over generations across Australia, with trial data behind them.</p></div>
-          <div className="pillar"><Icon name="users" size={27} /><h3>Partnership</h3><p>Confidence before the order. Support after it — through your local rural reseller.</p></div>
+          <div className="pillar"><Icon name="map-pin" size={27} /><h3>Regional expertise</h3><p>Local conditions, understood and applied. Our experience across Western Australia tells us which varieties and mixes deliver in your rainfall, your soil and your enterprise.</p></div>
+          <div className="pillar"><Icon name="sprout" size={27} /><h3>Proven performance</h3><p>Pasture varieties and mixes proven over generations and across Australia. Seed from accredited growers, true to type and consistent with its description.</p></div>
+          <div className="pillar"><Icon name="users" size={27} /><h3>Partnership</h3><p>Confidence before the order, support after it. We combine local experience with knowledge shared by farmers to give sound technical advice, through your local store or direct from our team.</p></div>
         </div>
       </section>
 

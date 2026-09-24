@@ -1,102 +1,77 @@
-# IH Seeds SEO + GEO audit
+# IH Seeds SEO audit
 
-**Audit date:** 22 September 2026  
-**Supersedes:** the 18 September 2026 replacement-domain audit in this file, which itself superseded the 16 September 2026 findings  
-**Scope:** Public IH Seeds website as the replacement for `www.irwinhunter.com.au`, including social-preview metadata and generative-engine (GEO) citation readiness  
-**Environment:** Current Next.js metadata, database schema, admin editors, and `lib/db/seed/catalogue.json` (106 published products, 11 active root categories). The local API was not running, so this pass is not a live HTML crawl. Google Search Console, Analytics, backlink data, and the production edge were not accessed.
+**Audit date:** 23 September 2026
+**Supersedes:** the 22 September 2026 audit in this file
+**Scope:** The replacement Next.js site, the seed catalogue, and the live WordPress host at `irwinhunter.com.au`
+**Environment:** `lib/db/seed/catalogue.json` (106 published products, 10 active root categories, `/products/other` inactive) and a fetch of the live host on 23 September 2026. Google Search Console, Analytics, backlinks, and field Core Web Vitals were not accessed. The new app is not what the live host is serving.
 
-This document records audit findings only. No SEO, GEO, redirect, catalogue, or content fixes were implemented as part of the audit.
+This document records findings only. No SEO, redirect, catalogue, or content fixes were made.
 
 ## Executive summary
 
-The public site already has titles, descriptions, and canonicals on the indexable routes, a `www` sitemap and robots file, product and article Open Graph, and site-wide Organization JSON-LD. Product pages also emit Product, Offer, and BreadcrumbList schema. Category pages emit BreadcrumbList and ItemList. FAQPage schema is wired and only prints when a question and answer both exist.
+The replacement app is ready to be crawled once it is the site on the host: titles, descriptions, and canonicals exist on the indexable routes, `robots.txt` and a `www` sitemap exist, and product, category, article, and pasture-selector pages emit useful JSON-LD.
 
-The remaining gaps are empty social and FAQ fields, category and marketing pages with no share metadata, and a few GEO pieces that were never built. Legacy product URLs and three product/category slug collisions are still crawl failures.
+Google is still indexing the WordPress site, and the host canonical points the wrong way for the new app. `www.irwinhunter.com.au` 301s to `https://irwinhunter.com.au/`. The new app writes every canonical and sitemap URL as `https://www.irwinhunter.com.au` and does not issue an HTTP host redirect. Live `robots.txt` is empty. The live sitemap lists 161 URLs (79 products, 29 posts, 44 pages, 9 categories).
 
-Headline results from the seed catalogue:
+Of the 79 live product URLs, 71 have no redirect row. Seven of the eight that exist 301 to a category. The one product-level redirect is `/product/souwest-pasture-mix-2`. The SouWest URL in the live sitemap, `/product/souwest-pasture-mix`, has no redirect.
 
-- Product `socialTitle`, `socialDescription`, and `socialImage` are empty on **0 of 106** published products. Product and category FAQs are empty. Category `seoTitle`, `seoDescription`, and `pageHeading` are empty on **0 of 11** roots.
-- Open Graph exists on product and article pages only. Home, about, contact, guide, availability, the resources index, privacy, terms, and every category page have no share image.
-- `/llms.txt` and `/llms-full.txt` do not exist. Organization schema has no logo, `sameAs`, or `areaServed`. There is no WebSite or LocalBusiness schema.
-- **70 of 77** workbook `/product/{slug}` URLs have no redirect. Three published products (`tall-fescue`, `puccinellia`, `carpet-grass`) share a slug with a child category, so their nested URLs 301 to the parent category.
+On the catalogue itself, body copy is strong (median about 318 words) and titles and meta descriptions are not. Rendered product titles average 19 characters. None of the 76 custom SEO titles include the brand. “Western Australia” appears in 7 of 106 title-plus-description pairs. Product and category FAQs are empty. 54 published products have no photo, and the 52 photos that exist are still on the apex WordPress host, with no alt text.
 
-## What changed since 18 September 2026
+## Live host, 23 September 2026
 
-These items from the previous audit are no longer open:
+- Home title: `IH Seeds Pty Ltd`. Meta description: `Western Australia's Leading Seed Merchant`. Canonical: `https://irwinhunter.com.au/`. `lang` is `en-US`. One H1: “Welcome to IH Seeds”. Open Graph and JSON-LD are present.
+- `https://www.irwinhunter.com.au/` returns a WordPress 301 to the apex.
+- `robots.txt` is an empty 200.
+- Sitemap index at `/sitemaps.xml`: 29 posts, 44 pages, 79 products, 9 categories, 0 tags.
 
-- `/robots.txt` and `/sitemap.xml` exist. Robots allows `/`, disallows `/admin`, `/api`, and `/internal`, and points at the `www` sitemap.
-- The default public origin is `https://www.irwinhunter.com.au`.
-- Canonicals are set on home, catalogue, categories, products, articles, availability, resources, guide, about, contact, privacy, and terms.
-- `/privacy` and `/terms-and-conditions` are real pages, not redirects to Contact.
-- Every page emits Organization JSON-LD from company settings, with the legal name as `alternateName` when it differs from the trading name.
+Same-path pages can be replaced in place: `/`, `/contact`, `/products`, `/privacy`, `/terms-and-conditions`. They do not need a redirect.
 
-## Already in place
+## Migration gaps
 
-- Titles, descriptions, and canonicals on home, catalogue, categories, products, articles, availability, resources, guide, about, contact, privacy, and terms.
-- `artifacts/web/app/robots.ts` allows `/`, disallows `/admin`, `/api`, and `/internal`, and points at the `www` sitemap.
-- `artifacts/web/app/sitemap.ts` lists static pages, non-empty root categories, indexable products, and articles.
-- Default public origin is `https://www.irwinhunter.com.au` in `artifacts/web/lib/site-url.ts`.
-- Product and article pages emit Open Graph. Product pages also emit Product, Offer, and BreadcrumbList JSON-LD. Articles emit Article JSON-LD. Categories emit BreadcrumbList and ItemList. FAQPage JSON-LD is wired and only prints when a question and answer both exist.
-- Every page emits Organization JSON-LD from company settings (`artifacts/web/lib/company.ts`), including legal name as `alternateName` when it differs from the trading name.
+- **71 of 79** live `/product/{slug}` URLs have no redirect. 70 of those paths are already stored on a published product as `websiteUrlLegacy`, including MaxiMix, Safeguard, Silahay, and Equi1st. `/product/souwest-pasture-mix` is in the sitemap and is not stored on the published SouWest product.
+- **7 redirects land on a category:** Anywhere tall fescue, Avalon, Icon lucerne, hard-seeded Persian clover, soft-seeded Persian clover, NemNuke, Parafield peas.
+- **29 posts** have no redirect, including “Essential pasture legumes for WA” and “Tetraploid or diploid ryegrass”. The seed file contains no articles.
+- **9 `/category/` URLs** are uncovered, including `/category/ryegrass/`, `/category/mixes/`, and `/category/lucerne/`. The Next config redirects `/annual-ryegrass` and `/news`, not `/category/ryegrass` or `/category/news`.
+- **`/publications-and-news`** is in the page sitemap and is not redirected. `/news` and `/publications` are.
+- Old guide, availability, about, and rainfall-map paths are redirected, including `/rainfall-map` to `/pasture-selector`.
 
-## Built, then left empty
+## Catalogue on-page
 
-These fields have columns or JSON, admin controls, and public fallbacks. The seed catalogue does not fill them, so the public tags fall back to weaker copy or never appear.
+- **Titles.** 63 of 106 rendered titles are 20 characters or shorter. 0 are longer than 45. There is no title template, so a custom SEO title drops “| IH Seeds”.
+- **Descriptions.** 22 are in the 120–160 character band. 74 are longer than 160. 4 are under 50 characters.
+- **Thin published products.** Demo Mix (`demo-mix`), New product 1 (`newproduct1`), and Ceres PG One50 (`ceres-pg-one50-ryegrass`, SEO title “Migration regression SEO title”) are published and indexable. SARDI Seven has no blurb.
+- **Keywords in product title plus description:** seed 51, clover 24, “wa” 22, pasture 20, ryegrass 17, rainfall 13, “western australia” 7.
+- **FAQs.** 0 of 106 products. 0 of 10 active categories. FAQPage schema only prints when both fields exist. The pasture selector is the exception: 10 questions, with FAQPage and BreadcrumbList JSON-LD.
+- **Category SEO.** All 10 active roots have empty `seoTitle`, `seoDescription`, and `pageHeading`. Rainfall is stored (ryegrass `500–900+ mm`) and the public category type does not include it, so the page shows the one-sentence lead only.
+- **Images.** 54 products have no photo. 52 photo URLs are on `irwinhunter.com.au`. Alt text is empty on all of them. 56 categories share 5 Unsplash URLs.
+- **Offers.** Sale lines say “Contact for pricing”, so Product schema has availability and no price.
+- **Slug collisions.** `tall-fescue`, `puccinellia`, and `carpet-grass` are both a product and a child category. The nested URL resolves to the product. `/products/{child-slug}` is not a root, so that short path 404s.
+- **`/products/other`** is inactive and excluded from the sitemap.
 
-- **Product social sharing** (`socialTitle`, `socialDescription`, `socialImage`): **0 of 106** published products. Admin tab 6 can edit them. Product Open Graph therefore uses the SEO title, SEO description, and the first product photo (or the logo fallback).
-- **Product FAQs**: **0 of 106**. The FAQ block and FAQPage schema never render.
-- **Product H1 override**: **0 of 106**. Pages use the product name.
-- **Product SEO title**: **76 of 106** filled. The other 30 use `{name} | IH Seeds`.
-- **Product SEO description**: **78 of 106** filled. The rest fall back to the blurb.
-- **Product photo alt text**: photos that exist have no `alt`. **52 of 106** published products have no photo at all. **52** photo URLs still point at `irwinhunter.com.au` WordPress uploads.
-- **Category SEO**: **0 of 11** roots have `seoTitle`, `seoDescription`, or `pageHeading`. Titles become `{name} Seed | IH Seeds`. Descriptions reuse the one-sentence lead.
-- **Category FAQs**: **0**. Same unused FAQPage path as products. The root-category SEO screen in admin can store up to 10.
-- **Article social fields**: columns and the blog editor exist. The example article seed sets SEO title and description only, and leaves `socialTitle`, `socialDescription`, and `socialImage` blank. Heroes are Unsplash URLs, so article Open Graph images are stock photos.
-- **Canonical URL override and `robotsIndex`**: present and empty or true. That is fine; the computed URL is used and pages stay indexable.
-- **Company phone and ABN**: the settings model and admin screen exist. Defaults are blank, so Organization schema omits `telephone` and `taxID`. Address and email are filled.
+## Technical and citation
 
-## Stored, but not shown
+In place: canonicals on home, catalogue, categories, products, articles, availability, resources, guide, pasture selector, about, contact, privacy, and terms. Organization JSON-LD on every page, with the legal name as `alternateName`. Product, Offer, and BreadcrumbList on products. ItemList on categories. Article schema on articles. Tech-sheet HTML is `noindex`.
 
-- **Category rainfall** is filled for all 11 roots (for example ryegrass `500–900+ mm`) and is in the API row. The public category type in `artifacts/web/lib/catalogue.ts` drops it, and `artifacts/web/app/products/category-page.tsx` only prints the lead. Product pages do show per-product minimum rainfall.
-- **Article author** is hardcoded as Organization `IH Seeds`. There is no author column, byline, or credentials.
-- **Reseller outlet address, phone, and map URL** render on Contact as HTML only. They are not LocalBusiness nodes.
+Not in place:
 
-## Not built
+- Open Graph and Twitter on home, categories, and the marketing pages. No site-wide default share image. Product and article social fields are empty, so previews use the first photo or a stock hero.
+- `/llms.txt`. WebSite and LocalBusiness schema. Organization `logo`, `telephone`, `taxID`, `areaServed`, and `sameAs`. Company phone and ABN defaults are blank, while product pages fall back to a hardcoded office number.
+- `lang` is `en`. No `not-found.tsx`. Catalogue fetches are `cache: "no-store"`. Heroes are CSS backgrounds. No `next/image`.
+- PDF tech sheets send no `X-Robots-Tag`. `/api/sitemap-products` and `/api/sitemap-articles` duplicate the app sitemap; `/api` is disallowed on the web host.
+- The pasture selector is not in the header or footer.
+- Availability has no visible last-updated date.
 
-- **`/llms.txt` and `/llms-full.txt`**. No route and no file.
-- **Open Graph and Twitter on anything except products and articles.** Home, about, contact, guide, availability, the resources index, privacy, terms, and every category page set title, description, and canonical only. There is no site-wide default share image in `artifacts/web/app/layout.tsx`.
-- **Explicit `twitter` metadata.** Product and article pages rely on Open Graph alone. Platforms that only read `twitter:*` get no card.
-- **WebSite JSON-LD** (site name, URL, publisher). **LocalBusiness** on Contact (geo, opening hours, `areaServed: Western Australia`). Organization has no `logo`, `sameAs`, or `areaServed`. There is no field for social or federation profile URLs.
-- **Per-crawler robots rules.** One `User-agent: *` rule. That allows AI crawlers; it does not name them or point them at a summary file.
-- **Resources listing schema**, article `publisher.logo`, and a named author.
-- **RSS/Atom** for `/resources`.
-- **`lang` is `en`**, not `en-AU`.
-- **Custom `not-found.tsx`.** No app 404 module.
-- **`next/image`, security headers, and HTML cache policy.** Catalogue fetches are `cache: "no-store"`. Heroes are CSS backgrounds, so most photos have no alt.
+## Recommended order
 
-## Still broken for crawl and citation
-
-- **70 of 77** workbook `/product/{slug}` URLs have no redirect row (including Maximix and Safeguard). The 7 that exist 301 to a category, not the product. About 170 other redirect rows are old category-test paths.
-- **Three slugs are both a product and a child category:** `tall-fescue`, `puccinellia`, `carpet-grass`. Nested product routing 301s those URLs to the parent category, so the product page never renders.
-- **`/products/other`** is still an active empty root with blank SEO fields.
-- **Availability** has no visible last-updated date. Articles have `datePublished` and `dateModified`; product specs do not.
-- Home and about still say trial data sits behind the varieties, with no source, date, or author an answer engine can attribute.
-
-## What this means for sharing and GEO
-
-A link to a product or article can produce a preview, but the preview image is a WordPress file, an Unsplash file, or the logo, because the social-image field is empty. A link to the home page, a category, or Contact has a title and description and no image.
-
-Answer engines can quote product quick facts (rainfall, sowing rate, livestock) from the HTML and Product schema. They cannot quote FAQs, a confirmed phone number, a Western Australia service area, or a stable "who is IH Seeds" graph with logo and profile links. Category pages are the natural answer for "ryegrass for 500–900 mm" and that rainfall figure is stored and then omitted.
-
-## Recommended implementation work, in priority order
-
-1. Restore the 70 legacy `/product/{slug}` redirects to the live product URL, and stop the three slug collisions from 301ing to the parent category.
-2. Add Open Graph and Twitter to the layout, with a same-origin default image, then category pages. Populate `socialImage` on products and articles, or intentionally use the first photo as the share image and stop treating the empty social fields as a content task.
-3. Fill category SEO titles, descriptions, and headings. Render the stored rainfall band under the category H1.
-4. Add a short `llms.txt`, and extend Organization with logo, `areaServed`, and `sameAs` once those URLs are known. Add LocalBusiness on Contact only after the phone number is real.
-5. Write a small set of on-page FAQs for the 11 categories and the main products so the existing FAQ schema has something to emit.
-6. Noindex or deactivate `/products/other`. Move product and category images onto the `www` host and give informative photos alt text.
+1. 301 one host to the other before the new app is served. The app currently assumes `www`.
+2. Add the 71 missing `/product/` redirects to the nested product URL, and retarget the 7 category destinations. Include `/product/souwest-pasture-mix`.
+3. Redirect or replace the 29 posts and the `/category/` hubs. `/publications-and-news` needs its own rule.
+4. Unpublish Demo Mix, New product 1, the migration-regression ryegrass, and fill or hide SARDI Seven.
+5. Rewrite short product titles so they name the variety, the species, and Western Australia or pasture seed, and cut descriptions that run past about 160 characters.
+6. Write category SEO titles, descriptions, and headings, and print the stored rainfall band. Add FAQs where the schema is already wired.
+7. Host images on the new origin and set alt text. Add a default Open Graph image, then category and marketing tags.
+8. Add logo, phone, service area, and profile URLs to Organization once they are confirmed. Add a short `llms.txt`. Link the pasture selector from the header or footer.
 
 ## Limitations
 
-This audit did not access production, Google Search Console, Analytics, backlink tools, or a running local API. Counts are from the seed catalogue and may differ if editors have filled fields in the live database since that seed was exported. It cannot confirm DNS or edge behaviour, indexed URL counts, ranking changes, or production Web Vitals.
+Search Console, Analytics, backlinks, and field Core Web Vitals were not available. Seed counts can differ from a database editors have changed. Article URLs on a running database were not counted; the seed file has none.

@@ -9335,7 +9335,7 @@ export const getPublicSiteSettingsResponseAboutStoryLeadMax = 2000;
 
 export const getPublicSiteSettingsResponseAboutStoryParagraphsItemMax = 4000;
 
-export const getPublicSiteSettingsResponseAboutStoryParagraphsMax = 3;
+export const getPublicSiteSettingsResponseAboutStoryParagraphsMax = 4;
 
 export const getPublicSiteSettingsResponseAboutValuesHeadingMax = 80;
 
@@ -9486,7 +9486,7 @@ export const getAdminSiteSettingsResponseAboutStoryLeadMax = 2000;
 
 export const getAdminSiteSettingsResponseAboutStoryParagraphsItemMax = 4000;
 
-export const getAdminSiteSettingsResponseAboutStoryParagraphsMax = 3;
+export const getAdminSiteSettingsResponseAboutStoryParagraphsMax = 4;
 
 export const getAdminSiteSettingsResponseAboutValuesHeadingMax = 80;
 
@@ -9627,7 +9627,7 @@ export const updateSiteSettingsBodyAboutStoryLeadMax = 2000;
 
 export const updateSiteSettingsBodyAboutStoryParagraphsItemMax = 4000;
 
-export const updateSiteSettingsBodyAboutStoryParagraphsMax = 3;
+export const updateSiteSettingsBodyAboutStoryParagraphsMax = 4;
 
 export const updateSiteSettingsBodyAboutValuesHeadingMax = 80;
 
@@ -9765,7 +9765,7 @@ export const updateSiteSettingsResponseAboutStoryLeadMax = 2000;
 
 export const updateSiteSettingsResponseAboutStoryParagraphsItemMax = 4000;
 
-export const updateSiteSettingsResponseAboutStoryParagraphsMax = 3;
+export const updateSiteSettingsResponseAboutStoryParagraphsMax = 4;
 
 export const updateSiteSettingsResponseAboutValuesHeadingMax = 80;
 
@@ -9920,7 +9920,7 @@ export const uploadSeedGuidePdfResponseAboutStoryLeadMax = 2000;
 
 export const uploadSeedGuidePdfResponseAboutStoryParagraphsItemMax = 4000;
 
-export const uploadSeedGuidePdfResponseAboutStoryParagraphsMax = 3;
+export const uploadSeedGuidePdfResponseAboutStoryParagraphsMax = 4;
 
 export const uploadSeedGuidePdfResponseAboutValuesHeadingMax = 80;
 

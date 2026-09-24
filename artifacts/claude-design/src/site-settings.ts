@@ -1,6 +1,6 @@
 import type { SiteHeroImage, SiteHomepageSettings } from "@workspace/api-client-react";
 
-export const ABOUT_STORY_LIMIT = 3;
+export const ABOUT_STORY_LIMIT = 4;
 export const ABOUT_VALUE_ICONS = ["map-pin", "sprout", "users"] as const;
 
 export const BEST_SELLER_LIMIT = 4;

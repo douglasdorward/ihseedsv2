@@ -144,6 +144,12 @@ h1 strong { display:block; font-weight:800; }
 .availability-enquire { gap:16px; justify-content:flex-end; padding-right:0; color:var(--green); }
 .availability-status { display:flex; flex-direction:column; align-items:center; gap:5px; }
 .availability-action { color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; line-height:1; }
+.availability-search { display:flex; align-items:center; gap:12px; margin:0 0 20px; padding:12px 16px; border:1px solid var(--green); border-radius:12px; background:#fff; color:var(--green); }
+.availability-search input { flex:1; min-width:0; border:0; padding:0; background:transparent; color:var(--black-green); font:inherit; font-size:16px; }
+.availability-search input:focus { outline:none; }
+.availability-group { margin:0 -32px; padding:0 32px; background:var(--sage); text-decoration:none; color:var(--green); }
+.availability-group-name { display:flex; align-items:center; min-width:0; padding:16px 0; color:var(--green); font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+a.availability-group:hover .availability-group-name { color:#06763C; }
 .availability-row strong { color:var(--green); font-size:18px; }
 .availability-tagline { font-size:13px; line-height:1.4; }
 .availability-chevron { display:grid; place-items:center; flex:0 0 auto; transition:transform .2s; }
@@ -585,6 +591,7 @@ h1 strong { display:block; font-weight:800; }
   .about-section { padding:64px 20px; }.feature-panel { grid-template-columns:1fr; }.feature-image { min-height:240px; }.feature-copy { padding:34px 26px; }.feature-copy p { font-size:15px; }
   .feature-heading-break { display:none; }
   .availability-table { padding:4px 18px; }.availability-row { gap:4px; }.availability-product,.availability-enquire { padding:17px 6px; }.availability-product { padding-left:0; }.availability-enquire { padding-right:0; gap:10px; }.availability-row strong { font-size:16px; }
+  .availability-group { margin:0 -18px; padding:0 18px; }
   .article-grid { grid-template-columns:1fr; gap:20px; }.article-image { min-height:190px; }.article-copy h3 { font-size:20px; }
   .guide-section { padding:0 20px 64px; }.guide-banner { min-height:420px; padding:30px 24px; align-items:flex-end; }.guide-banner h2 { font-size:35px; }
   .contact-layout { grid-template-columns:1fr; gap:36px; }.form-row { grid-template-columns:1fr; }.contact-intro p { max-width:none; }

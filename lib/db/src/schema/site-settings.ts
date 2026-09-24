@@ -5,7 +5,7 @@ export const SITE_SETTINGS_ID = 1;
 export const BEST_SELLER_LIMIT = 4;
 export const HERO_IMAGE_LIMIT = 6;
 export const ABOUT_VALUE_LIMIT = 3;
-export const ABOUT_STORY_LIMIT = 3;
+export const ABOUT_STORY_LIMIT = 4;
 export const DEFAULT_SEED_GUIDE_PDF_URL = "/IH-Seeds-2026-Pasture-Seed-Guide.pdf";
 export const SEED_GUIDE_PDF_PUBLIC_PATH = "/api/site/seed-guide.pdf";
 export const SEED_GUIDE_PDF_STORAGE_KEY = "site/seed-guide.pdf";
@@ -89,7 +89,7 @@ export const DEFAULT_HOMEPAGE_SETTINGS: SiteHomepageSettings = {
   heroEyebrow: "Western Australia's",
   heroHeading: "Pasture Seed Specialists",
   heroBody: "Independently owned since 1966. We source, test and blend {productCount} for every region of the state — from Esperance to Derby.",
-  aboutBody: "Irwin Hunter & Co has been Western Australian owned and operated since 1966. We supply true to type seed from credible growers, blended into mixes that suit the paddock they are going into. Our long history across the state means we know which varieties perform in every region.",
+  aboutBody: "IH Seeds (Irwin Hunter & Co) has been Western Australian, family owned and operated since 1966. We supply true to type pasture seed from accredited growers, plus specialist mixes built for WA conditions. Our seed is available through rural stores across the state and backed by sound technical advice from our team.",
   bestSellerSlugs: [],
 };
 
@@ -107,23 +107,24 @@ export const DEFAULT_SEED_GUIDE_SETTINGS: SiteSeedGuideSettings = {
 };
 
 export const DEFAULT_ABOUT_VALUES: SiteAboutValue[] = [
-  { title: "Regional expertise", body: "Local conditions, understood and applied. Sixty years of sowing across every WA rainfall zone." },
-  { title: "Proven performance", body: "Varieties and mixes proven over generations across Australia, with trial data behind them." },
-  { title: "Partnership", body: "Confidence before the order. Support after it — through your local rural reseller." },
+  { title: "Regional expertise", body: "Local conditions, understood and applied. Our experience across Western Australia tells us which varieties and mixes deliver in your rainfall, your soil and your enterprise." },
+  { title: "Proven performance", body: "Pasture varieties and mixes proven over generations and across Australia. Seed from accredited growers, true to type and consistent with its description." },
+  { title: "Partnership", body: "Confidence before the order, support after it. We combine local experience with knowledge shared by farmers to give sound technical advice, through your local store or direct from our team." },
 ];
 
 export const DEFAULT_ABOUT_SETTINGS: SiteAboutSettings = {
-  heroEyebrow: "About Us",
-  heroHeading: "Western Australian owned,",
+  heroEyebrow: "About IH Seeds",
+  heroHeading: "Proudly Western Australian,",
   heroHeadingEmphasis: "since 1966",
-  heroIntro: "Three generations of the Hunter family, one paddock question at a time: what will actually grow here.",
+  heroIntro: "Family owned and operated for 60 years, supplying proven pasture seed and specialist mixes to farms from Derby to Esperance.",
   heroImageSrc: DEFAULT_ABOUT_HERO_IMAGE,
   heroImageAssetId: null,
-  storyLead: "It started with a question every farmer in the south-west was asking: which seed will actually perform on my ground, in my rainfall, under my grazing plan.",
+  storyLead: "Every paddock in Western Australia is different. For 60 years, our job has been knowing which pasture seed will perform in yours.",
   storyParagraphs: [
-    "Irwin Hunter & Co was founded in 1966 by growers who were tired of buying seed blended for somewhere else. They started sourcing, testing and blending pasture seed for Western Australian conditions specifically — not the eastern states, not overseas trial data, but paddocks from Esperance to Derby.",
-    "Sixty years on, the company is still independently owned and run by the same family. We have watched varieties come and go, rainfall patterns shift, and three generations of resellers build their businesses alongside ours. What has not changed is the question we start with: what will actually grow here.",
-    "Today we supply through rural resellers across the state — from the wheatbelt to the Kimberley — with true to type seed across {productCount} from credible growers, and the technical advice to back it. We are an Australian Seed Federation member, and every mix we blend still gets tested against the same standard the founders set: would we sow it on our own place.",
+    "IH Seeds (Irwin Hunter & Co) was established in 1966 and has been Western Australian, family owned and operated ever since. In 2026 we celebrate 60 years of supplying high-quality pasture seed across the state's agricultural and rangelands areas, from Derby in the north to Esperance in the south.",
+    "Western Australia's conditions are unlike anywhere else. Rainfall swings between the coast and inland, the sowing window after the autumn break is tight, and soils run from acidic sands to heavy clays. We work with domestic and international seed companies to source temperate and sub-tropical species suited to those conditions, and partner with specialist seed growers under accredited domestic and international certification programs. That protects the varietal and genetic integrity of every line we sell, so the seed you sow is true to type, consistent in quality and reliable in performance.",
+    "We range {productCount}, including our own specialist pasture and cover crop mixes, the Equi1st range for horse properties and Mix & Match custom mixes. Our customers include beef, sheep and dairy producers, hay growers, horse owners and small landholders, and many of them come to us after seeing how a pasture has performed on a neighbour's farm.",
+    "You can buy our seed through an extensive network of rural retail stores throughout Western Australia, and our team is always available for technical advice. Tell us your location, rainfall, soil type and pH, and we will help you choose the variety or mix that suits your paddock. As a member of the Australian Seed Federation, we follow its Code of Practice.",
   ],
   valuesHeading: "What we",
   valuesHeadingEmphasis: "stand for",

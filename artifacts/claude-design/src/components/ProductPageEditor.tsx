@@ -246,7 +246,7 @@ export function ProductPageEditor(props: ProductPageEditorProps) {
             )}
             <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
               <PublicStatusPill status={status} />
-              {form.slug && <a className="button button-primary" href={`/tech-sheets/${form.slug}/view`} target="_blank" rel="noreferrer">Download tech sheet</a>}
+              {form.slug && <a className="button button-primary" href={`/tech-sheets/${form.slug}`} target="_blank" rel="noreferrer">Download tech sheet</a>}
             </div>
           </div>
           <HeroUpload photos={details.photos} updatePhoto={props.updatePhoto} readOnly={readOnly} ownerName={form.name} />

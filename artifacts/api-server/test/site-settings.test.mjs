@@ -163,7 +163,7 @@ test("public site settings expose the seeded homepage and seed-guide defaults", 
   assert.equal(data.homepage.heroImages.length, 1);
   assert.equal(data.seedGuide.navTitle, "Seed Guide 2026");
   assert.equal(data.seedGuide.pdfPublicUrl, "/IH-Seeds-2026-Pasture-Seed-Guide.pdf");
-  assert.equal(data.about.heroEyebrow, "About Us");
+  assert.equal(data.about.heroEyebrow, "About IH Seeds");
   assert.equal(data.about.heroHeadingEmphasis, "since 1966");
   assert.equal(data.about.values.length, 3);
   assert.match(data.about.storyParagraphs.join(" "), /\{productCount\}/);

@@ -65,9 +65,9 @@ test("withHomepageHeroImages keeps extras when slideshow is off and disables it 
   assert.equal(one.heroImageSrc, "https://example.com/one.jpg");
 });
 
-test("aboutStorySlots pads the About page story to three editable paragraphs", () => {
-  assert.deepEqual(aboutStorySlots(["One paragraph"]), ["One paragraph", "", ""]);
-  assert.equal(aboutStorySlots(["a", "b", "c", "d"]).length, 3);
+test("aboutStorySlots pads the About page story to four editable paragraphs", () => {
+  assert.deepEqual(aboutStorySlots(["One paragraph"]), ["One paragraph", "", "", ""]);
+  assert.equal(aboutStorySlots(["a", "b", "c", "d", "e"]).length, 4);
 });
 
 test("aboutHeroDisplaySrc uses the admin preview path for uploaded assets", () => {

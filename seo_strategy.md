@@ -24,5 +24,5 @@
 
 ## Audit record
 
-- The SEO and GEO audit dated 22 September 2026 is recorded in [`docs/seo-audit.md`](docs/seo-audit.md). It supersedes the 18 September 2026 findings, which superseded the 16 September 2026 findings.
+- The SEO audit dated 23 September 2026 is recorded in [`docs/seo-audit.md`](docs/seo-audit.md). It supersedes the 22 September 2026 findings.
 - The audit is findings-only; SEO, GEO, redirect, catalogue, and content changes remain separate implementation work.

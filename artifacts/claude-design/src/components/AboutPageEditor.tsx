@@ -95,7 +95,7 @@ export function AboutPageEditor({
               className={`ppe-ghost ape-eyebrow ${about.heroEyebrow.trim() ? "" : "is-empty"}`}
               rows={1}
               value={about.heroEyebrow}
-              placeholder="About Us"
+              placeholder="About IH Seeds"
               aria-label="Hero eyebrow"
               onChange={(event) => setField("heroEyebrow", event.target.value)}
             />
@@ -104,7 +104,7 @@ export function AboutPageEditor({
                 className={`ppe-ghost ape-heading ${about.heroHeading.trim() ? "" : "is-empty"}`}
                 rows={1}
                 value={about.heroHeading}
-                placeholder="Western Australian owned,"
+                placeholder="Proudly Western Australian,"
                 aria-label="Hero heading"
                 onChange={(event) => setField("heroHeading", event.target.value)}
               />

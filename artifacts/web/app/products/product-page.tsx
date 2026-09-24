@@ -198,7 +198,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
           <h1 style={{ color: "#fff", fontSize: "clamp(44px,6vw,64px)", lineHeight: 1.05, fontWeight: 700, maxWidth: "20ch" }}>{productPageHeading(product)}</h1>
           {details.tagline && <p className="product-hero-tagline">{details.tagline}</p>}
           {details.botanicalName && <p style={{ color: "#C5CCC5", fontSize: 20, fontStyle: "italic" }}>{details.botanicalName}</p>}
-          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><StatusPill status={product.status} /><a className="button button-primary" href={`/tech-sheets/${product.slug}/view`} target="_blank" rel="noreferrer">Download tech sheet</a></div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><StatusPill status={product.status} /><a className="button button-primary" href={`/tech-sheets/${product.slug}`} target="_blank" rel="noreferrer">Download tech sheet</a></div>
         </div>
       </section>
       <section>

@@ -55,8 +55,8 @@ test("withAboutDefaults fills missing About page copy and pads values", () => {
     values: [{ title: "Regional expertise", body: "Edited value." }],
   });
   assert.equal(about.heroHeading, "Family owned,");
-  assert.match(about.storyLead, /south-west/);
-  assert.equal(about.storyParagraphs.length, 3);
+  assert.match(about.storyLead, /Every paddock in Western Australia is different/);
+  assert.equal(about.storyParagraphs.length, 4);
   assert.equal(about.values.length, 3);
   assert.equal(about.values[0].body, "Edited value.");
   assert.equal(about.values[1].title, "Proven performance");

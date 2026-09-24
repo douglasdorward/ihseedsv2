@@ -101,7 +101,7 @@ export function ResourcesContent({
                   <div style={{ fontSize: 14, color: "var(--black-green)" }}>{product.packSize}</div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>2026 range</div>
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <a href={`/tech-sheets/${product.slug}/view`} className="button button-outline" style={{ padding: "8px 16px", minHeight: "auto", fontSize: 14 }} target="_blank" rel="noreferrer">Download tech sheet</a>
+                    <a href={`/tech-sheets/${product.slug}`} className="button button-outline" style={{ padding: "8px 16px", minHeight: "auto", fontSize: 14 }} target="_blank" rel="noreferrer">Download tech sheet</a>
                   </div>
                 </div>
               ))}

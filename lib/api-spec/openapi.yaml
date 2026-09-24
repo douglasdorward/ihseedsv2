@@ -2478,7 +2478,7 @@ components:
         storyLead: { type: string, maxLength: 2000 }
         storyParagraphs:
           type: array
-          maxItems: 3
+          maxItems: 4
           items: { type: string, maxLength: 4000 }
         valuesHeading: { type: string, maxLength: 80 }
         valuesHeadingEmphasis: { type: string, maxLength: 80 }

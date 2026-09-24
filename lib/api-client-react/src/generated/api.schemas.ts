@@ -1579,7 +1579,7 @@ export interface SiteAboutSettings {
   /** @maxLength 2000 */
   storyLead: string;
   /**
-     * @maxItems 3
+     * @maxItems 4
      * @items.maxLength 4000
      */
   storyParagraphs: string[];
