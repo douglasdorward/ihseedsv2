@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, enquiriesTable } from "@workspace/db";
 import { CreateEnquiryBody } from "@workspace/api-zod";
+import { sendEnquiryEmail } from "../lib/enquiry-email";
 
 const router: IRouter = Router();
 router.post("/enquiries", async (req, res): Promise<void> => {
@@ -19,7 +20,15 @@ router.post("/enquiries", async (req, res): Promise<void> => {
     createdAt: enquiriesTable.createdAt,
   });
   req.log.info({ enquiryId: enquiry.id }, "Enquiry received");
-  res.status(201).json({ ok: true, id: enquiry.id, createdAt: enquiry.createdAt });
+  let emailSent = false;
+  try {
+    const emailId = await sendEnquiryEmail({ ...parsed.data, id: enquiry.id });
+    emailSent = true;
+    req.log.info({ enquiryId: enquiry.id, emailId }, "Enquiry notification accepted by Resend");
+  } catch {
+    req.log.error({ enquiryId: enquiry.id }, "Enquiry saved but email notification failed");
+  }
+  res.status(201).json({ ok: true, id: enquiry.id, createdAt: enquiry.createdAt, emailSent });
 });
 
 export default router;

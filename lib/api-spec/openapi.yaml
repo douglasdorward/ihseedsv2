@@ -2419,6 +2419,7 @@ components:
         ok: { type: boolean }
         id: { type: number }
         createdAt: { type: string, format: date-time }
+        emailSent: { type: boolean, description: Whether the email provider accepted the enquiry notification. }
       required: [ok, id, createdAt]
     SiteHeroImage:
       type: object

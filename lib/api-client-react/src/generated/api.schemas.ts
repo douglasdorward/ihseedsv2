@@ -1501,6 +1501,8 @@ export interface EnquiryCreated {
   ok: boolean;
   id: number;
   createdAt: string;
+  /** Whether the email provider accepted the enquiry notification. */
+  emailSent?: boolean;
 }
 
 export interface SiteHeroImage {

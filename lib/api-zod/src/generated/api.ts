@@ -10032,7 +10032,8 @@ export const CreateEnquiryBody = zod.object({
 export const CreateEnquiryResponse = zod.object({
   "ok": zod.boolean(),
   "id": zod.number(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "emailSent": zod.boolean().optional().describe('Whether the email provider accepted the enquiry notification.')
 })
 
 
