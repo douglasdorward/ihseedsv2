@@ -233,7 +233,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
         </div>
       </section>
       {faqs.length > 0 && (
-        <section className="product-faq-section" aria-labelledby="product-faq-heading">
+        <section className="product-faq-section" id="faqs" aria-labelledby="product-faq-heading">
           <div className="product-faq-inner">
             <h2 id="product-faq-heading">FAQs</h2>
             <div className="product-faq-list">
