@@ -25,7 +25,7 @@ export default async function Guide() {
             <p style={{ fontSize: 20, lineHeight: 1.6, color: "var(--black-green)" }}>
               {guide.pageIntro}
             </p>
-            <p className="pasture-selector-banner">Not sure which seed suits the paddock? <Link href="/pasture-selector">Try the Pasture Selector</Link> — four questions on rainfall, soil, use and how long the stand needs to last.</p>
+            <p className="pasture-selector-banner">Not sure which seed suits the paddock? <Link href="/pasture-selector">Try the Pasture Selector</Link> — four questions on rainfall, soil, use and how long the stand needs to last — or <Link href="/contact">Contact Us</Link>.</p>
             <div style={{ marginTop: 16 }}>
               <a href={guide.pdfPublicUrl} className="button button-primary" style={{ display: "inline-block", textDecoration: "none" }} download>{guide.pageButtonLabel}</a>
             </div>

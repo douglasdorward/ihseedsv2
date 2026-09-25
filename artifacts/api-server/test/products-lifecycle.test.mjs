@@ -1679,6 +1679,56 @@ test("published workbook rows enforce content fields and delete products absent 
 
 });
 
+test("blank workbook social image stores the hero photo and NULL stays empty", async () => {
+  const categories = assertStatus(await request("GET", "/categories"), 200);
+  const other = categories.find((category) => category.slug === "other");
+  assert.ok(other, "Expected the seeded Other category");
+  const product = await createProduct("workbook-social-hero", { category: other.name, subcategoryId: other.id });
+  const hero = "https://example.com/hero.jpg";
+  const makeWorkbook = ({ socialImage, includeSeoSheet }) => {
+    const book = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{
+      slug: product.slug,
+      product_name: product.name,
+      category: other.name,
+      record_type: "Variety",
+      status: "Draft",
+      photo_1: hero,
+    }]), "1 Products");
+    if (includeSeoSheet) {
+      xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{
+        product_slug: product.slug,
+        social_image: socialImage,
+      }]), "7 Website SEO");
+    }
+    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ category: other.name, record_type: "Variety" }]), "Lists");
+    return xlsx.write(book, { type: "buffer", bookType: "xlsx" });
+  };
+  const commitWorkbook = async (options) => {
+    const workbook = makeWorkbook(options);
+    const report = assertStatus(await request("POST", "/admin/import/dry-run", {
+      workbookBase64: workbook.toString("base64"),
+    }), 200);
+    assert.deepEqual(report.issues, []);
+    assertStatus(await request("POST", "/admin/import/commit", {
+      workbookBase64: workbook.toString("base64"),
+      token: report.token,
+    }), 200);
+  };
+
+  await commitWorkbook({ socialImage: "", includeSeoSheet: true });
+  assert.equal((await adminProduct(product.id)).details.socialImage, hero);
+
+  await commitWorkbook({ socialImage: "NULL", includeSeoSheet: true });
+  assert.equal((await adminProduct(product.id)).details.socialImage, "");
+
+  await commitWorkbook({ includeSeoSheet: false });
+  assert.equal((await adminProduct(product.id)).details.socialImage, hero);
+
+  await commitWorkbook({ socialImage: "https://example.com/share.jpg", includeSeoSheet: true });
+  assert.equal((await adminProduct(product.id)).details.socialImage, "https://example.com/share.jpg");
+});
+
 test("retired companion, category, and redirect sheets are ignored with exact warnings", async () => {
   const book = xlsx.utils.book_new();
   xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{

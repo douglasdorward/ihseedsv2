@@ -4,6 +4,7 @@ import { logger } from "./lib/logger";
 import { configureSimpleAdminAccounts } from "./lib/admin-accounts";
 import { setAdminAuthReady } from "./lib/admin-readiness";
 import { startArticlePublishScheduler } from "./lib/article-publish";
+import { repairProductPhotoLinks } from "./lib/media-usage";
 
 const rawPort = process.env["PORT"];
 
@@ -30,6 +31,13 @@ try {
     { err },
     "Administrator account bootstrap failed; public API will continue without administrator access",
   );
+}
+
+try {
+  const repaired = await repairProductPhotoLinks();
+  logger.info(repaired, "Reconciled product photo links");
+} catch (err) {
+  logger.error({ err }, "Product photo link reconcile failed");
 }
 
 app.listen(port, (err) => {

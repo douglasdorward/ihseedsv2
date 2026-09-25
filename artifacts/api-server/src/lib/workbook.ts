@@ -4,6 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import {
   applyListingAvailability,
   catalogueCategoriesTable, db, forSearchMetadata, isActiveListing, normalizeProductDetails, productOptionsTable,
+  withDefaultSocialImage,
   productDraftsTable, productsTable, redirectsTable, resolveListingState, saleLinesTable,
 } from "@workspace/db";
 import { clearProductMediaReferences, syncProductMediaReferences } from "./media-usage.ts";
@@ -485,6 +486,9 @@ export async function commitWorkbook(content: Buffer, token: string) {
       applyProductRow(details, row);
       const seoRow = rows["7 Website SEO"].find((candidate) => cell(candidate.product_slug) === slug);
       applySeoRow(details as ReturnType<typeof normalizeProductDetails>, seoRow);
+      if (!seoRow || !isNull(seoRow.social_image)) {
+        details.socialImage = withDefaultSocialImage(details as ReturnType<typeof normalizeProductDetails>).socialImage;
+      }
       const categoryName = cell(row.category);
       details.maturityMeasure = categoryName === "Ryegrasses" || categoryName === "Fescues & Other Grasses" ? "Heading date"
         : categoryName === "Clovers" || categoryName === "Serradellas & Medics" ? "Days to flowering (Perth)"

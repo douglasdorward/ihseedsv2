@@ -5,6 +5,7 @@ import {
   catalogueCategoriesTable,
   forSearchMetadata,
   normalizeProductDetails,
+  withDefaultSocialImage,
   resolveProductH1,
   productDraftSchema,
   productDraftsTable,
@@ -232,7 +233,7 @@ function normalizeEditable(payload: ProductEditablePayload): ProductEditablePayl
     ...payload,
     subcategoryId: payload.subcategoryId ?? null,
     saleLines: payload.saleLines ?? [],
-    details: normalizeProductDetails(payload.details, payload.packSize),
+    details: withDefaultSocialImage(normalizeProductDetails(payload.details, payload.packSize)),
     listingState: resolveListingState(payload),
   });
 }
@@ -470,7 +471,7 @@ router.post("/products", async (req, res): Promise<void> => {
   const parsed = insertProductSchema.safeParse(prepareEditablePayload({
     ...req.body,
     publishStatus: "Draft",
-    details: normalizeProductDetails(req.body.details, String(req.body.packSize ?? "")),
+    details: withDefaultSocialImage(normalizeProductDetails(req.body.details, String(req.body.packSize ?? ""))),
   }));
   if (!parsed.success) {
     req.log.warn({ errors: parsed.error.flatten() }, "Invalid product create request");
