@@ -33,7 +33,7 @@ export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 20
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header className="site-header" style={{ position: "relative", zIndex: 100 }}>
+    <header className="site-header">
       <Logo />
       <nav className={`desktop-nav ${menuOpen ? "mobile-nav-open" : ""}`} aria-label="Main navigation">
         <div className="nav-dropdown">

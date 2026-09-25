@@ -498,8 +498,17 @@ router.delete("/admin/media/:id", async (req, res): Promise<void> => {
 });
 
 router.get("/media/:id", async (req, res): Promise<void> => {
-  const [asset] = await db.select().from(mediaAssetsTable).where(eq(mediaAssetsTable.id, req.params.id));
+  const id = String(req.params.id ?? "");
+  const [asset] = await db.select().from(mediaAssetsTable).where(eq(mediaAssetsTable.id, id));
   if (!asset || asset.status !== "Ready" || !asset.objectPath) {
+    const orphanKey = /^[a-zA-Z0-9-]{8,80}$/.test(id) ? mediaObjectPath(id, "image.webp") : "";
+    const orphan = orphanKey ? await getStoredFile(orphanKey) : null;
+    if (orphan) {
+      res.setHeader("content-type", orphan.contentType || "image/webp");
+      res.setHeader("cache-control", "public, max-age=86400");
+      res.send(orphan.bytes);
+      return;
+    }
     res.status(404).json({ error: "Asset not published or not found." });
     return;
   }

@@ -60,9 +60,9 @@ Search and sharing metadata. SEO title and SEO description are required to publi
 - **API path:** `details.socialImage`
 - **Workbook:** `7 Website SEO.social_image`
 - **Required:** no
-- **Customer website:** Open Graph image. Blank uses the product hero (first photo `src`, else the site fallback image).
+- **Customer website:** Open Graph image. A stored blank still uses the product hero (first photo `src`, else the site fallback image) until the next save.
 - **Public API:** yes
-- **How to fill:** Pick a product photo slot or paste an HTTPS URL.
+- **How to fill:** Pick a product photo slot or paste an HTTPS URL. Leaving this blank on save or import stores the hero photo URL when one exists. A workbook `NULL` stores an empty value. Changing the hero later does not update a social image that was already saved.
 - **Constraints:** max 500 characters.
 
 ## Canonical URL override

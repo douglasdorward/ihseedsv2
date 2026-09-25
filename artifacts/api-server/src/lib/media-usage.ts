@@ -293,6 +293,22 @@ export async function unlinkAndDeleteMediaRecords(ids: string[]): Promise<MediaA
   return assets;
 }
 
+/** Library id stored on the photo, or the id embedded in a `/api/media/{id}` src. */
+export function assetIdFromPhoto(photo: { assetId?: string | null; src?: string | null }) {
+  const explicit = photo.assetId?.trim();
+  if (explicit) return explicit;
+  const match = photo.src?.trim().match(/^\/api\/media\/([^/?#]+)/);
+  return match?.[1]?.trim() ?? "";
+}
+
+async function existingAssetIds(ids: string[], tx: DbLike) {
+  const unique = [...new Set(ids.map((id) => id.trim()).filter(Boolean))];
+  if (!unique.length) return new Set<string>();
+  const rows = await tx.select({ id: mediaAssetsTable.id }).from(mediaAssetsTable)
+    .where(inArray(mediaAssetsTable.id, unique));
+  return new Set(rows.map((row) => row.id));
+}
+
 export async function syncProductMediaReferences(
   product: Pick<Product, "id" | "name" | "publishStatus">,
   photos: ProductPhoto[] | undefined,
@@ -303,24 +319,67 @@ export async function syncProductMediaReferences(
     eq(mediaReferencesTable.ownerType, "product"),
     eq(mediaReferencesTable.ownerId, ownerId),
   ));
-  const rows = (photos ?? [])
-    .map((photo, index) => {
-      const assetId = photo.assetId?.trim();
-      if (!assetId) return null;
-      return {
-        assetId,
-        ownerType: "product" as const,
-        ownerId,
-        ownerName: product.name,
-        field: `details.photos[${index}]`,
-        role: photo.role || (index === 0 ? "hero" : photo.slot || ""),
-        usageState: mediaUsageState(product.publishStatus),
-        editPath: `/admin/products/${product.id}`,
-        metadata: { slot: photo.slot, index },
-      };
-    })
-    .filter((row): row is NonNullable<typeof row> => Boolean(row));
-  if (rows.length) await tx.insert(mediaReferencesTable).values(rows);
+  const candidates = (photos ?? []).flatMap((photo, index) => {
+    const assetId = assetIdFromPhoto(photo);
+    if (!assetId) return [];
+    return [{
+      assetId,
+      derived: !photo.assetId?.trim(),
+      ownerType: "product" as const,
+      ownerId,
+      ownerName: product.name,
+      field: `details.photos[${index}]`,
+      role: photo.role || (index === 0 ? "hero" : photo.slot || ""),
+      usageState: mediaUsageState(product.publishStatus),
+      editPath: `/admin/products/${product.id}`,
+      metadata: { slot: photo.slot, index },
+    }];
+  });
+  const existing = await existingAssetIds(candidates.map((row) => row.assetId), tx);
+  const rows = candidates.filter((row) => existing.has(row.assetId));
+  if (rows.length) {
+    await tx.insert(mediaReferencesTable).values(rows.map(({ derived: _derived, ...row }) => row));
+  }
+  return {
+    linkedIds: rows.map((row) => row.assetId),
+    dropped: candidates.length - rows.length,
+  };
+}
+
+/** Fill missing photo asset ids from `/api/media/{id}` srcs and recreate those products' public links. */
+export async function repairProductPhotoLinks() {
+  const products = await db.select({
+    id: productsTable.id,
+    name: productsTable.name,
+    publishStatus: productsTable.publishStatus,
+    details: productsTable.details,
+  }).from(productsTable);
+  let repaired = 0;
+  let linked = 0;
+  let dropped = 0;
+  for (const product of products) {
+    const photos = product.details?.photos ?? [];
+    const needsRepair = photos.some((photo) => !photo.assetId?.trim() && assetIdFromPhoto(photo));
+    if (!needsRepair) continue;
+    const result = await syncProductMediaReferences(product, photos);
+    const linkedIds = new Set(result.linkedIds);
+    const nextPhotos = photos.map((photo) => {
+      if (photo.assetId?.trim()) return photo;
+      const assetId = assetIdFromPhoto(photo);
+      if (!assetId || !linkedIds.has(assetId)) return photo;
+      return { ...photo, assetId };
+    });
+    if (nextPhotos.some((photo, index) => photo !== photos[index])) {
+      await db.update(productsTable).set({
+        details: { ...product.details, photos: nextPhotos },
+        updatedAt: new Date(),
+      }).where(eq(productsTable.id, product.id));
+    }
+    repaired += 1;
+    linked += result.linkedIds.length;
+    dropped += result.dropped;
+  }
+  return { products: products.length, repaired, linked, dropped };
 }
 
 export async function clearProductMediaReferences(productId: number, tx: DbLike = db) {
@@ -470,8 +529,28 @@ export async function backfillMediaUsage() {
       inArray(mediaReferencesTable.ownerId, ids),
     ));
   }
+  let repaired = 0;
+  let linked = 0;
+  let dropped = 0;
   for (const product of products) {
-    await syncProductMediaReferences(product, product.details?.photos);
+    const photos = product.details?.photos ?? [];
+    const result = await syncProductMediaReferences(product, photos);
+    const linkedIds = new Set(result.linkedIds);
+    const nextPhotos = photos.map((photo) => {
+      if (photo.assetId?.trim()) return photo;
+      const assetId = assetIdFromPhoto(photo);
+      if (!assetId || !linkedIds.has(assetId)) return photo;
+      return { ...photo, assetId };
+    });
+    if (nextPhotos.some((photo, index) => photo !== photos[index])) {
+      await db.update(productsTable).set({
+        details: { ...product.details, photos: nextPhotos },
+        updatedAt: new Date(),
+      }).where(eq(productsTable.id, product.id));
+      repaired += 1;
+    }
+    linked += result.linkedIds.length;
+    dropped += result.dropped;
   }
   const articles = await db.select({
     id: articlesTable.id,
@@ -511,5 +590,5 @@ export async function backfillMediaUsage() {
     withSeedGuideDefaults(settings?.seedGuide),
     withAboutDefaults(settings?.about),
   );
-  return { products: products.length, articles: articles.length, resellers: brands.length };
+  return { products: products.length, articles: articles.length, resellers: brands.length, repaired, linked, dropped };
 }

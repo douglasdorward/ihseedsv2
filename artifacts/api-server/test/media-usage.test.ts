@@ -5,6 +5,7 @@ process.env.DATABASE_URL ??= "postgres://127.0.0.1:5432/ih_media_usage_unit_test
 
 const {
   aboutWithoutAssets,
+  assetIdFromPhoto,
   detailsWithoutAssets,
   homepageWithoutAssets,
   isProductHeroPhoto,
@@ -25,6 +26,12 @@ const {
 
 after(async () => {
   await pool.end();
+});
+
+test("assetIdFromPhoto reads a library id from src when assetId was not stored", () => {
+  assert.equal(assetIdFromPhoto({ src: "/api/media/4bb9e866-9848-4894-8bd3-95198eb7fb92" }), "4bb9e866-9848-4894-8bd3-95198eb7fb92");
+  assert.equal(assetIdFromPhoto({ assetId: "kept", src: "/api/media/other" }), "kept");
+  assert.equal(assetIdFromPhoto({ src: "https://example.com/photo.jpg" }), "");
 });
 
 test("product hero references and first-slot photos are protected", () => {

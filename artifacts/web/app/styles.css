@@ -22,7 +22,7 @@ button,input,select,textarea { font:inherit; }
 button { cursor:pointer; }
 button:disabled { cursor:not-allowed; opacity:.45; }
 .site-shell { overflow:hidden; }
-.site-header { min-height:88px; padding:8px max(40px, calc((100vw - 1360px)/2)); display:flex; align-items:center; justify-content:space-between; background:#fff; }
+.site-header { position:relative; z-index:100; min-height:88px; padding:8px max(40px, calc((100vw - 1360px)/2)); display:flex; align-items:center; justify-content:space-between; background:#fff; }
 .logo { border:0; background:none; position:relative; padding:0; line-height:1; display:block; width:82px; flex-shrink:0; }
 .logo img { display:block; width:100%; height:auto; }
 .desktop-nav { display:flex; align-items:center; gap:28px; }

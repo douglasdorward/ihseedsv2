@@ -383,6 +383,18 @@ export function normalizeProductDetails(value: unknown, packSize = ""): ProductD
   };
 }
 
+/** First photo with a src. Matches the public product-page hero. */
+export function heroPhotoSrc(details: { photos?: Array<{ src?: string }> }): string {
+  return details.photos?.find((photo) => photo.src?.trim())?.src.trim() ?? "";
+}
+
+/** Copy the hero photo into a blank social image. Does not replace an explicit URL. */
+export function withDefaultSocialImage<T extends { socialImage: string; photos?: Array<{ src?: string }> }>(details: T): T {
+  if (details.socialImage.trim()) return details;
+  const hero = heroPhotoSrc(details);
+  return hero ? { ...details, socialImage: hero } : details;
+}
+
 export const productsTable = pgTable("ih_products", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   name: text("name").notNull().unique(),

@@ -565,14 +565,16 @@ function HeroUpload({ photos, updatePhoto, readOnly, ownerName }: { photos: Prod
   if (readOnly) return null;
   const applyUrl = () => {
     const next = url.trim();
+    if (next === (photos[0]?.src?.trim() ?? "")) return;
+    const libraryId = next.match(/^\/api\/media\/([^/?#]+)/)?.[1];
     updatePhoto(0, {
       src: next,
       file: next ? (photos[0]?.file || "Hero image") : "",
-      assetId: undefined,
-      format: undefined,
-      objectPath: undefined,
-      width: undefined,
-      height: undefined,
+      assetId: libraryId,
+      format: libraryId ? photos[0]?.format : undefined,
+      objectPath: libraryId ? photos[0]?.objectPath : undefined,
+      width: libraryId ? photos[0]?.width : undefined,
+      height: libraryId ? photos[0]?.height : undefined,
       alt: photos[0]?.alt || ownerName.trim() || undefined,
     });
   };

@@ -244,8 +244,8 @@ export function ProductsListing({
         Filters
       </button>
       {filtersOpen && (
-        <div className="product-filter-drawer">
-          <div className="product-filter-drawer-panel">
+        <div className="product-filter-drawer" onClick={() => setFiltersOpen(false)}>
+          <div className="product-filter-drawer-panel" onClick={(event) => event.stopPropagation()}>
             <div className="product-filter-sidebar-header">
               <h2>Filters</h2>
               <button type="button" className="product-filter-clear" onClick={() => setFiltersOpen(false)} aria-label="Close filters">Close</button>

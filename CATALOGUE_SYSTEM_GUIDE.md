@@ -388,7 +388,8 @@ Current import uses this sheet to merge SEO, sharing and legacy-address informat
 - `seo_title` is the only SEO title source.
 - `meta_description` supplies SEO description.
 - `h1` is an optional product-page heading override. Blank cells leave the stored override; `NULL` clears it so the public H1 follows the product name again.
-- `social_title`, `social_description`, `social_image`, `canonical_url` and `robots_index` store the admin SEO extras. Blank cells leave existing values; `NULL` clears them (`robots_index` NULL restores the default of indexed).
+- `social_title`, `social_description`, `canonical_url` and `robots_index` store the admin SEO extras. Blank cells leave existing values; `NULL` clears them (`robots_index` NULL restores the default of indexed).
+- A blank or missing `social_image` stores the first photo `src` from the imported product when one exists. `NULL` stores an empty social image and does not substitute the hero. A non-blank URL is stored as written.
 - `1 Products.website_url` is the only redirect source; the destination is calculated from the imported category and slug.
 
 Generated exports write one SEO row per product with the current H1 override, title, description, social fields, canonical URL and index flag.
@@ -480,7 +481,7 @@ The following matrix groups related fields. “Publish required” means require
 | Legacy URL | `website_url` | Content & publishing | No | No | Old current-site URL; its path redirects to the imported category-and-slug product path |
 | SEO title | `7 Website SEO.seo_title` | SEO | No | **Yes** | Document title and metadata; `™`/`®` are stripped |
 | SEO description | `7 Website SEO.meta_description`; `1 Products` cells are currently ignored | SEO | No | **Yes** | Meta description and structured-data fallback; `™`/`®` are stripped |
-| Social sharing | `social_title`, `social_description`, `social_image` | SEO | No | No | Optional; blank falls back to the product SEO/hero on the public site |
+| Social sharing | `social_title`, `social_description`, `social_image` | SEO | No | No | Optional. A blank social image is saved as the first photo src on editor save and workbook import. `NULL` stores empty. Public previews still use the hero when the stored value is empty |
 | Canonical URL | `canonical_url` | SEO | No | No | Optional override of the product URL |
 | Search indexing | `robots_index` | SEO | No | No | `N` publishes with noindex |
 | Category metadata | back office | Categories admin | No | No | Managed outside the workbook |

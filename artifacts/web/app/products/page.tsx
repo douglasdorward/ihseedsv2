@@ -20,7 +20,7 @@ export default async function ProductsIndex() {
         <div className="category-intro products-intro" style={{ maxWidth: 1180, margin: "0 auto", padding: "56px 40px 48px", display: "flex", flexDirection: "column", gap: 20 }}>
           <h1 style={{ margin: 0, fontSize: 48, lineHeight: 1.2, fontWeight: 300, color: "var(--green)" }}>Find the seed that fits your <span>paddock</span></h1>
           <p style={{ margin: 0, fontSize: 18, lineHeight: 1.6, color: "var(--black-green)", maxWidth: "64ch" }}>Browse the current online range by pasture category, sourced and tested for Western Australian conditions, then order through your local rural reseller.</p>
-          <p className="pasture-selector-banner">Not sure where to start? <Link href="/pasture-selector">Try the Pasture Selector</Link></p>
+          <p className="pasture-selector-banner">Not sure where to start? <Link href="/pasture-selector">Try the Pasture Selector</Link> or <Link href="/contact">Contact Us</Link></p>
         </div>
       </section>
 

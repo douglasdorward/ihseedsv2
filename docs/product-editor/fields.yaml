@@ -1197,7 +1197,7 @@ fields:
     visibility: customer
     customerSurfaces: [open-graph-image]
     workbook: 7 Website SEO.social_image
-    fillGuidance: Photo src or URL. Blank uses the hero image.
+    fillGuidance: Photo src or URL. A blank save or import stores the first photo src. Workbook NULL stores empty. No photo leaves it blank.
 
   - id: canonicalUrl
     tab: 6
