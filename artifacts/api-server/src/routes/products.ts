@@ -392,6 +392,33 @@ function validId(rawId: string) {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
+// Drizzle wraps the driver error in DrizzleQueryError, so the Postgres error
+// code and constraint live on `cause`, not on the thrown error's message.
+function findPostgresUniqueViolation(error: unknown): { constraint: string | null } | null {
+  let current: unknown = error;
+  while (current && typeof current === "object") {
+    if ("code" in current && current.code === "23505") {
+      const constraint = "constraint" in current && typeof current.constraint === "string" ? current.constraint : null;
+      return { constraint };
+    }
+    current = "cause" in current ? current.cause : null;
+  }
+  return null;
+}
+
+function sendDuplicateProductError(res: Response, error: unknown): boolean {
+  const violation = findPostgresUniqueViolation(error);
+  if (!violation) return false;
+  const field = violation.constraint === "ih_products_slug_unique" ? "slug" : "name";
+  res.status(409).json({
+    error: field === "slug"
+      ? "A product with that slug already exists. Choose a different slug."
+      : "A product with that name already exists.",
+    issues: [{ field, label: field === "slug" ? "Slug" : "Product name" }],
+  });
+  return true;
+}
+
 router.get("/products", async (req, res): Promise<void> => {
   const products = await ensureProducts();
   res.set("Cache-Control", "no-store");
@@ -513,10 +540,7 @@ router.post("/products", async (req, res): Promise<void> => {
     req.log.info({ productId: product.id }, "Draft product created");
     res.status(201).json(product);
   } catch (error) {
-    if (error instanceof Error && error.message.includes("duplicate key")) {
-      res.status(409).json({ error: "A product with that name already exists." });
-      return;
-    }
+    if (sendDuplicateProductError(res, error)) return;
     throw error;
   }
 });
@@ -613,10 +637,7 @@ router.post("/admin/products/:id/draft", async (req, res): Promise<void> => {
       res.status(409).json({ error: "Published products cannot be saved as drafts. Publish the changes instead." });
       return;
     }
-    if (error instanceof Error && error.message.includes("duplicate key")) {
-      res.status(409).json({ error: "A product with that name already exists." });
-      return;
-    }
+    if (sendDuplicateProductError(res, error)) return;
     throw error;
   }
 });
@@ -712,10 +733,7 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       sendProductReferenceError(res, issues);
       return;
     }
-    if (error instanceof Error && error.message.includes("duplicate key")) {
-      res.status(409).json({ error: "A product with that name already exists." });
-      return;
-    }
+    if (sendDuplicateProductError(res, error)) return;
     throw error;
   }
 });
@@ -950,7 +968,6 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     }
     return { kind: "updated" as const, product: updated };
   });
-  // #region agent log
   if (updateResult.kind === "not-found") {
     res.status(404).json({ error: "Product not found." });
     return;
