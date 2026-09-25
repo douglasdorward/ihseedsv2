@@ -26,7 +26,7 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [product-h1-default, category-cards, comparison-table, related-cards, also-popular, json-ld-name]
+    customerSurfaces: [product-h1-default, category-cards, comparison-table, related-cards, also-popular, json-ld-name, llms-txt, llms-full-txt]
     workbook: 1 Products.product_name
     fillGuidance: Commercial title. Put ™/® here. H1 copies this unless overwritten on the SEO tab.
 
@@ -45,7 +45,7 @@ fields:
     visibility: customer
     customerSurfaces: [product-url]
     workbook: 1 Products.slug
-    fillGuidance: Lowercase kebab-case. Permanent after create. Public URL is /products/{category}/{slug}.
+    fillGuidance: Lowercase kebab-case. Auto-generated from the product name on create until edited by hand; the input rejects spaces and capitals. Permanent after create. Public URL is /products/{category}/{slug}.
 
   - id: category
     tab: 1
@@ -58,7 +58,7 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [breadcrumb, directory, category-page, also-popular-pool]
+    customerSurfaces: [breadcrumb, directory, category-page, also-popular-pool, llms-txt, llms-full-txt]
     workbook: 1 Products.category
     fillGuidance: Active root category name. Controls which tab 3 fields appear.
 
@@ -119,7 +119,7 @@ fields:
     visibleWhen: category-not-Mixes
     publicApi: true
     visibility: customer
-    customerSurfaces: [product-hero]
+    customerSurfaces: [product-hero, llms-txt]
     workbook: 1 Products.botanical_name
     fillGuidance: Scientific name, e.g. Lolium multiflorum.
 
@@ -133,7 +133,7 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, comparison-table, some-category-chips, forage-chips]
+    customerSurfaces: [quick-facts, comparison-table, some-category-chips, forage-chips, llms-txt, llms-full-txt]
     workbook: 2 Sowing rates
     fillGuidance: One row per context with min/max and unit, usually kg/ha. Forage cards chip the first range only when earlier forage pills leave a slot.
 
@@ -149,7 +149,7 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, category-chips, comparison-table, forage-chips]
+    customerSurfaces: [quick-facts, category-chips, comparison-table, forage-chips, llms-txt, llms-full-txt]
     workbook: 1 Products.rainfall_min_mm
     fillGuidance: Dropdown 150–800 mm in 50 mm steps. Leave unset if unknown. Forage cards chip it only when earlier forage pills leave a slot.
 
@@ -166,7 +166,7 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts-when-soils-complete, comparison-table]
+    customerSurfaces: [quick-facts-when-soils-complete, comparison-table, llms-txt, llms-full-txt]
     workbook: 1 Products.soil_ph_min
     fillGuidance: Lowest suitable pH. Quick facts pair it with the expanded soil range as “Soil range: Sand to Heavy · pH 5+ (CaCl₂)”.
 
@@ -181,7 +181,7 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts-when-soils-complete, comparison-table]
+    customerSurfaces: [quick-facts-when-soils-complete, comparison-table, llms-txt, llms-full-txt]
     workbook: 1 Products.soil_ph_scale
     fillGuidance: Prefer CaCl₂ unless the source used water.
 
@@ -196,7 +196,7 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts-when-pH-complete, comparison-table]
+    customerSurfaces: [quick-facts-when-pH-complete, comparison-table, llms-txt, llms-full-txt]
     workbook: 1 Products.soil_range_lightest
     fillGuidance: Stored/workbook codes remain LS, S, L, H. Quick facts expand them to Light sand, Sand, Loam, Heavy and explicitly label the range; equal endpoints show one name.
 
@@ -211,7 +211,7 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts-when-pH-complete, comparison-table]
+    customerSurfaces: [quick-facts-when-pH-complete, comparison-table, llms-txt, llms-full-txt]
     workbook: 1 Products.soil_range_heaviest
     fillGuidance: Must be as heavy or heavier than lightest soil. Quick facts use “to” between distinct expanded endpoint names.
 
@@ -258,7 +258,7 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, comparison-table]
+    customerSurfaces: [quick-facts, comparison-table, llms-full-txt]
     workbook: 1 Products.tolerance
     fillGuidance: Toggle stresses. Optional Mild per selected stress.
 
@@ -273,7 +273,7 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts]
+    customerSurfaces: [quick-facts, llms-txt, llms-full-txt]
     workbook: 1 Products.end_use
     fillGuidance: Multi-select intended uses.
 
@@ -288,7 +288,7 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts]
+    customerSurfaces: [quick-facts, llms-full-txt]
     workbook: 1 Products.livestock
     fillGuidance: Multi-select target animals.
 
@@ -303,7 +303,7 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, herbs-category-chips, forage-chips]
+    customerSurfaces: [quick-facts, herbs-category-chips, forage-chips, llms-txt, llms-full-txt]
     workbook: 1 Products.persistency_type
     fillGuidance: How long the stand lasts. Forage cards chip it only when earlier forage pills leave a slot.
 
@@ -332,7 +332,7 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [accordion]
+    customerSurfaces: [accordion, llms-full-txt]
     workbook: 1 Products.disease_pest_resistance
     fillGuidance: Public resistance notes. Keep out of Description.
 
@@ -347,7 +347,7 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [accordion]
+    customerSurfaces: [accordion, llms-full-txt]
     workbook: 1 Products.stand_life_notes
     fillGuidance: Persistence and replacement guidance.
 
@@ -362,7 +362,7 @@ fields:
     visibleWhen: category-not-Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [accordion]
+    customerSurfaces: [accordion, llms-full-txt]
     workbook: 1 Products.grazing_management_notes
     fillGuidance: Planting and grazing advice. Do not repeat Quick facts.
 
@@ -377,7 +377,7 @@ fields:
     visibleWhen: Ryegrasses|Fescues & Other Grasses|Sub-Tropical Grasses|Mixes
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts-grasses-only, ryegrass-chips]
+    customerSurfaces: [quick-facts-grasses-only, ryegrass-chips, llms-full-txt]
     workbook: 3 Category specifics.ploidy
     fillGuidance: Mix editor shows this; Mix Quick facts do not.
 
@@ -392,7 +392,7 @@ fields:
     visibleWhen: Ryegrasses|Fescues & Other Grasses
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, ryegrass-chips]
+    customerSurfaces: [quick-facts, ryegrass-chips, llms-full-txt]
     workbook: 3 Category specifics.heading_date
     fillGuidance: Relative heading class.
 
@@ -407,7 +407,7 @@ fields:
     visibleWhen: Ryegrasses|Fescues & Other Grasses
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, fescue-chips]
+    customerSurfaces: [quick-facts, fescue-chips, llms-full-txt]
     workbook: 3 Category specifics.endophyte
     fillGuidance: Nil is omitted from category chips.
 
@@ -422,7 +422,7 @@ fields:
     visibleWhen: Ryegrasses
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts]
+    customerSurfaces: [quick-facts, llms-full-txt]
     workbook: 3 Category specifics.heading_offset_days
     fillGuidance: Days versus Nui.
 
@@ -436,7 +436,7 @@ fields:
     visibleWhen: Ryegrasses
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts-when-true]
+    customerSurfaces: [quick-facts-when-true, llms-full-txt]
     workbook: 3 Category specifics.argt_resistant
     fillGuidance: Check only for a real ARGT resistance claim.
 
@@ -452,7 +452,7 @@ fields:
     visibleWhen: Clovers|Serradellas & Medics
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, clover-serradella-chips]
+    customerSurfaces: [quick-facts, clover-serradella-chips, llms-full-txt]
     workbook: 3 Category specifics.maturity_days
     fillGuidance: Days to flowering at Perth.
 
@@ -467,7 +467,7 @@ fields:
     visibleWhen: Clovers|Serradellas & Medics
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, clover-chips]
+    customerSurfaces: [quick-facts, clover-chips, llms-full-txt]
     workbook: 3 Category specifics.hard_seed_level
     fillGuidance: Soft through Very high.
 
@@ -482,7 +482,7 @@ fields:
     visibleWhen: Clovers|Serradellas & Medics
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts]
+    customerSurfaces: [quick-facts, llms-full-txt]
     workbook: 3 Category specifics.bloat_risk
     fillGuidance: Closed risk class.
 
@@ -497,7 +497,7 @@ fields:
     visibleWhen: Clovers|Serradellas & Medics
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, serradella-chips]
+    customerSurfaces: [quick-facts, serradella-chips, llms-full-txt]
     workbook: 3 Category specifics.flower_colour
     fillGuidance: Closed colour list.
 
@@ -512,7 +512,7 @@ fields:
     visibleWhen: Clovers
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts]
+    customerSurfaces: [quick-facts, llms-full-txt]
     workbook: 3 Category specifics.oestrogen_level
     fillGuidance: Clovers only.
 
@@ -529,7 +529,7 @@ fields:
     visibleWhen: Lucerne
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, lucerne-chips]
+    customerSurfaces: [quick-facts, lucerne-chips, llms-full-txt]
     workbook: 3 Category specifics.winter_activity
     fillGuidance: Integer 1–10.
 
@@ -544,7 +544,7 @@ fields:
     visibleWhen: Fescues & Other Grasses|Sub-Tropical Grasses
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, fescue-chips]
+    customerSurfaces: [quick-facts, fescue-chips, llms-full-txt]
     workbook: 3 Category specifics.growth_season
     fillGuidance: Seasonal growth class.
 
@@ -559,7 +559,7 @@ fields:
     visibleWhen: Forage & Grain Crops
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, forage-chips]
+    customerSurfaces: [quick-facts, forage-chips, llms-full-txt]
     workbook: 3 Category specifics.growing_season
     fillGuidance: Summer, Winter, or Either.
 
@@ -573,7 +573,7 @@ fields:
     visibleWhen: Forage & Grain Crops
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, forage-chips]
+    customerSurfaces: [quick-facts, forage-chips, llms-full-txt]
     workbook: 3 Category specifics.weeks_to_first_grazing
     fillGuidance: Short text such as 6-8.
 
@@ -588,7 +588,7 @@ fields:
     visibleWhen: Forage & Grain Crops
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts]
+    customerSurfaces: [quick-facts, llms-full-txt]
     workbook: 3 Category specifics.prussic_acid_risk
     fillGuidance: Closed risk class.
 
@@ -603,7 +603,7 @@ fields:
     visibleWhen: Forage & Grain Crops
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts]
+    customerSurfaces: [quick-facts, llms-full-txt]
     workbook: 3 Category specifics.regrowth
     fillGuidance: Single cut or multi-cut.
 
@@ -647,7 +647,7 @@ fields:
     visibleWhen: Mixes
     publicApi: true
     visibility: customer
-    customerSurfaces: [mix-components-table]
+    customerSurfaces: [mix-components-table, llms-full-txt]
     workbook: 5 Mix components
     fillGuidance: One card per ingredient. Never substitute the linked product blurb.
 
@@ -662,7 +662,7 @@ fields:
     visibleWhen: Mixes
     publicApi: true
     visibility: customer
-    customerSurfaces: [mix-components-table]
+    customerSurfaces: [mix-components-table, llms-full-txt]
     workbook: 5 Mix components.component_name
     fillGuidance: Required if the row has any other content.
 
@@ -693,7 +693,7 @@ fields:
     visibleWhen: Mixes
     publicApi: true
     visibility: customer
-    customerSurfaces: [mix-rate-column-when-any-rate]
+    customerSurfaces: [mix-rate-column-when-any-rate, llms-full-txt]
     workbook: 5 Mix components.inclusion_rate
     fillGuidance: Percentage rates cannot exceed 100.
 
@@ -708,7 +708,7 @@ fields:
     visibleWhen: Mixes
     publicApi: true
     visibility: customer
-    customerSurfaces: [mix-rate-column-when-any-rate]
+    customerSurfaces: [mix-rate-column-when-any-rate, llms-full-txt]
     workbook: 5 Mix components.rate_unit
     fillGuidance: Suggested %, kg/ha, g/ha, kg.
 
@@ -723,7 +723,7 @@ fields:
     visibleWhen: Mixes
     publicApi: true
     visibility: customer
-    customerSurfaces: [mix-component-description]
+    customerSurfaces: [mix-component-description, llms-full-txt]
     workbook: 5 Mix components.component_description
     fillGuidance: Mix-specific copy. Blank means no description.
 
@@ -738,7 +738,7 @@ fields:
     visibleWhen: Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, biologicals-chips]
+    customerSurfaces: [quick-facts, biologicals-chips, llms-full-txt]
     workbook: 3 Category specifics.product_form
     fillGuidance: Powder, Liquid, Peat, Granule, or similar.
 
@@ -752,7 +752,7 @@ fields:
     visibleWhen: Biologicals
     publicApi: true
     visibility: customer
-    customerSurfaces: [quick-facts, biologicals-chips]
+    customerSurfaces: [quick-facts, biologicals-chips, llms-full-txt]
     workbook: 3 Category specifics.application_rate
     fillGuidance: Public rate text, not internal notes. Listing cards chip it only at 40 characters or fewer; longer text stays on Quick facts.
 
@@ -944,7 +944,7 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [product-hero, category-cards, related-cards, also-popular, other-listings]
+    customerSurfaces: [product-hero, category-cards, related-cards, also-popular, other-listings, llms-txt, llms-full-txt]
     workbook: 1 Products.tagline
     fillGuidance: Short promise. No ™/®.
 
@@ -958,7 +958,7 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [product-intro, seo-fallback]
+    customerSurfaces: [product-intro, seo-fallback, llms-full-txt]
     workbook: 1 Products.blurb
     fillGuidance: Opening paragraph. Not the full description.
 
@@ -972,7 +972,7 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [product-bullets]
+    customerSurfaces: [product-bullets, llms-full-txt]
     workbook: 1 Products.key_attributes
     fillGuidance: At least one non-blank strength. Aim for 5–6.
 
@@ -987,7 +987,7 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [about-this-variety]
+    customerSurfaces: [about-this-variety, llms-full-txt]
     workbook: 1 Products.description
     fillGuidance: Paragraphs separated by blank lines. No Quick facts, breeder, or supplier.
 
@@ -1060,7 +1060,7 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [product-faqs, json-ld-faq]
+    customerSurfaces: [product-faqs, json-ld-faq, llms-full-txt]
     workbook: 10 Product FAQs
     fillGuidance: Up to ten question/answer cards. Incomplete cards stay in the editor and are hidden from customers. Question max 180. Answer max 4000. Workbook sheet `10 Product FAQs` replaces the set for each represented product slug.
 
@@ -1075,7 +1075,7 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [product-faqs, json-ld-faq]
+    customerSurfaces: [product-faqs, json-ld-faq, llms-full-txt]
     workbook: 10 Product FAQs.question
     fillGuidance: Required if the card has an answer.
 
@@ -1090,7 +1090,7 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [product-faqs, json-ld-faq]
+    customerSurfaces: [product-faqs, json-ld-faq, llms-full-txt]
     workbook: 10 Product FAQs.answer
     fillGuidance: Required if the card has a question.
 
@@ -1210,7 +1210,7 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [canonical-link, open-graph-url]
+    customerSurfaces: [canonical-link, open-graph-url, llms-txt, llms-full-txt]
     workbook: 7 Website SEO.canonical_url
     fillGuidance: Leave blank for /products/{category}/{slug}. Not a redirect.
 

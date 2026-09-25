@@ -6,6 +6,7 @@ import { ProductNewStamp } from "./NewStamp";
 import { intendedAlsoPopularSlugs, isAlsoPopularEligible, resolveAlsoPopular } from "../also-popular";
 import { getEditorQuickFactSlots, type QuickFactSlotId } from "../product-quick-facts";
 import { ProductPhotoOrderButtons } from "../product-photo-order";
+import { slugify } from "../product-slug";
 import { photoDisplaySrc, uploadMediaAsset } from "../upload-image";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80";
@@ -772,8 +773,8 @@ function BelowCards(props: ProductPageEditorProps) {
         <p className="admin-field-hint">Staff fields that are not shown in the page layout above.</p>
         <div className="admin-form-grid">
           <label className={props.issueFor("slug") ? "admin-field-invalid" : ""}>
-            <FieldLabel required>Slug</FieldLabel>
-            <input required disabled={!props.isNew} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={form.slug} onChange={(event) => props.setField("slug", event.target.value.toLowerCase())} placeholder="souwest-pasture-mix" />
+            <FieldLabel required hint={props.isNew ? "Created from the product name. Lowercase letters, numbers and hyphens only; permanent after create." : undefined}>Slug</FieldLabel>
+            <input required disabled={!props.isNew} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={form.slug} onChange={(event) => props.setField("slug", event.target.value)} onBlur={(event) => props.setField("slug", slugify(event.target.value))} placeholder="souwest-pasture-mix" />
             {props.issueFor("slug") && <span className="admin-inline-field-error">{props.issueFor("slug")!.message}</span>}
           </label>
           <label>

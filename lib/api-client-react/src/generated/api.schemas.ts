@@ -1248,9 +1248,14 @@ export interface MediaCompleteInput {
   role?: string;
 }
 
+/**
+ * Exactly one of productId or articleId. The image becomes that owner's hero.
+ */
 export interface MediaAttachInput {
   /** @minimum 1 */
-  productId: number;
+  productId?: number;
+  /** @minimum 1 */
+  articleId?: number;
 }
 
 export interface MediaUploadRequestResult {

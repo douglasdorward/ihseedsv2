@@ -1,8 +1,8 @@
 import { LLMS_SUCCESS_HEADERS, llmsUnavailable, loadLlmsInput } from "../../lib/llms-sources";
-import { buildLlmsTxt } from "../../lib/llms-txt";
+import { buildLlmsFullTxt } from "../../lib/llms-txt";
 
 export async function GET() {
   const input = await loadLlmsInput();
   if (!input) return llmsUnavailable();
-  return new Response(buildLlmsTxt(input), { headers: LLMS_SUCCESS_HEADERS });
+  return new Response(buildLlmsFullTxt(input), { headers: LLMS_SUCCESS_HEADERS });
 }

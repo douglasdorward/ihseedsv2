@@ -50,12 +50,12 @@ Same-path pages can be replaced in place: `/`, `/contact`, `/products`, `/privac
 
 ## Technical and citation
 
-In place: canonicals on home, catalogue, categories, products, articles, availability, resources, guide, pasture selector, about, contact, privacy, and terms. Organization JSON-LD on every page, with the legal name as `alternateName`. Product, Offer, and BreadcrumbList on products. ItemList on categories. Article schema on articles. Tech-sheet HTML is `noindex`.
+In place: canonicals on home, catalogue, categories, products, articles, availability, resources, guide, pasture selector, about, contact, privacy, and terms. `/llms.txt` and `/llms-full.txt` are served from the public catalogue. Organization JSON-LD on every page, with the legal name as `alternateName`. Product, Offer, and BreadcrumbList on products. ItemList on categories. Article schema on articles. Tech-sheet HTML is `noindex`.
 
 Not in place:
 
 - Open Graph and Twitter on home, categories, and the marketing pages. No site-wide default share image. Product and article social fields are empty, so previews use the first photo or a stock hero.
-- `/llms.txt`. WebSite and LocalBusiness schema. Organization `logo`, `telephone`, `taxID`, `areaServed`, and `sameAs`. Company phone and ABN defaults are blank, while product pages fall back to a hardcoded office number.
+- WebSite and LocalBusiness schema. Organization `logo`, `telephone`, `taxID`, `areaServed`, and `sameAs`. Company phone and ABN defaults are blank, while product pages fall back to a hardcoded office number.
 - `lang` is `en`. No `not-found.tsx`. Catalogue fetches are `cache: "no-store"`. Heroes are CSS backgrounds. No `next/image`.
 - PDF tech sheets send no `X-Robots-Tag`. `/api/sitemap-products` and `/api/sitemap-articles` duplicate the app sitemap; `/api` is disallowed on the web host.
 - The pasture selector is not in the header or footer.
@@ -70,7 +70,7 @@ Not in place:
 5. Rewrite short product titles so they name the variety, the species, and Western Australia or pasture seed, and cut descriptions that run past about 160 characters.
 6. Write category SEO titles, descriptions, and headings, and print the stored rainfall band. Add FAQs where the schema is already wired.
 7. Host images on the new origin and set alt text. Add a default Open Graph image, then category and marketing tags.
-8. Add logo, phone, service area, and profile URLs to Organization once they are confirmed. Add a short `llms.txt`. Link the pasture selector from the header or footer.
+8. Add logo, phone, service area, and profile URLs to Organization once they are confirmed. Link the pasture selector from the header or footer.
 
 ## Limitations
 

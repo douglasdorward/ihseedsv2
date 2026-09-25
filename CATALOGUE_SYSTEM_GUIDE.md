@@ -113,7 +113,7 @@ Published writes, publication, archive, restore, and leftover discard operations
 - Listing state is chosen by the administrator. It is not derived from sale-line availability.
 - Archiving is different: Archive removes the product from the public website entirely while keeping the record. Restoring an Archived product returns it to Draft.
 
-Only **Published + Active or New** products appear in the main public catalogue and sitemap. Published Legacy products can appear only as names in the category page’s “Also in our catalogue” section. Draft and Archived products never appear there.
+Only **Published + Active or New** products appear in the main public catalogue, the sitemap, `/llms.txt`, and `/llms-full.txt`. Those two files list the same product and article set as the sitemap and refresh within about 5 minutes of an admin change. The Pasture Selector questions are the one part stored in code (`artifacts/web/lib/pasture-selector-faqs.ts`). Published Legacy products can appear only as names in the category page’s “Also in our catalogue” section. Draft and Archived products never appear there.
 
 ## 3. PostgreSQL data model
 
@@ -594,6 +594,7 @@ The current public hierarchy is:
 - When a product has complete FAQs, the page also emits FAQPage JSON-LD for those question/answer pairs.
 - When a category page has complete FAQs, it also emits FAQPage JSON-LD for those question/answer pairs.
 - The sitemap contains the same Published + Active or New product set as the main catalogue, excluding products with search indexing turned off.
+- `/llms.txt` and `/llms-full.txt` list that same product set and the same indexable articles. They are rebuilt from the public API on each request and cached for about 5 minutes. Pasture Selector FAQs are the exception: they live in `artifacts/web/lib/pasture-selector-faqs.ts`.
 - Redirect lookup supports valid legacy paths; the application issues permanent redirects for mapped routes.
 
 ### Public redaction

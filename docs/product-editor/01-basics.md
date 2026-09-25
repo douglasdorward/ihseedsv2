@@ -32,7 +32,7 @@ Draft save requires Product name, Slug, Category, and Record type from this tab.
 - **Customer website:** Permanent URL `/products/{category-slug}/{slug}`. Used to join Also popular picks and mix components. A Legacy website URL redirects here only when supplied for this product in the workbook.
 - **Public API:** yes (`slug`)
 - **Purpose:** Immutable public identifier.
-- **How to fill:** Lowercase kebab-case matching `^[a-z0-9]+(?:-[a-z0-9]+)*$`. Choose carefully on create; it cannot be edited later.
+- **How to fill:** On a new product the slug is generated from Product name as you type (lowercase kebab-case matching `^[a-z0-9]+(?:-[a-z0-9]+)*$`; ™/® and punctuation are dropped). Typing in the Slug field takes over from the name; clearing it resumes auto-generation. The field rejects spaces, capitals, and symbols as you type, converting them to hyphens. Choose carefully on create; it cannot be edited later.
 - **Constraints:** 1–180 characters. Unique.
 
 ## Category
