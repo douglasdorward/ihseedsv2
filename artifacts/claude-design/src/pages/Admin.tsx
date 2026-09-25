@@ -19,6 +19,7 @@ import AdminCompany from "./AdminCompany";
 import AdminBlog from "./AdminBlog";
 import AdminResellers from "./AdminResellers";
 import { persistLatestProductAndPublish } from "../persist-latest-product";
+import { ProductPhotoOrderButtons } from "../product-photo-order";
 import { photoDisplaySrc, uploadMediaAsset } from "../upload-image";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -2163,30 +2164,37 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                             />
                           </span>
                           {viewMode !== "live" && !isArchived && (
-                            <label className="admin-text-button">
-                              Upload
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                                hidden
-                                onChange={async (event) => {
-                                  const file = event.target.files?.[0];
-                                  event.target.value = "";
-                                  if (!file) return;
-                                  try {
-                                    updatePhoto(index, {
-                                      ...await uploadMediaAsset(file, {
-                                        ownerName: form.name,
-                                        role: index === 0 ? "hero" : photo.role,
-                                      }),
-                                      role: index === 0 ? "hero" : photo.role,
-                                    });
-                                  } catch (caught) {
-                                    setError(caught instanceof Error ? caught.message : "Upload failed.");
-                                  }
-                                }}
+                            <div className="admin-photo-actions">
+                              <ProductPhotoOrderButtons
+                                photos={currentForm.details.photos}
+                                index={index}
+                                onChange={(photos) => setDetail("photos", photos)}
                               />
-                            </label>
+                              <label className="admin-text-button">
+                                Upload
+                                <input
+                                  type="file"
+                                  accept="image/jpeg,image/png,image/webp"
+                                  hidden
+                                  onChange={async (event) => {
+                                    const file = event.target.files?.[0];
+                                    event.target.value = "";
+                                    if (!file) return;
+                                    try {
+                                      updatePhoto(index, {
+                                        ...await uploadMediaAsset(file, {
+                                          ownerName: form.name,
+                                          role: index === 0 ? "hero" : photo.role,
+                                        }),
+                                        role: index === 0 ? "hero" : photo.role,
+                                      });
+                                    } catch (caught) {
+                                      setError(caught instanceof Error ? caught.message : "Upload failed.");
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
                           )}
                         </div>
                       ))}

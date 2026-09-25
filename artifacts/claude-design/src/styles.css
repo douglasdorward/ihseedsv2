@@ -390,6 +390,11 @@ h1 strong { display:block; font-weight:800; }
 .status-dot.unavailable { background:#b6bdb8; }
 .admin-photo-list { display:flex; flex-direction:column; gap:11px; }
 .admin-photo-row { display:grid; grid-template-columns:72px minmax(0,1fr) auto; align-items:center; gap:12px; border-radius:12px; padding:9px; background:#f3f5f2; }
+.admin-photo-order { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+.admin-photo-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; }
+.admin-photo-order button { border:1px solid #c8cec9; border-radius:6px; padding:4px 8px; background:#fff; color:#0c6c49; font-size:12px; font-weight:750; }
+.admin-photo-order button:disabled { color:#b7c0b8; background:#f7f8f7; cursor:default; }
+.admin-photo-order button.danger { color:#a3312b; }
 .admin-photo-thumb { width:72px; height:54px; display:grid; place-items:center; overflow:hidden; border:1px dashed #bdc6bf; border-radius:8px; background:#fff; color:#8a938d; }
 .admin-photo-thumb img { width:100%; height:100%; object-fit:contain; }
 .admin-photo-row > span:nth-child(2) { min-width:0; display:flex; flex-direction:column; gap:3px; }

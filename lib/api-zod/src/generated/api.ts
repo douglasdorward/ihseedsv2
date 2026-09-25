@@ -7251,7 +7251,7 @@ export const CompleteMediaUploadResponse = zod.object({
 
 
 /**
- * @summary Insert a library image as a product hero and shift existing photos down
+ * @summary Set a library image as the hero of a product (shifting existing photos down) or of an article
  */
 export const AttachMediaAssetParams = zod.object({
   "id": zod.coerce.string()
@@ -7259,11 +7259,14 @@ export const AttachMediaAssetParams = zod.object({
 
 export const attachMediaAssetBodyProductIdMultipleOf = 1;
 
+export const attachMediaAssetBodyArticleIdMultipleOf = 1;
+
 
 
 export const AttachMediaAssetBody = zod.object({
-  "productId": zod.number().min(1).multipleOf(attachMediaAssetBodyProductIdMultipleOf)
-})
+  "productId": zod.number().min(1).multipleOf(attachMediaAssetBodyProductIdMultipleOf).optional(),
+  "articleId": zod.number().min(1).multipleOf(attachMediaAssetBodyArticleIdMultipleOf).optional()
+}).describe('Exactly one of productId or articleId. The image becomes that owner\'s hero.')
 
 export const attachMediaAssetResponseBytesMultipleOf = 1;
 

@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { Router, type IRouter } from "express";
 import { and, desc, eq, ilike, inArray, ne } from "drizzle-orm";
 import {
+  articlesTable,
   db,
   mediaAssetsTable,
   mediaReferencesTable,
@@ -20,7 +21,7 @@ import {
 } from "../lib/app-storage";
 import { imageAltFromContext, resolveImageAlt, shouldReplaceGeneratedAlt } from "../lib/image-alt";
 import { convertToWebp } from "../lib/media-image";
-import { backfillMediaUsage, insertHeroPhoto, isProtectedMediaReference, syncProductMediaReferences, unlinkAndDeleteMediaRecords } from "../lib/media-usage";
+import { backfillMediaUsage, insertHeroPhoto, isProtectedMediaReference, syncArticleMediaReferences, syncProductMediaReferences, unlinkAndDeleteMediaRecords } from "../lib/media-usage";
 
 const router: IRouter = Router();
 const MAX_BYTES = 12 * 1024 * 1024;
@@ -375,11 +376,28 @@ router.post("/admin/media/bulk-delete", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
+function attachTargetId(value: unknown) {
+  if (value === undefined || value === null || value === "") return null;
+  const id = Number(value);
+  return Number.isInteger(id) && id >= 1 ? id : Number.NaN;
+}
+
+/** Exactly one of productId or articleId. Returns the chosen target, or null when the body is invalid. */
+function attachTarget(body: unknown) {
+  const record = body && typeof body === "object" ? body as { productId?: unknown; articleId?: unknown } : {};
+  const productId = attachTargetId(record.productId);
+  const articleId = attachTargetId(record.articleId);
+  if (productId === null && articleId === null) return null;
+  if (productId !== null && articleId !== null) return null;
+  if (productId !== null) return Number.isNaN(productId) ? null : { kind: "product" as const, id: productId };
+  return Number.isNaN(articleId as number) ? null : { kind: "article" as const, id: articleId as number };
+}
+
 router.post("/admin/media/:id/attach", async (req, res): Promise<void> => {
   const id = String(req.params.id ?? "");
-  const productId = Number(req.body?.productId);
-  if (!Number.isInteger(productId) || productId < 1) {
-    res.status(400).json({ error: "Choose a product." });
+  const target = attachTarget(req.body);
+  if (!target) {
+    res.status(400).json({ error: "Choose a product or an article." });
     return;
   }
   const [asset] = await db.select().from(mediaAssetsTable).where(eq(mediaAssetsTable.id, id));
@@ -387,7 +405,35 @@ router.post("/admin/media/:id/attach", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Asset not found or not ready." });
     return;
   }
-  const [product] = await db.select().from(productsTable).where(eq(productsTable.id, productId));
+  if (target.kind === "article") {
+    const [article] = await db.select().from(articlesTable).where(eq(articlesTable.id, target.id));
+    if (!article) {
+      res.status(404).json({ error: "Article not found." });
+      return;
+    }
+    const nextDefaultAlt = shouldReplaceGeneratedAlt(asset.defaultAlt, asset.originalFilename)
+      ? imageAltFromContext({ ownerName: article.title, filename: asset.originalFilename, role: "hero" })
+      : asset.defaultAlt;
+    const updatedArticle = await db.transaction(async (tx) => {
+      const [saved] = await tx.update(articlesTable).set({
+        heroImageSrc: mediaPublicPath(asset.id),
+        heroImageAssetId: asset.id,
+        updatedAt: new Date(),
+      }).where(eq(articlesTable.id, article.id)).returning();
+      if (nextDefaultAlt !== asset.defaultAlt) {
+        await tx.update(mediaAssetsTable).set({
+          defaultAlt: nextDefaultAlt,
+          updatedAt: new Date(),
+        }).where(eq(mediaAssetsTable.id, asset.id));
+      }
+      await syncArticleMediaReferences(saved, tx);
+      return saved;
+    });
+    const usage = (await usageByAssetId([asset.id])).get(asset.id) ?? emptyUsage();
+    res.json(toPublicAsset({ ...asset, defaultAlt: nextDefaultAlt }, usage, updatedArticle.publishStatus === "Published"));
+    return;
+  }
+  const [product] = await db.select().from(productsTable).where(eq(productsTable.id, target.id));
   if (!product) {
     res.status(404).json({ error: "Product not found." });
     return;

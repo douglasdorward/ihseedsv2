@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { getListAdminProductsQueryKey, useListAdminProducts } from "@workspace/api-client-react";
+import { getListAdminArticlesQueryKey, getListAdminProductsQueryKey, useListAdminArticles, useListAdminProducts } from "@workspace/api-client-react";
 import { Icon } from "../components/ui";
 import { ConfirmDialog, PageHeader } from "./Admin";
 import { downloadImageListCsv, productListingState } from "../image-list-csv";
+import { MEDIA_SORT_OPTIONS, sortMediaAssets, type MediaSort } from "../image-sort";
 import { matchUploadToProduct } from "../match-upload-product";
 import { imageUsageLine, type ImageUsageSummary } from "../image-usage-line";
 import { photoDisplaySrc, uploadMediaAsset, type UploadedMediaPhoto, type UploadMediaProgress } from "../upload-image";
@@ -51,6 +52,22 @@ type UploadQueueItem = {
   error: string;
   photo?: UploadedMediaPhoto;
 };
+
+type AssignTarget = "product" | "article";
+
+type AssignState = {
+  asset: MediaAsset;
+  target: AssignTarget;
+  filter: string;
+  productId: string;
+  articleId: string;
+  error: string;
+};
+
+function matchesFilter(label: string, filter: string) {
+  const needle = filter.trim().toLowerCase();
+  return !needle || label.toLowerCase().includes(needle);
+}
 
 function assignedProductNames(products: { name?: string; details?: { photos?: Array<{ assetId?: string | null }> } }[], assetId: string) {
   const names: string[] = [];
@@ -103,7 +120,10 @@ export default function AdminImages() {
   const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { data: products = [], isLoading: loadingProducts } = useListAdminProducts();
+  const { data: articles = [] } = useListAdminArticles();
   const [items, setItems] = useState<MediaAsset[]>([]);
+  const [sort, setSort] = useState<MediaSort>("newest");
+  const [assign, setAssign] = useState<AssignState | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -119,6 +139,7 @@ export default function AdminImages() {
   const [pendingDelete, setPendingDelete] = useState<MediaAsset[] | null>(null);
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const sortedItems = useMemo(() => sortMediaAssets(items, sort), [items, sort]);
   const allSelected = items.length > 0 && items.every((asset) => selectedSet.has(asset.id));
 
   const exportRows = useMemo(
@@ -129,6 +150,21 @@ export default function AdminImages() {
   const matchProducts = useMemo(
     () => exportRows.filter((product) => product.lifecycleStatus !== "Archived"),
     [exportRows],
+  );
+
+  const assignArticles = useMemo(
+    () => [...articles].sort((first, second) => first.title.localeCompare(second.title, undefined, { numeric: true, sensitivity: "base" }) || second.id - first.id),
+    [articles],
+  );
+
+  const assignProductOptions = useMemo(
+    () => (assign ? matchProducts.filter((product) => matchesFilter(product.name ?? "", assign.filter)) : []),
+    [assign, matchProducts],
+  );
+
+  const assignArticleOptions = useMemo(
+    () => (assign ? assignArticles.filter((article) => matchesFilter(article.title, assign.filter)) : []),
+    [assign, assignArticles],
   );
 
   const refresh = async () => {
@@ -258,6 +294,42 @@ export default function AdminImages() {
     }
   };
 
+  const openAssign = (asset: MediaAsset) => {
+    setError("");
+    setAssign({ asset, target: "product", filter: "", productId: "", articleId: "", error: "" });
+  };
+
+  const assignSelectedId = assign ? (assign.target === "product" ? assign.productId : assign.articleId) : "";
+
+  const confirmAssign = async () => {
+    if (!assign || !assignSelectedId) return;
+    setBusy(true);
+    setAssign((current) => (current ? { ...current, error: "" } : current));
+    try {
+      const body = assign.target === "product"
+        ? { productId: Number(assign.productId) }
+        : { articleId: Number(assign.articleId) };
+      const response = await fetch(`/api/admin/media/${assign.asset.id}/attach`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(payload?.error ?? "Could not assign that image.");
+      setAssign(null);
+      await refresh();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: getListAdminArticlesQueryKey() }),
+      ]);
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : "Could not assign that image.";
+      setAssign((current) => (current ? { ...current, error: message } : current));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const saveMeta = async (asset: MediaAsset) => {
     setBusy(true);
     setError("");
@@ -374,7 +446,22 @@ export default function AdminImages() {
                   />
                   <span>{allSelected ? "Clear selection" : "Select all"}</span>
                 </label>
-                <span>{items.length} image{items.length === 1 ? "" : "s"}</span>
+                <div className="admin-image-grid-meta">
+                  <span>{items.length} image{items.length === 1 ? "" : "s"}</span>
+                  <label className="admin-image-sort">
+                    <span>Sort</span>
+                    <select
+                      value={sort}
+                      aria-label="Sort images"
+                      data-testid="image-sort-select"
+                      onChange={(event) => setSort(event.target.value as MediaSort)}
+                    >
+                      {MEDIA_SORT_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
               </div>
             )}
             {selectedIds.length > 0 && (
@@ -396,7 +483,7 @@ export default function AdminImages() {
             )}
             <div className="admin-image-grid">
             {items.length === 0 && <p className="admin-empty">No library images yet.</p>}
-            {items.map((asset) => (
+            {sortedItems.map((asset) => (
               <article className={`admin-image-card${selectedSet.has(asset.id) ? " is-selected" : ""}`} key={asset.id}>
                 <label className="admin-image-select">
                   <input
@@ -415,8 +502,19 @@ export default function AdminImages() {
                   <img src={photoDisplaySrc({ assetId: asset.id })} alt={asset.defaultAlt || asset.originalFilename} />
                 </div>
                 <strong>{asset.originalFilename}</strong>
-                <small>
-                  {imageUsageLine(asset, assignedProductNames(products, asset.id))}
+                <small className="admin-image-usage">
+                  <button
+                    type="button"
+                    className="admin-image-assign-btn"
+                    aria-label={`Assign ${asset.originalFilename} to a product or article`}
+                    title="Assign to a product or article"
+                    data-testid="assign-image-btn"
+                    disabled={busy}
+                    onClick={() => openAssign(asset)}
+                  >
+                    <Icon name="plus" size={14} />
+                  </button>
+                  <span>{imageUsageLine(asset, assignedProductNames(products, asset.id))}</span>
                 </small>
                 <p className={asset.defaultAlt.trim() ? "admin-image-alt" : "admin-image-alt is-missing"}>
                   {asset.defaultAlt.trim() ? `Alt: ${asset.defaultAlt}` : "No alt text"}
@@ -592,6 +690,110 @@ export default function AdminImages() {
                 onClick={() => void attachSelected()}
               >
                 Attach selected
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+      {assign && (
+        <div className="admin-dialog-backdrop" role="presentation" onMouseDown={() => !busy && setAssign(null)}>
+          <section
+            className="admin-dialog admin-image-assign-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="assign-image-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="admin-image-match-header">
+              <h2 id="assign-image-title">Assign image</h2>
+              <button
+                type="button"
+                className="admin-image-match-close"
+                aria-label="Close assign dialog"
+                disabled={busy}
+                onClick={() => setAssign(null)}
+              >
+                <Icon name="close" size={20} />
+              </button>
+            </div>
+            <div className="admin-image-match-file">
+              <button
+                type="button"
+                className="admin-image-thumb admin-image-match-preview-btn"
+                aria-label={`Preview ${assign.asset.originalFilename}`}
+                onClick={() => setPreview({ assetId: assign.asset.id, filename: assign.asset.originalFilename })}
+              >
+                <img src={photoDisplaySrc({ assetId: assign.asset.id })} alt="" />
+              </button>
+              <strong>{assign.asset.originalFilename}</strong>
+            </div>
+            <p>The photo becomes the hero. Existing product photos move down. For an article, it replaces the current hero and a published article updates straight away.</p>
+            <div className="admin-image-assign-targets" role="radiogroup" aria-label="Assign to">
+              {(["product", "article"] as AssignTarget[]).map((target) => (
+                <label key={target} className={`admin-image-assign-target${assign.target === target ? " is-active" : ""}`}>
+                  <input
+                    type="radio"
+                    name="assign-target"
+                    value={target}
+                    checked={assign.target === target}
+                    disabled={busy}
+                    onChange={() => setAssign((current) => (current ? { ...current, target, filter: "", error: "" } : current))}
+                  />
+                  <span>{target === "product" ? "Product" : "Article"}</span>
+                </label>
+              ))}
+            </div>
+            <label className="admin-image-assign-field">
+              Filter
+              <input
+                type="search"
+                value={assign.filter}
+                placeholder={assign.target === "product" ? "Type part of a product name" : "Type part of an article title"}
+                disabled={busy}
+                onChange={(event) => setAssign((current) => (current ? { ...current, filter: event.target.value } : current))}
+              />
+            </label>
+            <label className="admin-image-assign-field">
+              {assign.target === "product" ? "Product" : "Article"}
+              {assign.target === "product" ? (
+                <select
+                  value={assign.productId}
+                  disabled={busy}
+                  data-testid="assign-product-select"
+                  onChange={(event) => setAssign((current) => (current ? { ...current, productId: event.target.value, error: "" } : current))}
+                >
+                  <option value="">Choose a product</option>
+                  {assignProductOptions.map((product) => (
+                    <option key={product.id} value={product.id}>{product.name} ({productListingState(product).toLowerCase()})</option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  value={assign.articleId}
+                  disabled={busy}
+                  data-testid="assign-article-select"
+                  onChange={(event) => setAssign((current) => (current ? { ...current, articleId: event.target.value, error: "" } : current))}
+                >
+                  <option value="">Choose an article</option>
+                  {assignArticleOptions.map((article) => (
+                    <option key={article.id} value={article.id}>{article.title} ({article.publishStatus.toLowerCase()})</option>
+                  ))}
+                </select>
+              )}
+            </label>
+            {assign.target === "product" && assignProductOptions.length === 0 && <p className="admin-field-hint">No products match that filter.</p>}
+            {assign.target === "article" && assignArticleOptions.length === 0 && <p className="admin-field-hint">{articles.length ? "No articles match that filter." : "No articles yet."}</p>}
+            {assign.error && <p className="admin-inline-field-error">{assign.error}</p>}
+            <div className="admin-dialog-actions">
+              <button className="admin-button ghost" type="button" disabled={busy} onClick={() => setAssign(null)}>Cancel</button>
+              <button
+                className="admin-button primary"
+                type="button"
+                data-testid="assign-image-confirm"
+                disabled={busy || !assignSelectedId}
+                onClick={() => void confirmAssign()}
+              >
+                {busy ? "Assigning…" : `Set as ${assign.target} hero`}
               </button>
             </div>
           </section>
