@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const serverRoot = new URL("..", import.meta.url);
 const testRunId = `${process.pid}-${Date.now()}`;
 const createdProductIds = [];
+const createdArticleIds = [];
 const createdAssetIds = [];
 let child;
 let baseUrl;
@@ -139,6 +140,10 @@ afterEach(async () => {
     await request("DELETE", `/products/${id}`).catch(() => {});
   }
   createdProductIds.length = 0;
+  for (const id of createdArticleIds) {
+    await request("DELETE", `/admin/articles/${id}`).catch(() => {});
+  }
+  createdArticleIds.length = 0;
   for (const id of createdAssetIds) {
     await request("DELETE", `/admin/media/${id}`, { confirm: true }).catch(() => {});
   }
@@ -300,6 +305,52 @@ test("attach inserts the new image as hero and shifts existing photos", async (t
   assert.equal(afterSecond.details.photos[0].assetId, second.id);
   assert.equal(afterSecond.details.photos[1].assetId, first.id);
   assert.equal(afterSecond.details.photos[1].slot, "Photo 2");
+});
+
+test("attach sets a library image as an article hero", async (t) => {
+  if (!process.env.DATABASE_URL) {
+    t.skip("DATABASE_URL is not set");
+    return;
+  }
+  const article = assertStatus(await request("POST", "/admin/articles", {
+    title: `Media attach article ${testRunId}`,
+    slug: `media-attach-article-${testRunId}`,
+    excerpt: "Attach test excerpt",
+    body: "Attach test body",
+    seoTitle: "Attach test SEO",
+    seoDescription: "Attach test SEO description",
+  }), 201);
+  createdArticleIds.push(article.id);
+  assert.equal(article.heroImageAssetId, null);
+
+  const uploaded = assertStatus((await uploadPng(`attach-article-${testRunId}.png`)).completed, 200);
+  const attached = assertStatus(await request("POST", `/admin/media/${uploaded.id}/attach`, { articleId: article.id }), 200);
+  assert.equal(attached.id, uploaded.id);
+  assert.equal(attached.defaultAlt, article.title);
+  assert.equal(attached.usageSummary.article, 1);
+  assert.equal(attached.usageSummary.draft, 1);
+  assert.equal(attached.usageSummary.published, 0);
+
+  const afterAttach = assertStatus(await request("GET", `/admin/articles/${article.id}`), 200);
+  assert.equal(afterAttach.heroImageAssetId, uploaded.id);
+  assert.equal(afterAttach.heroImageSrc, `/api/media/${uploaded.id}`);
+
+  const missing = await request("POST", `/admin/media/${uploaded.id}/attach`, { articleId: 999999999 });
+  assert.equal(missing.response.status, 404);
+});
+
+test("attach requires exactly one of productId or articleId", async (t) => {
+  if (!process.env.DATABASE_URL) {
+    t.skip("DATABASE_URL is not set");
+    return;
+  }
+  const uploaded = assertStatus((await uploadPng(`attach-target-${testRunId}.png`)).completed, 200);
+  const neither = await request("POST", `/admin/media/${uploaded.id}/attach`, {});
+  assert.equal(neither.response.status, 400);
+  const both = await request("POST", `/admin/media/${uploaded.id}/attach`, { productId: 1, articleId: 1 });
+  assert.equal(both.response.status, 400);
+  const invalid = await request("POST", `/admin/media/${uploaded.id}/attach`, { articleId: "abc" });
+  assert.equal(invalid.response.status, 400);
 });
 
 test("product photos can be deleted and remaining photos move up", async (t) => {

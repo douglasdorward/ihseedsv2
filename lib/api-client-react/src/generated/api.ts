@@ -2487,7 +2487,7 @@ export const getAttachMediaAssetUrl = (id: string,) => {
 }
 
 /**
- * @summary Insert a library image as a product hero and shift existing photos down
+ * @summary Set a library image as the hero of a product (shifting existing photos down) or of an article
  */
 export const attachMediaAsset = async (id: string,
     mediaAttachInput: MediaAttachInput, options?: Parameters<typeof customFetch>[1]): Promise<MediaAsset> => {
@@ -2537,7 +2537,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AttachMediaAssetMutationError = ErrorType<void>
 
     /**
- * @summary Insert a library image as a product hero and shift existing photos down
+ * @summary Set a library image as the hero of a product (shifting existing photos down) or of an article
  */
 export const useAttachMediaAsset = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachMediaAsset>>, TError,{id: string;data: BodyType<MediaAttachInput>}, TContext>, request?: SecondParameter<typeof customFetch>}

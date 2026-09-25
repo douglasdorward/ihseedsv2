@@ -627,15 +627,15 @@ paths:
     post:
       operationId: attachMediaAsset
       tags: [admin]
-      summary: Insert a library image as a product hero and shift existing photos down
+      summary: Set a library image as the hero of a product (shifting existing photos down) or of an article
       security: [{ clerkSession: [] }]
       requestBody:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/MediaAttachInput" } } }
       responses:
         "200": { description: Attached asset, content: { application/json: { schema: { $ref: "#/components/schemas/MediaAsset" } } } }
-        "400": { description: Missing product }
-        "404": { description: Asset or product not found }
+        "400": { description: "Provide exactly one of productId or articleId" }
+        "404": { description: "Asset, product, or article not found" }
         "409": { description: Product is archived }
   /admin/media/{id}/object:
     parameters:
@@ -2192,9 +2192,10 @@ components:
         role: { type: string, maxLength: 40 }
     MediaAttachInput:
       type: object
-      required: [productId]
+      description: "Exactly one of productId or articleId. The image becomes that owner's hero."
       properties:
         productId: { type: number, multipleOf: 1, minimum: 1 }
+        articleId: { type: number, multipleOf: 1, minimum: 1 }
     MediaUploadRequestResult:
       type: object
       required: [duplicate]
