@@ -61,7 +61,7 @@ export function buildLlmsTxt(input: {
 
   for (const product of input.products) {
     if (product.details.robotsIndex === false) continue;
-    const note = faqNote(product.details.faqs);
+    const note = faqNote(product.details.faqs ?? []);
     if (!note) continue;
     const path = productCanonicalUrl(
       product.details.canonicalUrl,
