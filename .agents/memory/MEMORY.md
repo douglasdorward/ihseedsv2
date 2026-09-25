@@ -16,3 +16,4 @@
 - [Empty catalogue is valid](empty-catalogue.md) — an intentional wipe must remain empty until an administrator imports or creates products.
 - [Admin bootstrap availability](admin-bootstrap-availability.md) — authentication bootstrap failure must fail admin access closed without taking down the public catalogue API.
 - [Administrator login verification](admin-login-verification.md) — validate real SDK submission and session persistence; a rendered form and an empty typecheck can both falsely pass.
+- [Build API maintenance isolation](build-api-maintenance.md) — temporary build API startup must not perform catalogue repair work before listening.
