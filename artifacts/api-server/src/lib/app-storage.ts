@@ -131,6 +131,7 @@ export function contentTypeFor(filename: string) {
   if (extension === ".png") return "image/png";
   if (extension === ".jpg" || extension === ".jpeg") return "image/jpeg";
   if (extension === ".webp") return "image/webp";
+  if (extension === ".mp4") return "video/mp4";
   return "application/octet-stream";
 }
 
@@ -161,4 +162,10 @@ export function mediaPreviewPath(id: string) {
 
 export function mediaPublicPath(id: string) {
   return `/api/media/${id}`;
+}
+
+export const HERO_VIDEO_STORAGE_PREFIX = "site/hero-videos/";
+
+export function heroVideoStorageKey(id: string, file: "video.mp4" | "poster.webp") {
+  return `${HERO_VIDEO_STORAGE_PREFIX}${id}/${file}`;
 }

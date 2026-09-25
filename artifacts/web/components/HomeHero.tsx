@@ -1,30 +1,74 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CATALOGUE_INDEX_PATH } from "../lib/catalogue-paths";
-import { Icon } from "./Icon";
+import type { HeroSlide } from "../lib/site-settings";
 
-const HERO_OVERLAY = "linear-gradient(90deg, rgba(29,40,28,.98) 0%, rgba(29,40,28,.84) 47%, rgba(29,40,28,.42) 100%)";
+const HERO_OVERLAY = "linear-gradient(90deg, rgba(29,40,28,.83) 0%, rgba(29,40,28,.69) 47%, rgba(29,40,28,.27) 100%)";
 const SLIDE_MS = 6000;
+/** Safety net so a video that never fires `ended` (stalled network) still advances. */
+const VIDEO_FALLBACK_MS = 45000;
+
+function HeroVideo({
+  slide,
+  active,
+  loop,
+  onEnded,
+}: {
+  slide: HeroSlide;
+  active: boolean;
+  loop: boolean;
+  onEnded: () => void;
+}) {
+  const ref = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    if (active) {
+      video.currentTime = 0;
+      const attempt = video.play();
+      if (attempt) attempt.catch(() => { /* autoplay blocked; poster stays visible */ });
+    } else {
+      video.pause();
+    }
+  }, [active]);
+
+  return (
+    <video
+      ref={ref}
+      className="hero-video"
+      src={slide.src}
+      poster={slide.posterSrc || undefined}
+      muted
+      playsInline
+      loop={loop}
+      autoPlay={active}
+      preload={active ? "auto" : "metadata"}
+      onEnded={loop ? undefined : onEnded}
+      aria-hidden="true"
+      tabIndex={-1}
+    />
+  );
+}
 
 export function HomeHero({
   eyebrow,
   heading,
   body,
-  images,
+  slides,
   slideshow,
 }: {
   eyebrow: string;
   heading: string;
   body: string;
-  images: string[];
+  slides: HeroSlide[];
   slideshow: boolean;
 }) {
-  const slides = images.filter(Boolean);
-  const canSlide = slideshow && slides.length > 1;
+  const items = slides.filter((slide) => slide.src);
+  const canSlide = slideshow && items.length > 1;
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -36,19 +80,20 @@ export function HomeHero({
   }, []);
 
   const active = canSlide && !reduceMotion;
-  const current = slides[index] ?? slides[0] ?? "";
+  const safeIndex = items.length ? index % items.length : 0;
+  const current = items[safeIndex] ?? items[0];
+  const currentIsVideo = current?.kind === "video";
 
   useEffect(() => {
-    if (!active || paused) return;
-    const timer = window.setInterval(() => {
-      setIndex((currentIndex) => (currentIndex + 1) % slides.length);
-    }, SLIDE_MS);
-    return () => window.clearInterval(timer);
-  }, [active, paused, slides.length]);
+    if (!active) return;
+    // Photos hold for a fixed time; videos advance from `onEnded`, with a long fallback.
+    const timer = window.setTimeout(() => {
+      setIndex((currentIndex) => (currentIndex + 1) % items.length);
+    }, currentIsVideo ? VIDEO_FALLBACK_MS : SLIDE_MS);
+    return () => window.clearTimeout(timer);
+  }, [active, safeIndex, currentIsVideo, items.length]);
 
-  const go = (next: number) => {
-    setIndex((next + slides.length) % slides.length);
-  };
+  const advance = () => setIndex((currentIndex) => (currentIndex + 1) % items.length);
 
   const copy = (
     <div className="hero-copy">
@@ -61,10 +106,30 @@ export function HomeHero({
     </div>
   );
 
-  if (!active) {
+  if (!current) {
     return (
       <section className="hero-wrap">
-        <div className="hero" style={{ backgroundImage: `${HERO_OVERLAY}, url(${current})` }}>
+        <div className="hero" style={{ backgroundImage: HERO_OVERLAY }}>{copy}</div>
+      </section>
+    );
+  }
+
+  if (!active) {
+    // Single slide, slideshow off, or reduced motion: show the first slide only.
+    const still = current.kind === "video" ? current.posterSrc : current.src;
+    const playVideo = current.kind === "video" && !reduceMotion;
+    return (
+      <section className="hero-wrap">
+        <div
+          className={`hero ${playVideo ? "hero-has-video" : ""}`}
+          style={{ backgroundImage: still ? `${HERO_OVERLAY}, url(${still})` : HERO_OVERLAY }}
+        >
+          {playVideo && (
+            <>
+              <HeroVideo slide={current} active loop onEnded={() => undefined} />
+              <div className="hero-video-overlay" style={{ backgroundImage: HERO_OVERLAY }} aria-hidden="true" />
+            </>
+          )}
           {copy}
         </div>
       </section>
@@ -73,42 +138,32 @@ export function HomeHero({
 
   return (
     <section className="hero-wrap">
-      <div
-        className="hero hero-slideshow"
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-      >
-        {slides.map((src, slideIndex) => (
-          <div
-            key={`${src}-${slideIndex}`}
-            className={`hero-slide ${slideIndex === index ? "is-active" : ""}`}
-            style={{ backgroundImage: `${HERO_OVERLAY}, url(${src})` }}
-            aria-hidden={slideIndex !== index}
-          />
-        ))}
+      <div className="hero hero-slideshow" aria-live="off">
+        {items.map((slide, slideIndex) => {
+          const isActive = slideIndex === safeIndex;
+          if (slide.kind === "video") {
+            return (
+              <div
+                key={`${slide.src}-${slideIndex}`}
+                className={`hero-slide hero-slide-video ${isActive ? "is-active" : ""}`}
+                style={slide.posterSrc ? { backgroundImage: `${HERO_OVERLAY}, url(${slide.posterSrc})` } : undefined}
+                aria-hidden={!isActive}
+              >
+                <HeroVideo slide={slide} active={isActive} loop={false} onEnded={advance} />
+                <div className="hero-video-overlay" style={{ backgroundImage: HERO_OVERLAY }} aria-hidden="true" />
+              </div>
+            );
+          }
+          return (
+            <div
+              key={`${slide.src}-${slideIndex}`}
+              className={`hero-slide ${isActive ? "is-active" : ""}`}
+              style={{ backgroundImage: `${HERO_OVERLAY}, url(${slide.src})` }}
+              aria-hidden={!isActive}
+            />
+          );
+        })}
         {copy}
-        <div className="hero-slideshow-controls">
-          <div className="hero-slideshow-dots" role="tablist" aria-label="Hero photos">
-            {slides.map((_, slideIndex) => (
-              <button
-                key={slideIndex}
-                type="button"
-                className={`hero-slideshow-dot ${slideIndex === index ? "is-active" : ""}`}
-                aria-label={`Show photo ${slideIndex + 1}`}
-                aria-current={slideIndex === index ? "true" : undefined}
-                onClick={() => setIndex(slideIndex)}
-              />
-            ))}
-          </div>
-          <div className="hero-slideshow-arrows">
-            <button type="button" className="hero-slideshow-arrow" aria-label="Previous photo" onClick={() => go(index - 1)}>
-              <Icon name="chevron-left" size={20} />
-            </button>
-            <button type="button" className="hero-slideshow-arrow" aria-label="Next photo" onClick={() => go(index + 1)}>
-              <Icon name="chevron-right" size={20} />
-            </button>
-          </div>
-        </div>
       </div>
     </section>
   );

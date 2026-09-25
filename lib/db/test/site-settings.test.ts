@@ -41,6 +41,34 @@ test("withHomepageDefaults disables slideshow when only one photo remains", () =
   assert.equal(homepage.heroSlideshow, false);
 });
 
+test("withHomepageDefaults keeps video slides with their poster and length, and leaves photos untouched", () => {
+  const homepage = withHomepageDefaults({
+    heroImages: [
+      { src: "https://example.com/one.jpg", assetId: "one" },
+      { src: "/api/site/hero-videos/abc.mp4", assetId: "ignored", kind: "video", posterSrc: "/api/site/hero-videos/abc.webp", durationSeconds: 12.4 },
+      { src: "", assetId: null, kind: "video", posterSrc: "/api/site/hero-videos/missing.webp" },
+    ],
+    heroSlideshow: true,
+  });
+  assert.deepEqual(homepage.heroImages[0], { src: "https://example.com/one.jpg", assetId: "one" });
+  assert.deepEqual(homepage.heroImages[1], {
+    src: "/api/site/hero-videos/abc.mp4",
+    assetId: null,
+    kind: "video",
+    posterSrc: "/api/site/hero-videos/abc.webp",
+    durationSeconds: 12.4,
+  });
+  assert.equal(homepage.heroImages.length, 2, "a video slide without a src is dropped");
+  assert.equal(homepage.heroSlideshow, true);
+});
+
+test("withHomepageDefaults clamps an out-of-range video length", () => {
+  const homepage = withHomepageDefaults({
+    heroImages: [{ src: "/api/site/hero-videos/abc.mp4", assetId: null, kind: "video", posterSrc: "", durationSeconds: 900 }],
+  });
+  assert.equal(homepage.heroImages[0].durationSeconds, 31);
+});
+
 test("withHomepageDefaults fills the About Us blurb when it is missing", () => {
   const homepage = withHomepageDefaults({
     heroHeading: "Pasture Seed Specialists",

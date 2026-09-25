@@ -1510,11 +1510,30 @@ export interface EnquiryCreated {
   emailSent?: boolean;
 }
 
+export type SiteHeroImageKind = typeof SiteHeroImageKind[keyof typeof SiteHeroImageKind];
+
+
+export const SiteHeroImageKind = {
+  image: 'image',
+  video: 'video',
+} as const;
+
+/**
+ * A homepage hero slide. Photos carry src/assetId only; video slides set kind: video plus a poster frame and clip length.
+ */
 export interface SiteHeroImage {
   /** @maxLength 500 */
   src: string;
   /** @maxLength 80 */
   assetId: string | null;
+  kind?: SiteHeroImageKind;
+  /** @maxLength 500 */
+  posterSrc?: string;
+  /**
+     * @minimum 0
+     * @maximum 31
+     */
+  durationSeconds?: number;
 }
 
 export interface SiteHomepageSettings {

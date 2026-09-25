@@ -26,11 +26,33 @@ export function heroDisplaySrc(image: { src?: string; assetId?: string | null },
   return image.src?.trim() || DEFAULT_HERO_IMAGE;
 }
 
+export function isHeroVideoSlide(image: Partial<SiteHeroImage> | null | undefined): boolean {
+  return image?.kind === "video";
+}
+
+export function heroSlideKind(image: Partial<SiteHeroImage> | null | undefined): "image" | "video" {
+  return isHeroVideoSlide(image) ? "video" : "image";
+}
+
+/** Thumbnail/poster for a slide: the poster frame for videos, the photo itself otherwise. */
+export function heroPosterSrc(image: SiteHeroImage, forAdmin = false) {
+  if (isHeroVideoSlide(image)) return image.posterSrc?.trim() || "";
+  return heroDisplaySrc(image, forAdmin);
+}
+
 function cleanHeroImage(image: Partial<SiteHeroImage> | null | undefined): SiteHeroImage | null {
   const src = image?.src?.trim() || "";
   const assetId = image?.assetId?.trim() || null;
   if (!src && !assetId) return null;
-  return { src, assetId };
+  if (!isHeroVideoSlide(image)) return { src, assetId };
+  if (!src) return null;
+  return {
+    src,
+    assetId: null,
+    kind: "video",
+    posterSrc: image?.posterSrc?.trim() || "",
+    ...(typeof image?.durationSeconds === "number" ? { durationSeconds: image.durationSeconds } : {}),
+  };
 }
 
 export function homepageHeroImages(homepage: Pick<SiteHomepageSettings, "heroImageSrc" | "heroImageAssetId" | "heroImages">): SiteHeroImage[] {

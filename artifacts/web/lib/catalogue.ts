@@ -138,6 +138,9 @@ export type SitemapProductEntry = {
 export type PublicSiteHeroImage = {
   src: string;
   assetId: string | null;
+  kind?: "image" | "video";
+  posterSrc?: string;
+  durationSeconds?: number;
 };
 
 export type PublicSiteHomepage = {

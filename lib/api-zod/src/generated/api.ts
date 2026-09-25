@@ -9288,6 +9288,11 @@ export const getPublicSiteSettingsResponseHomepageHeroImagesItemSrcMax = 500;
 
 export const getPublicSiteSettingsResponseHomepageHeroImagesItemAssetIdMax = 80;
 
+export const getPublicSiteSettingsResponseHomepageHeroImagesItemPosterSrcMax = 500;
+
+export const getPublicSiteSettingsResponseHomepageHeroImagesItemDurationSecondsMin = 0;
+export const getPublicSiteSettingsResponseHomepageHeroImagesItemDurationSecondsMax = 31;
+
 export const getPublicSiteSettingsResponseHomepageHeroImagesMax = 6;
 
 export const getPublicSiteSettingsResponseHomepageHeroEyebrowMax = 120;
@@ -9372,8 +9377,11 @@ export const GetPublicSiteSettingsResponse = zod.object({
   "heroImageAssetId": zod.string().max(getPublicSiteSettingsResponseHomepageHeroImageAssetIdMax).nullable(),
   "heroImages": zod.array(zod.object({
   "src": zod.string().max(getPublicSiteSettingsResponseHomepageHeroImagesItemSrcMax),
-  "assetId": zod.string().max(getPublicSiteSettingsResponseHomepageHeroImagesItemAssetIdMax).nullable()
-})).max(getPublicSiteSettingsResponseHomepageHeroImagesMax),
+  "assetId": zod.string().max(getPublicSiteSettingsResponseHomepageHeroImagesItemAssetIdMax).nullable(),
+  "kind": zod.enum(['image', 'video']).optional(),
+  "posterSrc": zod.string().max(getPublicSiteSettingsResponseHomepageHeroImagesItemPosterSrcMax).optional(),
+  "durationSeconds": zod.number().min(getPublicSiteSettingsResponseHomepageHeroImagesItemDurationSecondsMin).max(getPublicSiteSettingsResponseHomepageHeroImagesItemDurationSecondsMax).optional()
+}).describe('A homepage hero slide. Photos carry src\/assetId only; video slides set kind: video plus a poster frame and clip length.')).max(getPublicSiteSettingsResponseHomepageHeroImagesMax),
   "heroSlideshow": zod.boolean(),
   "heroEyebrow": zod.string().max(getPublicSiteSettingsResponseHomepageHeroEyebrowMax),
   "heroHeading": zod.string().max(getPublicSiteSettingsResponseHomepageHeroHeadingMax),
@@ -9438,6 +9446,11 @@ export const getAdminSiteSettingsResponseHomepageHeroImageAssetIdMax = 80;
 export const getAdminSiteSettingsResponseHomepageHeroImagesItemSrcMax = 500;
 
 export const getAdminSiteSettingsResponseHomepageHeroImagesItemAssetIdMax = 80;
+
+export const getAdminSiteSettingsResponseHomepageHeroImagesItemPosterSrcMax = 500;
+
+export const getAdminSiteSettingsResponseHomepageHeroImagesItemDurationSecondsMin = 0;
+export const getAdminSiteSettingsResponseHomepageHeroImagesItemDurationSecondsMax = 31;
 
 export const getAdminSiteSettingsResponseHomepageHeroImagesMax = 6;
 
@@ -9523,8 +9536,11 @@ export const GetAdminSiteSettingsResponse = zod.object({
   "heroImageAssetId": zod.string().max(getAdminSiteSettingsResponseHomepageHeroImageAssetIdMax).nullable(),
   "heroImages": zod.array(zod.object({
   "src": zod.string().max(getAdminSiteSettingsResponseHomepageHeroImagesItemSrcMax),
-  "assetId": zod.string().max(getAdminSiteSettingsResponseHomepageHeroImagesItemAssetIdMax).nullable()
-})).max(getAdminSiteSettingsResponseHomepageHeroImagesMax),
+  "assetId": zod.string().max(getAdminSiteSettingsResponseHomepageHeroImagesItemAssetIdMax).nullable(),
+  "kind": zod.enum(['image', 'video']).optional(),
+  "posterSrc": zod.string().max(getAdminSiteSettingsResponseHomepageHeroImagesItemPosterSrcMax).optional(),
+  "durationSeconds": zod.number().min(getAdminSiteSettingsResponseHomepageHeroImagesItemDurationSecondsMin).max(getAdminSiteSettingsResponseHomepageHeroImagesItemDurationSecondsMax).optional()
+}).describe('A homepage hero slide. Photos carry src\/assetId only; video slides set kind: video plus a poster frame and clip length.')).max(getAdminSiteSettingsResponseHomepageHeroImagesMax),
   "heroSlideshow": zod.boolean(),
   "heroEyebrow": zod.string().max(getAdminSiteSettingsResponseHomepageHeroEyebrowMax),
   "heroHeading": zod.string().max(getAdminSiteSettingsResponseHomepageHeroHeadingMax),
@@ -9583,6 +9599,11 @@ export const updateSiteSettingsBodyHomepageHeroImageAssetIdMax = 80;
 export const updateSiteSettingsBodyHomepageHeroImagesItemSrcMax = 500;
 
 export const updateSiteSettingsBodyHomepageHeroImagesItemAssetIdMax = 80;
+
+export const updateSiteSettingsBodyHomepageHeroImagesItemPosterSrcMax = 500;
+
+export const updateSiteSettingsBodyHomepageHeroImagesItemDurationSecondsMin = 0;
+export const updateSiteSettingsBodyHomepageHeroImagesItemDurationSecondsMax = 31;
 
 export const updateSiteSettingsBodyHomepageHeroImagesMax = 6;
 
@@ -9664,8 +9685,11 @@ export const UpdateSiteSettingsBody = zod.object({
   "heroImageAssetId": zod.string().max(updateSiteSettingsBodyHomepageHeroImageAssetIdMax).nullable(),
   "heroImages": zod.array(zod.object({
   "src": zod.string().max(updateSiteSettingsBodyHomepageHeroImagesItemSrcMax),
-  "assetId": zod.string().max(updateSiteSettingsBodyHomepageHeroImagesItemAssetIdMax).nullable()
-})).max(updateSiteSettingsBodyHomepageHeroImagesMax),
+  "assetId": zod.string().max(updateSiteSettingsBodyHomepageHeroImagesItemAssetIdMax).nullable(),
+  "kind": zod.enum(['image', 'video']).optional(),
+  "posterSrc": zod.string().max(updateSiteSettingsBodyHomepageHeroImagesItemPosterSrcMax).optional(),
+  "durationSeconds": zod.number().min(updateSiteSettingsBodyHomepageHeroImagesItemDurationSecondsMin).max(updateSiteSettingsBodyHomepageHeroImagesItemDurationSecondsMax).optional()
+}).describe('A homepage hero slide. Photos carry src\/assetId only; video slides set kind: video plus a poster frame and clip length.')).max(updateSiteSettingsBodyHomepageHeroImagesMax),
   "heroSlideshow": zod.boolean(),
   "heroEyebrow": zod.string().max(updateSiteSettingsBodyHomepageHeroEyebrowMax),
   "heroHeading": zod.string().max(updateSiteSettingsBodyHomepageHeroHeadingMax),
@@ -9717,6 +9741,11 @@ export const updateSiteSettingsResponseHomepageHeroImageAssetIdMax = 80;
 export const updateSiteSettingsResponseHomepageHeroImagesItemSrcMax = 500;
 
 export const updateSiteSettingsResponseHomepageHeroImagesItemAssetIdMax = 80;
+
+export const updateSiteSettingsResponseHomepageHeroImagesItemPosterSrcMax = 500;
+
+export const updateSiteSettingsResponseHomepageHeroImagesItemDurationSecondsMin = 0;
+export const updateSiteSettingsResponseHomepageHeroImagesItemDurationSecondsMax = 31;
 
 export const updateSiteSettingsResponseHomepageHeroImagesMax = 6;
 
@@ -9802,8 +9831,11 @@ export const UpdateSiteSettingsResponse = zod.object({
   "heroImageAssetId": zod.string().max(updateSiteSettingsResponseHomepageHeroImageAssetIdMax).nullable(),
   "heroImages": zod.array(zod.object({
   "src": zod.string().max(updateSiteSettingsResponseHomepageHeroImagesItemSrcMax),
-  "assetId": zod.string().max(updateSiteSettingsResponseHomepageHeroImagesItemAssetIdMax).nullable()
-})).max(updateSiteSettingsResponseHomepageHeroImagesMax),
+  "assetId": zod.string().max(updateSiteSettingsResponseHomepageHeroImagesItemAssetIdMax).nullable(),
+  "kind": zod.enum(['image', 'video']).optional(),
+  "posterSrc": zod.string().max(updateSiteSettingsResponseHomepageHeroImagesItemPosterSrcMax).optional(),
+  "durationSeconds": zod.number().min(updateSiteSettingsResponseHomepageHeroImagesItemDurationSecondsMin).max(updateSiteSettingsResponseHomepageHeroImagesItemDurationSecondsMax).optional()
+}).describe('A homepage hero slide. Photos carry src\/assetId only; video slides set kind: video plus a poster frame and clip length.')).max(updateSiteSettingsResponseHomepageHeroImagesMax),
   "heroSlideshow": zod.boolean(),
   "heroEyebrow": zod.string().max(updateSiteSettingsResponseHomepageHeroEyebrowMax),
   "heroHeading": zod.string().max(updateSiteSettingsResponseHomepageHeroHeadingMax),
@@ -9872,6 +9904,11 @@ export const uploadSeedGuidePdfResponseHomepageHeroImageAssetIdMax = 80;
 export const uploadSeedGuidePdfResponseHomepageHeroImagesItemSrcMax = 500;
 
 export const uploadSeedGuidePdfResponseHomepageHeroImagesItemAssetIdMax = 80;
+
+export const uploadSeedGuidePdfResponseHomepageHeroImagesItemPosterSrcMax = 500;
+
+export const uploadSeedGuidePdfResponseHomepageHeroImagesItemDurationSecondsMin = 0;
+export const uploadSeedGuidePdfResponseHomepageHeroImagesItemDurationSecondsMax = 31;
 
 export const uploadSeedGuidePdfResponseHomepageHeroImagesMax = 6;
 
@@ -9957,8 +9994,11 @@ export const UploadSeedGuidePdfResponse = zod.object({
   "heroImageAssetId": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroImageAssetIdMax).nullable(),
   "heroImages": zod.array(zod.object({
   "src": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroImagesItemSrcMax),
-  "assetId": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroImagesItemAssetIdMax).nullable()
-})).max(uploadSeedGuidePdfResponseHomepageHeroImagesMax),
+  "assetId": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroImagesItemAssetIdMax).nullable(),
+  "kind": zod.enum(['image', 'video']).optional(),
+  "posterSrc": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroImagesItemPosterSrcMax).optional(),
+  "durationSeconds": zod.number().min(uploadSeedGuidePdfResponseHomepageHeroImagesItemDurationSecondsMin).max(uploadSeedGuidePdfResponseHomepageHeroImagesItemDurationSecondsMax).optional()
+}).describe('A homepage hero slide. Photos carry src\/assetId only; video slides set kind: video plus a poster frame and clip length.')).max(uploadSeedGuidePdfResponseHomepageHeroImagesMax),
   "heroSlideshow": zod.boolean(),
   "heroEyebrow": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroEyebrowMax),
   "heroHeading": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroHeadingMax),
@@ -10005,6 +10045,38 @@ export const UploadSeedGuidePdfResponse = zod.object({
 }),
   "updatedAt": zod.coerce.date()
 })
+
+
+/**
+ * The raw video bytes are the request body. Send the original filename in the `x-filename` header. The clip is validated (MP4/MOV/WebM container, a video stream, 30 second limit) and transcoded server-side to H.264 MP4 without audio plus a WebP poster frame. The response is a hero slide ready to be added to `homepage.heroImages`; nothing is saved until site settings are updated.
+ * @summary Upload a homepage hero video clip (max 30 seconds, 100 MB) and transcode it to an optimised muted MP4
+ */
+export const uploadHeroVideoHeaderXFilenameMax = 200;
+
+
+
+export const UploadHeroVideoHeader = zod.object({
+  "x-filename": zod.string().max(uploadHeroVideoHeaderXFilenameMax).optional()
+})
+
+export const uploadHeroVideoResponseSrcMax = 500;
+
+export const uploadHeroVideoResponseAssetIdMax = 80;
+
+export const uploadHeroVideoResponsePosterSrcMax = 500;
+
+export const uploadHeroVideoResponseDurationSecondsMin = 0;
+export const uploadHeroVideoResponseDurationSecondsMax = 31;
+
+
+
+export const UploadHeroVideoResponse = zod.object({
+  "src": zod.string().max(uploadHeroVideoResponseSrcMax),
+  "assetId": zod.string().max(uploadHeroVideoResponseAssetIdMax).nullable(),
+  "kind": zod.enum(['image', 'video']).optional(),
+  "posterSrc": zod.string().max(uploadHeroVideoResponsePosterSrcMax).optional(),
+  "durationSeconds": zod.number().min(uploadHeroVideoResponseDurationSecondsMin).max(uploadHeroVideoResponseDurationSecondsMax).optional()
+}).describe('A homepage hero slide. Photos carry src\/assetId only; video slides set kind: video plus a poster frame and clip length.')
 
 
 /**

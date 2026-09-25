@@ -6,7 +6,7 @@ import { StatusPill } from "../components/StatusPill";
 import { getArticles, getCategories, getProducts, type CatalogueArticle } from "../lib/catalogue";
 import { CATALOGUE_INDEX_PATH, productPublicPath } from "../lib/catalogue-paths";
 import { HomeHero } from "../components/HomeHero";
-import { expandProductCount, FALLBACK_SITE_SETTINGS, loadSiteSettings, publicMediaSrc, resolveBestSellers, resolveHomepageHeroImages } from "../lib/site-settings";
+import { expandProductCount, FALLBACK_SITE_SETTINGS, loadSiteSettings, publicMediaSrc, resolveBestSellers, resolveHomepageHeroSlides } from "../lib/site-settings";
 import { hasProductPhoto, productCardImage, productImageAlt } from "./products/product-card-facts";
 
 export const metadata: Metadata = {
@@ -41,7 +41,7 @@ export default async function Home() {
         eyebrow={settings.homepage.heroEyebrow}
         heading={settings.homepage.heroHeading}
         body={heroBody}
-        images={resolveHomepageHeroImages(settings.homepage)}
+        slides={resolveHomepageHeroSlides(settings.homepage)}
         slideshow={settings.homepage.heroSlideshow}
       />
 

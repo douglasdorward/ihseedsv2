@@ -14,7 +14,8 @@
     "test:admin-password-recovery-browser": "pnpm --filter @workspace/claude-design run build && pnpm run build && node --test ./test/admin-password-recovery-browser.test.mjs",
     "test:clerk-proxy": "tsx --test ./test/clerk-proxy.test.ts",
     "test:lifecycle": "node ./scripts/run-lifecycle-tests.mjs",
-    "test:media": "tsx --test ./test/media-image-validation.test.ts ./test/image-alt.test.ts ./test/media-usage.test.ts && node --test ./test/media-library.test.mjs"
+    "test:media": "tsx --test ./test/media-image-validation.test.ts ./test/image-alt.test.ts ./test/media-usage.test.ts ./test/hero-video.test.ts && node --test ./test/media-library.test.mjs",
+    "test:hero-video": "tsx --test ./test/hero-video.test.ts"
   },
   "dependencies": {
     "@clerk/express": "^2.1.67",
@@ -27,6 +28,8 @@
     "cors": "^2.8.6",
     "drizzle-orm": "catalog:",
     "express": "^5.2.1",
+    "ffmpeg-static": "^5.3.0",
+    "ffprobe-static": "^3.1.0",
     "google-auth-library": "^11.0.2",
     "http-proxy-middleware": "^4.2.0",
     "pino": "^9.14.0",

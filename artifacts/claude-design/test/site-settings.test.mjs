@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { aboutHeroDisplaySrc, aboutStorySlots, expandProductCount, homepageHeroImages, resolveBestSellers, withHomepageHeroImages } from "../src/site-settings.ts";
+import { aboutHeroDisplaySrc, aboutStorySlots, expandProductCount, heroPosterSrc, heroSlideKind, homepageHeroImages, resolveBestSellers, withHomepageHeroImages } from "../src/site-settings.ts";
 
 test("expandProductCount replaces the live variety token", () => {
   assert.equal(
@@ -63,6 +63,31 @@ test("withHomepageHeroImages keeps extras when slideshow is off and disables it 
   const one = withHomepageHeroImages(two, [two.heroImages[0]], true);
   assert.equal(one.heroSlideshow, false);
   assert.equal(one.heroImageSrc, "https://example.com/one.jpg");
+});
+
+test("withHomepageHeroImages preserves video slides and their poster frame", () => {
+  const homepage = {
+    heroImageSrc: "https://example.com/one.jpg",
+    heroImageAssetId: "one",
+    heroImages: [],
+    heroSlideshow: false,
+    heroEyebrow: "",
+    heroHeading: "",
+    heroBody: "",
+    aboutBody: "",
+    bestSellerSlugs: [],
+  };
+  const video = { src: "/api/site/hero-videos/abc.mp4", assetId: null, kind: "video", posterSrc: "/api/site/hero-videos/abc.webp", durationSeconds: 9 };
+  const next = withHomepageHeroImages(homepage, [video, { src: "https://example.com/two.jpg", assetId: "two" }], true);
+  assert.deepEqual(next.heroImages[0], video);
+  assert.deepEqual(next.heroImages[1], { src: "https://example.com/two.jpg", assetId: "two" });
+  assert.equal(next.heroSlideshow, true);
+  assert.equal(next.heroImageSrc, video.src);
+  assert.equal(next.heroImageAssetId, null);
+  assert.equal(heroSlideKind(next.heroImages[0]), "video");
+  assert.equal(heroSlideKind(next.heroImages[1]), "image");
+  assert.equal(heroPosterSrc(next.heroImages[0], true), "/api/site/hero-videos/abc.webp");
+  assert.equal(heroPosterSrc(next.heroImages[1], true), "/api/admin/media/two/preview");
 });
 
 test("aboutStorySlots pads the About page story to four editable paragraphs", () => {

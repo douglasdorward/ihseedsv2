@@ -63,3 +63,7 @@ artifacts/api-server/uploads/tech-sheets/*
 !artifacts/api-server/uploads/tech-sheets/.gitkeep
 artifacts/api-server/uploads/media/*
 !artifacts/api-server/uploads/media/.gitkeep
+artifacts/api-server/uploads/site/hero-videos/
+
+# Cursor debug logs
+.cursor/debug-*.log

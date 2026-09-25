@@ -5,10 +5,22 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SiteHeroImageKind } from './siteHeroImageKind';
 
+/**
+ * A homepage hero slide. Photos carry src/assetId only; video slides set kind: video plus a poster frame and clip length.
+ */
 export interface SiteHeroImage {
   /** @maxLength 500 */
   src: string;
   /** @maxLength 80 */
   assetId: string | null;
+  kind?: SiteHeroImageKind;
+  /** @maxLength 500 */
+  posterSrc?: string;
+  /**
+     * @minimum 0
+     * @maximum 31
+     */
+  durationSeconds?: number;
 }
