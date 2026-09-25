@@ -385,7 +385,7 @@ export function normalizeProductDetails(value: unknown, packSize = ""): ProductD
 
 /** First photo with a src. Matches the public product-page hero. */
 export function heroPhotoSrc(details: { photos?: Array<{ src?: string }> }): string {
-  return details.photos?.find((photo) => photo.src?.trim())?.src.trim() ?? "";
+  return details.photos?.find((photo) => photo.src?.trim())?.src?.trim() ?? "";
 }
 
 /** Copy the hero photo into a blank social image. Does not replace an explicit URL. */
