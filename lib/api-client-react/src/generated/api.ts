@@ -83,6 +83,7 @@ import type {
   ResellerOutletUpdate,
   ResellerReorder,
   SeedGuidePdfInput,
+  SiteHeroImage,
   SiteSettings,
   SiteSettingsInput,
   SitemapProductEntry,
@@ -6630,6 +6631,78 @@ export const useUploadSeedGuidePdf = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getUploadSeedGuidePdfMutationOptions(options));
+    }
+
+export const getUploadHeroVideoUrl = () => {
+
+
+
+
+  return `/api/admin/site-settings/hero-video`
+}
+
+/**
+ * The raw video bytes are the request body. Send the original filename in the `x-filename` header. The clip is validated (MP4/MOV/WebM container, a video stream, 30 second limit) and transcoded server-side to H.264 MP4 without audio plus a WebP poster frame. The response is a hero slide ready to be added to `homepage.heroImages`; nothing is saved until site settings are updated.
+ * @summary Upload a homepage hero video clip (max 30 seconds, 100 MB) and transcode it to an optimised muted MP4
+ */
+export const uploadHeroVideo = async (uploadHeroVideoBody: Blob, options?: Parameters<typeof customFetch>[1]): Promise<SiteHeroImage> => {
+
+  return customFetch<SiteHeroImage>(getUploadHeroVideoUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/octet-stream', ...options?.headers },
+    body: uploadHeroVideoBody
+  }
+);}
+
+
+
+
+
+export const getUploadHeroVideoMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadHeroVideo>>, TError,{data: BodyType<Blob>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadHeroVideo>>, TError,{data: BodyType<Blob>}, TContext> => {
+
+const mutationKey = ['uploadHeroVideo'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadHeroVideo>>, {data: BodyType<Blob>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  uploadHeroVideo(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadHeroVideoMutationResult = NonNullable<Awaited<ReturnType<typeof uploadHeroVideo>>>
+    export type UploadHeroVideoMutationBody = BodyType<Blob>
+    export type UploadHeroVideoMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Upload a homepage hero video clip (max 30 seconds, 100 MB) and transcode it to an optimised muted MP4
+ */
+export const useUploadHeroVideo = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadHeroVideo>>, TError,{data: BodyType<Blob>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof uploadHeroVideo>>,
+        TError,
+        {data: BodyType<Blob>},
+        TContext
+      > => {
+      return useMutation(getUploadHeroVideoMutationOptions(options));
     }
 
 export const getCreateEnquiryUrl = () => {

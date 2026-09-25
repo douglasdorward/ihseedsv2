@@ -1,10 +1,12 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
+import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import {
   DEFAULT_ABOUT_SETTINGS,
   DEFAULT_COMPANY_SETTINGS,
   DEFAULT_HOMEPAGE_SETTINGS,
   DEFAULT_SEED_GUIDE_SETTINGS,
+  HERO_VIDEO_PUBLIC_PREFIX,
   SEED_GUIDE_PDF_STORAGE_KEY,
   SITE_SETTINGS_ID,
   db,
@@ -18,16 +20,94 @@ import {
   withSeedGuideDefaults,
   type SiteAboutSettings,
   type SiteCompanySettings,
+  type SiteHeroImage,
   type SiteHomepageSettings,
   type SiteSeedGuideSettings,
   type SiteSettingsRow,
 } from "@workspace/db";
-import { getStoredFile, putStoredFile } from "../lib/app-storage";
+import { getStoredFile, heroVideoStorageKey, putStoredFile, removeStoredFile } from "../lib/app-storage";
+import { HeroVideoError, transcodeHeroVideo } from "../lib/hero-video";
 import { syncStaticSiteMediaReferences } from "../lib/media-usage";
 
 const router: IRouter = Router();
 const MAX_PDF_BYTES = 15 * 1024 * 1024;
 const PDF_MAGIC = Buffer.from("%PDF");
+const HERO_VIDEO_ID = /^[a-f0-9-]{36}$/;
+
+export function heroVideoPublicSrc(id: string) {
+  return `${HERO_VIDEO_PUBLIC_PREFIX}${id}.mp4`;
+}
+
+export function heroVideoPosterSrc(id: string) {
+  return `${HERO_VIDEO_PUBLIC_PREFIX}${id}.webp`;
+}
+
+/** Extract the storage id from a hero-video slide src, or null for anything else. */
+export function heroVideoIdFromSrc(src: string | undefined | null) {
+  const value = (src ?? "").trim();
+  if (!value.startsWith(HERO_VIDEO_PUBLIC_PREFIX)) return null;
+  const id = value.slice(HERO_VIDEO_PUBLIC_PREFIX.length).replace(/\.(mp4|webp)$/, "");
+  return HERO_VIDEO_ID.test(id) ? id : null;
+}
+
+function heroVideoIds(homepage: Pick<SiteHomepageSettings, "heroImages">) {
+  const ids = new Set<string>();
+  for (const image of homepage.heroImages ?? []) {
+    if (image.kind !== "video") continue;
+    const id = heroVideoIdFromSrc(image.src);
+    if (id) ids.add(id);
+  }
+  return ids;
+}
+
+/** Delete stored clips that were on the homepage before this save but are not any more. */
+async function removeOrphanedHeroVideos(previous: SiteHomepageSettings, next: SiteHomepageSettings, log: Request["log"]) {
+  const keep = heroVideoIds(next);
+  for (const id of heroVideoIds(previous)) {
+    if (keep.has(id)) continue;
+    try {
+      await removeStoredFile(heroVideoStorageKey(id, "video.mp4"));
+      await removeStoredFile(heroVideoStorageKey(id, "poster.webp"));
+    } catch (error) {
+      log.warn({ err: error, heroVideoId: id }, "Orphaned hero video could not be removed");
+    }
+  }
+}
+
+/** Serve a stored file with byte-range support so Safari and iOS will stream `<video>`. */
+function sendStoredWithRanges(req: Request, res: Response, bytes: Buffer, contentType: string) {
+  res.setHeader("content-type", contentType);
+  res.setHeader("accept-ranges", "bytes");
+  res.setHeader("cache-control", "public, max-age=31536000, immutable");
+  const range = req.headers.range;
+  const total = bytes.length;
+  if (!range || !/^bytes=/.test(range)) {
+    res.setHeader("content-length", String(total));
+    if (req.method === "HEAD") { res.end(); return; }
+    res.send(bytes);
+    return;
+  }
+  const [startRaw, endRaw] = range.replace(/^bytes=/, "").split(",")[0].split("-");
+  let start = startRaw ? Number(startRaw) : Number.NaN;
+  let end = endRaw ? Number(endRaw) : total - 1;
+  if (Number.isNaN(start)) {
+    // Suffix range: bytes=-500
+    const suffix = Number(endRaw);
+    if (!Number.isFinite(suffix) || suffix <= 0) { res.status(416).setHeader("content-range", `bytes */${total}`).end(); return; }
+    start = Math.max(0, total - suffix);
+    end = total - 1;
+  }
+  if (!Number.isFinite(end) || end >= total) end = total - 1;
+  if (!Number.isFinite(start) || start < 0 || start > end || start >= total) {
+    res.status(416).setHeader("content-range", `bytes */${total}`).end();
+    return;
+  }
+  res.status(206);
+  res.setHeader("content-range", `bytes ${start}-${end}/${total}`);
+  res.setHeader("content-length", String(end - start + 1));
+  if (req.method === "HEAD") { res.end(); return; }
+  res.end(bytes.subarray(start, end + 1));
+}
 
 function decodePdf(data: string, filename: string) {
   const buffer = Buffer.from(data.replace(/^data:[^;]+;base64,/, ""), "base64");
@@ -165,7 +245,62 @@ router.put("/admin/site-settings", async (req, res): Promise<void> => {
     await syncStaticSiteMediaReferences(homepage, seedGuide, about, tx);
     return saved;
   });
+  await removeOrphanedHeroVideos(withHomepageDefaults(current.homepage), homepage, req.log);
   res.json(toPublicSettings(updated ?? { ...current, homepage, seedGuide, about, company, updatedAt: new Date() }));
+});
+
+router.put("/admin/site-settings/hero-video", async (req, res): Promise<void> => {
+  const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+  const filename = typeof req.headers["x-filename"] === "string" ? req.headers["x-filename"].slice(0, 200) : "";
+  let converted;
+  try {
+    converted = await transcodeHeroVideo(body);
+  } catch (error) {
+    if (error instanceof HeroVideoError) {
+      if (error.status === 503) req.log.error({ err: error }, "Hero video processing unavailable");
+      res.status(error.status).json({ error: error.message });
+      return;
+    }
+    req.log.error({ err: error, filename }, "Hero video transcode failed");
+    res.status(500).json({ error: "The video could not be processed. Please try again." });
+    return;
+  }
+  const id = randomUUID();
+  try {
+    await putStoredFile(heroVideoStorageKey(id, "video.mp4"), converted.mp4, converted.contentType);
+    await putStoredFile(heroVideoStorageKey(id, "poster.webp"), converted.poster, converted.posterContentType);
+  } catch (error) {
+    req.log.error({ err: error, heroVideoId: id }, "Hero video storage upload failed");
+    await removeStoredFile(heroVideoStorageKey(id, "video.mp4")).catch(() => undefined);
+    res.status(503).json({ error: "Video storage is temporarily unavailable. Please try the upload again." });
+    return;
+  }
+  const slide: SiteHeroImage = {
+    src: heroVideoPublicSrc(id),
+    assetId: null,
+    kind: "video",
+    posterSrc: heroVideoPosterSrc(id),
+    durationSeconds: converted.durationSeconds,
+  };
+  req.log.info({ heroVideoId: id, filename, bytes: converted.mp4.length, durationSeconds: converted.durationSeconds }, "Hero video stored");
+  res.status(201).json(slide);
+});
+
+router.get("/site/hero-videos/:file", async (req, res): Promise<void> => {
+  const file = String(req.params.file ?? "");
+  const match = /^([a-f0-9-]{36})\.(mp4|webp)$/.exec(file);
+  if (!match) {
+    res.status(404).json({ error: "Hero video not found." });
+    return;
+  }
+  const id = match[1];
+  const wantsPoster = match[2] === "webp";
+  const stored = await getStoredFile(heroVideoStorageKey(id, wantsPoster ? "poster.webp" : "video.mp4"));
+  if (!stored?.bytes?.length) {
+    res.status(404).json({ error: "Hero video not found." });
+    return;
+  }
+  sendStoredWithRanges(req, res, stored.bytes, wantsPoster ? "image/webp" : "video/mp4");
 });
 
 router.post("/admin/site-settings/seed-guide-pdf", async (req, res): Promise<void> => {

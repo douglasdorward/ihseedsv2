@@ -30,6 +30,9 @@ async function buildAll() {
     external: [
       "*.node",
       "sharp",
+      // Resolve their bundled binaries relative to their own package directory.
+      "ffmpeg-static",
+      "ffprobe-static",
       "better-sqlite3",
       "sqlite3",
       "canvas",

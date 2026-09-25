@@ -148,6 +148,7 @@ export * from './siteAboutSettings';
 export * from './siteAboutValue';
 export * from './siteCompanySettings';
 export * from './siteHeroImage';
+export * from './siteHeroImageKind';
 export * from './siteHomepageSettings';
 export * from './sitemapProductEntry';
 export * from './siteSeedGuideInput';

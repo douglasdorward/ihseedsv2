@@ -195,6 +195,8 @@ Forage cards chip growing season (`{value} crop`), weeks to first grazing (`Graz
 
 Each card is one public ingredient row. Do not substitute the linked product’s Blurb.
 
+The customer website prints a fixed like-for-like substitution disclaimer (grey italic) directly under every mix table. It is not editable per product.
+
 #### Display name
 
 - **API path:** `details.components[].speciesName`

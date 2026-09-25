@@ -1,3 +1,5 @@
+import { canonicalHostRedirects } from "./host-redirect.mjs";
+
 /** @type {import('next').NextConfig} */
 const wordpressRedirects = [
   ["/lucerne", "/products/lucerne"],
@@ -48,7 +50,9 @@ const nextConfig = {
     tsconfigPath: process.env.NEXT_TSCONFIG_PATH || "tsconfig.json",
   },
   async redirects() {
-    return wordpressRedirects;
+    // Host canonicalisation runs first so a legacy apex URL lands on www in
+    // one hop before the path redirect below is applied.
+    return [...canonicalHostRedirects(), ...wordpressRedirects];
   },
   async rewrites() {
     return [

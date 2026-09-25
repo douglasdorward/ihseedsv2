@@ -406,6 +406,43 @@ test("drafts require only identity fields while publishing requires public catal
   );
 });
 
+test("creating a product with a taken name or slug returns 409 with the clashing field", async () => {
+  const existing = await createProduct("duplicate-source");
+  const base = {
+    price: "",
+    packSize: "",
+    status: "in-stock",
+    note: "",
+    category: "Automated tests",
+    techSheet: "",
+    details: { recordType: "Variety" },
+  };
+
+  const duplicateName = await request("POST", "/products", {
+    ...base,
+    name: existing.name,
+    slug: `duplicate-name-${testRunId}`,
+  });
+  assertStatus(duplicateName, 409);
+  assert.match(duplicateName.data.error, /name already exists/);
+  assert.deepEqual(duplicateName.data.issues, [{ field: "name", label: "Product name" }]);
+
+  const duplicateSlug = await request("POST", "/products", {
+    ...base,
+    name: `Duplicate slug ${testRunId}`,
+    slug: existing.slug,
+  });
+  assertStatus(duplicateSlug, 409);
+  assert.match(duplicateSlug.data.error, /slug already exists/);
+  assert.deepEqual(duplicateSlug.data.issues, [{ field: "slug", label: "Slug" }]);
+
+  const draftRename = await request("POST", `/admin/products/${existing.id}/draft`, draftPayload(existing, {
+    name: (await createProduct("duplicate-target")).name,
+  }));
+  assertStatus(draftRename, 409);
+  assert.match(draftRename.data.error, /name already exists/);
+});
+
 test("draft saves persist sale lines without making the product public", async () => {
   const product = await createProduct("sale-lines-draft");
   const saleLines = [{

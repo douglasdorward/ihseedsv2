@@ -1541,6 +1541,38 @@ paths:
         "400": { description: Invalid PDF, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
         "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
         "403": { description: Administrator access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/site-settings/hero-video:
+    put:
+      operationId: uploadHeroVideo
+      tags: [admin]
+      summary: Upload a homepage hero video clip (max 30 seconds, 100 MB) and transcode it to an optimised muted MP4
+      description: >
+        The raw video bytes are the request body. Send the original filename in the `x-filename` header.
+        The clip is validated (MP4/MOV/WebM container, a video stream, 30 second limit) and transcoded
+        server-side to H.264 MP4 without audio plus a WebP poster frame. The response is a hero slide
+        ready to be added to `homepage.heroImages`; nothing is saved until site settings are updated.
+      security: [{ clerkSession: [] }]
+      parameters:
+        - in: header
+          name: x-filename
+          required: false
+          schema: { type: string, maxLength: 200 }
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: { type: string, format: binary }
+      responses:
+        "201":
+          description: The optimised hero video slide
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SiteHeroImage" }
+        "400": { description: Invalid or too long video, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "403": { description: Administrator access is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "413": { description: Video exceeds the upload size limit, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "503": { description: Video processing is unavailable, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
   /enquiries:
     post:
       operationId: createEnquiry
@@ -2424,10 +2456,14 @@ components:
       required: [ok, id, createdAt]
     SiteHeroImage:
       type: object
+      description: "A homepage hero slide. Photos carry src/assetId only; video slides set kind: video plus a poster frame and clip length."
       required: [src, assetId]
       properties:
         src: { type: string, maxLength: 500 }
         assetId: { type: string, nullable: true, maxLength: 80 }
+        kind: { type: string, enum: [image, video] }
+        posterSrc: { type: string, maxLength: 500 }
+        durationSeconds: { type: number, minimum: 0, maximum: 31 }
     SiteHomepageSettings:
       type: object
       required: [heroImageSrc, heroImageAssetId, heroImages, heroSlideshow, heroEyebrow, heroHeading, heroBody, aboutBody, bestSellerSlugs]

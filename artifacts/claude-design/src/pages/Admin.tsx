@@ -62,6 +62,7 @@ import type {
   ProductAvailabilityOverride,
   ProductListingState
 } from "@workspace/api-client-react";
+import { sanitizeSlugInput, slugify } from "../product-slug";
 import "../admin-v2.css";
 
 function forSearchMetadataInput(value: string) {
@@ -1217,6 +1218,8 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
 
   const [form, setForm] = useState<any>(() => blankProduct);
   const formRef = useRef<any>(blankProduct);
+  /** True once the slug has been typed by hand on a new product, so it stops tracking the name. */
+  const slugEdited = useRef(false);
   const [viewMode, setViewMode] = useState<"draft" | "live">("draft");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -1337,7 +1340,21 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     setForm(confirmedForm);
     queryClient.setQueryData(getGetAdminProductQueryKey(confirmedProduct.id), confirmedProduct);
   };
-  const setField = (key: string, value: any) => updateForm((current: any) => ({ ...current, [key]: value }));
+  const setField = (key: string, value: any) => {
+    if (key === "slug") {
+      // Slugs are lowercase kebab-case only: no spaces, no capitals. A hand-edited
+      // slug stops following the name; clearing it resumes auto-generation.
+      const next = sanitizeSlugInput(String(value ?? ""));
+      slugEdited.current = next.length > 0;
+      updateForm((current: any) => ({ ...current, slug: next }));
+      return;
+    }
+    if (key === "name" && isNew && !slugEdited.current) {
+      updateForm((current: any) => ({ ...current, name: value, slug: slugify(String(value ?? "")) }));
+      return;
+    }
+    updateForm((current: any) => ({ ...current, [key]: value }));
+  };
   const setListingState = (listingState: ProductListingState) => {
     updateForm((current: any) => listingState === "Legacy"
       ? {
@@ -1882,7 +1899,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                      <span className="admin-field-hint">Use ™ on the product name when the brand is trademarked. Do not put ™ or ® in SEO or social fields.</span>
                      {issueFor("name") && <span className="admin-inline-field-error">{issueFor("name")!.message}</span>}
                    </label>
-                   <label className={issueFor("slug") ? "admin-field-invalid" : ""}><FieldLabel required>Slug</FieldLabel><input required aria-invalid={Boolean(issueFor("slug"))} disabled={!isNew} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={currentForm.slug} onChange={(event) => setField("slug", event.target.value.toLowerCase())} placeholder="souwest-pasture-mix"/>{issueFor("slug") && <span className="admin-inline-field-error">{issueFor("slug")!.message}</span>}</label>
+                   <label className={issueFor("slug") ? "admin-field-invalid" : ""}><FieldLabel required hint={isNew ? "Created from the product name. Lowercase letters, numbers and hyphens only; permanent after create." : undefined}>Slug</FieldLabel><input required aria-invalid={Boolean(issueFor("slug"))} disabled={!isNew} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={currentForm.slug} onChange={(event) => setField("slug", event.target.value)} onBlur={(event) => setField("slug", slugify(event.target.value))} placeholder="souwest-pasture-mix"/>{issueFor("slug") && <span className="admin-inline-field-error">{issueFor("slug")!.message}</span>}</label>
                    <label className={issueFor("category") ? "admin-field-invalid" : ""}><FieldLabel required>Category</FieldLabel>
                     <select required aria-invalid={Boolean(issueFor("category"))} value={selectedRoot?.id ?? ""} disabled={loadingTaxonomy || Boolean(taxonomyError)} onChange={handleCategoryChange}>
                       <option value="">Select a category</option>

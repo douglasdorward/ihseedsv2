@@ -1,4 +1,4 @@
-import { getSiteSettings, type CatalogueProduct, type PublicSiteHomepage, type PublicSiteSettings } from "./catalogue";
+import { getSiteSettings, type CatalogueProduct, type PublicSiteHeroImage, type PublicSiteHomepage, type PublicSiteSettings } from "./catalogue";
 import { DEFAULT_COMPANY } from "./company";
 
 export const BEST_SELLER_LIMIT = 4;
@@ -91,12 +91,28 @@ export function publicMediaSrc(image: { src?: string; assetId?: string | null })
   return image.src?.trim() || "";
 }
 
-export function resolveHomepageHeroImages(homepage: PublicSiteHomepage) {
-  const images = (homepage.heroImages ?? [])
-    .map((image) => publicMediaSrc(image))
-    .filter(Boolean);
-  if (images.length) return images;
-  const fallback = publicMediaSrc({ src: homepage.heroImageSrc, assetId: homepage.heroImageAssetId });
+export type HeroSlide = {
+  kind: "image" | "video";
+  src: string;
+  posterSrc: string;
+};
+
+function toHeroSlide(image: PublicSiteHeroImage): HeroSlide | null {
+  if (image.kind === "video") {
+    const src = image.src?.trim() || "";
+    if (!src) return null;
+    return { kind: "video", src, posterSrc: image.posterSrc?.trim() || "" };
+  }
+  const src = publicMediaSrc(image);
+  return src ? { kind: "image", src, posterSrc: src } : null;
+}
+
+export function resolveHomepageHeroSlides(homepage: PublicSiteHomepage): HeroSlide[] {
+  const slides = (homepage.heroImages ?? [])
+    .map(toHeroSlide)
+    .filter((slide): slide is HeroSlide => Boolean(slide));
+  if (slides.length) return slides;
+  const fallback = toHeroSlide({ src: homepage.heroImageSrc, assetId: homepage.heroImageAssetId });
   return fallback ? [fallback] : [];
 }
 

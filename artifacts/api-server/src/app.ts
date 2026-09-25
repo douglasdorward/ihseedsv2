@@ -36,17 +36,35 @@ app.use(
   }),
 );
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
+// Hero video clips are streamed as raw bytes and transcoded server-side, so
+// they get their own (larger) ceiling; the transcoder enforces the same limit.
+const HERO_VIDEO_PATH = "/api/admin/site-settings/hero-video";
+const HERO_VIDEO_BODY_LIMIT = "100mb";
+
+function isRawUploadPath(method: string, path: string) {
+  return method === "PUT" && (
+    /^\/api\/admin\/media\/[^/]+\/object$/.test(path)
+    || /^\/api\/generated-tech-sheets\/[^/]+$/.test(path)
+    || path === HERO_VIDEO_PATH
+  );
+}
+
 // Catalogue workbooks are posted as base64 JSON for a validation-first import.
 // PDF extract/tech-sheet uploads need a higher bound than the workbook path.
 app.use((req, res, next) => {
   const path = req.originalUrl.split("?")[0];
-  if (
-    req.method === "PUT"
-    && (
-      /^\/api\/admin\/media\/[^/]+\/object$/.test(path)
-      || /^\/api\/generated-tech-sheets\/[^/]+$/.test(path)
-    )
-  ) {
+  if (path === HERO_VIDEO_PATH && req.method === "PUT") {
+    express.raw({ type: "*/*", limit: HERO_VIDEO_BODY_LIMIT })(req, res, (err?: unknown) => {
+      const tooLarge = Boolean(err) && typeof err === "object" && (err as { type?: string }).type === "entity.too.large";
+      if (tooLarge) {
+        res.status(413).json({ error: "Videos must be 100 MB or smaller. Trim or compress the clip and try again." });
+        return;
+      }
+      next(err);
+    });
+    return;
+  }
+  if (isRawUploadPath(req.method, path)) {
     express.raw({ type: "*/*", limit: "12mb" })(req, res, next);
     return;
   }
@@ -58,14 +76,7 @@ app.use((req, res, next) => {
   express.json({ limit: large ? "25mb" : "10mb" })(req, res, next);
 });
 app.use((req, res, next) => {
-  const requestPath = req.originalUrl.split("?")[0];
-  if (
-    req.method === "PUT"
-    && (
-      /^\/api\/admin\/media\/[^/]+\/object$/.test(requestPath)
-      || /^\/api\/generated-tech-sheets\/[^/]+$/.test(requestPath)
-    )
-  ) {
+  if (isRawUploadPath(req.method, req.originalUrl.split("?")[0])) {
     next();
     return;
   }

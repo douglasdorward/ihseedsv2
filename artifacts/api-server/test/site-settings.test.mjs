@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { after, before, describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -9,6 +12,24 @@ const testRunId = `${process.pid}-${Date.now()}`;
 const createdAssetIds = [];
 let child;
 let baseUrl;
+
+const ffmpegPath = await import("ffmpeg-static")
+  .then((mod) => (typeof mod.default === "string" && existsSync(mod.default) ? mod.default : null))
+  .catch(() => null);
+let clipDir = "";
+
+/** Render a tiny synthetic H.264 clip with ffmpeg's test pattern source. */
+function renderClip(name, source) {
+  if (!clipDir) clipDir = mkdtempSync(path.join(tmpdir(), "ih-site-settings-clips-"));
+  const output = path.join(clipDir, name);
+  execFileSync(ffmpegPath, [
+    "-y", "-v", "error", "-nostdin",
+    "-f", "lavfi", "-i", source,
+    "-c:v", "libx264", "-pix_fmt", "yuv420p",
+    output,
+  ], { stdio: "pipe" });
+  return readFileSync(output);
+}
 
 const PNG_1X1 = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
@@ -149,6 +170,7 @@ after(async () => {
     await request("DELETE", `/admin/media/${id}`, { confirm: true }).catch(() => {});
   }
   await stopChild(child);
+  if (clipDir) rmSync(clipDir, { recursive: true, force: true });
 });
 
 describe("site settings API", { concurrency: false }, () => {
@@ -419,5 +441,91 @@ test("admin can persist company contact details without clearing homepage settin
 
   const publicSettings = assertStatus(await request("GET", "/site-settings"), 200);
   assert.equal(publicSettings.company.phone, "(08) 9381 2345");
+});
+
+test("hero video upload rejects non-video and over-length clips", async () => {
+  const notVideo = await request("PUT", "/admin/site-settings/hero-video", Buffer.from("%PDF-1.4 definitely not video"), "video/mp4");
+  assert.equal(notVideo.response.status, 400);
+  assert.match(JSON.stringify(notVideo.data), /MP4, MOV, or WebM/);
+
+  if (!ffmpegPath) return;
+  const tooLong = await request("PUT", "/admin/site-settings/hero-video", renderClip("long.mp4", "testsrc=size=160x120:rate=10:duration=31"), "video/mp4");
+  assert.equal(tooLong.response.status, 400);
+  assert.match(JSON.stringify(tooLong.data), /30 seconds or shorter/);
+});
+
+test("hero video upload transcodes the clip, serves it with byte ranges, and cleans up when removed", { skip: !ffmpegPath && "ffmpeg binary unavailable" }, async () => {
+  const clip = renderClip("short.mp4", "testsrc=size=640x360:rate=50:duration=2");
+  const uploaded = await fetch(`${baseUrl}/api/admin/site-settings/hero-video`, {
+    method: "PUT",
+    headers: { "content-type": "video/mp4", "x-filename": `paddock-${testRunId}.mp4` },
+    body: clip,
+  });
+  const uploadedText = await uploaded.text();
+  assert.equal(uploaded.status, 201, uploadedText);
+  const slide = JSON.parse(uploadedText);
+  assert.equal(slide.kind, "video");
+  assert.equal(slide.assetId, null);
+  assert.match(slide.src, /^\/api\/site\/hero-videos\/[a-f0-9-]{36}\.mp4$/);
+  assert.match(slide.posterSrc, /^\/api\/site\/hero-videos\/[a-f0-9-]{36}\.webp$/);
+  assert.ok(slide.durationSeconds > 1 && slide.durationSeconds <= 2.5, `duration ${slide.durationSeconds}`);
+
+  const full = await fetch(`${baseUrl}${slide.src}`);
+  assert.equal(full.status, 200);
+  assert.equal(full.headers.get("content-type"), "video/mp4");
+  assert.equal(full.headers.get("accept-ranges"), "bytes");
+  const total = Number(full.headers.get("content-length"));
+  const fullBytes = Buffer.from(await full.arrayBuffer());
+  assert.equal(fullBytes.length, total);
+  assert.equal(fullBytes.subarray(4, 8).toString("latin1"), "ftyp");
+
+  const partial = await fetch(`${baseUrl}${slide.src}`, { headers: { range: "bytes=0-99" } });
+  assert.equal(partial.status, 206);
+  assert.equal(partial.headers.get("content-range"), `bytes 0-99/${total}`);
+  assert.equal(Buffer.from(await partial.arrayBuffer()).length, 100);
+
+  const tail = await fetch(`${baseUrl}${slide.src}`, { headers: { range: `bytes=${total - 10}-` } });
+  assert.equal(tail.status, 206);
+  assert.equal(Buffer.from(await tail.arrayBuffer()).length, 10);
+
+  const outOfRange = await fetch(`${baseUrl}${slide.src}`, { headers: { range: `bytes=${total + 5}-` } });
+  assert.equal(outOfRange.status, 416);
+
+  const poster = await fetch(`${baseUrl}${slide.posterSrc}`);
+  assert.equal(poster.status, 200);
+  assert.equal(poster.headers.get("content-type"), "image/webp");
+  assert.equal(Buffer.from(await poster.arrayBuffer()).subarray(8, 12).toString(), "WEBP");
+
+  const current = assertStatus(await request("GET", "/admin/site-settings"), 200);
+  const seedGuide = {
+    navTitle: current.seedGuide.navTitle,
+    cardHeading: current.seedGuide.cardHeading,
+    cardButtonLabel: current.seedGuide.cardButtonLabel,
+    cardImageSrc: current.seedGuide.cardImageSrc,
+    cardImageAssetId: current.seedGuide.cardImageAssetId,
+    pageTitle: current.seedGuide.pageTitle,
+    pageIntro: current.seedGuide.pageIntro,
+    pageButtonLabel: current.seedGuide.pageButtonLabel,
+  };
+  const photo = current.homepage.heroImages[0];
+  const saved = assertStatus(await request("PUT", "/admin/site-settings", {
+    homepage: { ...current.homepage, heroImages: [photo, slide], heroSlideshow: true },
+    seedGuide,
+  }), 200);
+  assert.equal(saved.homepage.heroImages.length, 2);
+  assert.equal(saved.homepage.heroSlideshow, true);
+  assert.deepEqual(saved.homepage.heroImages[1], slide);
+  const publicSettings = assertStatus(await request("GET", "/site-settings"), 200);
+  assert.equal(publicSettings.homepage.heroImages[1].kind, "video");
+  assert.equal(publicSettings.homepage.heroImages[1].posterSrc, slide.posterSrc);
+
+  // Removing the slide from the homepage deletes the stored clip and poster.
+  assertStatus(await request("PUT", "/admin/site-settings", {
+    homepage: { ...current.homepage, heroImages: [photo], heroSlideshow: false },
+    seedGuide,
+  }), 200);
+  assert.equal((await fetch(`${baseUrl}${slide.src}`)).status, 404);
+  assert.equal((await fetch(`${baseUrl}${slide.posterSrc}`)).status, 404);
+  assert.equal((await fetch(`${baseUrl}/api/site/hero-videos/%2e%2e%2f%2e%2e%2fseed-guide.pdf`)).status, 404);
 });
 });

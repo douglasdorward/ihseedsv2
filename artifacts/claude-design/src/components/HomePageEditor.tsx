@@ -6,6 +6,7 @@ import {
   useUpdateSiteSettings,
   type AdminProduct,
   type SiteAboutSettings,
+  type SiteHeroImage,
   type SiteHomepageSettings,
   type SiteSettings,
 } from "@workspace/api-client-react";
@@ -13,6 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Icon, StatusPill } from "./ui";
 import { ProductNewStamp } from "./NewStamp";
 import { photoDisplaySrc, uploadMediaAsset } from "../upload-image";
+import { HERO_VIDEO_ACCEPT, HERO_VIDEO_MAX_SECONDS, isVideoFile, uploadHeroVideo, type UploadHeroVideoProgress } from "../upload-video";
 import { isAlsoPopularEligible } from "../also-popular";
 import { navigate } from "../router";
 import {
@@ -21,7 +23,9 @@ import {
   aboutHeroDisplaySrc,
   expandProductCount,
   heroDisplaySrc,
+  heroPosterSrc,
   homepageHeroImages,
+  isHeroVideoSlide,
   guideCardDisplaySrc,
   resolveBestSellers,
   withHomepageHeroImages,
@@ -30,6 +34,15 @@ import "../homepage-editor.css";
 
 const PRODUCT_FALLBACK = "/ih-seeds-logo.png";
 const HERO_OVERLAY = "linear-gradient(90deg, rgba(29,40,28,.98) 0%, rgba(29,40,28,.84) 47%, rgba(29,40,28,.42) 100%)";
+const HERO_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
+
+function uploadStatusLabel(progress: UploadHeroVideoProgress | null, fallback: string) {
+  if (!progress) return fallback;
+  if (progress.stage === "checking") return "Checking video…";
+  if (progress.stage === "uploading") return `Uploading… ${progress.percent}%`;
+  if (progress.stage === "processing") return "Optimising video…";
+  return fallback;
+}
 const GUIDE_OVERLAY = "linear-gradient(90deg, rgba(29,40,28,.92), rgba(29,40,28,.44))";
 const ABOUT_OVERLAY = "linear-gradient(90deg, rgba(12,88,60,.12), rgba(12,88,60,.02))";
 
@@ -71,13 +84,19 @@ export function HomePageEditor({
   const [selectedHero, setSelectedHero] = useState(0);
   const selectedIndex = Math.min(selectedHero, Math.max(heroImages.length - 1, 0));
   const selectedImage = heroImages[selectedIndex] ?? heroImages[0];
-  const heroSrc = heroDisplaySrc(selectedImage ?? { src: homepage.heroImageSrc, assetId: homepage.heroImageAssetId }, true);
+  const selectedIsVideo = isHeroVideoSlide(selectedImage);
+  const heroSrc = selectedIsVideo
+    ? heroPosterSrc(selectedImage, true)
+    : heroDisplaySrc(selectedImage ?? { src: homepage.heroImageSrc, assetId: homepage.heroImageAssetId }, true);
   const aboutSrc = aboutHeroDisplaySrc({ src: about.heroImageSrc, assetId: about.heroImageAssetId }, true);
   const guideSrc = guideCardDisplaySrc({ src: seedGuide.cardImageSrc, assetId: seedGuide.cardImageAssetId }, true);
   const addInputRef = useRef<HTMLInputElement>(null);
+  const addVideoInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [videoProgress, setVideoProgress] = useState<UploadHeroVideoProgress | null>(null);
   const [error, setError] = useState("");
+  const videoCount = heroImages.filter(isHeroVideoSlide).length;
 
   useEffect(() => {
     setSelectedHero((current) => Math.min(current, Math.max(heroImages.length - 1, 0)));
@@ -97,18 +116,24 @@ export function HomePageEditor({
     if (!files.length) return;
     setBusy(true);
     setError("");
+    setVideoProgress(null);
     try {
-      const uploaded = [];
+      const uploaded: SiteHeroImage[] = [];
       for (const file of files) {
-        uploaded.push(await uploadMediaAsset(file, { ownerName: homepage.heroHeading || "IH Seeds" }));
+        if (isVideoFile(file)) {
+          uploaded.push(await uploadHeroVideo(file, setVideoProgress));
+          setVideoProgress(null);
+        } else {
+          const asset = await uploadMediaAsset(file, { ownerName: homepage.heroHeading || "IH Seeds" });
+          uploaded.push({ src: asset.src, assetId: asset.assetId });
+        }
       }
       const nextImages = [...heroImages];
       if (mode === "replace" && uploaded[0]) {
-        nextImages[selectedIndex] = { src: uploaded[0].src, assetId: uploaded[0].assetId };
-        const extras = uploaded.slice(1).map((item) => ({ src: item.src, assetId: item.assetId }));
-        nextImages.splice(selectedIndex + 1, 0, ...extras);
+        nextImages[selectedIndex] = uploaded[0];
+        nextImages.splice(selectedIndex + 1, 0, ...uploaded.slice(1));
       } else {
-        nextImages.push(...uploaded.map((item) => ({ src: item.src, assetId: item.assetId })));
+        nextImages.push(...uploaded);
       }
       const limited = nextImages.slice(0, HERO_IMAGE_LIMIT);
       onChange(withHomepageHeroImages(homepage, limited));
@@ -117,6 +142,7 @@ export function HomePageEditor({
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setBusy(false);
+      setVideoProgress(null);
     }
   };
 
@@ -145,6 +171,23 @@ export function HomePageEditor({
     <div className="hpe-page">
       <section className="hero-wrap">
         <div className="hero" style={{ backgroundImage: `${HERO_OVERLAY}, url(${heroSrc})` }}>
+          {selectedIsVideo && selectedImage?.src && (
+            <>
+              <video
+                key={selectedImage.src}
+                className="hpe-hero-video"
+                src={selectedImage.src}
+                poster={heroSrc || undefined}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                aria-label="Selected hero video preview"
+              />
+              <div className="hpe-hero-video-overlay" style={{ backgroundImage: HERO_OVERLAY }} aria-hidden="true" />
+            </>
+          )}
           <div className="hero-copy">
             <h1>
               <textarea
@@ -181,21 +224,28 @@ export function HomePageEditor({
             </div>
           </div>
           <div className="ppe-hero-upload hpe-hero-photos">
-            <input ref={addInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden multiple onChange={handleUpload("add")} />
-            <input ref={replaceInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={handleUpload("replace")} />
-            <div className="hpe-hero-thumbs" role="listbox" aria-label="Hero photos">
-              {heroImages.map((image, index) => (
-                <button
-                  type="button"
-                  key={`${image.assetId || image.src}-${index}`}
-                  className={`hpe-hero-thumb ${index === selectedIndex ? "is-selected" : ""}`}
-                  role="option"
-                  aria-selected={index === selectedIndex}
-                  aria-label={`Hero photo ${index + 1}`}
-                  onClick={() => setSelectedHero(index)}
-                  style={{ backgroundImage: `url(${heroDisplaySrc(image, true)})` }}
-                />
-              ))}
+            <input ref={addInputRef} type="file" accept={HERO_IMAGE_ACCEPT} hidden multiple onChange={handleUpload("add")} />
+            <input ref={addVideoInputRef} type="file" accept={HERO_VIDEO_ACCEPT} hidden onChange={handleUpload("add")} />
+            <input ref={replaceInputRef} type="file" accept={`${HERO_IMAGE_ACCEPT},${HERO_VIDEO_ACCEPT}`} hidden onChange={handleUpload("replace")} />
+            <div className="hpe-hero-thumbs" role="listbox" aria-label="Hero slides">
+              {heroImages.map((image, index) => {
+                const video = isHeroVideoSlide(image);
+                const thumb = heroPosterSrc(image, true);
+                return (
+                  <button
+                    type="button"
+                    key={`${image.assetId || image.src}-${index}`}
+                    className={`hpe-hero-thumb ${index === selectedIndex ? "is-selected" : ""} ${video ? "is-video" : ""}`}
+                    role="option"
+                    aria-selected={index === selectedIndex}
+                    aria-label={`Hero ${video ? "video" : "photo"} ${index + 1}`}
+                    onClick={() => setSelectedHero(index)}
+                    style={thumb ? { backgroundImage: `url(${thumb})` } : undefined}
+                  >
+                    {video && <span className="hpe-hero-thumb-badge" aria-hidden="true">▶</span>}
+                  </button>
+                );
+              })}
             </div>
             <div className="hpe-hero-photo-actions">
               <button
@@ -204,14 +254,23 @@ export function HomePageEditor({
                 onClick={() => addInputRef.current?.click()}
                 disabled={busy || heroImages.length >= HERO_IMAGE_LIMIT}
               >
-                {busy ? "Uploading…" : heroImages.length >= HERO_IMAGE_LIMIT ? "Photo limit reached" : "Add photo"}
+                {busy ? uploadStatusLabel(videoProgress, "Uploading…") : heroImages.length >= HERO_IMAGE_LIMIT ? "Slide limit reached" : "Add photo"}
+              </button>
+              <button
+                type="button"
+                className="ppe-hero-upload-button hpe-hero-secondary"
+                onClick={() => addVideoInputRef.current?.click()}
+                disabled={busy || heroImages.length >= HERO_IMAGE_LIMIT}
+                title={`MP4, MOV or WebM up to ${HERO_VIDEO_MAX_SECONDS} seconds. Sound is removed and the clip is optimised for the web.`}
+              >
+                Add video
               </button>
               <button type="button" className="ppe-hero-upload-button hpe-hero-secondary" onClick={() => replaceInputRef.current?.click()} disabled={busy}>
-                Change photo
+                Change
               </button>
             </div>
             <div className="hpe-hero-photo-tools">
-              <div className="hpe-hero-move" role="group" aria-label="Reorder selected photo">
+              <div className="hpe-hero-move" role="group" aria-label="Reorder selected slide">
                 <button type="button" aria-label="Move left" onClick={() => moveHero(selectedIndex, selectedIndex - 1)} disabled={busy || selectedIndex === 0}>
                   <Icon name="chevron-left" size={16} />
                 </button>
@@ -229,10 +288,17 @@ export function HomePageEditor({
                   disabled={heroImages.length < 2}
                   onChange={(event) => onChange(withHomepageHeroImages(homepage, heroImages, event.target.checked))}
                 />
-                Slideshow
+                Auto slideshow
               </label>
             </div>
-            {error && <span className="ppe-hero-upload-error">{error}</span>}
+            <span className="hpe-hero-help">
+              {heroImages.length < 2
+                ? `Add another photo or video to enable the auto slideshow. Videos play muted and are limited to ${HERO_VIDEO_MAX_SECONDS} seconds.`
+                : homepage.heroSlideshow
+                  ? `Photos show for 6 seconds; videos play through once${videoCount ? "" : " (none yet)"}. Visitors cannot skip slides.`
+                  : "Only the first slide is shown until Auto slideshow is turned on."}
+            </span>
+            {error && <span className="ppe-hero-upload-error" role="alert">{error}</span>}
           </div>
         </div>
       </section>

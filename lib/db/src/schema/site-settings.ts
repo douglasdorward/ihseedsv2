@@ -17,9 +17,22 @@ export const DEFAULT_SEED_GUIDE_CARD_IMAGE =
 export const DEFAULT_ABOUT_HERO_IMAGE =
   "https://images.unsplash.com/photo-1530507629858-e4977d30e9e0?auto=format&fit=crop&w=900&q=80";
 
+export const HERO_VIDEO_MAX_SECONDS = 30;
+export const HERO_VIDEO_PUBLIC_PREFIX = "/api/site/hero-videos/";
+
+export type SiteHeroSlideKind = "image" | "video";
+
+/**
+ * A homepage hero slide. Photos carry only `src`/`assetId`; video slides add
+ * `kind: "video"`, a poster frame and the clip length so the public hero can
+ * play the clip through before advancing.
+ */
 export type SiteHeroImage = {
   src: string;
   assetId: string | null;
+  kind?: SiteHeroSlideKind;
+  posterSrc?: string;
+  durationSeconds?: number;
 };
 
 export type SiteHomepageSettings = {
@@ -173,6 +186,9 @@ const slugListSchema = z.array(z.string().trim().max(160)).max(BEST_SELLER_LIMIT
 const siteHeroImageSchema = z.object({
   src: z.string().trim().max(500),
   assetId: nullableAssetId,
+  kind: z.enum(["image", "video"]).optional(),
+  posterSrc: z.string().trim().max(500).optional(),
+  durationSeconds: z.number().min(0).max(HERO_VIDEO_MAX_SECONDS + 1).optional(),
 });
 
 export const siteHomepageSettingsSchema = z.object({
@@ -244,11 +260,27 @@ export const seedGuidePdfInputSchema = z.object({
 export type UpdateSiteSettings = z.infer<typeof updateSiteSettingsSchema>;
 export type SiteSettingsRow = typeof siteSettingsTable.$inferSelect;
 
-function cleanHeroImage(image: Partial<SiteHeroImage> | null | undefined): SiteHeroImage | null {
+export function isHeroVideoSlide(image: Partial<SiteHeroImage> | null | undefined): boolean {
+  return image?.kind === "video";
+}
+
+export function cleanHeroImage(image: Partial<SiteHeroImage> | null | undefined): SiteHeroImage | null {
   const src = image?.src?.trim() || "";
   const assetId = image?.assetId?.trim() || null;
   if (!src && !assetId) return null;
-  return { src, assetId };
+  if (!isHeroVideoSlide(image)) return { src, assetId };
+  // Video slides always live at a public hero-video URL; a video needs a src.
+  if (!src) return null;
+  const duration = typeof image?.durationSeconds === "number" && Number.isFinite(image.durationSeconds)
+    ? Math.max(0, Math.min(HERO_VIDEO_MAX_SECONDS + 1, image.durationSeconds))
+    : undefined;
+  return {
+    src,
+    assetId: null,
+    kind: "video",
+    posterSrc: image?.posterSrc?.trim() || "",
+    ...(duration === undefined ? {} : { durationSeconds: duration }),
+  };
 }
 
 export function normalizeHeroImages(value: Partial<SiteHomepageSettings> | null | undefined): SiteHeroImage[] {

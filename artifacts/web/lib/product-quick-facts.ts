@@ -5,12 +5,16 @@ export type ProductQuickFact = { label: string; value: string | number; icon: st
 
 type SowingRate = NonNullable<CatalogueProduct["details"]["sowingRates"]>[number];
 
-function formatSowingRate(rate: SowingRate) {
+export function formatSowingRate(rate: SowingRate) {
   const hasMin = rate.min != null;
   const hasMax = rate.max != null;
   if (!hasMin && !hasMax) return null;
   const range = hasMin && hasMax ? `${rate.min}–${rate.max}` : String(hasMin ? rate.min : rate.max);
   return [range, rate.unit, rate.context].filter((part) => Boolean(part && String(part).trim())).join(" ");
+}
+
+export function formatSowingRates(rates: readonly SowingRate[] | undefined) {
+  return (rates ?? []).map(formatSowingRate).filter((value): value is string => Boolean(value)).join(", ");
 }
 
 const SOIL_LABELS = Object.fromEntries(SOIL_OPTIONS.map(({ value, label }) => [value, label])) as Record<string, string>;
@@ -20,19 +24,30 @@ type SoilAndPhDetails = Pick<
   "soilRangeLightest" | "soilRangeHeaviest" | "soilPhMin" | "soilPhScale"
 >;
 
-export function formatSoilAndPh(details: SoilAndPhDetails) {
+export function formatSoilRange(details: Pick<SoilAndPhDetails, "soilRangeLightest" | "soilRangeHeaviest">) {
   const lightest = details.soilRangeLightest ? SOIL_LABELS[details.soilRangeLightest] : undefined;
   const heaviest = details.soilRangeHeaviest ? SOIL_LABELS[details.soilRangeHeaviest] : undefined;
-  if (!lightest || !heaviest || details.soilPhMin == null || !details.soilPhScale) return null;
-  const soilRange = lightest === heaviest ? lightest : `${lightest} to ${heaviest}`;
-  return `Soil range: ${soilRange} · pH ${details.soilPhMin}+ (${details.soilPhScale})`;
+  if (!lightest || !heaviest) return null;
+  return lightest === heaviest ? lightest : `${lightest} to ${heaviest}`;
+}
+
+export function formatSoilPh(details: Pick<SoilAndPhDetails, "soilPhMin" | "soilPhScale">) {
+  if (details.soilPhMin == null || !details.soilPhScale) return null;
+  return `pH ${details.soilPhMin}+ (${details.soilPhScale})`;
+}
+
+export function formatSoilAndPh(details: SoilAndPhDetails) {
+  const soilRange = formatSoilRange(details);
+  const soilPh = formatSoilPh(details);
+  if (!soilRange || !soilPh) return null;
+  return `Soil range: ${soilRange} · ${soilPh}`;
 }
 
 // Preserves the historical ProductDetail fact order and values exactly.
 export function getProductQuickFacts(product: CatalogueProduct): ProductQuickFact[] {
   const d = product.details;
   const quickFacts: ProductQuickFact[] = [];
-  const sowingRate = (d.sowingRates ?? []).map(formatSowingRate).filter((value): value is string => Boolean(value)).join(", ");
+  const sowingRate = formatSowingRates(d.sowingRates);
   if (d.persistencyType) quickFacts.push({ label: "Type & persistency", value: d.persistencyType, icon: "leaf" });
   if (d.rainfallMinMm) quickFacts.push({ label: "Min rainfall", value: `${d.rainfallMinMm} mm+`, icon: "cloud-rain" });
   const soilAndPh = formatSoilAndPh(d);
