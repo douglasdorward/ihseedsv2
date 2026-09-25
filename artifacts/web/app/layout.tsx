@@ -5,7 +5,7 @@ import { getCategories } from "../lib/catalogue";
 import { featuredNavCategories } from "../lib/catalogue-paths";
 import { DEFAULT_COMPANY, organizationJsonLd } from "../lib/company";
 import { FALLBACK_SITE_SETTINGS, loadSiteSettings } from "../lib/site-settings";
-import { publicSiteUrl } from "../lib/site-url";
+import { absoluteSiteUrl, publicSiteUrl } from "../lib/site-url";
 import "./styles.css";
 
 export const metadata: Metadata = {
@@ -24,6 +24,9 @@ export default async function RootLayout({ children }: { children: any }) {
 
   return (
     <html lang="en">
+      <head>
+        <link rel="describedby" href={absoluteSiteUrl("/llms.txt")} />
+      </head>
       <body>
         <script
           type="application/ld+json"
