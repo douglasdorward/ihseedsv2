@@ -5,6 +5,7 @@ import { AlsoPopularPicker } from "./AlsoPopularPicker";
 import { ProductNewStamp } from "./NewStamp";
 import { intendedAlsoPopularSlugs, isAlsoPopularEligible, resolveAlsoPopular } from "../also-popular";
 import { getEditorQuickFactSlots, type QuickFactSlotId } from "../product-quick-facts";
+import { ProductPhotoOrderButtons } from "../product-photo-order";
 import { photoDisplaySrc, uploadMediaAsset } from "../upload-image";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80";
@@ -880,36 +881,47 @@ function BelowCards(props: ProductPageEditorProps) {
                     onChange={(event) => props.updatePhoto(index, { alt: event.target.value })}
                   />
                 </span>
-                {index > 0 && (
-                  <>
-                    <input
-                      className="ppe-extra-photo-url"
-                      type="url"
-                      value={photo.src?.startsWith("/api/media/") ? "" : photo.src}
-                      placeholder="Image URL"
-                      onChange={(event) => props.updatePhoto(index, {
-                        src: event.target.value,
-                        file: event.target.value ? photo.file || `Photo ${index + 1}` : "",
-                        assetId: undefined,
-                        format: undefined,
-                        objectPath: undefined,
-                      })}
-                    />
-                    <label className="admin-text-button">
-                      Upload
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        hidden
-                        onChange={async (event) => {
-                          const file = event.target.files?.[0];
-                          event.target.value = "";
-                          if (!file) return;
-                          props.updatePhoto(index, await uploadMediaAsset(file, { ownerName: form.name, role: photo.role }));
-                        }}
+                {(index > 0 || !readOnly) && (
+                  <div className="admin-photo-actions">
+                    {!readOnly && (
+                      <ProductPhotoOrderButtons
+                        photos={details.photos}
+                        index={index}
+                        onChange={(photos) => props.setDetail("photos", photos)}
                       />
-                    </label>
-                  </>
+                    )}
+                    {index > 0 && (
+                      <>
+                        <input
+                          className="ppe-extra-photo-url"
+                          type="url"
+                          value={photo.src?.startsWith("/api/media/") ? "" : photo.src}
+                          placeholder="Image URL"
+                          onChange={(event) => props.updatePhoto(index, {
+                            src: event.target.value,
+                            file: event.target.value ? photo.file || `Photo ${index + 1}` : "",
+                            assetId: undefined,
+                            format: undefined,
+                            objectPath: undefined,
+                          })}
+                        />
+                        <label className="admin-text-button">
+                          Upload
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            hidden
+                            onChange={async (event) => {
+                              const file = event.target.files?.[0];
+                              event.target.value = "";
+                              if (!file) return;
+                              props.updatePhoto(index, await uploadMediaAsset(file, { ownerName: form.name, role: photo.role }));
+                            }}
+                          />
+                        </label>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
             ))}
