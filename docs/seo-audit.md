@@ -63,7 +63,7 @@ Not in place:
 
 ## Recommended order
 
-1. 301 one host to the other before the new app is served. The app currently assumes `www`.
+1. Use the apex host consistently. The app now emits apex canonicals and redirects `www` to apex; both domains must be connected when publishing.
 2. Add the 71 missing `/product/` redirects to the nested product URL, and retarget the 7 category destinations. Include `/product/souwest-pasture-mix`.
 3. Redirect or replace the 29 posts and the `/category/` hubs. `/publications-and-news` needs its own rule.
 4. Unpublish Demo Mix, New product 1, the migration-regression ryegrass, and fill or hide SARDI Seven.

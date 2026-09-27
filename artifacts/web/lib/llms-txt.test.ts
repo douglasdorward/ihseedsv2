@@ -187,9 +187,9 @@ test("products are grouped by public category, with canonical URLs and soil when
   assert.match(text, /Annual clovers for WA\./);
   assert.match(
     text,
-    /- \[Crimson Clover\]\(https:\/\/www\.irwinhunter\.com\.au\/products\/clovers\/crimson-clover\): Trifolium incarnatum\. Attractive crimson flowers and highly palatable\. Annual · 500 mm\+ rainfall · Sand to Heavy · Grazing, Hay · Sowing rate 10 kg\/ha Monoculture/,
+    /- \[Crimson Clover\]\(https:\/\/irwinhunter\.com\.au\/products\/clovers\/crimson-clover\): Trifolium incarnatum\. Attractive crimson flowers and highly palatable\. Annual · 500 mm\+ rainfall · Sand to Heavy · Grazing, Hay · Sowing rate 10 kg\/ha Monoculture/,
   );
-  assert.match(text, /- \[Bare\]\(https:\/\/www\.irwinhunter\.com\.au\/products\/clovers\/bare\): Just a tagline\./);
+  assert.match(text, /- \[Bare\]\(https:\/\/irwinhunter\.com\.au\/products\/clovers\/bare\): Just a tagline\./);
   assert.equal(text.includes(" · \n"), false);
   assert.equal(/Just a tagline\. ·/.test(text), false);
   assert.match(text, /### Other\n\n- \[Orphan\]/);
@@ -204,7 +204,7 @@ test("products are grouped by public category, with canonical URLs and soil when
   const older = text.indexOf("/resources/older");
   assert.ok(newer >= 0 && newer < older);
   assert.match(text, /\/resources\/newer\): Second\./);
-  assert.match(text, /Clovers\]\(https:\/\/www\.irwinhunter\.com\.au\/products\/clovers#faqs\): 1 question/);
+  assert.match(text, /Clovers\]\(https:\/\/irwinhunter\.com\.au\/products\/clovers#faqs\): 1 question/);
   assert.equal(text.includes("Blank"), false);
   assert.match(text, new RegExp(`Pasture selector.*${PASTURE_SELECTOR_FAQS.length} questions`));
 });

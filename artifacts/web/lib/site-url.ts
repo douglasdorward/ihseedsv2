@@ -1,12 +1,12 @@
-export const DEFAULT_PUBLIC_SITE_URL = "https://www.irwinhunter.com.au";
+export const DEFAULT_PUBLIC_SITE_URL = "https://irwinhunter.com.au";
 
 function canonicalPublicOrigin(value: string) {
   const parsed = new URL(value);
   if (!["http:", "https:"].includes(parsed.protocol)) {
     throw new Error("PUBLIC_SITE_URL must use http or https.");
   }
-  if (parsed.hostname === "irwinhunter.com.au") {
-    parsed.hostname = "www.irwinhunter.com.au";
+  if (parsed.hostname === "www.irwinhunter.com.au") {
+    parsed.hostname = "irwinhunter.com.au";
   }
   return parsed.origin;
 }

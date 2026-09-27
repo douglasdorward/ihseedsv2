@@ -34,7 +34,7 @@ export function companyTelHref(phone: string) {
   return `tel:${digits}`;
 }
 
-export function organizationJsonLd(company: CompanyContact, siteUrl = "https://www.irwinhunter.com.au") {
+export function organizationJsonLd(company: CompanyContact, siteUrl = "https://irwinhunter.com.au") {
   const graph: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Organization",
