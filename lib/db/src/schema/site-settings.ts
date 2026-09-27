@@ -38,6 +38,8 @@ export type SiteHeroImage = {
 export type SiteHomepageSettings = {
   heroImageSrc: string;
   heroImageAssetId: string | null;
+  socialImageSrc: string;
+  socialImageAssetId: string | null;
   heroImages: SiteHeroImage[];
   heroSlideshow: boolean;
   heroEyebrow: string;
@@ -97,6 +99,8 @@ const DEFAULT_HERO_IMAGE: SiteHeroImage = {
 export const DEFAULT_HOMEPAGE_SETTINGS: SiteHomepageSettings = {
   heroImageSrc: DEFAULT_HOMEPAGE_HERO_IMAGE,
   heroImageAssetId: null,
+  socialImageSrc: "",
+  socialImageAssetId: null,
   heroImages: [DEFAULT_HERO_IMAGE],
   heroSlideshow: false,
   heroEyebrow: "Western Australia's",
@@ -194,6 +198,8 @@ const siteHeroImageSchema = z.object({
 export const siteHomepageSettingsSchema = z.object({
   heroImageSrc: z.string().trim().max(500),
   heroImageAssetId: nullableAssetId,
+  socialImageSrc: z.string().trim().max(500).optional(),
+  socialImageAssetId: nullableAssetId,
   heroImages: z.array(siteHeroImageSchema).max(HERO_IMAGE_LIMIT).optional().default([]),
   heroSlideshow: z.boolean().optional().default(false),
   heroEyebrow: z.string().trim().max(120),
@@ -297,6 +303,8 @@ export function withHomepageDefaults(value: Partial<SiteHomepageSettings> | null
   return {
     ...DEFAULT_HOMEPAGE_SETTINGS,
     ...value,
+    socialImageSrc: typeof value?.socialImageSrc === "string" ? value.socialImageSrc.trim() : "",
+    socialImageAssetId: value?.socialImageAssetId?.trim() || null,
     aboutBody: typeof value?.aboutBody === "string" ? value.aboutBody : DEFAULT_HOMEPAGE_SETTINGS.aboutBody,
     heroImages,
     heroImageSrc: first.src,

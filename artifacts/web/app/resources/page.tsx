@@ -2,12 +2,17 @@ import type { Metadata } from "next";
 import { getArticles, getProducts } from "../../lib/catalogue";
 import { loadSiteSettings } from "../../lib/site-settings";
 import { ResourcesContent } from "./ResourcesContent";
+import { siteSocialMetadata } from "../../lib/social-metadata";
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: "Pasture Seed Resources and Tech Sheets | IH Seeds",
   description: "Read IH Seeds pasture advice and browse downloadable technical information for current seed varieties and mixes.",
   alternates: { canonical: "/resources" },
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { ...metadata, ...await siteSocialMetadata(metadata.title as string, metadata.description as string, "/resources") };
+}
 
 export default async function Resources({
   searchParams,

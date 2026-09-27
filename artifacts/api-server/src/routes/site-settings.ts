@@ -10,6 +10,7 @@ import {
   SEED_GUIDE_PDF_STORAGE_KEY,
   SITE_SETTINGS_ID,
   db,
+  mediaAssetsTable,
   seedGuidePdfInputSchema,
   seedGuidePublicPdfUrl,
   siteSettingsTable,
@@ -128,6 +129,8 @@ function toPublicHomepage(homepage: SiteHomepageSettings) {
   return {
     heroImageSrc: homepage.heroImageSrc,
     heroImageAssetId: homepage.heroImageAssetId,
+    socialImageSrc: homepage.socialImageSrc,
+    socialImageAssetId: homepage.socialImageAssetId,
     heroImages: homepage.heroImages,
     heroSlideshow: homepage.heroSlideshow,
     heroEyebrow: homepage.heroEyebrow,
@@ -226,7 +229,31 @@ router.put("/admin/site-settings", async (req, res): Promise<void> => {
     return;
   }
   const current = await ensureSettings();
-  const homepage = withHomepageDefaults(parsed.data.homepage);
+  // Older clients omit the sharing fields. Preserve the persisted override rather
+  // than clearing it on an unrelated homepage edit.
+  const homepage = withHomepageDefaults({
+    ...parsed.data.homepage,
+    socialImageSrc: parsed.data.homepage.socialImageSrc ?? current.homepage?.socialImageSrc ?? "",
+    socialImageAssetId: Object.prototype.hasOwnProperty.call(req.body?.homepage, "socialImageAssetId")
+      ? parsed.data.homepage.socialImageAssetId
+      : current.homepage?.socialImageAssetId ?? null,
+  });
+  const socialAssetId = homepage.socialImageAssetId;
+  const embeddedId = /^\/api\/media\/([^/?#]+)/.exec(homepage.socialImageSrc)?.[1];
+  if ((socialAssetId && homepage.socialImageSrc !== `/api/media/${socialAssetId}`)
+    || (embeddedId && embeddedId !== socialAssetId)
+    || (!homepage.socialImageSrc && socialAssetId)) {
+    res.status(400).json({ error: "Choose a valid sharing image from the media library, or use an external image URL." });
+    return;
+  }
+  if (socialAssetId) {
+    const [asset] = await db.select({ status: mediaAssetsTable.status, objectPath: mediaAssetsTable.objectPath })
+      .from(mediaAssetsTable).where(eq(mediaAssetsTable.id, socialAssetId));
+    if (!asset || asset.status !== "Ready" || !asset.objectPath) {
+      res.status(400).json({ error: "The selected sharing image is not available in the media library." });
+      return;
+    }
+  }
   const seedGuide = withSeedGuideDefaults({
     ...parsed.data.seedGuide,
     pdfFilename: current.seedGuide?.pdfFilename || DEFAULT_SEED_GUIDE_SETTINGS.pdfFilename,

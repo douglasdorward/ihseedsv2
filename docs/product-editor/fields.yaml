@@ -1197,7 +1197,7 @@ fields:
     visibility: customer
     customerSurfaces: [open-graph-image]
     workbook: 7 Website SEO.social_image
-    fillGuidance: Photo src or URL. A blank save or import stores the first photo src. Workbook NULL stores empty. No photo leaves it blank.
+    fillGuidance: Optional photo src or URL override. Effective image order is override, first photo (hero), Site settings homepage.socialImageAssetId (as /api/media/{id}) or homepage.socialImageSrc, then /social-share-default.jpg. Clear removes the override so the fallback applies. Editor shows effective image and source label. Guide 1200x630.
 
   - id: canonicalUrl
     tab: 6

@@ -24,6 +24,7 @@ import { forSearchMetadata } from "../../lib/search-metadata";
 import { companyTelHref } from "../../lib/company";
 import { loadSiteSettings } from "../../lib/site-settings";
 import { absoluteSiteUrl } from "../../lib/site-url";
+import { socialMetadata } from "../../lib/social-metadata";
 import { hasProductPhoto, PRODUCT_FALLBACK_IMAGE, productImageAlt } from "./product-card-facts";
 
 const PUBLISHED_OFFICE_PHONE = "(08) 9383 4708";
@@ -102,20 +103,22 @@ export async function productMetadata(params: RouteParams): Promise<Metadata> {
   const details = product.details;
   const title = forSearchMetadata(details.seoTitle?.trim() || `${product.name} | IH Seeds`);
   const description = forSearchMetadata(details.seoDescription?.trim() || details.blurb?.trim() || product.note);
-  const image = details.socialImage?.trim() || productImage(product);
+  const settings = await loadSiteSettings();
   const canonicalHref = productCanonicalUrl(details.canonicalUrl, canonical);
   return {
     title,
     description,
     alternates: { canonical: canonicalHref },
     robots: details.robotsIndex === false ? { index: false, follow: false } : undefined,
-    openGraph: {
-      type: "website",
-      url: canonicalHref,
-      title: forSearchMetadata(details.socialTitle?.trim() || title),
-      description: forSearchMetadata(details.socialDescription?.trim() || description),
-      images: [{ url: image, alt: productImageAlt(product) }],
-    },
+    ...socialMetadata(title, description, canonicalHref, {
+      override: details.socialImage,
+      hero: attachedPhotos(product)[0]?.src,
+      siteImage: settings.homepage.socialImageSrc,
+      siteAssetId: settings.homepage.socialImageAssetId,
+      socialTitle: forSearchMetadata(details.socialTitle?.trim() || title),
+      socialDescription: forSearchMetadata(details.socialDescription?.trim() || description),
+      alt: productImageAlt(product),
+    }),
   };
 }
 

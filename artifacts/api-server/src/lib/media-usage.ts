@@ -112,6 +112,8 @@ export function homepageWithoutAssets(
   const remaining = current.filter((image) => !matchesAsset(image.assetId, image.src, ids, srcs));
   return withHomepageDefaults({
     ...homepage,
+    socialImageSrc: matchesAsset(homepage.socialImageAssetId, homepage.socialImageSrc, ids, srcs) ? "" : homepage.socialImageSrc,
+    socialImageAssetId: matchesAsset(homepage.socialImageAssetId, homepage.socialImageSrc, ids, srcs) ? null : homepage.socialImageAssetId,
     heroImages: remaining,
     heroImageSrc: remaining[0]?.src ?? "",
     heroImageAssetId: remaining[0]?.assetId ?? null,
@@ -211,6 +213,11 @@ export async function unlinkAndDeleteMediaRecords(ids: string[]): Promise<MediaA
   const idSet = new Set(assets.map((asset) => asset.id));
 
   await db.transaction(async (tx) => {
+    const [site] = await tx.select({ homepage: siteSettingsTable.homepage })
+      .from(siteSettingsTable).where(eq(siteSettingsTable.id, SITE_SETTINGS_ID));
+    if (site && matchesAsset(site.homepage?.socialImageAssetId, site.homepage?.socialImageSrc, idSet, publicSrcs(idSet))) {
+      throw new SocialImageInUseError();
+    }
     const products = await tx.select({
       id: productsTable.id,
       name: productsTable.name,
@@ -266,6 +273,8 @@ export async function unlinkAndDeleteMediaRecords(ids: string[]): Promise<MediaA
       const about = aboutWithoutAssets(currentAbout, idSet);
       const homepageChanged = homepage.heroImageSrc !== currentHomepage.heroImageSrc
         || homepage.heroImageAssetId !== currentHomepage.heroImageAssetId
+        || homepage.socialImageSrc !== currentHomepage.socialImageSrc
+        || homepage.socialImageAssetId !== currentHomepage.socialImageAssetId
         || homepage.heroImages.length !== currentHomepage.heroImages.length
         || homepage.heroImages.some((image, index) => (
           image.src !== currentHomepage.heroImages[index]?.src
@@ -291,6 +300,12 @@ export async function unlinkAndDeleteMediaRecords(ids: string[]): Promise<MediaA
   });
 
   return assets;
+}
+
+export class SocialImageInUseError extends Error {
+  constructor() {
+    super("The homepage sharing image is in use. Clear it in site settings before deleting this asset.");
+  }
 }
 
 /** Library id stored on the photo, or the id embedded in a `/api/media/{id}` src. */
@@ -485,6 +500,19 @@ export async function syncStaticSiteMediaReferences(
   });
   const rows = [
     ...heroRows,
+    homepage.socialImageAssetId?.trim()
+      ? {
+          assetId: homepage.socialImageAssetId.trim(),
+          ownerType: "static" as const,
+          ownerId: "homepage",
+          ownerName: "Home page",
+          field: "socialImage",
+          role: "social",
+          usageState: "Published" as const,
+          editPath: "/admin/site-settings/home",
+          metadata: {},
+        }
+      : null,
     seedGuide.cardImageAssetId?.trim()
       ? {
           assetId: seedGuide.cardImageAssetId.trim(),

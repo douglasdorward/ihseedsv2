@@ -7,6 +7,8 @@ export const FALLBACK_SITE_SETTINGS: PublicSiteSettings = {
   homepage: {
     heroImageSrc: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80",
     heroImageAssetId: null,
+    socialImageSrc: "",
+    socialImageAssetId: null,
     heroImages: [{
       src: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80",
       assetId: null,

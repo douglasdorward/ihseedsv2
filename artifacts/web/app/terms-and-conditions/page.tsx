@@ -2,12 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { DEFAULT_COMPANY } from "../../lib/company";
 import { FALLBACK_SITE_SETTINGS, loadSiteSettings } from "../../lib/site-settings";
+import { siteSocialMetadata } from "../../lib/social-metadata";
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: "Terms and Conditions | IH Seeds",
   description: "Terms for using the IH Seeds website, catalogue information and agronomic advice.",
   alternates: { canonical: "/terms-and-conditions" },
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { ...metadata, ...await siteSocialMetadata(metadata.title as string, metadata.description as string, "/terms-and-conditions") };
+}
 
 export default async function TermsPage() {
   const settings = await loadSiteSettings().catch(() => FALLBACK_SITE_SETTINGS);

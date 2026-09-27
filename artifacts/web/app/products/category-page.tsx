@@ -14,6 +14,7 @@ import { absoluteSiteUrl } from "../../lib/site-url";
 import { CategoryCatalogue } from "./CategoryCatalogue";
 import { forSearchMetadata } from "../../lib/search-metadata";
 import { loadSiteSettings } from "../../lib/site-settings";
+import { siteSocialMetadata } from "../../lib/social-metadata";
 
 type RouteParams = { category: string };
 
@@ -98,12 +99,13 @@ export async function categoryMetadata(params: RouteParams): Promise<Metadata> {
     return {};
   }
 
+  const title = forSearchMetadata(page.root.seoTitle.trim() || `${page.root.name} Seed | IH Seeds`);
+  const description = forSearchMetadata(page.root.seoDescription.trim() || page.root.lead.trim());
   return {
-    title: forSearchMetadata(page.root.seoTitle.trim() || `${page.root.name} Seed | IH Seeds`),
-    description: forSearchMetadata(
-      page.root.seoDescription.trim() || page.root.lead.trim(),
-    ),
+    title,
+    description,
     alternates: { canonical: page.path },
+    ...await siteSocialMetadata(title, description, page.path),
   };
 }
 

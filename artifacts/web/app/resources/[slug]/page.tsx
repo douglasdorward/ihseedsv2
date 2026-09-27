@@ -8,6 +8,8 @@ import { getArticleBySlug, getCategories, getProducts } from "../../../lib/catal
 import { productPublicPath } from "../../../lib/catalogue-paths";
 import { forSearchMetadata } from "../../../lib/search-metadata";
 import { absoluteSiteUrl } from "../../../lib/site-url";
+import { socialMetadata } from "../../../lib/social-metadata";
+import { loadSiteSettings } from "../../../lib/site-settings";
 import { hasProductPhoto, productCardImage, productImageAlt } from "../../products/product-card-facts";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -27,21 +29,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const article = await loadArticle(slug);
   const title = forSearchMetadata(article.seoTitle?.trim() || `${article.title} | IH Seeds`);
   const description = forSearchMetadata(article.seoDescription?.trim() || article.excerpt);
-  const image = article.socialImage?.trim() || article.heroImageSrc;
+  const settings = await loadSiteSettings();
   const canonicalHref = `/resources/${article.slug}`;
+  const social = socialMetadata(title, description, canonicalHref, {
+    type: "article",
+    override: article.socialImage,
+    hero: article.heroImageSrc,
+    siteImage: settings.homepage.socialImageSrc,
+    siteAssetId: settings.homepage.socialImageAssetId,
+    socialTitle: forSearchMetadata(article.socialTitle?.trim() || title),
+    socialDescription: forSearchMetadata(article.socialDescription?.trim() || description),
+    alt: article.title,
+  });
   return {
     title,
     description,
     alternates: { canonical: canonicalHref },
     robots: article.robotsIndex === false ? { index: false, follow: false } : undefined,
+    ...social,
     openGraph: {
+      ...social.openGraph,
       type: "article",
-      url: canonicalHref,
-      title: forSearchMetadata(article.socialTitle?.trim() || title),
-      description: forSearchMetadata(article.socialDescription?.trim() || description),
       publishedTime: article.publishedAt,
       modifiedTime: article.updatedAt,
-      images: image ? [{ url: image, alt: article.title }] : undefined,
     },
   };
 }

@@ -60,9 +60,9 @@ Search and sharing metadata. SEO title and SEO description are required to publi
 - **API path:** `details.socialImage`
 - **Workbook:** `7 Website SEO.social_image`
 - **Required:** no
-- **Customer website:** Open Graph image. A stored blank still uses the product hero (first photo `src`, else the site fallback image) until the next save.
+- **Customer website:** Open Graph and Twitter card image. The effective image is resolved in this order: (1) this override, (2) the first product photo (hero), (3) the site-wide sharing image from **Site settings > Social sharing** (a library asset is served as `/api/media/{id}`), (4) the IH Seeds default `/social-share-default.jpg`.
 - **Public API:** yes
-- **How to fill:** Pick a product photo slot or paste an HTTPS URL. Leaving this blank on save or import stores the hero photo URL when one exists. A workbook `NULL` stores an empty value. Changing the hero later does not update a social image that was already saved.
+- **How to fill:** Optional. Pick a product photo slot or paste an HTTPS URL. The SEO tab shows the effective image and a source label (Custom sharing image, First product photo, Site-wide sharing image, or IH Seeds default). **Clear custom image** empties the override so the fallback chain applies; changing the hero later then changes the share image too. Best size 1200 × 630 px.
 - **Constraints:** max 500 characters.
 
 ## Canonical URL override
@@ -83,3 +83,12 @@ Search and sharing metadata. SEO title and SEO description are required to publi
 - **Customer website:** When false, the page is published with `noindex, nofollow`. The live page still exists. The public sitemap includes Published + Active or New products except those with search indexing turned off.
 - **Public API:** yes
 - **How to fill:** Leave on for normal catalogue pages. Turn off only when the page must stay out of search results.
+
+## Site-wide sharing image (Site settings)
+
+Not a product field. Edited at **Site settings > Social sharing** (`/admin/site-settings/social`).
+
+- **API path:** `homepage.socialImageSrc` (string) and `homepage.socialImageAssetId` (string or null; optional for older clients)
+- **Customer website:** Share image for any page without its own image, and step 3 of the product and article fallback chain. When `socialImageAssetId` is set, `/api/media/{id}` is used in preference to `socialImageSrc`.
+- **How to fill:** Upload a JPEG/PNG/WebP or choose from the Images library, then save. **Reset to default** clears both values so `/social-share-default.jpg` is used. Guide size 1200 × 630 px (about 1.91:1); the editor warns about smaller or very differently shaped images.
+- **Icon:** the home screen / share-sheet icon is fixed at `/apple-touch-icon.png` (180 × 180) and is shown read-only on the same page.

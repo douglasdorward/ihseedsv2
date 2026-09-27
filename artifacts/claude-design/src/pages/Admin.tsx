@@ -15,6 +15,7 @@ import AdminHomePage from "./AdminHomePage";
 import AdminAbout from "./AdminAbout";
 import AdminRootCategories from "./AdminRootCategories";
 import AdminSeedGuide from "./AdminSeedGuide";
+import AdminSocialSharing from "./AdminSocialSharing";
 import AdminCompany from "./AdminCompany";
 import AdminBlog from "./AdminBlog";
 import AdminResellers from "./AdminResellers";
@@ -2411,6 +2412,7 @@ export default function Admin({ role, accountName, onSignOut }: AdminAccountProp
   const isSiteHome = route === "/admin/site-settings/home";
   const isSiteAbout = route === "/admin/site-settings/about";
   const isSiteGuide = route === "/admin/site-settings/seed-guide";
+  const isSiteSocial = route === "/admin/site-settings/social";
   const isSiteCompany = route === "/admin/site-settings/company";
   const isSiteCategories = route === "/admin/site-settings/categories" || route.startsWith("/admin/site-settings/categories/");
   const isEditor = route.startsWith("/admin/products/") && route !== "/admin/products/categories";
@@ -2430,6 +2432,7 @@ export default function Admin({ role, accountName, onSignOut }: AdminAccountProp
       {isBlog && <AdminBlog />}
       {isResellers && <AdminResellers />}
       {isSiteSettingsHub && <AdminSiteSettings />}
+      {isSiteSocial && <AdminSocialSharing />}
       {isSiteHome && <AdminHomePage />}
       {isSiteAbout && <AdminAbout />}
       {isSiteCategories && <AdminRootCategories />}

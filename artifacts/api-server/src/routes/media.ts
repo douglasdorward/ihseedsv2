@@ -21,7 +21,7 @@ import {
 } from "../lib/app-storage";
 import { imageAltFromContext, resolveImageAlt, shouldReplaceGeneratedAlt } from "../lib/image-alt";
 import { convertToWebp } from "../lib/media-image";
-import { backfillMediaUsage, insertHeroPhoto, isProtectedMediaReference, syncArticleMediaReferences, syncProductMediaReferences, unlinkAndDeleteMediaRecords } from "../lib/media-usage";
+import { backfillMediaUsage, insertHeroPhoto, isProtectedMediaReference, SocialImageInUseError, syncArticleMediaReferences, syncProductMediaReferences, unlinkAndDeleteMediaRecords } from "../lib/media-usage";
 
 const router: IRouter = Router();
 const MAX_BYTES = 12 * 1024 * 1024;
@@ -372,7 +372,13 @@ router.post("/admin/media/bulk-delete", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error });
     return;
   }
-  await deleteAssetsAndFiles(parsed.ids);
+  try {
+    await deleteAssetsAndFiles(parsed.ids);
+  } catch (error) {
+    if (!(error instanceof SocialImageInUseError)) throw error;
+    res.status(409).json({ error: error.message });
+    return;
+  }
   res.sendStatus(204);
 });
 
@@ -535,7 +541,14 @@ router.delete("/admin/media/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error });
     return;
   }
-  const deleted = await deleteAssetsAndFiles(parsed.ids);
+  let deleted;
+  try {
+    deleted = await deleteAssetsAndFiles(parsed.ids);
+  } catch (error) {
+    if (!(error instanceof SocialImageInUseError)) throw error;
+    res.status(409).json({ error: error.message });
+    return;
+  }
   if (!deleted.length) {
     res.status(404).json({ error: "Asset not found." });
     return;

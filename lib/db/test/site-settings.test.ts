@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { DEFAULT_ABOUT_HERO_IMAGE, DEFAULT_HOMEPAGE_HERO_IMAGE, withAboutDefaults, withCompanyDefaults, withHomepageDefaults } from "../src/schema/site-settings.ts";
+import { DEFAULT_ABOUT_HERO_IMAGE, DEFAULT_HOMEPAGE_HERO_IMAGE, siteHomepageSettingsSchema, withAboutDefaults, withCompanyDefaults, withHomepageDefaults } from "../src/schema/site-settings.ts";
 
 test("withHomepageDefaults seeds heroImages from a legacy single hero photo", () => {
   const homepage = withHomepageDefaults({
@@ -74,6 +74,23 @@ test("withHomepageDefaults fills the About Us blurb when it is missing", () => {
     heroHeading: "Pasture Seed Specialists",
   });
   assert.match(homepage.aboutBody, /Irwin Hunter/);
+});
+
+test("homepage social image defaults are blank, independent of the hero, and preserve an explicit override", () => {
+  const old = withHomepageDefaults({ heroImageSrc: "https://example.com/hero.jpg", heroImageAssetId: null });
+  assert.equal(old.socialImageSrc, "");
+  assert.equal(old.socialImageAssetId, null);
+  const override = withHomepageDefaults({
+    ...old, socialImageSrc: "/api/media/share", socialImageAssetId: "share",
+  });
+  assert.equal(override.socialImageSrc, "/api/media/share");
+  assert.equal(override.socialImageAssetId, "share");
+  const reset = withHomepageDefaults({ ...override, socialImageSrc: "", socialImageAssetId: null });
+  assert.equal(reset.socialImageSrc, "");
+  assert.equal(reset.socialImageAssetId, null);
+  assert.ok(siteHomepageSettingsSchema.safeParse({
+    ...old, socialImageSrc: undefined, socialImageAssetId: undefined,
+  }).success, "older editors may omit sharing fields");
 });
 
 test("withAboutDefaults fills missing About page copy and pads values", () => {

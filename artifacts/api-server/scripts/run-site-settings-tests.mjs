@@ -1,4 +1,7 @@
 import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const workspaceRoot = new URL("../../..", import.meta.url);
 const databaseName = `ih_catalogue_test_${process.pid}_${Date.now()}`;
@@ -22,6 +25,7 @@ const databaseUrl = new URL(process.env.DATABASE_URL);
 databaseUrl.pathname = `/${databaseName}`;
 const isolatedEnv = {
   ...process.env,
+  APP_UPLOADS_DIR: mkdtempSync(join(tmpdir(), "ih-settings-uploads-")),
   CATALOGUE_TEST_DATABASE: databaseName,
   DATABASE_URL: databaseUrl.toString(),
 };
@@ -42,5 +46,9 @@ try {
   run(process.execPath, ["--test", "lib/db/test/site-settings.test.ts"], isolatedEnv);
   run(process.execPath, ["--test", "artifacts/api-server/test/site-settings.test.mjs"], isolatedEnv);
 } finally {
-  run("dropdb", [`--maintenance-db=${process.env.DATABASE_URL}`, "--if-exists", databaseName]);
+  try {
+    run("dropdb", [`--maintenance-db=${process.env.DATABASE_URL}`, "--if-exists", databaseName]);
+  } finally {
+    rmSync(isolatedEnv.APP_UPLOADS_DIR, { recursive: true, force: true });
+  }
 }

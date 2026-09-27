@@ -9284,6 +9284,10 @@ export const getPublicSiteSettingsResponseHomepageHeroImageSrcMax = 500;
 
 export const getPublicSiteSettingsResponseHomepageHeroImageAssetIdMax = 80;
 
+export const getPublicSiteSettingsResponseHomepageSocialImageSrcMax = 500;
+
+export const getPublicSiteSettingsResponseHomepageSocialImageAssetIdMax = 80;
+
 export const getPublicSiteSettingsResponseHomepageHeroImagesItemSrcMax = 500;
 
 export const getPublicSiteSettingsResponseHomepageHeroImagesItemAssetIdMax = 80;
@@ -9375,6 +9379,8 @@ export const GetPublicSiteSettingsResponse = zod.object({
   "homepage": zod.object({
   "heroImageSrc": zod.string().max(getPublicSiteSettingsResponseHomepageHeroImageSrcMax),
   "heroImageAssetId": zod.string().max(getPublicSiteSettingsResponseHomepageHeroImageAssetIdMax).nullable(),
+  "socialImageSrc": zod.string().max(getPublicSiteSettingsResponseHomepageSocialImageSrcMax).optional().describe('Optional homepage sharing image override. Blank uses the current hero\/site fallback.'),
+  "socialImageAssetId": zod.string().max(getPublicSiteSettingsResponseHomepageSocialImageAssetIdMax).nullish().describe('Library asset selected for the sharing image, or null.'),
   "heroImages": zod.array(zod.object({
   "src": zod.string().max(getPublicSiteSettingsResponseHomepageHeroImagesItemSrcMax),
   "assetId": zod.string().max(getPublicSiteSettingsResponseHomepageHeroImagesItemAssetIdMax).nullable(),
@@ -9442,6 +9448,10 @@ export const DownloadSeedGuidePdfResponse = zod.unknown()
 export const getAdminSiteSettingsResponseHomepageHeroImageSrcMax = 500;
 
 export const getAdminSiteSettingsResponseHomepageHeroImageAssetIdMax = 80;
+
+export const getAdminSiteSettingsResponseHomepageSocialImageSrcMax = 500;
+
+export const getAdminSiteSettingsResponseHomepageSocialImageAssetIdMax = 80;
 
 export const getAdminSiteSettingsResponseHomepageHeroImagesItemSrcMax = 500;
 
@@ -9534,6 +9544,8 @@ export const GetAdminSiteSettingsResponse = zod.object({
   "homepage": zod.object({
   "heroImageSrc": zod.string().max(getAdminSiteSettingsResponseHomepageHeroImageSrcMax),
   "heroImageAssetId": zod.string().max(getAdminSiteSettingsResponseHomepageHeroImageAssetIdMax).nullable(),
+  "socialImageSrc": zod.string().max(getAdminSiteSettingsResponseHomepageSocialImageSrcMax).optional().describe('Optional homepage sharing image override. Blank uses the current hero\/site fallback.'),
+  "socialImageAssetId": zod.string().max(getAdminSiteSettingsResponseHomepageSocialImageAssetIdMax).nullish().describe('Library asset selected for the sharing image, or null.'),
   "heroImages": zod.array(zod.object({
   "src": zod.string().max(getAdminSiteSettingsResponseHomepageHeroImagesItemSrcMax),
   "assetId": zod.string().max(getAdminSiteSettingsResponseHomepageHeroImagesItemAssetIdMax).nullable(),
@@ -9595,6 +9607,10 @@ export const GetAdminSiteSettingsResponse = zod.object({
 export const updateSiteSettingsBodyHomepageHeroImageSrcMax = 500;
 
 export const updateSiteSettingsBodyHomepageHeroImageAssetIdMax = 80;
+
+export const updateSiteSettingsBodyHomepageSocialImageSrcMax = 500;
+
+export const updateSiteSettingsBodyHomepageSocialImageAssetIdMax = 80;
 
 export const updateSiteSettingsBodyHomepageHeroImagesItemSrcMax = 500;
 
@@ -9683,6 +9699,8 @@ export const UpdateSiteSettingsBody = zod.object({
   "homepage": zod.object({
   "heroImageSrc": zod.string().max(updateSiteSettingsBodyHomepageHeroImageSrcMax),
   "heroImageAssetId": zod.string().max(updateSiteSettingsBodyHomepageHeroImageAssetIdMax).nullable(),
+  "socialImageSrc": zod.string().max(updateSiteSettingsBodyHomepageSocialImageSrcMax).optional().describe('Optional homepage sharing image override. Blank uses the current hero\/site fallback.'),
+  "socialImageAssetId": zod.string().max(updateSiteSettingsBodyHomepageSocialImageAssetIdMax).nullish().describe('Library asset selected for the sharing image, or null.'),
   "heroImages": zod.array(zod.object({
   "src": zod.string().max(updateSiteSettingsBodyHomepageHeroImagesItemSrcMax),
   "assetId": zod.string().max(updateSiteSettingsBodyHomepageHeroImagesItemAssetIdMax).nullable(),
@@ -9737,6 +9755,10 @@ export const UpdateSiteSettingsBody = zod.object({
 export const updateSiteSettingsResponseHomepageHeroImageSrcMax = 500;
 
 export const updateSiteSettingsResponseHomepageHeroImageAssetIdMax = 80;
+
+export const updateSiteSettingsResponseHomepageSocialImageSrcMax = 500;
+
+export const updateSiteSettingsResponseHomepageSocialImageAssetIdMax = 80;
 
 export const updateSiteSettingsResponseHomepageHeroImagesItemSrcMax = 500;
 
@@ -9829,6 +9851,8 @@ export const UpdateSiteSettingsResponse = zod.object({
   "homepage": zod.object({
   "heroImageSrc": zod.string().max(updateSiteSettingsResponseHomepageHeroImageSrcMax),
   "heroImageAssetId": zod.string().max(updateSiteSettingsResponseHomepageHeroImageAssetIdMax).nullable(),
+  "socialImageSrc": zod.string().max(updateSiteSettingsResponseHomepageSocialImageSrcMax).optional().describe('Optional homepage sharing image override. Blank uses the current hero\/site fallback.'),
+  "socialImageAssetId": zod.string().max(updateSiteSettingsResponseHomepageSocialImageAssetIdMax).nullish().describe('Library asset selected for the sharing image, or null.'),
   "heroImages": zod.array(zod.object({
   "src": zod.string().max(updateSiteSettingsResponseHomepageHeroImagesItemSrcMax),
   "assetId": zod.string().max(updateSiteSettingsResponseHomepageHeroImagesItemAssetIdMax).nullable(),
@@ -9900,6 +9924,10 @@ export const UploadSeedGuidePdfBody = zod.object({
 export const uploadSeedGuidePdfResponseHomepageHeroImageSrcMax = 500;
 
 export const uploadSeedGuidePdfResponseHomepageHeroImageAssetIdMax = 80;
+
+export const uploadSeedGuidePdfResponseHomepageSocialImageSrcMax = 500;
+
+export const uploadSeedGuidePdfResponseHomepageSocialImageAssetIdMax = 80;
 
 export const uploadSeedGuidePdfResponseHomepageHeroImagesItemSrcMax = 500;
 
@@ -9992,6 +10020,8 @@ export const UploadSeedGuidePdfResponse = zod.object({
   "homepage": zod.object({
   "heroImageSrc": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroImageSrcMax),
   "heroImageAssetId": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroImageAssetIdMax).nullable(),
+  "socialImageSrc": zod.string().max(uploadSeedGuidePdfResponseHomepageSocialImageSrcMax).optional().describe('Optional homepage sharing image override. Blank uses the current hero\/site fallback.'),
+  "socialImageAssetId": zod.string().max(uploadSeedGuidePdfResponseHomepageSocialImageAssetIdMax).nullish().describe('Library asset selected for the sharing image, or null.'),
   "heroImages": zod.array(zod.object({
   "src": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroImagesItemSrcMax),
   "assetId": zod.string().max(uploadSeedGuidePdfResponseHomepageHeroImagesItemAssetIdMax).nullable(),

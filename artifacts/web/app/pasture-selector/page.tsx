@@ -5,6 +5,7 @@ import { pageSearchParams, selectorContactHref } from "../../lib/pasture-selecto
 import { PASTURE_SELECTOR_FAQS } from "../../lib/pasture-selector-faqs";
 import { absoluteSiteUrl } from "../../lib/site-url";
 import { PastureSelector } from "./PastureSelector";
+import { siteSocialMetadata } from "../../lib/social-metadata";
 
 const DESCRIPTION = "Answer four questions about your paddock — rainfall, soil, what you're growing it for and how long it needs to last — and see pasture seed that suits it.";
 const FAQS = PASTURE_SELECTOR_FAQS;
@@ -23,6 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "Pasture Seed Selector WA | IH Seeds",
     description: DESCRIPTION,
     alternates: { canonical: "/pasture-selector" },
+    ...await siteSocialMetadata("Pasture Seed Selector WA | IH Seeds", DESCRIPTION, "/pasture-selector"),
   };
 }
 

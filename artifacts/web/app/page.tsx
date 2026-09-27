@@ -8,12 +8,17 @@ import { CATALOGUE_INDEX_PATH, productPublicPath } from "../lib/catalogue-paths"
 import { HomeHero } from "../components/HomeHero";
 import { expandProductCount, FALLBACK_SITE_SETTINGS, loadSiteSettings, publicMediaSrc, resolveBestSellers, resolveHomepageHeroSlides } from "../lib/site-settings";
 import { hasProductPhoto, productCardImage, productImageAlt } from "./products/product-card-facts";
+import { siteSocialMetadata } from "../lib/social-metadata";
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: "IH Seeds | Western Australia's Pasture Seed Specialists",
   description: "Western Australian pasture seed, proven varieties, regional mixes and practical advice from the independently owned IH Seeds team.",
   alternates: { canonical: "/" },
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { ...metadata, ...await siteSocialMetadata(metadata.title as string, metadata.description as string, "/") };
+}
 
 function formatArticleDate(value: string) {
   return new Date(value).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });

@@ -42,6 +42,13 @@ const sections = [
     action: "Open root editor",
   },
   {
+    href: "/admin/site-settings/social",
+    icon: "image",
+    title: "Social sharing",
+    body: "Choose the fallback image shown when a page is shared on Facebook, LinkedIn or by message, and check the home screen icon.",
+    action: "Edit social sharing",
+  },
+  {
     href: "/admin/site-settings/seed-guide",
     icon: "file-text",
     title: "Seed guide",

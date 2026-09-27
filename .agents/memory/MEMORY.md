@@ -17,3 +17,5 @@
 - [Admin bootstrap availability](admin-bootstrap-availability.md) — authentication bootstrap failure must fail admin access closed without taking down the public catalogue API.
 - [Administrator login verification](admin-login-verification.md) — validate real SDK submission and session persistence; a rendered form and an empty typecheck can both falsely pass.
 - [Build API maintenance isolation](build-api-maintenance.md) — temporary build API startup must not perform catalogue repair work before listening.
+- [Social image fallback intent](social-image-fallbacks.md) — blank editor overrides remain dynamic; workbook imports retain their explicit compatibility behavior.
+- [Test upload isolation](test-upload-isolation.md) — disposable databases do not protect app uploads; local-storage tests also need temporary upload directories.
