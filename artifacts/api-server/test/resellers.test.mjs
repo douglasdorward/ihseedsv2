@@ -279,7 +279,8 @@ describe("reseller API", { concurrency: false }, () => {
     assert.ok(invalid.issues.some((issue) => issue.column === "brand"));
 
     const badCoordinates = assertStatus(await request("POST", "/admin/resellers/import/dry-run", {
-      csvText: "brand,kind,website,outlet_name,address,suburb,postcode,region,phone,email,google_pin,coordinates,listed\nBad Coords,independent,,Town,,,,,,,,,not-a-place,yes",
+      csvText: "brand,kind,website,outlet_name,address,suburb,postcode,region,phone,email,google_pin,coordinates,listed\n"
+        + ["Bad Coords", "independent", "", "Town", "", "", "", "", "", "", "", "not-a-place", "yes"].join(","),
     }), 200);
     assert.ok(badCoordinates.issues.some((issue) => issue.column === "coordinates"));
 

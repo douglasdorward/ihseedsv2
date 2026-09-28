@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { loadSiteSettings, publicMediaSrc } from "../../lib/site-settings";
+import { siteSocialMetadata } from "../../lib/social-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await loadSiteSettings();
+  const title = `${settings.seedGuide.pageTitle} | IH Seeds`;
+  const description = settings.seedGuide.pageIntro;
   return {
-    title: `${settings.seedGuide.pageTitle} | IH Seeds`,
-    description: settings.seedGuide.pageIntro,
+    title,
+    description,
     alternates: { canonical: "/guide" },
+    ...await siteSocialMetadata(title, description, "/guide"),
   };
 }
 

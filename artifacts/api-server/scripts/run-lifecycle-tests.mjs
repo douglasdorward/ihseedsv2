@@ -1,7 +1,13 @@
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { mkdtempSync, rmSync, readFileSync } from "node:fs";
+import assert from "node:assert/strict";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const workspaceRoot = fileURLToPath(new URL("../../..", import.meta.url));
+const servedGuidePath = new URL("../uploads/site/seed-guide.pdf", import.meta.url);
+const servedGuideBefore = readFileSync(servedGuidePath);
 const databaseName = `ih_catalogue_test_${process.pid}_${Date.now()}`;
 
 if (!process.env.DATABASE_URL) {
@@ -23,6 +29,7 @@ const databaseUrl = new URL(process.env.DATABASE_URL);
 databaseUrl.pathname = `/${databaseName}`;
 const isolatedEnv = {
   ...process.env,
+  APP_UPLOADS_DIR: mkdtempSync(join(tmpdir(), "ih-lifecycle-uploads-")),
   CATALOGUE_TEST_DATABASE: databaseName,
   DATABASE_URL: databaseUrl.toString(),
 };
@@ -49,5 +56,11 @@ try {
   run(process.execPath, ["--test", "artifacts/api-server/test/site-settings.test.mjs"], isolatedEnv);
   run(process.execPath, ["--test", "artifacts/api-server/test/resellers.test.mjs"], isolatedEnv);
 } finally {
-  run("dropdb", [`--maintenance-db=${process.env.DATABASE_URL}`, "--if-exists", databaseName]);
+  try {
+    run("dropdb", [`--maintenance-db=${process.env.DATABASE_URL}`, "--if-exists", databaseName]);
+  } finally {
+    rmSync(isolatedEnv.APP_UPLOADS_DIR, { recursive: true, force: true });
+    assert.deepEqual(readFileSync(servedGuidePath), servedGuideBefore,
+      "The isolated test suite must not change the served seed guide");
+  }
 }

@@ -142,6 +142,13 @@ before(async () => {
   if (!/^ih_catalogue_test_\d+_\d+$/.test(process.env.CATALOGUE_TEST_DATABASE ?? "")) {
     throw new Error("Site settings API tests must run through the isolated lifecycle-test runner");
   }
+  if (new URL(process.env.DATABASE_URL).pathname !== `/${process.env.CATALOGUE_TEST_DATABASE}`) {
+    throw new Error("Site settings fixture reset requires the isolated test database URL");
+  }
+  // The preceding lifecycle suite uploads a PDF. Start this suite from its own
+  // clean settings fixture rather than inheriting the previous suite's changes.
+  execFileSync("psql", [process.env.DATABASE_URL, "-X", "-v", "ON_ERROR_STOP=1",
+    "-c", "DELETE FROM ih_site_settings WHERE id = 1"], { stdio: "pipe" });
   const port = await freePort();
   baseUrl = `http://127.0.0.1:${port}`;
   child = spawn(process.execPath, ["--enable-source-maps", "./dist/index.mjs"], {
@@ -183,6 +190,8 @@ test("public site settings expose the seeded homepage and seed-guide defaults", 
   assert.deepEqual(data.homepage.bestSellerSlugs, []);
   assert.equal(data.homepage.heroSlideshow, false);
   assert.equal(data.homepage.heroImages.length, 1);
+  assert.equal(data.homepage.socialImageSrc, "");
+  assert.equal(data.homepage.socialImageAssetId, null);
   assert.equal(data.seedGuide.navTitle, "Seed Guide 2026");
   assert.equal(data.seedGuide.pdfPublicUrl, "/IH-Seeds-2026-Pasture-Seed-Guide.pdf");
   assert.equal(data.about.heroEyebrow, "About IH Seeds");
@@ -193,6 +202,108 @@ test("public site settings expose the seeded homepage and seed-guide defaults", 
   assert.equal(data.company.tradingName, "IH Seeds");
   assert.equal(data.company.phone, "");
   assert.equal(data.company.email, "info@irwinhunter.com.au");
+});
+
+test("homepage sharing override persists, survives older editors, resets and protects the selected asset", async () => {
+  const original = assertStatus(await request("GET", "/admin/site-settings"), 200);
+  const image = await uploadPng(`share-${testRunId}.png`, PNG_GREEN_1X1);
+  const src = `/api/media/${image.id}`;
+  const put = (homepage) => request("PUT", "/admin/site-settings", {
+    homepage,
+    seedGuide: original.seedGuide,
+  });
+  try {
+    const invalid = await put({ ...original.homepage, socialImageSrc: "/api/media/not-a-real-asset", socialImageAssetId: "not-a-real-asset" });
+    assertStatus(invalid, 400);
+    assertStatus(await put({ ...original.homepage, socialImageSrc: src, socialImageAssetId: null }), 400);
+    assertStatus(await put({ ...original.homepage, socialImageSrc: "/api/media/other", socialImageAssetId: image.id }), 400);
+    const pending = assertStatus(await request("POST", "/admin/media/upload-request", {
+      originalFilename: `pending-share-${testRunId}.png`,
+      contentType: "image/png",
+      bytes: PNG_RED_1X1.length,
+    }), 201);
+    createdAssetIds.push(pending.assetId);
+    assertStatus(await put({
+      ...original.homepage, socialImageSrc: `/api/media/${pending.assetId}`, socialImageAssetId: pending.assetId,
+    }), 400);
+    const saved = assertStatus(await put({
+      ...original.homepage, socialImageSrc: src, socialImageAssetId: image.id,
+    }), 200);
+    assert.equal(saved.homepage.socialImageSrc, src);
+    assert.equal(saved.homepage.socialImageAssetId, image.id);
+    const publicSettings = assertStatus(await request("GET", "/site-settings"), 200);
+    assert.equal(publicSettings.homepage.socialImageSrc, src);
+    assert.equal(publicSettings.homepage.socialImageAssetId, image.id);
+    const detail = assertStatus(await request("GET", `/admin/media/${image.id}`), 200);
+    assert.ok(detail.usages.some((usage) => usage.ownerType === "static" && usage.field === "socialImage"));
+    assertStatus(await request("DELETE", `/admin/media/${image.id}`, { confirm: true }), 409);
+    assertStatus(await request("POST", "/admin/media/bulk-delete", { ids: [image.id], confirm: true }), 409);
+    assert.equal(assertStatus(await request("GET", "/site-settings"), 200).homepage.socialImageSrc, src);
+
+    const { socialImageSrc: _src, socialImageAssetId: _id, ...olderHomepage } = original.homepage;
+    const olderSave = assertStatus(await put(olderHomepage), 200);
+    assert.equal(olderSave.homepage.socialImageSrc, src);
+    assert.equal(olderSave.homepage.socialImageAssetId, image.id);
+    assert.equal(assertStatus(await request("GET", "/admin/site-settings"), 200).homepage.socialImageAssetId, image.id);
+
+    const reset = assertStatus(await put({ ...olderHomepage, socialImageSrc: "", socialImageAssetId: null }), 200);
+    assert.equal(reset.homepage.socialImageSrc, "");
+    assert.equal(reset.homepage.socialImageAssetId, null);
+    assert.equal(assertStatus(await request("GET", "/site-settings"), 200).homepage.socialImageSrc, "");
+    assertStatus(await request("DELETE", `/admin/media/${image.id}`, { confirm: true }), 204);
+  } finally {
+    await put(original.homepage);
+  }
+});
+
+test("product editor saves keep a blank sharing override instead of freezing the hero", async () => {
+  const created = assertStatus(await request("POST", "/products", {
+    name: `Sharing editor test ${testRunId}`,
+    slug: `sharing-editor-${testRunId}`,
+    category: "Automated tests",
+    price: "$30 per kg",
+    packSize: "25 kg bag",
+    status: "in-stock",
+    note: "Sharing editor test",
+    techSheet: "",
+    details: { recordType: "Variety" },
+  }), 201);
+  const id = created.id;
+  const payload = (product, details) => ({
+    name: product.name, price: product.price, packSize: product.packSize, status: product.status,
+    note: product.note, category: product.category, subcategoryId: product.subcategoryId ?? null,
+    techSheet: product.techSheet, listingState: product.listingState ?? "Active",
+    details, saleLines: product.saleLines ?? [],
+  });
+  try {
+    const hero = "https://example.com/editor-hero.jpg";
+    const details = {
+      ...created.details,
+      tagline: "Sharing editor test",
+      blurb: "Sharing editor blurb",
+      keyAttributes: ["Test"],
+      distributionNote: "Sharing editor test",
+      description: "Sharing editor test",
+      seoTitle: "Sharing editor test",
+      seoDescription: "Sharing editor test",
+      photos: [{ slot: "Photo 1 · Hero", file: "", rating: "", src: hero, role: "hero" }],
+      socialImage: "",
+    };
+    const blank = assertStatus(await request("POST", `/admin/products/${id}/draft`, payload(created, details)), 200);
+    assert.equal(blank.details.socialImage, "");
+    assert.equal(assertStatus(await request("GET", `/admin/products/${id}`), 200).details.socialImage, "");
+    const explicit = "https://example.com/explicit-share.jpg";
+    const overridden = assertStatus(await request("POST", `/admin/products/${id}/draft`, payload(blank, {
+      ...details, socialImage: explicit,
+    })), 200);
+    assert.equal(overridden.details.socialImage, explicit);
+    assert.equal(assertStatus(await request("GET", `/admin/products/${id}`), 200).details.socialImage, explicit);
+    const reset = assertStatus(await request("POST", `/admin/products/${id}/draft`, payload(overridden, details)), 200);
+    assert.equal(reset.details.socialImage, "");
+    assert.equal(assertStatus(await request("GET", `/admin/products/${id}`), 200).details.socialImage, "");
+  } finally {
+    await request("DELETE", `/products/${id}`);
+  }
 });
 
 test("admin can persist homepage copy and invalid best-seller slugs", async () => {

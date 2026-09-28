@@ -74,6 +74,7 @@ test("product gallery slots are not protected, including slot-name roles", () =>
 test("article, site, and reseller usages stay protected", () => {
   assert.equal(isProtectedMediaReference({ ownerType: "article", role: "hero" }), true);
   assert.equal(isProtectedMediaReference({ ownerType: "static", role: "hero" }), true);
+  assert.equal(isProtectedMediaReference({ ownerType: "static", role: "social", field: "socialImage" }), true);
   assert.equal(isProtectedMediaReference({ ownerType: "reseller", role: "logo" }), true);
   assert.equal(isProtectedMediaReference({ ownerType: "category", role: "" }), true);
 });
@@ -119,6 +120,15 @@ test("homepageWithoutAssets falls back to the default hero when the last library
     heroSlideshow: false,
   }), ["one"]);
   assert.equal(homepage.heroImageAssetId, null);
+  assert.equal(homepage.heroImageSrc, DEFAULT_HOMEPAGE_HERO_IMAGE);
+});
+
+test("homepageWithoutAssets clears a deleted social override without changing the hero", () => {
+  const homepage = homepageWithoutAssets(withHomepageDefaults({
+    socialImageSrc: "/api/media/share", socialImageAssetId: "share",
+  }), ["share"]);
+  assert.equal(homepage.socialImageSrc, "");
+  assert.equal(homepage.socialImageAssetId, null);
   assert.equal(homepage.heroImageSrc, DEFAULT_HOMEPAGE_HERO_IMAGE);
 });
 

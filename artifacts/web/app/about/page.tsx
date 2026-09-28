@@ -3,12 +3,17 @@ import { CoverImage } from "../../components/CoverImage";
 import { Icon } from "../../components/Icon";
 import { getProducts } from "../../lib/catalogue";
 import { expandProductCount, FALLBACK_SITE_SETTINGS, loadSiteSettings, publicMediaSrc } from "../../lib/site-settings";
+import { siteSocialMetadata } from "../../lib/social-metadata";
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: "About IH Seeds | Western Australian Pasture Seed Specialists",
   description: "Meet the Western Australian family behind IH Seeds, supplying proven pasture seed and regional advice since 1966.",
   alternates: { canonical: "/about" },
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { ...metadata, ...await siteSocialMetadata(metadata.title as string, metadata.description as string, "/about") };
+}
 
 const VALUE_ICONS = ["map-pin", "sprout", "users"] as const;
 

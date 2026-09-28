@@ -146,6 +146,8 @@ export type PublicSiteHeroImage = {
 export type PublicSiteHomepage = {
   heroImageSrc: string;
   heroImageAssetId: string | null;
+  socialImageSrc?: string;
+  socialImageAssetId?: string | null;
   heroImages: PublicSiteHeroImage[];
   heroSlideshow: boolean;
   heroEyebrow: string;

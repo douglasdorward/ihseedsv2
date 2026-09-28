@@ -1541,6 +1541,16 @@ export interface SiteHomepageSettings {
   heroImageSrc: string;
   /** @maxLength 80 */
   heroImageAssetId: string | null;
+  /**
+     * Optional homepage sharing image override. Blank uses the current hero/site fallback.
+     * @maxLength 500
+     */
+  socialImageSrc?: string;
+  /**
+     * Library asset selected for the sharing image, or null.
+     * @maxLength 80
+     */
+  socialImageAssetId?: string | null;
   /** @maxItems 6 */
   heroImages: SiteHeroImage[];
   heroSlideshow: boolean;

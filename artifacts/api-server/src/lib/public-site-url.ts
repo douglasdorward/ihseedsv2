@@ -1,4 +1,4 @@
-export const DEFAULT_PUBLIC_SITE_URL = "https://www.irwinhunter.com.au";
+export const DEFAULT_PUBLIC_SITE_URL = "https://irwinhunter.com.au";
 
 export function publicSiteBaseUrl() {
   const raw = (process.env.PUBLIC_SITE_URL ?? DEFAULT_PUBLIC_SITE_URL).trim().replace(/\/+$/, "")
@@ -6,7 +6,7 @@ export function publicSiteBaseUrl() {
   try {
     const url = new URL(raw);
     if (!["http:", "https:"].includes(url.protocol)) return DEFAULT_PUBLIC_SITE_URL;
-    if (url.hostname === "irwinhunter.com.au") url.hostname = "www.irwinhunter.com.au";
+    if (url.hostname === "www.irwinhunter.com.au") url.hostname = "irwinhunter.com.au";
     return url.origin;
   } catch {
     return DEFAULT_PUBLIC_SITE_URL;

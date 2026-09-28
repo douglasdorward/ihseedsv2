@@ -7,6 +7,7 @@ import { featuredNavCategories } from "../lib/catalogue-paths";
 import { DEFAULT_COMPANY, organizationJsonLd } from "../lib/company";
 import { FALLBACK_SITE_SETTINGS, loadSiteSettings } from "../lib/site-settings";
 import { absoluteSiteUrl, publicSiteUrl } from "../lib/site-url";
+import { socialMetadata } from "../lib/social-metadata";
 import "./styles.css";
 
 const raleway = Raleway({
@@ -20,6 +21,15 @@ export const metadata: Metadata = {
   metadataBase: publicSiteUrl,
   title: "IH Seeds",
   description: "Western Australia's pasture seed specialists.",
+  ...socialMetadata("IH Seeds", "Western Australia's pasture seed specialists.", "/"),
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default async function RootLayout({ children }: { children: any }) {

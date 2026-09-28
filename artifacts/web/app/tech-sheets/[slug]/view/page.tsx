@@ -4,6 +4,7 @@ import { TechSheetDocument } from "../../../../components/pdf/TechSheetDocument"
 import { getCategories, getProductBySlug, productPageHeading } from "../../../../lib/catalogue";
 import { productPublicPath } from "../../../../lib/catalogue-paths";
 import { absoluteSiteUrl } from "../../../../lib/site-url";
+import { siteSocialMetadata } from "../../../../lib/social-metadata";
 
 type RouteParams = { slug: string };
 
@@ -11,9 +12,13 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) return { title: "Technical sheet | IH Seeds", robots: { index: false, follow: false } };
+  const title = `${productPageHeading(product)} technical sheet | IH Seeds`;
+  const description = `Technical sheet for ${productPageHeading(product)} from IH Seeds.`;
   return {
-    title: `${productPageHeading(product)} technical sheet | IH Seeds`,
+    title,
+    description,
     robots: { index: false, follow: false },
+    ...await siteSocialMetadata(title, description, `/tech-sheets/${slug}/view`),
   };
 }
 

@@ -5,12 +5,17 @@ import { CoverImage } from "../../components/CoverImage";
 import { getCategories, getProducts } from "../../lib/catalogue";
 import { CATALOGUE_INDEX_PATH } from "../../lib/catalogue-paths";
 import { ProductsListing } from "./ProductsListing";
+import { siteSocialMetadata } from "../../lib/social-metadata";
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: "Pasture Seed Products | IH Seeds",
   description: "Browse pasture seed varieties and mixes selected for Western Australian rainfall zones, soils and grazing systems.",
   alternates: { canonical: CATALOGUE_INDEX_PATH },
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { ...metadata, ...await siteSocialMetadata(metadata.title as string, metadata.description as string, CATALOGUE_INDEX_PATH) };
+}
 
 export default async function ProductsIndex() {
   const [categories, products] = await Promise.all([getCategories(), getProducts()]);

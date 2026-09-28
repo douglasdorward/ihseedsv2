@@ -228,10 +228,10 @@ test("only registered redirect paths resolve through lookup and the legacy HTTP 
 });
 
 function publicOrigin() {
-  const raw = (process.env.PUBLIC_SITE_URL || "https://www.irwinhunter.com.au").trim().replace(/\/+$/, "")
-    || "https://www.irwinhunter.com.au";
+  const raw = (process.env.PUBLIC_SITE_URL || "https://irwinhunter.com.au").trim().replace(/\/+$/, "")
+    || "https://irwinhunter.com.au";
   const url = new URL(raw);
-  if (url.hostname === "irwinhunter.com.au") url.hostname = "www.irwinhunter.com.au";
+  if (url.hostname === "www.irwinhunter.com.au") url.hostname = "irwinhunter.com.au";
   return url.origin;
 }
 
@@ -317,7 +317,7 @@ test("product sitemap uses same-origin canonical overrides, lastmod, and omits n
   const indexed = await createProduct("sitemap-canonical");
   const hidden = await createProduct("sitemap-noindex");
   assertStatus(await request("POST", `/admin/products/${indexed.id}/publish`, draftPayload(indexed, {
-    details: { ...indexed.details, canonicalUrl: overridePath },
+    details: { ...indexed.details, canonicalUrl: `https://www.irwinhunter.com.au${overridePath}` },
   })), 200);
   assertStatus(await request("POST", `/admin/products/${hidden.id}/publish`, draftPayload(hidden, {
     details: { ...hidden.details, robotsIndex: false },
@@ -757,9 +757,11 @@ test("a later published category choice for a seed product is not reverted", asy
   const publicProduct = (await publicProducts()).find((item) => item.slug === "ceres-pg-one50-ryegrass");
   assert.ok(publicProduct);
   const product = await adminProduct(publicProduct.id);
-  const otherCategory = assertStatus(await request("GET", "/categories"), 200)
-    .find((category) => category.slug === "other");
-  assert.ok(otherCategory);
+  // "Other" is a legacy source category in the one-time correction, so use a
+  // different valid editor choice to verify that a later publish survives re-migration.
+  const chosenCategory = assertStatus(await request("GET", "/categories"), 200)
+    .find((category) => category.slug === "forage-grain-crops");
+  assert.ok(chosenCategory);
   const timestamps = sql(`
     SELECT published_at::text, updated_at::text, COALESCE(subcategory_id::text, '')
     FROM ih_products
@@ -768,8 +770,8 @@ test("a later published category choice for a seed product is not reverted", asy
 
   try {
     assertStatus(await request("POST", `/admin/products/${product.id}/publish`, draftPayload(product, {
-      category: "Other",
-      subcategoryId: otherCategory.id,
+      category: chosenCategory.name,
+      subcategoryId: chosenCategory.id,
       details: {
         ...product.details,
         recordType: "Variety",
@@ -786,7 +788,7 @@ test("a later published category choice for a seed product is not reverted", asy
 
     const published = (await publicProducts()).find((item) => item.id === product.id);
     assert.ok(published);
-    assert.equal(published.category, otherCategory.name);
+    assert.equal(published.category, chosenCategory.name);
     assert.equal(sql(`SELECT publish_status FROM ih_products WHERE id = ${product.id}`), "Published");
   } finally {
     sql(`
@@ -2225,15 +2227,20 @@ test("blog article Excel import keeps HTML formatting and upserts by slug", asyn
   assert.deepEqual(productHeaders, ["slug", "name", "category", "category_slug", "path"]);
   const productRows = xlsx.utils.sheet_to_json(templateBook.Sheets.Products, { defval: "", raw: false });
   const catalogue = assertStatus(await request("GET", "/admin/products"), 200);
-  const linkable = catalogue.find((product) => product.publishStatus === "Published" && product.listingState !== "Legacy");
+  const categories = assertStatus(await request("GET", "/admin/categories"), 200);
+  const activeRoots = categories.filter((category) => category.parentId == null && category.active);
+  const linkable = catalogue.find((product) => product.publishStatus === "Published" && product.listingState !== "Legacy"
+    && activeRoots.some((category) => category.name === product.category));
   assert.ok(linkable);
-  assert.equal(productRows.some((row) => row.slug === linkable.slug && String(row.category_slug).length > 0 && String(row.path).startsWith("/products/")), true);
+  const linkableCategory = activeRoots.find((category) => category.name === linkable.category);
+  assert.equal(productRows.some((row) => row.slug === linkable.slug
+    && row.category_slug === linkableCategory.slug
+    && row.path === `/products/${linkableCategory.slug}/${linkable.slug}`), true);
   assert.ok(templateBook.Sheets.Categories);
   const categoryHeaders = xlsx.utils.sheet_to_json(templateBook.Sheets.Categories, { header: 1 })[0];
   assert.deepEqual(categoryHeaders, ["slug", "name", "path"]);
   const categoryRows = xlsx.utils.sheet_to_json(templateBook.Sheets.Categories, { defval: "", raw: false });
-  const categories = assertStatus(await request("GET", "/admin/categories"), 200);
-  const rootCategory = categories.find((category) => category.parentId == null && category.active);
+  const rootCategory = activeRoots[0];
   assert.ok(rootCategory);
   assert.equal(categoryRows.some((row) => row.slug === rootCategory.slug && row.path === `/products/${rootCategory.slug}`), true);
   const promptSheet = xlsx.utils.sheet_to_json(templateBook.Sheets["Agent prompt"], { header: 1, defval: "" });

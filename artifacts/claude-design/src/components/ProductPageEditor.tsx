@@ -8,6 +8,7 @@ import { getEditorQuickFactSlots, type QuickFactSlotId } from "../product-quick-
 import { ProductPhotoOrderButtons } from "../product-photo-order";
 import { slugify } from "../product-slug";
 import { photoDisplaySrc, uploadMediaAsset } from "../upload-image";
+import { SocialImagePreview } from "./SocialImagePreview";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80";
 const PRODUCT_FAQ_LIMIT = 10;
@@ -761,8 +762,14 @@ function BelowCards(props: ProductPageEditorProps) {
               <option value="">Use the product hero image</option>
               {details.photos.filter((photo: ProductPhoto) => photo.src).map((photo: ProductPhoto, index: number) => <option key={`${photo.slot}-${index}`} value={photo.src}>{photo.slot || `Photo ${index + 1}`}</option>)}
             </select>
-            <input type="url" value={details.socialImage} onChange={(event) => props.setDetail("socialImage", event.target.value)} placeholder="https://example.com/social-image.jpg" />
+            <input type="url" aria-label="Social sharing image URL" value={details.socialImage} onChange={(event) => props.setDetail("socialImage", event.target.value)} placeholder="https://example.com/social-image.jpg" />
           </label>
+          <div className="wide" style={{ display: "grid", gap: 8 }}>
+            <SocialImagePreview kind="product" override={details.socialImage} hero={photoDisplaySrc(details.photos?.find((photo: ProductPhoto) => photo.src?.trim() || photo.assetId))} />
+            {details.socialImage?.trim() && !readOnly && (
+              <div><button type="button" className="admin-button ghost" onClick={() => props.setDetail("socialImage", "")}>Clear custom image</button></div>
+            )}
+          </div>
           <label className="wide"><FieldLabel hint="Optional. Leave blank to use the product's normal published URL.">Canonical URL override</FieldLabel><input type="url" value={details.canonicalUrl} onChange={(event) => props.setDetail("canonicalUrl", event.target.value)} /></label>
           <label className="admin-check-row wide"><input type="checkbox" checked={details.robotsIndex} onChange={(event) => props.setDetail("robotsIndex", event.target.checked)} /><span><strong>Allow search engines to index this product</strong></span></label>
         </div>

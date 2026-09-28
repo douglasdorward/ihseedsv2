@@ -2470,6 +2470,8 @@ components:
       properties:
         heroImageSrc: { type: string, maxLength: 500 }
         heroImageAssetId: { type: string, nullable: true, maxLength: 80 }
+        socialImageSrc: { type: string, maxLength: 500, description: "Optional homepage sharing image override. Blank uses the current hero/site fallback." }
+        socialImageAssetId: { type: string, nullable: true, maxLength: 80, description: "Library asset selected for the sharing image, or null." }
         heroImages:
           type: array
           maxItems: 6

@@ -69,7 +69,7 @@ const nextConfig = {
     tsconfigPath: process.env.NEXT_TSCONFIG_PATH || "tsconfig.json",
   },
   async redirects() {
-    // Host canonicalisation runs first so a legacy apex URL lands on www in
+    // Host canonicalisation runs first so a legacy www URL lands on apex in
     // one hop before the path redirect below is applied.
     return [...canonicalHostRedirects(), ...wordpressRedirects];
   },

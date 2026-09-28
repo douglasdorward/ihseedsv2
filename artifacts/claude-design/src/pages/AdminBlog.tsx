@@ -27,6 +27,7 @@ import { ArticleBodyEditor } from "../components/ArticleBodyEditor";
 import { navigate, useLocation } from "../router";
 import { photoDisplaySrc, uploadMediaAsset } from "../upload-image";
 import { ConfirmDialog, PageHeader } from "./Admin";
+import { SocialImagePreview } from "../components/SocialImagePreview";
 import "../admin-blog.css";
 
 const TAG_PRESETS = ["Editorial", "Sowing & Timing", "Feed Planning", "Regional Advice"];
@@ -793,6 +794,10 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
             <label>Social image URL
               <input value={form.socialImage} onChange={(event) => setField("socialImage", event.target.value)} placeholder="Uses the hero image when left blank" />
             </label>
+            <SocialImagePreview kind="article" override={form.socialImage} hero={heroSrc} />
+            {form.socialImage.trim() && (
+              <div><button type="button" className="admin-button ghost" onClick={() => setField("socialImage", "")}>Clear custom image</button></div>
+            )}
           </details>
         </section>
 
