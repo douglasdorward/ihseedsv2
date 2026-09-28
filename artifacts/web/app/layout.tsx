@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Raleway } from "next/font/google";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { getCategories } from "../lib/catalogue";
@@ -7,6 +8,13 @@ import { DEFAULT_COMPANY, organizationJsonLd } from "../lib/company";
 import { FALLBACK_SITE_SETTINGS, loadSiteSettings } from "../lib/site-settings";
 import { absoluteSiteUrl, publicSiteUrl } from "../lib/site-url";
 import "./styles.css";
+
+const raleway = Raleway({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
+  variable: "--font-raleway",
+});
 
 export const metadata: Metadata = {
   metadataBase: publicSiteUrl,
@@ -23,7 +31,7 @@ export default async function RootLayout({ children }: { children: any }) {
   const company = settings.company ?? DEFAULT_COMPANY;
 
   return (
-    <html lang="en">
+    <html lang="en" className={raleway.variable}>
       <head>
         <link rel="describedby" href={absoluteSiteUrl("/llms.txt")} />
       </head>
