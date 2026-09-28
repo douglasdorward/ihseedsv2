@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CoverImage } from "../components/CoverImage";
 import { Icon } from "../components/Icon";
 import { ProductNewStamp } from "../components/NewStamp";
 import { StatusPill } from "../components/StatusPill";
@@ -65,8 +66,13 @@ export default async function Home() {
             <div className="product-grid">
               {visibleProducts.map((product) => (
                 <Link href={productPublicPath(product, categories)} className="product-card" style={{ textDecoration: "none", color: "inherit" }} key={product.id} data-testid={`card-product-${product.id}`}>
-                  <div className="product-image" role="img" aria-label={productImageAlt(product)} style={{ backgroundImage: `linear-gradient(180deg, transparent, rgba(29,40,28,.72)), url(${productCardImage(product)})` }}>
-                    {!hasProductPhoto(product) && <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" />}
+                  <div className="product-image" style={hasProductPhoto(product) ? undefined : { backgroundImage: `linear-gradient(180deg, transparent, rgba(29,40,28,.72)), url(${productCardImage(product)})` }}>
+                    {hasProductPhoto(product) ? (
+                      <>
+                        <CoverImage src={productCardImage(product)} alt={productImageAlt(product)} sizes="(max-width: 520px) 92vw, (max-width: 900px) 46vw, 280px" />
+                        <div className="product-image-scrim" aria-hidden="true" />
+                      </>
+                    ) : <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" width={178} height={117} />}
                     <StatusPill status={product.status} />
                     <ProductNewStamp listingState={product.listingState} />
                   </div>
@@ -83,7 +89,10 @@ export default async function Home() {
 
       <section id="about" className="section about-section">
         <div className="feature-panel">
-          <div className="feature-image" style={{ backgroundImage: `linear-gradient(90deg, rgba(12,88,60,.12), rgba(12,88,60,.02)), url(${aboutImage})` }} />
+          <div className="feature-image">
+            <CoverImage src={aboutImage} alt="" sizes="(max-width: 900px) 100vw, 680px" />
+            <div className="feature-image-scrim" aria-hidden="true" />
+          </div>
           <div className="feature-copy">
             <h2><span>About</span> Us</h2>
             <p>{settings.homepage.aboutBody || FALLBACK_SITE_SETTINGS.homepage.aboutBody}</p>
@@ -102,7 +111,9 @@ export default async function Home() {
             <div className="article-grid">
               {seedShedArticles.map((article) => (
                 <article className="article-card" key={article.id} data-testid={`card-home-article-${article.slug}`}>
-                  <div className="article-image" style={article.heroImageSrc ? { backgroundImage: `url(${article.heroImageSrc})` } : undefined} />
+                  <div className="article-image">
+                    {article.heroImageSrc ? <CoverImage src={article.heroImageSrc} alt="" sizes="(max-width: 900px) 100vw, 380px" /> : null}
+                  </div>
                   <div className="article-copy">
                     <small>{[article.tags[0], formatArticleDate(article.publishedAt)].filter(Boolean).join(" · ")}</small>
                     <h3>{article.title}</h3>
@@ -117,7 +128,9 @@ export default async function Home() {
       )}
 
       <section id="guide" className="section guide-section">
-        <div className="guide-banner" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.92), rgba(29,40,28,.44)), url(${guideImage})` }}>
+        <div className="guide-banner">
+          {guideImage ? <CoverImage src={guideImage} alt="" sizes="(max-width: 900px) 100vw, 1360px" /> : null}
+          <div className="guide-scrim" aria-hidden="true" />
           <div>
             <h2>{settings.seedGuide.cardHeading}</h2>
             <a href={settings.seedGuide.pdfPublicUrl} className="button button-light" style={{ display: "inline-block", textDecoration: "none" }} data-testid="button-download-guide" download>{settings.seedGuide.cardButtonLabel}</a>

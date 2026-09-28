@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CoverImage } from "../../../components/CoverImage";
 import { ProductNewStamp } from "../../../components/NewStamp";
 import { StatusPill } from "../../../components/StatusPill";
 import { ArticleMarkdown } from "../../../lib/article-markdown";
@@ -84,7 +85,9 @@ export default async function ArticlePage({ params }: Props) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([articleJsonLd, breadcrumbJsonLd]).replace(/</g, "\\u003c") }} />
-      <section className="article-hero" style={article.heroImageSrc ? { backgroundImage: `linear-gradient(rgba(29,40,28,.55), rgba(29,40,28,.72)), url(${article.heroImageSrc})` } : undefined}>
+      <section className="article-hero">
+        {article.heroImageSrc ? <CoverImage src={article.heroImageSrc} alt="" sizes="100vw" /> : null}
+        {article.heroImageSrc ? <div className="article-hero-scrim" aria-hidden="true" /> : null}
         <div className="page-content article-hero-copy">
           <nav aria-label="Breadcrumb" className="article-breadcrumb">
             <Link href="/resources">Resources</Link> › {article.tags[0] || "Article"}
@@ -103,8 +106,8 @@ export default async function ArticlePage({ params }: Props) {
               <div className="also-popular-grid">
                 {linkedProducts.map((product) => (
                   <Link key={product.id} href={productPublicPath(product, categories)} className="also-popular-card">
-                    <div className="also-popular-image" role="img" aria-label={productImageAlt(product)} style={{ backgroundImage: `url(${productCardImage(product)})` }}>
-                      {!hasProductPhoto(product) && <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" />}
+                    <div className="also-popular-image" style={hasProductPhoto(product) ? undefined : { backgroundImage: `url(${productCardImage(product)})` }}>
+                      {hasProductPhoto(product) ? <CoverImage src={productCardImage(product)} alt={productImageAlt(product)} sizes="(max-width: 800px) 100vw, 360px" /> : <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" width={178} height={117} />}
                       <StatusPill status={product.status} />
                       <ProductNewStamp listingState={product.listingState} />
                     </div>

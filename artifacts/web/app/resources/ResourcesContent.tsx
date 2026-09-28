@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { CoverImage } from "../../components/CoverImage";
 import { Icon } from "../../components/Icon";
 import type { CatalogueArticle, CatalogueProduct, PublicSiteSeedGuide } from "../../lib/catalogue";
 import { publicMediaSrc } from "../../lib/site-settings";
@@ -72,7 +73,9 @@ export function ResourcesContent({
               <div className="article-grid">
                 {filteredArticles.map((article, index) => (
                   <article className="article-card" key={article.id} data-testid={`card-article-${index}`}>
-                    <div className="article-image" style={article.heroImageSrc ? { backgroundImage: `url(${article.heroImageSrc})` } : undefined} />
+                    <div className="article-image">
+                  {article.heroImageSrc ? <CoverImage src={article.heroImageSrc} alt="" sizes="(max-width: 900px) 100vw, 380px" /> : null}
+                </div>
                     <div className="article-copy">
                       <small>{[article.tags[0], formatArticleDate(article.publishedAt)].filter(Boolean).join(" · ")}</small>
                       <h3>{article.title}</h3>
@@ -112,7 +115,9 @@ export function ResourcesContent({
 
       <section style={{ background: "var(--sage)" }}>
         <div className="page-wide" style={{ maxWidth: 1440, margin: "0 auto", padding: "96px 40px" }}>
-          <div className="guide-banner" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.92), rgba(29,40,28,.44)), url(${publicMediaSrc({ src: seedGuide.cardImageSrc, assetId: seedGuide.cardImageAssetId }) || imageOptions[3]})` }}>
+          <div className="guide-banner">
+            <CoverImage src={publicMediaSrc({ src: seedGuide.cardImageSrc, assetId: seedGuide.cardImageAssetId }) || imageOptions[3]} alt="" sizes="(max-width: 900px) 100vw, 1360px" />
+            <div className="guide-scrim" aria-hidden="true" />
             <div>
               <h2>{seedGuide.cardHeading}</h2>
               <a href={seedGuide.pdfPublicUrl} className="button button-light" style={{ display: "inline-block", textDecoration: "none" }} download>{seedGuide.cardButtonLabel}</a>

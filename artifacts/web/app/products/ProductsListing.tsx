@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
+import { CoverImage } from "../../components/CoverImage";
 import { Icon } from "../../components/Icon";
 import { ProductNewStamp } from "../../components/NewStamp";
 import { StatusPill } from "../../components/StatusPill";
@@ -272,13 +273,10 @@ export function ProductsListing({
                   className={`catalogue-product-card${hasPhoto ? "" : " is-photo-missing"}`}
                 >
                   <div className="catalogue-product-media">
-                    <div
-                      className="catalogue-product-image"
-                      role="img"
-                      aria-label={hasPhoto ? productImageAlt(product) : `${product.name} — product image unavailable`}
-                      style={{ backgroundImage: `url(${productCardImage(product)})` }}
-                    />
-                    {!hasPhoto && <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" />}
+                    <div className="catalogue-product-image">
+                      {hasPhoto ? <CoverImage src={productCardImage(product)} alt={productImageAlt(product)} sizes="(max-width: 700px) 100vw, (max-width: 1100px) 46vw, 360px" /> : null}
+                    </div>
+                    {!hasPhoto && <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt={`${product.name} — product image unavailable`} width={178} height={117} />}
                     <div style={{ position: "absolute", top: 12, left: 12 }}>
                       <StatusPill status={product.status} />
                     </div>

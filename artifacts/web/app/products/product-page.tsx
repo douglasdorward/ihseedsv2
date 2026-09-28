@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
+import { CoverImage } from "../../components/CoverImage";
 import { Icon } from "../../components/Icon";
 import { ProductNewStamp } from "../../components/NewStamp";
 import { StatusPill } from "../../components/StatusPill";
@@ -135,9 +136,6 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
   const officeTel = companyTelHref(officePhone);
   const details = product.details;
   const image = productImage(product);
-  const heroOverlay = hasProductPhoto(product)
-    ? "linear-gradient(rgba(29,40,28,.55), rgba(29,40,28,.72))"
-    : "linear-gradient(rgba(39,45,42,.38), rgba(39,45,42,.56))";
   const canonicalHref = productCanonicalUrl(details.canonicalUrl, canonical);
   const root = rootCategoryForProduct(product, categories);
   const categoryUrl = root ? categoryPublicPath(root) : CATALOGUE_INDEX_PATH;
@@ -188,8 +186,10 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([productJsonLd, breadcrumbJsonLd, ...(faqJsonLd ? [faqJsonLd] : [])]).replace(/</g, "\\u003c") }} />
-      <section className="product-hero" style={{ minHeight: 520, backgroundImage: `${heroOverlay}, url(${image})`, backgroundSize: "cover", backgroundPosition: "center" }}>
-        {!hasProductPhoto(product) && <img className="product-hero-fallback-logo" src="/ih-seeds-logo.png" alt="" />}
+      <section className="product-hero" style={hasProductPhoto(product) ? { minHeight: 520 } : { minHeight: 520, backgroundImage: `url(${image})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+        {hasProductPhoto(product) && <CoverImage src={image} alt="" sizes="100vw" />}
+        <div className={`product-hero-scrim ${hasProductPhoto(product) ? "has-photo" : "no-photo"}`} aria-hidden="true" />
+        {!hasProductPhoto(product) && <img className="product-hero-fallback-logo" src="/ih-seeds-logo.png" alt="" width={178} height={117} />}
         <ProductNewStamp listingState={product.listingState} size="hero" />
         <div className="product-hero-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "150px 40px 64px", display: "flex", flexDirection: "column", gap: 20 }}>
           <nav aria-label="Breadcrumb" style={{ color: "var(--yellow)", fontSize: 14, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase" }}>
@@ -247,7 +247,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
           </div>
         </section>
       )}
-      {alsoPopular.length > 0 && <section className="also-popular-section" aria-labelledby="also-popular-heading"><div className="also-popular-inner"><div className="also-popular-header"><h2 id="also-popular-heading">Also popular:</h2><Link href={categoryUrl} className="also-popular-category-link">View all {product.category}<Icon name="arrow-right" size={18} /></Link></div><div className="also-popular-grid">{alsoPopular.map((item) => <Link key={item.id} href={productPublicPath(item, categories)} className="also-popular-card"><div className="also-popular-image" role="img" aria-label={productImageAlt(item)} style={{ backgroundImage: `url(${productImage(item)})` }}>{!hasProductPhoto(item) && <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" />}<StatusPill status={item.status} /><ProductNewStamp listingState={item.listingState} /></div><div className="also-popular-card-body"><div><h3>{item.name}</h3>{item.details.tagline?.trim() && <p>{item.details.tagline}</p>}</div><span className="also-popular-arrow" aria-hidden="true"><Icon name="arrow-right" size={18} /></span></div></Link>)}</div></div></section>}
+      {alsoPopular.length > 0 && <section className="also-popular-section" aria-labelledby="also-popular-heading"><div className="also-popular-inner"><div className="also-popular-header"><h2 id="also-popular-heading">Also popular:</h2><Link href={categoryUrl} className="also-popular-category-link">View all {product.category}<Icon name="arrow-right" size={18} /></Link></div><div className="also-popular-grid">{alsoPopular.map((item) => <Link key={item.id} href={productPublicPath(item, categories)} className="also-popular-card"><div className="also-popular-image" style={hasProductPhoto(item) ? undefined : { backgroundImage: `url(${productImage(item)})` }}>{hasProductPhoto(item) ? <CoverImage src={productImage(item)} alt={productImageAlt(item)} sizes="(max-width: 800px) 100vw, 360px" /> : <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" width={178} height={117} />}<StatusPill status={item.status} /><ProductNewStamp listingState={item.listingState} /></div><div className="also-popular-card-body"><div><h3>{item.name}</h3>{item.details.tagline?.trim() && <p>{item.details.tagline}</p>}</div><span className="also-popular-arrow" aria-hidden="true"><Icon name="arrow-right" size={18} /></span></div></Link>)}</div></div></section>}
     </>
   );
 }

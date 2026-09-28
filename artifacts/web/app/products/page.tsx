@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { CoverImage } from "../../components/CoverImage";
 import { getCategories, getProducts } from "../../lib/catalogue";
 import { CATALOGUE_INDEX_PATH } from "../../lib/catalogue-paths";
 import { ProductsListing } from "./ProductsListing";
@@ -40,7 +41,9 @@ export default async function ProductsIndex() {
               <p>Every line is true to type seed from credible growers, germination tested and blended to order. If you are unsure which species suits your rainfall zone, soil type and grazing plan, talk to us before you order — that advice is part of the seed.</p>
               <Link href="/resources" className="button button-outline" style={{ color: "#fff", borderColor: "#fff" }}>Download the Tech Sheet</Link>
             </div>
-            <div className="feature-image" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80)`, backgroundPosition: "right" }} />
+            <div className="feature-image">
+              <CoverImage src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80" alt="" sizes="(max-width: 900px) 100vw, 680px" className="cover-image cover-image-right" />
+            </div>
           </div>
         </div>
       </section>

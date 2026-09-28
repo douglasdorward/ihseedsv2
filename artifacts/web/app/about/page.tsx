@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CoverImage } from "../../components/CoverImage";
 import { Icon } from "../../components/Icon";
 import { getProducts } from "../../lib/catalogue";
 import { expandProductCount, FALLBACK_SITE_SETTINGS, loadSiteSettings, publicMediaSrc } from "../../lib/site-settings";
@@ -29,7 +30,8 @@ export default async function About() {
             </h1>
             <p style={{ margin: 0, fontSize: 18, lineHeight: 1.6, color: "var(--black-green)", maxWidth: "52ch" }}>{about.heroIntro}</p>
           </div>
-          <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", aspectRatio: "4/3", backgroundImage: `url(${heroSrc})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+          <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", aspectRatio: "4/3" }}>
+            <CoverImage src={heroSrc} alt="" sizes="(max-width: 900px) 100vw, 560px" />
           </div>
         </div>
       </section>
@@ -67,7 +69,9 @@ export default async function About() {
 
       <section style={{ background: "#FFFFFF" }}>
         <div className="page-wide" style={{ maxWidth: 1440, margin: "0 auto", padding: "96px 40px" }}>
-          <div className="guide-banner" style={{ backgroundImage: `linear-gradient(90deg, rgba(29,40,28,.92), rgba(29,40,28,.44)), url(${publicMediaSrc({ src: settings.seedGuide.cardImageSrc, assetId: settings.seedGuide.cardImageAssetId })})` }}>
+          <div className="guide-banner">
+            <CoverImage src={publicMediaSrc({ src: settings.seedGuide.cardImageSrc, assetId: settings.seedGuide.cardImageAssetId })} alt="" sizes="(max-width: 900px) 100vw, 1360px" />
+            <div className="guide-scrim" aria-hidden="true" />
             <div>
               <h2>{settings.seedGuide.cardHeading}</h2>
               <a href={settings.seedGuide.pdfPublicUrl} className="button button-light" style={{ display: "inline-block", textDecoration: "none" }} download>{settings.seedGuide.cardButtonLabel}</a>

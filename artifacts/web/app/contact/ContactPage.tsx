@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState, type FormEvent } from "react";
 import { Icon } from "../../components/Icon";
+import { optimizableSrc } from "../../lib/image-src";
 import type { CatalogueResellerBrand } from "../../lib/catalogue";
 import { companyMapsUrl, companyTelHref, type CompanyContact } from "../../lib/company";
 import { resellerPoint } from "../../lib/reseller-distance";
@@ -216,7 +218,7 @@ export function ContactPage({
                 <div className="reseller-row" key={`${brand.id}-${outlet.id}`}>
                   <div className="reseller-identity">
                     {logo ? (
-                      <img className="reseller-logo" src={logo} alt="" />
+                      <Image className="reseller-logo" src={optimizableSrc(logo)} alt="" width={96} height={96} style={{ width: 48, height: 48 }} />
                     ) : brand.kind === "independent" ? (
                       <span className="reseller-logo reseller-logo-shop" aria-hidden="true">
                         <Icon name="store" size={24} />

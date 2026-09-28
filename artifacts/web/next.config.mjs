@@ -57,6 +57,8 @@ const nextConfig = {
       { protocol: "http", hostname: "127.0.0.1", port: "8080", pathname: "/api/site/**" },
       { protocol: "http", hostname: "localhost", port: "8080", pathname: "/api/site/**" },
       { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
+      { protocol: "https", hostname: "irwinhunter.com.au", pathname: "/**" },
+      { protocol: "https", hostname: "www.irwinhunter.com.au", pathname: "/**" },
     ],
   },
   typescript: {
