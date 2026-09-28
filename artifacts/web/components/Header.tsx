@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CATALOGUE_INDEX_PATH, categoryPublicPath, type NavCategory } from "../lib/catalogue-paths";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
@@ -12,16 +12,51 @@ export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 20
   const location = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [productsMenuDismissed, setProductsMenuDismissed] = useState(false);
+  const productsMenuRef = useRef<HTMLDivElement>(null);
+  const pointerInsideProductsMenu = useRef(false);
+  const skipProductsDismiss = useRef(true);
   const closeSearch = useCallback(() => setSearchOpen(false), []);
   const closeSearchAndMenu = useCallback(() => {
     setMenuOpen(false);
     setSearchOpen(false);
   }, []);
+  const dismissProductsMenu = useCallback(() => {
+    setProductsMenuDismissed(true);
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && productsMenuRef.current?.contains(active)) {
+      active.blur();
+    }
+  }, []);
 
   useEffect(() => {
     setMenuOpen(false);
     setSearchOpen(false);
-  }, [location]);
+    if (skipProductsDismiss.current) {
+      skipProductsDismiss.current = false;
+      return;
+    }
+    if (productsMenuRef.current?.contains(document.activeElement)) {
+      dismissProductsMenu();
+    }
+  }, [location, dismissProductsMenu]);
+
+  useEffect(() => {
+    if (!productsMenuDismissed) return;
+    const releaseIfPointerOutside = (event: PointerEvent) => {
+      const menu = productsMenuRef.current;
+      const target = event.target;
+      const inside = Boolean(menu && target instanceof Node && menu.contains(target));
+      pointerInsideProductsMenu.current = inside;
+      if (!inside) setProductsMenuDismissed(false);
+    };
+    document.addEventListener("pointermove", releaseIfPointerOutside);
+    document.addEventListener("pointerdown", releaseIfPointerOutside);
+    return () => {
+      document.removeEventListener("pointermove", releaseIfPointerOutside);
+      document.removeEventListener("pointerdown", releaseIfPointerOutside);
+    };
+  }, [productsMenuDismissed]);
 
   const isActive = (path: string) => {
     if (path === "/products") {
@@ -31,13 +66,37 @@ export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 20
   };
   const navItemClass = (path: string) => `nav-link ${isActive(path) ? "active" : ""}`;
   const closeMenu = () => setMenuOpen(false);
+  const selectProductsLink = () => {
+    closeMenu();
+    dismissProductsMenu();
+  };
 
   return (
     <header className="site-header">
       <Logo />
       <nav className={`desktop-nav ${menuOpen ? "mobile-nav-open" : ""}`} aria-label="Main navigation">
-        <div className="nav-dropdown">
-          <Link href={CATALOGUE_INDEX_PATH} className={navItemClass("/products")} aria-current={isActive("/products") ? "page" : undefined} aria-haspopup="true" aria-controls="products-nav-menu" onClick={closeMenu} data-testid="link-products">Products</Link>
+        <Link href="/" className={navItemClass("/")} aria-current={isActive("/") ? "page" : undefined} onClick={closeMenu} data-testid="link-home">Home</Link>
+        <div
+          ref={productsMenuRef}
+          className={`nav-dropdown${productsMenuDismissed ? " is-dismissed" : ""}`}
+          onMouseEnter={() => {
+            pointerInsideProductsMenu.current = true;
+          }}
+          onMouseLeave={() => {
+            pointerInsideProductsMenu.current = false;
+            setProductsMenuDismissed(false);
+          }}
+          onFocus={() => {
+            if (pointerInsideProductsMenu.current) return;
+            setProductsMenuDismissed(false);
+          }}
+          onBlur={(event) => {
+            if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+            if (pointerInsideProductsMenu.current) return;
+            setProductsMenuDismissed(false);
+          }}
+        >
+          <Link href={CATALOGUE_INDEX_PATH} className={navItemClass("/products")} aria-current={isActive("/products") ? "page" : undefined} aria-haspopup="true" aria-controls="products-nav-menu" onClick={selectProductsLink} data-testid="link-products">Products</Link>
           <div id="products-nav-menu" className="nav-dropdown-panel">
             <ul className="nav-dropdown-list" aria-label="Product categories">
               {productCategories.map((category) => {
@@ -45,12 +104,12 @@ export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 20
                 const current = location === href || location.startsWith(`${href}/`);
                 return (
                   <li key={category.slug}>
-                    <Link href={href} className={current ? "is-current" : undefined} aria-current={current ? "page" : undefined} onClick={closeMenu} data-testid={`link-products-nav-${category.slug}`}>{category.name}</Link>
+                    <Link href={href} className={current ? "is-current" : undefined} aria-current={current ? "page" : undefined} onClick={selectProductsLink} data-testid={`link-products-nav-${category.slug}`}>{category.name}</Link>
                   </li>
                 );
               })}
             </ul>
-            <Link href={CATALOGUE_INDEX_PATH} className="button button-accent nav-dropdown-all" onClick={closeMenu} data-testid="link-products-nav-all">All categories <Icon name="chevron-right" size={16} /></Link>
+            <Link href={CATALOGUE_INDEX_PATH} className="button button-accent nav-dropdown-all" onClick={selectProductsLink} data-testid="link-products-nav-all">All categories <Icon name="chevron-right" size={16} /></Link>
           </div>
         </div>
         <Link href="/guide" className={navItemClass("/guide")} aria-current={isActive("/guide") ? "page" : undefined} onClick={closeMenu} data-testid="link-guide">{seedGuideTitle}</Link>

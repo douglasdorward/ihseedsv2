@@ -249,10 +249,21 @@ export function ProductsListing({
           <div className="product-filter-drawer-panel" onClick={(event) => event.stopPropagation()}>
             <div className="product-filter-sidebar-header">
               <h2>Filters</h2>
-              <button type="button" className="product-filter-clear" onClick={() => setFiltersOpen(false)} aria-label="Close filters">Close</button>
+              <div className="product-filter-drawer-actions">
+                <button type="button" className="button button-primary" onClick={() => setFiltersOpen(false)}>
+                  Show {visibleProducts.length} {visibleProducts.length === 1 ? "product" : "products"}
+                </button>
+                <button
+                  type="button"
+                  className="product-filter-clear"
+                  onClick={() => apply(EMPTY_FILTERS)}
+                  disabled={filtersAreEmpty(filters)}
+                >
+                  Clear
+                </button>
+              </div>
             </div>
             {sidebar}
-            <button type="button" className="button button-primary" onClick={() => setFiltersOpen(false)}>Show {visibleProducts.length} products</button>
           </div>
         </div>
       )}

@@ -1032,7 +1032,7 @@
 .catalogue-product-card.is-photo-missing .catalogue-product-image {
   opacity: 0;
 }
-.catalogue-product-arrow {
+.catalogue-product-media .catalogue-product-arrow {
   position: absolute;
   right: 12px;
   bottom: 12px;
@@ -1154,7 +1154,7 @@
     width: min(360px, 92vw);
     overflow: auto;
     background: #fff;
-    padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+    padding: 0 24px max(24px, env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -1163,14 +1163,36 @@
     position: sticky;
     top: 0;
     z-index: 1;
-    margin: calc(-1 * max(24px, env(safe-area-inset-top))) -24px 0;
-    padding: max(24px, env(safe-area-inset-top)) 24px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin: 0 -24px;
+    padding: max(24px, env(safe-area-inset-top)) 24px 16px;
     background: #fff;
   }
-  .product-filter-drawer .product-filter-sidebar > .product-filter-sidebar-header h2 {
-    display: none;
+  .product-filter-drawer-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
-  .product-filter-drawer .product-filter-sidebar > .product-filter-sidebar-header:not(:has(.product-filter-clear)) {
+  .product-filter-drawer-actions .button {
+    flex: 1 1 auto;
+    min-height: 48px;
+    padding-inline: 16px;
+    font-size: 16px;
+  }
+  .product-filter-drawer-actions .product-filter-clear {
+    flex: 0 0 auto;
+    min-height: 48px;
+    padding: 8px;
+    font-size: 16px;
+  }
+  .product-filter-drawer-actions .product-filter-clear:disabled {
+    opacity: 0.45;
+    cursor: default;
+    text-decoration: none;
+  }
+  .product-filter-drawer .product-filter-sidebar > .product-filter-sidebar-header {
     display: none;
   }
   .category-card-grid {
@@ -1262,7 +1284,7 @@
     width: 64px;
     height: 64px;
   }
-  .catalogue-product-arrow {
+  .catalogue-product-media .catalogue-product-arrow {
     right: 12px;
     bottom: 12px;
     width: 44px;
@@ -1304,15 +1326,6 @@
   .product-filter-drawer-panel > .product-filter-sidebar-header {
     margin-inline: -20px;
     padding-inline: 20px;
-  }
-  .product-filter-drawer-panel > .button {
-    min-height: 48px;
-    font-size: 16px;
-  }
-  .product-filter-clear {
-    min-height: 44px;
-    padding: 8px;
-    font-size: 15px;
   }
   .product-filter-option {
     min-height: 40px;
