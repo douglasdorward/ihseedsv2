@@ -68,8 +68,8 @@ export function Footer({ company = DEFAULT_COMPANY }: { company?: CompanyContact
           </div>
         </div>
         <div className="footer-marks">
-          <img className="footer-accreditation" src="/asf-accredited.png" alt="Australian Seed Federation Code of Practice accredited" />
-          <img className="footer-anniversary" src="/celebrating-60-years.jpg" alt="Celebrating 60 years" />
+          <img className="footer-accreditation" src="/asf-accredited.png" alt="Australian Seed Federation Code of Practice accredited" loading="lazy" decoding="async" />
+          <img className="footer-anniversary" src="/celebrating-60-years.jpg" alt="Celebrating 60 years" loading="lazy" decoding="async" />
         </div>
       </div>
       <div className="footer-bottom">

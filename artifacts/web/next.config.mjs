@@ -46,6 +46,19 @@ const wordpressRedirects = [
 
 const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  images: {
+    formats: ["image/avif", "image/webp"],
+    // A relative /api/media src is not a file in public/, and the optimiser's
+    // internal request does not receive image bytes through the rewrite.
+    // CoverImage points src at this origin so the optimiser fetches Express directly.
+    remotePatterns: [
+      { protocol: "http", hostname: "127.0.0.1", port: "8080", pathname: "/api/media/**" },
+      { protocol: "http", hostname: "localhost", port: "8080", pathname: "/api/media/**" },
+      { protocol: "http", hostname: "127.0.0.1", port: "8080", pathname: "/api/site/**" },
+      { protocol: "http", hostname: "localhost", port: "8080", pathname: "/api/site/**" },
+      { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
+    ],
+  },
   typescript: {
     tsconfigPath: process.env.NEXT_TSCONFIG_PATH || "tsconfig.json",
   },

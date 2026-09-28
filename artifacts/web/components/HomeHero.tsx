@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { CoverImage } from "./CoverImage";
 import { CATALOGUE_INDEX_PATH } from "../lib/catalogue-paths";
 import type { HeroSlide } from "../lib/site-settings";
 
-const HERO_OVERLAY = "linear-gradient(90deg, rgba(29,40,28,.83) 0%, rgba(29,40,28,.69) 47%, rgba(29,40,28,.27) 100%)";
 const SLIDE_MS = 6000;
 /** Safety net so a video that never fires `ended` (stalled network) still advances. */
 const VIDEO_FALLBACK_MS = 45000;
@@ -109,7 +109,10 @@ export function HomeHero({
   if (!current) {
     return (
       <section className="hero-wrap">
-        <div className="hero" style={{ backgroundImage: HERO_OVERLAY }}>{copy}</div>
+        <div className="hero">
+          <div className="hero-scrim" aria-hidden="true" />
+          {copy}
+        </div>
       </section>
     );
   }
@@ -120,16 +123,10 @@ export function HomeHero({
     const playVideo = current.kind === "video" && !reduceMotion;
     return (
       <section className="hero-wrap">
-        <div
-          className={`hero ${playVideo ? "hero-has-video" : ""}`}
-          style={{ backgroundImage: still ? `${HERO_OVERLAY}, url(${still})` : HERO_OVERLAY }}
-        >
-          {playVideo && (
-            <>
-              <HeroVideo slide={current} active loop onEnded={() => undefined} />
-              <div className="hero-video-overlay" style={{ backgroundImage: HERO_OVERLAY }} aria-hidden="true" />
-            </>
-          )}
+        <div className={`hero ${playVideo ? "hero-has-video" : ""}`}>
+          {still ? <CoverImage src={still} alt="" sizes="100vw" priority className="hero-photo" /> : null}
+          {playVideo && <HeroVideo slide={current} active loop onEnded={() => undefined} />}
+          <div className="hero-scrim" aria-hidden="true" />
           {copy}
         </div>
       </section>
@@ -141,26 +138,27 @@ export function HomeHero({
       <div className="hero hero-slideshow" aria-live="off">
         {items.map((slide, slideIndex) => {
           const isActive = slideIndex === safeIndex;
-          if (slide.kind === "video") {
-            return (
-              <div
-                key={`${slide.src}-${slideIndex}`}
-                className={`hero-slide hero-slide-video ${isActive ? "is-active" : ""}`}
-                style={slide.posterSrc ? { backgroundImage: `${HERO_OVERLAY}, url(${slide.posterSrc})` } : undefined}
-                aria-hidden={!isActive}
-              >
-                <HeroVideo slide={slide} active={isActive} loop={false} onEnded={advance} />
-                <div className="hero-video-overlay" style={{ backgroundImage: HERO_OVERLAY }} aria-hidden="true" />
-              </div>
-            );
-          }
+          const still = slide.kind === "video" ? slide.posterSrc : slide.src;
           return (
             <div
               key={`${slide.src}-${slideIndex}`}
-              className={`hero-slide ${isActive ? "is-active" : ""}`}
-              style={{ backgroundImage: `${HERO_OVERLAY}, url(${slide.src})` }}
+              className={`hero-slide ${slide.kind === "video" ? "hero-slide-video" : ""} ${isActive ? "is-active" : ""}`}
               aria-hidden={!isActive}
-            />
+            >
+              {still ? (
+                <CoverImage
+                  src={still}
+                  alt=""
+                  sizes="100vw"
+                  priority={slideIndex === 0}
+                  className="hero-photo"
+                />
+              ) : null}
+              {slide.kind === "video" && (
+                <HeroVideo slide={slide} active={isActive} loop={false} onEnded={advance} />
+              )}
+              <div className="hero-scrim" aria-hidden="true" />
+            </div>
           );
         })}
         {copy}

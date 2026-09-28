@@ -71,6 +71,7 @@ autoInstallPeers: false
 onlyBuiltDependencies:
   - '@swc/core'
   - esbuild
+  - sharp
   # ffmpeg-static downloads the platform ffmpeg binary in its install script.
   - ffmpeg-static
   - msw
@@ -162,6 +163,7 @@ overrides:
   esbuild: "0.27.3"
 
 allowBuilds:
-  '@clerk/shared': set this to true or false
+  '@clerk/shared': false
   esbuild: true
   ffmpeg-static: true
+  sharp: true
