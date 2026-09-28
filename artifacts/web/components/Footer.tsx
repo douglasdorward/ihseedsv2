@@ -46,20 +46,20 @@ export function Footer({ company = DEFAULT_COMPANY }: { company?: CompanyContact
         </div>
         <div className="footer-columns">
           <div>
-            <h4>Products</h4>
+            <p className="footer-column-title">Products</p>
             <Link href="/products/mixes" className="footer-link" data-testid="footer-products">Mixes</Link>
             <Link href="/products/ryegrass" className="footer-link" data-testid="footer-ryegrass">Ryegrasses</Link>
             <Link href="/products/clovers" className="footer-link" data-testid="footer-clovers">Clovers</Link>
           </div>
           <div>
-            <h4>Resources</h4>
+            <p className="footer-column-title">Resources</p>
             <Link href="/resources" className="footer-link" data-testid="footer-resources">Tips &amp; Advice</Link>
             <Link href="/resources?tab=sheets" className="footer-link" data-testid="footer-tech-sheets">Tech sheets</Link>
             <Link href="/guide" className="footer-link" data-testid="footer-guide">Pasture Seed Guide</Link>
             <Link href="/availability" className="footer-link" data-testid="footer-availability">Seed Availability</Link>
           </div>
           <div>
-            <h4>Company</h4>
+            <p className="footer-column-title">Company</p>
             <Link href="/about" className="footer-link" data-testid="footer-story">Our Story</Link>
             <Link href="/contact" className="footer-link" data-testid="footer-contact">Contact</Link>
             <Link href="/contact#locations" className="footer-link" data-testid="footer-reseller">Find a reseller</Link>

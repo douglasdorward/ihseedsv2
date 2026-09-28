@@ -78,9 +78,9 @@ export function ResourcesContent({
                 </div>
                     <div className="article-copy">
                       <small>{[article.tags[0], formatArticleDate(article.publishedAt)].filter(Boolean).join(" · ")}</small>
-                      <h3>{article.title}</h3>
+                      <h2>{article.title}</h2>
                       <p>{article.excerpt}</p>
-                      <Link href={`/resources/${article.slug}`} className="text-link">Read article <span>↗</span></Link>
+                      <Link href={`/resources/${article.slug}`} className="text-link">Read article <span className="visually-hidden">: {article.title}</span> <span aria-hidden="true">↗</span></Link>
                     </div>
                   </article>
                 ))}

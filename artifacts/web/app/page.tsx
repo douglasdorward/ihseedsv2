@@ -48,9 +48,9 @@ export default async function Home() {
 
       <section className="pillars" aria-label="Why IH Seeds">
         <div className="three-column">
-          <div className="pillar"><Icon name="map-pin" size={27} /><h3>Regional expertise</h3><p>Local conditions, understood and applied. Our experience across Western Australia tells us which varieties and mixes deliver in your rainfall, your soil and your enterprise.</p></div>
-          <div className="pillar"><Icon name="sprout" size={27} /><h3>Proven performance</h3><p>Pasture varieties and mixes proven over generations and across Australia. Seed from accredited growers, true to type and consistent with its description.</p></div>
-          <div className="pillar"><Icon name="users" size={27} /><h3>Partnership</h3><p>Confidence before the order, support after it. We combine local experience with knowledge shared by farmers to give sound technical advice, through your local store or direct from our team.</p></div>
+          <div className="pillar"><Icon name="map-pin" size={27} /><h2>Regional expertise</h2><p>Local conditions, understood and applied. Our experience across Western Australia tells us which varieties and mixes deliver in your rainfall, your soil and your enterprise.</p></div>
+          <div className="pillar"><Icon name="sprout" size={27} /><h2>Proven performance</h2><p>Pasture varieties and mixes proven over generations and across Australia. Seed from accredited growers, true to type and consistent with its description.</p></div>
+          <div className="pillar"><Icon name="users" size={27} /><h2>Partnership</h2><p>Confidence before the order, support after it. We combine local experience with knowledge shared by farmers to give sound technical advice, through your local store or direct from our team.</p></div>
         </div>
       </section>
 
@@ -118,7 +118,7 @@ export default async function Home() {
                     <small>{[article.tags[0], formatArticleDate(article.publishedAt)].filter(Boolean).join(" · ")}</small>
                     <h3>{article.title}</h3>
                     <p>{article.excerpt}</p>
-                    <Link href={`/resources/${article.slug}`} className="text-link">Read article <span>↗</span></Link>
+                    <Link href={`/resources/${article.slug}`} className="text-link">Read article <span className="visually-hidden">: {article.title}</span> <span aria-hidden="true">↗</span></Link>
                   </div>
                 </article>
               ))}

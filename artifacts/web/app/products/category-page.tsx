@@ -206,14 +206,14 @@ export async function CategoryPage({ params }: { params: RouteParams }) {
           <div style={{ maxWidth: 1180, margin: "0 auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 32, marginBottom: 48 }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)", marginBottom: 12 }}>Also in our catalogue</h3>
+                <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, color: "var(--green)", marginBottom: 12 }}>Also in our catalogue</h2>
                 <p style={{ margin: 0, fontSize: 16, color: "var(--black-green)" }}>These lines are not on our current price list. Ask us about availability or a custom mix.</p>
               </div>
               <Link href="/contact" className="button button-outline" style={{ background: "transparent" }}>Contact us</Link>
             </div>
             <div className="legacy-grid">
               <div className="legacy-group">
-                <h6>{page.root.name} Legacy Lines</h6>
+                <h3>{page.root.name} Legacy Lines</h3>
                 <ul>
                   {legacy.map((item, index) => (
                     <li key={`${item.name}-${index}`}>{item.name}</li>
