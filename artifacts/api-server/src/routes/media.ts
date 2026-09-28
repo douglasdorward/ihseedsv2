@@ -551,7 +551,7 @@ router.get("/media/:id", async (req, res): Promise<void> => {
     const orphan = orphanKey ? await getStoredFile(orphanKey) : null;
     if (orphan) {
       res.setHeader("content-type", orphan.contentType || "image/webp");
-      res.setHeader("cache-control", "public, max-age=86400");
+      res.setHeader("cache-control", "public, max-age=31536000, immutable");
       res.send(orphan.bytes);
       return;
     }
@@ -571,7 +571,7 @@ router.get("/media/:id", async (req, res): Promise<void> => {
     return;
   }
   res.setHeader("content-type", stored.contentType || "image/webp");
-  res.setHeader("cache-control", "public, max-age=86400");
+  res.setHeader("cache-control", "public, max-age=31536000, immutable");
   res.send(stored.bytes);
 });
 

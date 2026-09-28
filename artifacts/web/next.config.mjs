@@ -48,6 +48,7 @@ const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   images: {
     formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 2678400,
     // A relative /api/media src is not a file in public/, and the optimiser's
     // internal request does not receive image bytes through the rewrite.
     // CoverImage points src at this origin so the optimiser fetches Express directly.
@@ -68,6 +69,13 @@ const nextConfig = {
     // Host canonicalisation runs first so a legacy apex URL lands on www in
     // one hop before the path redirect below is applied.
     return [...canonicalHostRedirects(), ...wordpressRedirects];
+  },
+  async headers() {
+    const immutable = [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }];
+    return [
+      { source: "/asf-accredited-224.webp", headers: immutable },
+      { source: "/celebrating-60-years-580.webp", headers: immutable },
+    ];
   },
   async rewrites() {
     return [
