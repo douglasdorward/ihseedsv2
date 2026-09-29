@@ -44,7 +44,7 @@ const HERO_VIDEO_BODY_LIMIT = "100mb";
 function isRawUploadPath(method: string, path: string) {
   return method === "PUT" && (
     /^\/api\/admin\/media\/[^/]+\/object$/.test(path)
-    || /^\/api\/generated-tech-sheets\/[^/]+$/.test(path)
+    || /^\/api\/generated-tech-sheets\/[^/]+\/[^/]+$/.test(path)
     || path === HERO_VIDEO_PATH
   );
 }

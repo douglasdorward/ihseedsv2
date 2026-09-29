@@ -27,7 +27,7 @@ import { publicRedirectTo } from "../lib/public-redirect";
 import { productPublicPath } from "../lib/product-path";
 import { absolutePublicUrl, canonicalPublicPath } from "../lib/public-site-url";
 import { clearProductMediaReferences, syncProductMediaReferences } from "../lib/media-usage";
-import { scheduleGeneratedTechSheet } from "../lib/generated-tech-sheet";
+import { discardGeneratedTechSheets, queueGeneratedTechSheets } from "../lib/generated-tech-sheet";
 
 const router: IRouter = Router();
 
@@ -704,7 +704,8 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       await syncProductMediaReferences(published, published.details.photos, tx);
       return published;
     });
-    scheduleGeneratedTechSheet(updated.slug);
+    if (product.slug !== updated.slug) discardGeneratedTechSheets(product.slug);
+    queueGeneratedTechSheets([updated.slug]);
     res.json(await getAdminProduct(updated));
   } catch (error) {
     if (error instanceof Error && error.message === "PRODUCT_NOT_FOUND") {
@@ -772,6 +773,7 @@ router.post("/admin/products/:id/archive", async (req, res): Promise<void> => {
     return;
   }
   const updated = archiveResult.product;
+  discardGeneratedTechSheets(updated.slug);
   res.json(await getAdminProduct(updated));
 });
 
@@ -979,6 +981,7 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     res.status(409).json({ error: "Published catalogue content must be published. Use the publish action to apply changes." });
     return;
   }
+  if (updateResult.product.publishStatus === "Published") queueGeneratedTechSheets([updateResult.product.slug]);
   res.json(updateResult.product);
 });
 
@@ -1014,6 +1017,7 @@ router.delete("/products/:id", async (req, res): Promise<void> => {
   }
   await db.delete(productsTable).where(eq(productsTable.id, id));
   await clearProductMediaReferences(id);
+  discardGeneratedTechSheets(target.slug);
   res.sendStatus(204);
 });
 

@@ -16,7 +16,8 @@
     "test:enquiry": "tsx --test ./test/enquiry-email.test.ts",
     "test:lifecycle": "node ./scripts/run-lifecycle-tests.mjs",
     "test:media": "tsx --test ./test/media-image-validation.test.ts ./test/image-alt.test.ts ./test/media-usage.test.ts ./test/hero-video.test.ts && node --test ./test/media-library.test.mjs",
-    "test:hero-video": "tsx --test ./test/hero-video.test.ts"
+    "test:hero-video": "tsx --test ./test/hero-video.test.ts",
+    "test:tech-sheets": "tsx --test ./test/generated-tech-sheet-store.test.ts"
   },
   "dependencies": {
     "@clerk/express": "^2.1.67",

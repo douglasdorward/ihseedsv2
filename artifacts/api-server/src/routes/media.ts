@@ -19,6 +19,7 @@ import {
   putStoredFile,
   removeStoredFile,
 } from "../lib/app-storage";
+import { queueGeneratedTechSheets } from "../lib/generated-tech-sheet";
 import { imageAltFromContext, resolveImageAlt, shouldReplaceGeneratedAlt } from "../lib/image-alt";
 import { convertToWebp } from "../lib/media-image";
 import { backfillMediaUsage, insertHeroPhoto, isProtectedMediaReference, SocialImageInUseError, syncArticleMediaReferences, syncProductMediaReferences, unlinkAndDeleteMediaRecords } from "../lib/media-usage";
@@ -486,6 +487,7 @@ router.post("/admin/media/:id/attach", async (req, res): Promise<void> => {
     await syncProductMediaReferences(saved, photos, tx);
     return saved;
   });
+  if (updated.publishStatus === "Published") queueGeneratedTechSheets([updated.slug]);
   const usage = (await usageByAssetId([asset.id])).get(asset.id) ?? emptyUsage();
   res.json(toPublicAsset({ ...asset, defaultAlt: nextDefaultAlt }, usage, updated.publishStatus === "Published"));
 });

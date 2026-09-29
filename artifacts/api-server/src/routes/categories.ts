@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Response } from "express";
 import { asc, eq, inArray } from "drizzle-orm";
+import { queueAllPublishedTechSheets } from "../lib/generated-tech-sheet";
 import {
   catalogueCategoriesTable,
   db,
@@ -268,6 +269,7 @@ router.patch("/admin/categories/:id", async (req, res): Promise<void> => {
       }
       return updated;
     });
+    queueAllPublishedTechSheets("category updated");
     res.json(category);
   } catch (error) {
     if (error instanceof Error && (error.message === "EMPTY_CHILD_SLUG" || error.message === "PARENT_CATEGORY_NOT_FOUND")) {
