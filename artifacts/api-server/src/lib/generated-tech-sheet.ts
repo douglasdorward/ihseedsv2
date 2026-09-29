@@ -16,6 +16,15 @@ function refreshToken() {
   return process.env.TECH_SHEET_REFRESH_TOKEN?.trim() || "local-tech-sheet-refresh";
 }
 
+const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+
+/** The web server on this machine may store a sheet. A configured token allows the same write when the two processes are not loopback peers. */
+export function canStoreGeneratedTechSheet(remoteAddress: string | undefined, header: string | undefined) {
+  if (LOOPBACK.has(remoteAddress ?? "")) return true;
+  const configured = process.env.TECH_SHEET_REFRESH_TOKEN?.trim();
+  return Boolean(configured) && header === configured;
+}
+
 /** Rebuild the stored PDF after publish. A failed render does not fail the publish. */
 export async function scheduleGeneratedTechSheet(slug: string) {
   if (!SLUG.test(slug)) return false;

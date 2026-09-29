@@ -1366,7 +1366,7 @@ test("export workbook matches the authoritative contract and round-trips cleanly
   assert.equal(exportResponse.status, 200);
   const exported = Buffer.from(await exportResponse.arrayBuffer());
   const book = xlsx.read(exported, { type: "buffer" });
-  assert.deepEqual(book.SheetNames, ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines",
+  assert.deepEqual(book.SheetNames, ["Column guide", "1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines",
     "5 Mix components", "7 Website SEO", "10 Product FAQs", "Lists"]);
   const listsIndex = book.SheetNames.indexOf("Lists");
   assert.equal(book.Workbook?.Sheets?.[listsIndex]?.Hidden ?? 0, 0);

@@ -45,6 +45,7 @@ const wordpressRedirects = [
 
 const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  serverExternalPackages: ["@puppeteer/browsers", "puppeteer-core"],
   experimental: {
     inlineCss: true,
   },

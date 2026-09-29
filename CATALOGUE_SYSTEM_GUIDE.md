@@ -180,7 +180,8 @@ The approved file contains:
 
 | Sheet | Data rows | Columns | Import role |
 |---|---:|---:|---|
-| `1 Products` | one row per product | 38 | Core product, copy, lifecycle and broad agronomy data |
+| `Column guide` | one row per column | 5 | Not imported. Explains every column and where it appears on the website |
+| `1 Products` | one row per product | 40 | Core product, copy, lifecycle and broad agronomy data |
 | `2 Sowing rates` | repeatable | 5 | Repeatable sowing-rate rows |
 | `3 Category specifics` | one row per product | 21 | Category-dependent facts |
 | `4 Sale lines` | repeatable | 8 | Saleable pack/stock records |
@@ -190,7 +191,7 @@ The approved file contains:
 | `Lists` | generated | validation columns | Visible validation and option values |
 | `Review` | optional | variable | Optional warnings/work list; not catalogue content |
 
-The importer recognizes sheets `1`–`5`, `7`, and `10`; `Lists` is required and visible. Sheets `6 Companions`, `8 Categories`, and `9 Redirects` are no longer imported or exported; if present in an upload they are ignored with warnings. `Review` is optional and its rows become warnings.
+The importer recognizes sheets `1`–`5`, `7`, and `10`; `Lists` is required and visible. `Column guide` is the first sheet of an export and is never imported. Sheets `6 Companions`, `8 Categories`, and `9 Redirects` are no longer imported or exported; if present in an upload they are ignored with warnings. `Review` is optional and its rows become warnings.
 
 ### Joins and stable keys
 
@@ -300,7 +301,7 @@ Each nonblank `1 Products.website_url` is the old source URL. The importer extra
 
 ### Export behavior
 
-The admin export writes the numbered import sheets and a visible `Lists` sheet:
+The admin export writes `Column guide` first, then the numbered import sheets and a visible `Lists` sheet. `Column guide` tells an agent what each column expects and where that value appears on the website. It is not imported.
 
 - Database IDs are translated back to slugs and category names.
 - Arrays become pipe-delimited values.
@@ -331,6 +332,7 @@ This compatibility marker prevents the export from claiming an incomplete legacy
 The authoritative export headers, in order, are:
 
 ```text
+Column guide: Sheet, Column, When it is required, What to enter, How it appears on the website
 1 Products: slug, product_name, category, sub_category, record_type, botanical_name, persistency_type, australian_bred, tagline, blurb, key_attributes, description, distribution_note, rainfall_min_mm, soil_ph_min, soil_ph_scale, soil_range_lightest, soil_range_heaviest, sowing_depth_min_cm, sowing_depth_max_cm, tolerance, end_use, livestock, disease_pest_resistance, stand_life_notes, grazing_management_notes, pbr_protected, pbr_details, certification, formulation_year, related_products, photo_1, photo_2, photo_3, tech_sheet_pdf_path, website_url, listing_state, listing_override, availability, status
 2 Sowing rates: slug, context, min, max, unit
 3 Category specifics: slug, category, ploidy, heading_date, heading_offset_days, argt_resistant, endophyte, growth_season, maturity_days, hard_seed_level, oestrogen_level, bloat_risk, flower_colour, winter_activity, growing_season, weeks_to_first_grazing, prussic_acid_risk, regrowth, flowering_window, product_form, application_rate
@@ -749,8 +751,10 @@ Copy the following block into a future Claude request and add the specific edito
 You are refining an IH Seeds catalogue workbook for import into an existing
 PostgreSQL-backed website. Treat these as hard compatibility rules:
 
-1. Start from the newest admin export. Preserve the current numbered sheets
-   (`1`–`5`, `7`, `9`, and `10`) and the required visible Lists sheet.
+1. Start from the newest admin export. Read Column guide before changing a cell:
+   it states what each column expects and where that value appears on the website.
+   Preserve that sheet, the numbered data sheets (`1`–`5`, `7`, and `10`), and the
+   required visible Lists sheet. Column guide is not imported.
 2. Product slug is the permanent identity and join key. Never change an existing
    slug. Never invent a replacement slug for an existing product.
 3. Treat the uploaded workbook as authoritative replacement data. Export and

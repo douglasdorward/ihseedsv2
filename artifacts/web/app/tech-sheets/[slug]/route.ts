@@ -57,6 +57,19 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
     return pdfResponse(bytes, techSheetDownloadName(product.name), request);
   } catch (error) {
     console.error(`Tech sheet generation failed for ${slug}`, error);
-    return new NextResponse("Tech sheet could not be generated.", { status: 500 });
+    return new NextResponse(techSheetFailureMessage(error), { status: 500 });
   }
+}
+
+function techSheetFailureMessage(error: unknown) {
+  const raw = error instanceof Error ? error.message : "Unknown error";
+  const compact = raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 4)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .slice(0, 300);
+  return compact ? `Tech sheet could not be generated. ${compact}` : "Tech sheet could not be generated.";
 }
