@@ -111,6 +111,12 @@ export type CatalogueCategory = {
 
 export type LegacyCatalogueProduct = { name: string };
 
+export type CatalogueArticlePdf = {
+  slug: string;
+  title: string;
+  href: string;
+};
+
 export type CatalogueArticle = {
   id: number;
   slug: string;
@@ -120,6 +126,7 @@ export type CatalogueArticle = {
   tags: string[];
   heroImageSrc: string;
   relatedProductSlugs: string[];
+  pdfs: CatalogueArticlePdf[];
   publishedAt: string;
   seoTitle: string;
   seoDescription: string;

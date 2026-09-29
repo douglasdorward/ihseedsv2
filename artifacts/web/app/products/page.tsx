@@ -44,7 +44,7 @@ export default async function ProductsIndex() {
             <div className="feature-copy">
               <h2 style={{ fontSize: 48 }}>Tested before it <br className="feature-heading-break"/><strong>ships</strong></h2>
               <p>Every line is true to type seed from credible growers, germination tested and blended to order. If you are unsure which species suits your rainfall zone, soil type and grazing plan, talk to us before you order — that advice is part of the seed.</p>
-              <Link href="/resources" className="button button-outline" style={{ color: "#fff", borderColor: "#fff" }}>Download the Tech Sheet</Link>
+              <Link href="/tech-sheets" className="button button-outline" style={{ color: "#fff", borderColor: "#fff" }}>Download the Tech Sheet</Link>
             </div>
             <div className="feature-image">
               <CoverImage src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80" alt="" sizes="(max-width: 900px) 100vw, 680px" className="cover-image cover-image-right" />

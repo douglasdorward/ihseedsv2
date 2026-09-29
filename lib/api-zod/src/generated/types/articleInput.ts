@@ -14,6 +14,12 @@ export interface ArticleInput {
      */
   slug: string;
   /**
+     * Admin-only legacy URLs. Each address redirects an old website path to this article
+     * @maxItems 12
+     * @items.maxLength 500
+     */
+  websiteUrlLegacy?: string[];
+  /**
      * @minLength 1
      * @maxLength 180
      */

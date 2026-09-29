@@ -407,9 +407,15 @@ export function TechSheetPages({ view }: { view: TechSheetView }) {
     const start = async () => {
       document.querySelector(".pdf-preview-root")?.removeAttribute("data-pdf-ready");
       setMeasured(false);
-      await document.fonts?.ready;
-      const images = [...document.querySelectorAll<HTMLImageElement>(".pdf-preview-root img")];
-      await Promise.all(images.map((image) => (image.complete ? undefined : image.decode().catch(() => undefined))));
+      // A photo or font that never settles must not block the print signal.
+      await Promise.race([
+        (async () => {
+          await document.fonts?.ready;
+          const images = [...document.querySelectorAll<HTMLImageElement>(".pdf-preview-root img")];
+          await Promise.all(images.map((image) => (image.complete ? undefined : image.decode().catch(() => undefined))));
+        })(),
+        new Promise((resolve) => window.setTimeout(resolve, 8_000)),
+      ]);
       if (!cancelled) run();
     };
     void start();

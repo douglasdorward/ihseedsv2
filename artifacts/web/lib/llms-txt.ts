@@ -178,7 +178,8 @@ function startHere(settings: LlmsSettings) {
     link("Availability", absoluteSiteUrl("/availability"), "What is in stock."),
     link("Pasture selector", absoluteSiteUrl("/pasture-selector"), "Match a paddock to pasture seed."),
     link("Seed guide", absoluteSiteUrl("/guide"), guideNote),
-    link("Resources", absoluteSiteUrl("/resources"), "Articles and regional advice."),
+    link("Articles", absoluteSiteUrl("/articles"), "Sowing, feed planning and seasonal advice."),
+    link("Tech sheets", absoluteSiteUrl("/tech-sheets"), "Downloadable technical information for varieties and mixes."),
     link("About", absoluteSiteUrl("/about"), "Irwin Hunter & Co."),
     link("Contact", absoluteSiteUrl("/contact"), "Orders and paddock enquiries."),
   ];
@@ -232,7 +233,7 @@ export function buildLlmsTxt(input: LlmsInput) {
   if (articles.length) {
     lines.push("## Articles", "");
     for (const article of articles) {
-      lines.push(link(article.title, absoluteSiteUrl(`/resources/${article.slug}`), article.excerpt));
+      lines.push(link(article.title, absoluteSiteUrl(`/articles/${article.slug}`), article.excerpt));
     }
     lines.push("");
   }
@@ -327,7 +328,7 @@ export function buildLlmsFullTxt(input: LlmsInput) {
   if (articles.length) {
     lines.push("## Articles", "");
     for (const article of articles) {
-      lines.push(`### ${article.title}`, "", absoluteSiteUrl(`/resources/${article.slug}`));
+      lines.push(`### ${article.title}`, "", absoluteSiteUrl(`/articles/${article.slug}`));
       const day = publishedDay(article.publishedAt);
       if (day) lines.push("", day);
       const excerpt = article.excerpt.trim();

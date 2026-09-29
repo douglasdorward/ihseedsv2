@@ -72,6 +72,7 @@ app.use((req, res, next) => {
     || path.startsWith("/api/admin/tech-sheets")
     || path.startsWith("/api/admin/site-settings")
     || path.startsWith("/api/admin/articles/import")
+    || /^\/api\/admin\/articles\/[^/]+\/pdfs$/.test(path)
     || path.startsWith("/api/admin/categories/faqs/import");
   express.json({ limit: large ? "25mb" : "10mb" })(req, res, next);
 });

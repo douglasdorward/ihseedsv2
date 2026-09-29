@@ -5,6 +5,16 @@ type RedirectLookup = {
 };
 
 export async function middleware(request: NextRequest) {
+  const { pathname, searchParams } = request.nextUrl;
+  if (pathname === "/resources" || pathname === "/resources/") {
+    const destination = searchParams.get("tab") === "sheets" ? "/tech-sheets" : "/articles";
+    return NextResponse.redirect(new URL(destination, request.url), 308);
+  }
+  const articleMatch = pathname.match(/^\/resources\/([^/]+)\/?$/);
+  if (articleMatch?.[1]) {
+    return NextResponse.redirect(new URL(`/articles/${articleMatch[1]}`, request.url), 308);
+  }
+
   const apiBase = process.env.API_BASE?.replace(/\/+$/, "");
   if (!apiBase) {
     console.error("API_BASE is required for catalogue redirect lookup.");
@@ -41,5 +51,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/product/:path*", "/products/:path*"],
+  matcher: ["/product/:path*", "/products/:path*", "/resources", "/resources/", "/resources/:path*"],
 };

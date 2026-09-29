@@ -47,6 +47,14 @@ function browser() {
   return browserPromise;
 }
 
+function withTimeout<T>(work: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms.`)), ms);
+  });
+  return Promise.race([work, timeout]).finally(() => clearTimeout(timer));
+}
+
 function enqueue<T>(task: () => Promise<T>): Promise<T> {
   const run = printChain.then(task, task);
   printChain = run.then(() => undefined, () => undefined);
@@ -60,16 +68,16 @@ async function renderTechSheetPdf(slug: string) {
     const page = await chrome.newPage();
     try {
       await page.goto(`http://127.0.0.1:${port}/internal/pdf/tech-sheet/${encodeURIComponent(slug)}`, {
-        waitUntil: "networkidle0",
+        waitUntil: "domcontentloaded",
         timeout: 45_000,
       });
       await page.waitForSelector("[data-pdf-ready='true']", { timeout: 20_000 });
       await page.emulateMediaType("print");
-      const pdf = await page.pdf({
+      const pdf = await withTimeout(page.pdf({
         printBackground: true,
         preferCSSPageSize: true,
         margin: { top: "0", right: "0", bottom: "0", left: "0" },
-      });
+      }), 30_000, "Tech sheet print");
       return Buffer.from(pdf);
     } finally {
       await page.close();

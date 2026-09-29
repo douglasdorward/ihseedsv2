@@ -302,13 +302,14 @@ test("public sitemap.xml and robots.txt are the crawl contract", async () => {
   assert.equal(locations.every((loc) => loc.startsWith(origin)), true);
   assert.equal(locations.includes(`${origin}/`), true);
   assert.equal(locations.includes(`${origin}/products`), true);
-  assert.equal(locations.includes(`${origin}/resources`), true);
+  assert.equal(locations.includes(`${origin}/articles`), true);
+  assert.equal(locations.includes(`${origin}/tech-sheets`), true);
   assert.equal(locations.includes(`${origin}/privacy`), true);
   assert.equal(locations.includes(`${origin}/terms-and-conditions`), true);
   assert.equal(locations.includes(`${origin}/admin`), false);
   const articles = assertStatus(await request("GET", "/articles"), 200)
     .filter((article) => article.robotsIndex !== false);
-  assert.equal(articles.every((article) => locations.includes(`${origin}/resources/${article.slug}`)), true);
+  assert.equal(articles.every((article) => locations.includes(`${origin}/articles/${article.slug}`)), true);
 });
 
 test("product sitemap uses same-origin canonical overrides, lastmod, and omits noindex", async () => {
@@ -1370,7 +1371,7 @@ test("export workbook matches the authoritative contract and round-trips cleanly
   const listsIndex = book.SheetNames.indexOf("Lists");
   assert.equal(book.Workbook?.Sheets?.[listsIndex]?.Hidden ?? 0, 0);
   const headers = (name) => xlsx.utils.sheet_to_json(book.Sheets[name], { header: 1, defval: "", raw: false })[0];
-  assert.deepEqual(headers("1 Products"), ["slug", "product_name", "category", "sub_category", "record_type", "botanical_name", "persistency_type", "australian_bred", "tagline", "blurb", "key_attributes", "description", "distribution_note", "rainfall_min_mm", "soil_ph_min", "soil_ph_scale", "soil_range_lightest", "soil_range_heaviest", "sowing_depth_min_cm", "sowing_depth_max_cm", "tolerance", "end_use", "livestock", "disease_pest_resistance", "stand_life_notes", "grazing_management_notes", "pbr_protected", "pbr_details", "certification", "formulation_year", "related_products", "photo_1", "tech_sheet_pdf_path", "website_url", "listing_state", "listing_override", "availability", "status"]);
+  assert.deepEqual(headers("1 Products"), ["slug", "product_name", "category", "sub_category", "record_type", "botanical_name", "persistency_type", "australian_bred", "tagline", "blurb", "key_attributes", "description", "distribution_note", "rainfall_min_mm", "soil_ph_min", "soil_ph_scale", "soil_range_lightest", "soil_range_heaviest", "sowing_depth_min_cm", "sowing_depth_max_cm", "tolerance", "end_use", "livestock", "disease_pest_resistance", "stand_life_notes", "grazing_management_notes", "pbr_protected", "pbr_details", "certification", "formulation_year", "related_products", "photo_1", "photo_2", "photo_3", "tech_sheet_pdf_path", "website_url", "listing_state", "listing_override", "availability", "status"]);
   assert.deepEqual(headers("2 Sowing rates"), ["slug", "context", "min", "max", "unit"]);
   assert.deepEqual(headers("3 Category specifics"), ["slug", "category", "ploidy", "heading_date", "heading_offset_days", "argt_resistant", "endophyte", "growth_season", "maturity_days", "hard_seed_level", "oestrogen_level", "bloat_risk", "flower_colour", "winter_activity", "growing_season", "weeks_to_first_grazing", "prussic_acid_risk", "regrowth", "flowering_window", "product_form", "application_rate"]);
   assert.deepEqual(headers("4 Sale lines"), ["slug", "stock_code", "seed_form", "pack_kg", "pack_unit", "availability", "price_display", "is_default"]);
@@ -1379,7 +1380,8 @@ test("export workbook matches the authoritative contract and round-trips cleanly
   assert.deepEqual(headers("10 Product FAQs"), ["slug", "product_name", "question", "answer"]);
   assert.equal(headers("Lists").includes("seed_grade"), false);
   assert.equal(headers("Lists").includes("guide_section"), false);
-  assert.equal(headers("1 Products").includes("photo_2"), false);
+  assert.equal(headers("1 Products").includes("photo_2"), true);
+  assert.equal(headers("1 Products").includes("photo_3"), true);
   assert.equal(headers("1 Products").includes("featured"), false);
 
   const exportReport = assertStatus(await request("POST", "/admin/import/dry-run", {
@@ -1682,7 +1684,7 @@ test("published workbook rows enforce content fields and delete products absent 
   assert.equal(importedAdmin.draft, null);
   assert.equal(sql(`SELECT count(*) FROM ih_media_references WHERE owner_type = 'product' AND owner_id = '${imported.id}'`), "0");
   assert.equal(importedAdmin.websiteUrlLegacy, legacyWebsiteUrl);
-  assert.equal(sql("SELECT count(*) FROM ih_redirects"), "1");
+  assert.equal(sql("SELECT count(*) FROM ih_redirects WHERE to_path NOT LIKE '/articles/%'"), "1");
   assert.equal(sql(`SELECT to_path FROM ih_redirects WHERE from_path = '/product/${imported.slug}'`),
     `/products/${other.slug}/${imported.slug}`);
   assert.equal(sql(`SELECT count(*) FROM ih_redirects WHERE from_path = '${staleRedirectPath}'`), "0");
@@ -1766,6 +1768,111 @@ test("blank workbook social image stores the hero photo and NULL stays empty", a
 
   await commitWorkbook({ socialImage: "https://example.com/share.jpg", includeSeoSheet: true });
   assert.equal((await adminProduct(product.id)).details.socialImage, "https://example.com/share.jpg");
+});
+
+test("workbook photo columns reconnect library images and leave unmatched urls unlinked", async () => {
+  const categories = assertStatus(await request("GET", "/categories"), 200);
+  const other = categories.find((category) => category.slug === "other");
+  assert.ok(other, "Expected the seeded Other category");
+  const linked = await createProduct("workbook-photo-link", { category: other.name, subcategoryId: other.id });
+  const external = await createProduct("workbook-photo-external", { category: other.name, subcategoryId: other.id });
+  const ids = [0, 1, 2].map((index) => `workbook-photo-${testRunId}-${index}`);
+  const alts = ["Cattle grazing Holdfast", "Seed close-up", "Paddock in flower"];
+  const files = ["holdfast.webp", "seed.webp", "paddock.webp"];
+  for (const [index, id] of ids.entries()) {
+    sql(`
+      INSERT INTO ih_media_assets (id, status, original_filename, content_type, width, height, default_alt, storage_kind, object_path)
+      VALUES (
+        '${id}',
+        'Ready',
+        '${files[index]}',
+        'image/webp',
+        ${800 + index},
+        ${600 + index},
+        '${alts[index]}',
+        'managed',
+        'media/${id}/${files[index]}'
+      );
+    `);
+  }
+  const externalUrl = "https://example.com/not-a-library-image.jpg";
+  const book = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([
+    {
+      slug: linked.slug,
+      product_name: linked.name,
+      category: other.name,
+      record_type: "Variety",
+      status: "Draft",
+      photo_1: `/api/media/${ids[0]}`,
+      photo_2: `/api/media/${ids[1]}`,
+      photo_3: `/api/media/${ids[2]}`,
+    },
+    {
+      slug: external.slug,
+      product_name: external.name,
+      category: other.name,
+      record_type: "Variety",
+      status: "Draft",
+      photo_1: externalUrl,
+    },
+  ]), "1 Products");
+  xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ category: other.name, record_type: "Variety" }]), "Lists");
+  const workbook = xlsx.write(book, { type: "buffer", bookType: "xlsx" });
+  const report = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: workbook.toString("base64"),
+  }), 200);
+  assert.deepEqual(report.issues, []);
+  assertStatus(await request("POST", "/admin/import/commit", {
+    workbookBase64: workbook.toString("base64"),
+    token: report.token,
+  }), 200);
+
+  const saved = await adminProduct(linked.id);
+  assert.equal(saved.details.photos.length, 3);
+  assert.equal(saved.details.photos[0].assetId, ids[0]);
+  assert.equal(saved.details.photos[0].src, `/api/media/${ids[0]}`);
+  assert.equal(saved.details.photos[0].alt, alts[0]);
+  assert.equal(saved.details.photos[0].file, files[0]);
+  assert.equal(saved.details.photos[0].role, "hero");
+  assert.equal(saved.details.photos[0].width, 800);
+  assert.equal(saved.details.photos[0].height, 600);
+  assert.equal(saved.details.photos[0].format, "webp");
+  assert.equal(saved.details.photos[1].assetId, ids[1]);
+  assert.equal(saved.details.photos[1].alt, alts[1]);
+  assert.equal(saved.details.photos[1].role, "gallery");
+  assert.equal(saved.details.photos[1].slot, "Photo 2");
+  assert.equal(saved.details.photos[2].assetId, ids[2]);
+  assert.equal(saved.details.photos[2].alt, alts[2]);
+  assert.equal(saved.details.photos[2].slot, "Photo 3");
+  assert.equal(sql(`
+    SELECT asset_id || '|' || field || '|' || role
+    FROM ih_media_references
+    WHERE owner_type = 'product' AND owner_id = '${linked.id}'
+    ORDER BY field
+  `), [
+    `${ids[0]}|details.photos[0]|hero`,
+    `${ids[1]}|details.photos[1]|gallery`,
+    `${ids[2]}|details.photos[2]|gallery`,
+  ].join("\n"));
+
+  const plain = await adminProduct(external.id);
+  assert.equal(plain.details.photos[0].src, externalUrl);
+  assert.equal(plain.details.photos[0].assetId ?? "", "");
+  assert.equal(sql(`SELECT count(*) FROM ih_media_references WHERE owner_type = 'product' AND owner_id = '${external.id}'`), "0");
+
+  const exported = Buffer.from(await (await fetch(`${baseUrl}/api/admin/import/export`)).arrayBuffer());
+  const exportedRow = xlsx.utils.sheet_to_json(xlsx.read(exported).Sheets["1 Products"], { defval: "", raw: false })
+    .find((row) => row.slug === linked.slug);
+  assert.ok(exportedRow);
+  assert.equal(exportedRow.photo_1, `/api/media/${ids[0]}`);
+  assert.equal(exportedRow.photo_2, `/api/media/${ids[1]}`);
+  assert.equal(exportedRow.photo_3, `/api/media/${ids[2]}`);
+  const externalRow = xlsx.utils.sheet_to_json(xlsx.read(exported).Sheets["1 Products"], { defval: "", raw: false })
+    .find((row) => row.slug === external.slug);
+  assert.equal(externalRow.photo_1, externalUrl);
+  assert.equal(externalRow.photo_2, "");
+  assert.equal(externalRow.photo_3, "");
 });
 
 test("retired companion, category, and redirect sheets are ignored with exact warnings", async () => {
@@ -2059,7 +2166,7 @@ test("published blog articles appear on Resources immediately and drafts stay pr
   assert.equal((await request("GET", "/articles")).data.some((item) => item.id === created.id), false);
   assert.equal((await request("GET", `/articles/slug/${slug}`)).response.status, 404);
 
-  const publicBeforePublish = await fetch(`${webBaseUrl}/resources`);
+  const publicBeforePublish = await fetch(`${webBaseUrl}/articles`);
   assert.equal(publicBeforePublish.status, 200);
   const resourcesBefore = await publicBeforePublish.text();
   assert.doesNotMatch(resourcesBefore, new RegExp(originalTitle));
@@ -2073,10 +2180,10 @@ test("published blog articles appear on Resources immediately and drafts stay pr
   assert.equal("publishStatus" in publicArticle, false);
   assert.equal("heroImageAssetId" in publicArticle, false);
 
-  const primedIndex = await fetch(`${webBaseUrl}/resources`);
+  const primedIndex = await fetch(`${webBaseUrl}/articles`);
   assert.equal(primedIndex.status, 200);
   assert.match(await primedIndex.text(), new RegExp(originalTitle));
-  const primedPage = await fetch(`${webBaseUrl}/resources/${slug}`);
+  const primedPage = await fetch(`${webBaseUrl}/articles/${slug}`);
   assert.equal(primedPage.status, 200);
   const primedHtml = await primedPage.text();
   assert.match(primedHtml, new RegExp(originalTitle));
@@ -2104,7 +2211,7 @@ test("published blog articles appear on Resources immediately and drafts stay pr
   assert.equal(revisedApi.title, revisedTitle);
   assert.deepEqual(revisedApi.relatedProductSlugs, [publishedProduct.slug]);
 
-  const revisedPage = await fetch(`${webBaseUrl}/resources/${slug}`);
+  const revisedPage = await fetch(`${webBaseUrl}/articles/${slug}`);
   assert.equal(revisedPage.status, 200);
   const revisedHtml = await revisedPage.text();
   assert.match(revisedHtml, new RegExp(revisedTitle));
@@ -2114,19 +2221,19 @@ test("published blog articles appear on Resources immediately and drafts stay pr
   const sitemap = await fetch(`${baseUrl}/api/sitemap-articles`);
   assert.equal(sitemap.status, 200);
   const articleSitemap = await sitemap.text();
-  assert.match(articleSitemap, new RegExp(`/resources/${slug}`));
+  assert.match(articleSitemap, new RegExp(`/articles/${slug}`));
   assert.match(articleSitemap, /<lastmod>\d{4}-\d{2}-\d{2}T/);
   const publicSitemap = await fetch(`${webBaseUrl}/sitemap.xml`);
   assert.equal(publicSitemap.status, 200);
   const publicSitemapXml = await publicSitemap.text();
-  assert.match(publicSitemapXml, new RegExp(`/resources/${slug}`));
-  assert.match(publicSitemapXml, new RegExp(`<loc>[^<]*/resources/${slug}</loc>\\s*<lastmod>`));
+  assert.match(publicSitemapXml, new RegExp(`/articles/${slug}`));
+  assert.match(publicSitemapXml, new RegExp(`<loc>[^<]*/articles/${slug}</loc>\\s*<lastmod>`));
 
   assertStatus(await request("POST", `/admin/articles/${created.id}/unpublish`), 200);
   assert.equal((await request("GET", `/articles/slug/${slug}`)).response.status, 404);
-  const unpublishedPage = await fetch(`${webBaseUrl}/resources/${slug}`);
+  const unpublishedPage = await fetch(`${webBaseUrl}/articles/${slug}`);
   assert.equal(unpublishedPage.status, 404);
-  const unpublishedIndex = await fetch(`${webBaseUrl}/resources`);
+  const unpublishedIndex = await fetch(`${webBaseUrl}/articles`);
   assert.doesNotMatch(await unpublishedIndex.text(), new RegExp(revisedTitle));
 });
 
@@ -2221,7 +2328,7 @@ test("blog article Excel import keeps HTML formatting and upserts by slug", asyn
   assert.equal(template.status, 200);
   const templateBook = xlsx.read(Buffer.from(await template.arrayBuffer()), { type: "buffer" });
   const templateHeaders = xlsx.utils.sheet_to_json(templateBook.Sheets.Articles, { header: 1 })[0];
-  assert.deepEqual(templateHeaders, ["title", "slug", "excerpt", "body", "tags", "hero_image_src", "related_product_slugs", "seo_title", "seo_description", "social_title", "social_description", "social_image", "robots_index", "publish_status", "published_at", "scheduled_publish_at"]);
+  assert.deepEqual(templateHeaders, ["title", "slug", "website_url", "excerpt", "body", "tags", "hero_image_src", "related_product_slugs", "seo_title", "seo_description", "social_title", "social_description", "social_image", "robots_index", "publish_status", "published_at", "scheduled_publish_at"]);
   assert.ok(templateBook.Sheets.Products);
   const productHeaders = xlsx.utils.sheet_to_json(templateBook.Sheets.Products, { header: 1 })[0];
   assert.deepEqual(productHeaders, ["slug", "name", "category", "category_slug", "path"]);
@@ -2247,7 +2354,117 @@ test("blog article Excel import keeps HTML formatting and upserts by slug", asyn
   assert.match(String(promptSheet[1]?.[0] ?? ""), /published_at/);
   const prompt = await fetch(`${baseUrl}/api/admin/articles/import/prompt`);
   assert.equal(prompt.status, 200);
-  assert.match(await prompt.text(), /published_at: optional public date for backdating/);
+  const promptText = await prompt.text();
+  assert.match(promptText, /published_at: optional public date for backdating/);
+  assert.match(promptText, /website_url: optional old www.irwinhunter.com.au address/);
+});
+
+test("article legacy website URLs create, update, and remove redirects", async () => {
+  const slug = `legacy-article-${testRunId}`;
+  const legacyUrl = `https://www.irwinhunter.com.au/news/legacy-${testRunId}/`;
+  const legacyPath = `/news/legacy-${testRunId}`;
+  const workbook = articleWorkbook([{
+    title: `Legacy article ${testRunId}`,
+    slug,
+    excerpt: "Legacy excerpt",
+    body: "<p>Legacy body.</p>",
+    seo_title: `Legacy article ${testRunId} | IH Seeds`,
+    seo_description: "Legacy article SEO description",
+    publish_status: "Draft",
+    website_url: legacyUrl,
+  }]);
+  const dryRun = assertStatus(await request("POST", "/admin/articles/import/dry-run", {
+    workbookBase64: workbook.toString("base64"),
+  }), 200);
+  assert.equal(dryRun.issues.length, 0);
+  assert.match(dryRun.plannedChanges.join("\n"), new RegExp(`Legacy URL ${legacyPath} will redirect to /articles/${slug}`));
+  assertStatus(await request("POST", "/admin/articles/import/commit", {
+    workbookBase64: workbook.toString("base64"),
+    token: dryRun.token,
+  }), 200);
+
+  const listed = assertStatus(await request("GET", "/admin/articles"), 200);
+  const imported = listed.find((item) => item.slug === slug);
+  assert.ok(imported);
+  createdArticleIds.push(imported.id);
+  assert.deepEqual(imported.websiteUrlLegacy, [legacyUrl]);
+  assert.deepEqual(
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(legacyPath)}`), 200),
+    { toPath: `/articles/${slug}` },
+  );
+
+  const invalid = assertStatus(await request("POST", "/admin/articles/import/dry-run", {
+    workbookBase64: articleWorkbook([{
+      title: `Invalid legacy ${testRunId}`,
+      slug: `invalid-legacy-${testRunId}`,
+      website_url: "https://example.com/old-article",
+    }]).toString("base64"),
+  }), 200);
+  assert.equal(invalid.created, 0);
+  assert.equal(invalid.issues.some((issue) => issue.column === "website_url"), true);
+
+  const selfRedirect = assertStatus(await request("POST", "/admin/articles/import/dry-run", {
+    workbookBase64: articleWorkbook([{
+      title: `Self legacy ${testRunId}`,
+      slug,
+      website_url: `https://irwinhunter.com.au/articles/${slug}`,
+    }]).toString("base64"),
+  }), 200);
+  assert.equal(selfRedirect.issues.some((issue) => issue.column === "website_url"), true);
+
+  const preserveWorkbook = articleWorkbook([{
+    title: `Legacy article kept ${testRunId}`,
+    slug,
+    excerpt: "Legacy excerpt",
+    body: "<p>Legacy body.</p>",
+    publish_status: "Draft",
+  }]);
+  const preserved = assertStatus(await request("POST", "/admin/articles/import/dry-run", {
+    workbookBase64: preserveWorkbook.toString("base64"),
+  }), 200);
+  assert.equal(preserved.issues.length, 0);
+  assert.equal(preserved.updated, 1);
+  assertStatus(await request("POST", "/admin/articles/import/commit", {
+    workbookBase64: preserveWorkbook.toString("base64"),
+    token: preserved.token,
+  }), 200);
+  const kept = assertStatus(await request("GET", `/admin/articles/${imported.id}`), 200);
+  assert.deepEqual(kept.websiteUrlLegacy, [legacyUrl]);
+  assert.equal((await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(legacyPath)}`)).response.status, 200);
+
+  const revisedUrl = `https://irwinhunter.com.au/blog/legacy-${testRunId}`;
+  const secondUrl = `https://www.irwinhunter.com.au/news/also-legacy-${testRunId}`;
+  const revisedPath = `/blog/legacy-${testRunId}`;
+  const secondPath = `/news/also-legacy-${testRunId}`;
+  const patched = assertStatus(await request("PATCH", `/admin/articles/${imported.id}`, {
+    websiteUrlLegacy: [revisedUrl, secondUrl],
+  }), 200);
+  assert.deepEqual(patched.websiteUrlLegacy, [revisedUrl, secondUrl]);
+  assert.deepEqual(
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(revisedPath)}`), 200),
+    { toPath: `/articles/${slug}` },
+  );
+  assert.deepEqual(
+    assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(secondPath)}`), 200),
+    { toPath: `/articles/${slug}` },
+  );
+  assert.equal((await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(legacyPath)}`)).response.status, 404);
+
+  const dropped = assertStatus(await request("PATCH", `/admin/articles/${imported.id}`, {
+    websiteUrlLegacy: [secondUrl],
+  }), 200);
+  assert.deepEqual(dropped.websiteUrlLegacy, [secondUrl]);
+  assert.equal((await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(revisedPath)}`)).response.status, 404);
+  assert.equal((await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(secondPath)}`)).response.status, 200);
+
+  const exported = await fetch(`${baseUrl}/api/admin/articles/export`);
+  const exportedBook = xlsx.read(Buffer.from(await exported.arrayBuffer()), { type: "buffer" });
+  const exportedRow = xlsx.utils.sheet_to_json(exportedBook.Sheets.Articles, { defval: "", raw: false })
+    .find((row) => row.slug === slug);
+  assert.equal(exportedRow.website_url, secondUrl);
+
+  assertStatus(await request("DELETE", `/admin/articles/${imported.id}`), 204);
+  assert.equal((await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(secondPath)}`)).response.status, 404);
 });
 
 test("blog articles can be backdated on import, patch, and publish", async () => {

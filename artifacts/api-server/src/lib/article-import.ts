@@ -11,11 +11,18 @@ import {
 } from "@workspace/db";
 import { normalizeArticleBody } from "./article-body";
 import { findRelatedProductIssues, isFuturePublishDate, parseScheduledPublishAt, publishValidationIssues } from "./article-publish";
+import {
+  articleLegacyUrlProblem,
+  articlePublicPath,
+  describeArticleLegacyUrls,
+  syncArticleLegacyRedirect,
+} from "./article-redirect";
 import { syncArticleMediaReferences } from "./media-usage";
 
 export const ARTICLE_IMPORT_HEADERS = [
   "title",
   "slug",
+  "website_url",
   "excerpt",
   "body",
   "tags",
@@ -47,7 +54,7 @@ export const ARTICLE_AGENT_PROMPT = `You are preparing an IH Seeds blog import w
 OUTPUT
 - Create an .xlsx with sheets: Articles (required), Products (lookup), Categories (lookup), Instructions (optional), and Agent prompt (optional).
 - The Articles sheet MUST use these exact header names in row 1, in this order:
-  title, slug, excerpt, body, tags, hero_image_src, related_product_slugs, seo_title, seo_description, social_title, social_description, social_image, robots_index, publish_status, published_at, scheduled_publish_at
+  title, slug, website_url, excerpt, body, tags, hero_image_src, related_product_slugs, seo_title, seo_description, social_title, social_description, social_image, robots_index, publish_status, published_at, scheduled_publish_at
 - One article per row. Do not add extra columns. Do not rename headers.
 - The Products sheet is a lookup of currently linkable products. Copy product slugs into related_product_slugs. Use the path column for in-article links such as <a href="/products/ryegrass/haifa-white-clover">Haifa White Clover</a>. Do not put article rows there; it is not imported.
 - The Categories sheet is a lookup of public category landings. Copy a slug or path into body links such as <a href="/products/ryegrass">Ryegrass</a>. Do not put article rows there; it is not imported.
@@ -57,6 +64,7 @@ OUTPUT
 COLUMN RULES
 - title (required): public H1. Max 180 characters. Do not use ™ or ®.
 - slug (required): lowercase kebab-case, pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$, max 180. Example: autumn-sowing-window
+- website_url: optional old www.irwinhunter.com.au addresses that each create a redirect to /articles/{slug}. Separate several addresses with | or a comma. http or https, no query string or fragment. Example: https://www.irwinhunter.com.au/news/autumn-sowing|https://www.irwinhunter.com.au/blog/autumn-sowing. Blank clears every redirect. Up to 12 addresses, 500 characters each. Do not use the article's own /articles/{slug} address.
 - excerpt: 1–2 sentences for the Resources card. Max 500. Required if publish_status is Published or Scheduled.
 - body: article HTML or markdown as PLAIN TEXT in the cell. Max 32,767 characters (Excel cell limit). Required if Published or Scheduled.
 - tags: up to 12, separated with |. Prefer: Editorial | Sowing & Timing | Feed Planning | Regional Advice. Custom tags allowed, max 80 chars each.
@@ -126,6 +134,7 @@ const INSTRUCTION_ROWS: Array<[string, string]> = [
   ["Schedule", "For Scheduled rows, set scheduled_publish_at to an ISO datetime such as 2026-10-01T09:00:00+08:00."],
   ["Agent prompt", "The Agent prompt sheet is a copyable brief for another agent. It includes published_at for backdating and scheduled_publish_at for future go-live."],
   ["Matching", "Rows update existing articles with the same slug. Articles omitted from the file are not deleted."],
+  ["Legacy URL", "Optional website_url. Use one or more http(s) URLs on www.irwinhunter.com.au with no query or fragment. Separate several addresses with | or a comma. Each path redirects to /articles/{slug}. Blank clears every redirect. If the column is missing, the current legacy URLs are kept."],
 ];
 
 type Header = (typeof ARTICLE_IMPORT_HEADERS)[number];
@@ -165,8 +174,10 @@ type PlannedArticle = {
     socialDescription: string;
     socialImage: string;
     robotsIndex: boolean;
+    websiteUrlLegacy: string[];
   };
   publishStatus: ArticlePublishStatus;
+  previous: { slug: string; websiteUrlLegacy: string[] } | null;
   publishedAt: Date | null;
   scheduledPublishAt: Date | null;
 };
@@ -253,6 +264,7 @@ export function articlesToWorkbook(
   return workbookFromRows(articles.map((article) => ({
     title: article.title,
     slug: article.slug,
+    website_url: (article.websiteUrlLegacy ?? []).join("|"),
     excerpt: article.excerpt,
     body: article.body,
     tags: joinList(article.tags),
@@ -282,11 +294,11 @@ function parseRows(file: Buffer) {
   try {
     book = XLSX.read(file, { type: "buffer", cellDates: true });
   } catch {
-    return { rows: [] as SourceRow[], issues: [{ row: 1, column: "title", problem: "The file is not a valid Excel workbook." }] };
+    return { rows: [] as SourceRow[], issues: [{ row: 1, column: "title", problem: "The file is not a valid Excel workbook." }], hasWebsiteUrl: false };
   }
   const sheet = articlesSheet(book);
   if (!sheet) {
-    return { rows: [] as SourceRow[], issues: [{ row: 1, column: "title", problem: "The workbook has no Articles sheet." }] };
+    return { rows: [] as SourceRow[], issues: [{ row: 1, column: "title", problem: "The workbook has no Articles sheet." }], hasWebsiteUrl: false };
   }
   const table = XLSX.utils.sheet_to_json<(string | number | Date | boolean | null)[]>(sheet, { header: 1, defval: "", raw: true });
   const headerRow = table[0] ?? [];
@@ -295,9 +307,10 @@ function parseRows(file: Buffer) {
     const key = headerKey(header);
     if (key && !indexes.has(key)) indexes.set(key, index);
   });
+  const hasWebsiteUrl = indexes.has("website_url");
   const missing = ["title", "slug"].filter((header) => !indexes.has(header));
   if (missing.length) {
-    return { rows: [] as SourceRow[], issues: [{ row: 1, column: missing[0] ?? "title", problem: `Missing columns: ${missing.join(", ")}.` }] };
+    return { rows: [] as SourceRow[], issues: [{ row: 1, column: missing[0] ?? "title", problem: `Missing columns: ${missing.join(", ")}.` }], hasWebsiteUrl };
   }
   const rows: SourceRow[] = [];
   for (let index = 1; index < table.length; index += 1) {
@@ -308,16 +321,17 @@ function parseRows(file: Buffer) {
     })) as SourceRow;
     rows.push(row);
   }
-  return { rows, issues };
+  return { rows, issues, hasWebsiteUrl };
 }
 
 async function planImport(file: Buffer) {
-  const { rows, issues } = parseRows(file);
+  const { rows, issues, hasWebsiteUrl } = parseRows(file);
   const existing = await db.select().from(articlesTable);
   const existingBySlug = new Map(existing.map((article) => [article.slug, article]));
   const planned: PlannedArticle[] = [];
   const plannedChanges: string[] = [];
   const seenSlugs = new Set<string>();
+  const seenLegacyPaths = new Set<string>();
   let skipped = 0;
   const now = new Date();
 
@@ -341,9 +355,11 @@ async function planImport(file: Buffer) {
       continue;
     }
 
+    const existingPreview = existingBySlug.get(row.slug.trim());
     const parsed = insertArticleSchema.safeParse({
       title: row.title,
       slug: row.slug,
+      websiteUrlLegacy: hasWebsiteUrl ? splitList(row.website_url) : (existingPreview?.websiteUrlLegacy ?? []),
       excerpt: row.excerpt,
       body: normalizeArticleBody(row.body),
       tags: splitList(row.tags),
@@ -359,7 +375,9 @@ async function planImport(file: Buffer) {
     });
     if (!parsed.success) {
       const first = parsed.error.issues[0];
-      const column = String(first?.path[0] ?? "title");
+      const column = String(first?.path[0] ?? "title") === "websiteUrlLegacy"
+        ? "website_url"
+        : String(first?.path[0] ?? "title");
       issues.push({ row: rowNumber, column, problem: first?.message ?? "Article fields are invalid." });
       continue;
     }
@@ -425,6 +443,30 @@ async function planImport(file: Buffer) {
     }
 
     const existingArticle = existingBySlug.get(values.slug);
+    if (hasWebsiteUrl) {
+      const described = describeArticleLegacyUrls(values.websiteUrlLegacy, values.slug);
+      if (described.problem) {
+        issues.push({ row: rowNumber, column: "website_url", problem: described.problem });
+        continue;
+      }
+      const duplicate = described.paths.find((path) => seenLegacyPaths.has(path));
+      if (duplicate) {
+        issues.push({ row: rowNumber, column: "website_url", problem: `Duplicate legacy website path "${duplicate}"` });
+        continue;
+      }
+      const legacyProblem = await articleLegacyUrlProblem(
+        db,
+        values.websiteUrlLegacy,
+        values.slug,
+        existingArticle?.id ?? null,
+        existingArticle?.slug,
+      );
+      if (legacyProblem) {
+        issues.push({ row: rowNumber, column: "website_url", problem: legacyProblem });
+        continue;
+      }
+      for (const path of described.paths) seenLegacyPaths.add(path);
+    }
     let nextStatus = publishStatus;
     let nextScheduled = publishStatus === "Scheduled" ? scheduled : null;
     if (publishStatus === "Scheduled" && scheduled && scheduled.getTime() <= now.getTime()) {
@@ -439,6 +481,9 @@ async function planImport(file: Buffer) {
       publishStatus: nextStatus,
       publishedAt: nextStatus === "Scheduled" ? null : publishedAt,
       scheduledPublishAt: nextScheduled,
+      previous: existingArticle
+        ? { slug: existingArticle.slug, websiteUrlLegacy: existingArticle.websiteUrlLegacy }
+        : null,
     });
     const action = existingArticle ? "Update" : "Create";
     const statusNote = nextStatus === "Published" && publishStatus === "Scheduled"
@@ -448,7 +493,13 @@ async function planImport(file: Buffer) {
         : nextStatus === "Scheduled"
           ? ` and schedule for ${nextScheduled?.toISOString()}`
           : " as a draft";
-    plannedChanges.push(`${action} ${values.title}${statusNote}.`);
+    const legacyPaths = hasWebsiteUrl ? describeArticleLegacyUrls(values.websiteUrlLegacy, values.slug).paths : [];
+    const redirectNote = legacyPaths.length === 1
+      ? ` Legacy URL ${legacyPaths[0]} will redirect to ${articlePublicPath(values.slug)}.`
+      : legacyPaths.length > 1
+        ? ` Legacy URLs ${legacyPaths.join(", ")} will redirect to ${articlePublicPath(values.slug)}.`
+        : "";
+    plannedChanges.push(`${action} ${values.title}${statusNote}.${redirectNote}`);
   }
 
   return {
@@ -498,14 +549,24 @@ export async function commitArticleImport(file: Buffer, token: string) {
               ? (item.publishedAt ?? existing[0]?.publishedAt ?? null)
               : existing[0]?.publishedAt ?? null,
         }).where(eq(articlesTable.id, item.existingId)).returning();
-        if (updated) saved.push(updated);
+        if (updated) {
+          const legacyProblem = await articleLegacyUrlProblem(tx, updated.websiteUrlLegacy, updated.slug, updated.id, item.previous?.slug);
+          if (legacyProblem) throw new Error(`Row ${item.row}: ${legacyProblem}`);
+          await syncArticleLegacyRedirect(tx, item.previous, updated);
+          saved.push(updated);
+        }
         continue;
       }
       const [created] = await tx.insert(articlesTable).values({
         ...item.values,
         ...statusValues,
       }).returning();
-      if (created) saved.push(created);
+      if (created) {
+        const legacyProblem = await articleLegacyUrlProblem(tx, created.websiteUrlLegacy, created.slug, created.id);
+        if (legacyProblem) throw new Error(`Row ${item.row}: ${legacyProblem}`);
+        await syncArticleLegacyRedirect(tx, null, created);
+        saved.push(created);
+      }
     }
   });
   for (const article of saved) await syncArticleMediaReferences(article);

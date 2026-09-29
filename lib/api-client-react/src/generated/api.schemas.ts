@@ -1688,6 +1688,42 @@ export interface SeedGuidePdfInput {
   data: string;
 }
 
+export interface ArticlePdf {
+  slug: string;
+  title: string;
+  filename: string;
+  bytes: number;
+}
+
+export interface PublicArticlePdf {
+  slug: string;
+  title: string;
+  href: string;
+}
+
+export interface ArticlePdfInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  filename: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  title: string;
+  /** @minLength 1 */
+  data: string;
+}
+
+export interface ArticlePdfTitleInput {
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  title: string;
+}
+
 export type ArticlePublishStatus = typeof ArticlePublishStatus[keyof typeof ArticlePublishStatus];
 
 
@@ -1700,6 +1736,12 @@ export const ArticlePublishStatus = {
 export interface Article {
   id: number;
   slug: string;
+  /**
+     * Admin-only legacy URLs. Each address redirects an old website path to this article
+     * @maxItems 12
+     * @items.maxLength 500
+     */
+  websiteUrlLegacy: string[];
   title: string;
   excerpt: string;
   body: string;
@@ -1716,6 +1758,8 @@ export interface Article {
      * @items.maxLength 180
      */
   relatedProductSlugs: string[];
+  /** @maxItems 8 */
+  pdfs: ArticlePdf[];
   publishStatus: ArticlePublishStatus;
   /** @nullable */
   publishedAt: string | null;
@@ -1748,6 +1792,8 @@ export interface PublicArticle {
      * @items.maxLength 180
      */
   relatedProductSlugs: string[];
+  /** @maxItems 8 */
+  pdfs: PublicArticlePdf[];
   publishedAt: string;
   seoTitle: string;
   seoDescription: string;
@@ -1765,6 +1811,12 @@ export interface ArticleInput {
      * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
      */
   slug: string;
+  /**
+     * Admin-only legacy URLs. Each address redirects an old website path to this article
+     * @maxItems 12
+     * @items.maxLength 500
+     */
+  websiteUrlLegacy?: string[];
   /**
      * @minLength 1
      * @maxLength 180
@@ -1811,6 +1863,12 @@ export interface ArticleUpdate {
      * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
      */
   slug?: string;
+  /**
+     * Admin-only legacy URLs. Each address redirects an old website path to this article
+     * @maxItems 12
+     * @items.maxLength 500
+     */
+  websiteUrlLegacy?: string[];
   /**
      * @minLength 1
      * @maxLength 180

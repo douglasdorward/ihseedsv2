@@ -111,7 +111,7 @@ export default async function Home() {
           <div className="content-width">
             <div className="section-heading">
               <h2 id="seed-shed-heading"><span>From the</span> Seed Shed</h2>
-              <Link href="/resources" className="button button-outline" data-testid="button-view-articles">View all articles</Link>
+              <Link href="/articles" className="button button-outline" data-testid="button-view-articles">View all articles</Link>
             </div>
             <div className="article-grid">
               {seedShedArticles.map((article) => (
@@ -123,7 +123,7 @@ export default async function Home() {
                     <small>{[article.tags[0], formatArticleDate(article.publishedAt)].filter(Boolean).join(" · ")}</small>
                     <h3>{article.title}</h3>
                     <p>{article.excerpt}</p>
-                    <Link href={`/resources/${article.slug}`} className="text-link">Read article <span className="visually-hidden">: {article.title}</span> <span aria-hidden="true">↗</span></Link>
+                    <Link href={`/articles/${article.slug}`} className="text-link">Read article <span className="visually-hidden">: {article.title}</span> <span aria-hidden="true">↗</span></Link>
                   </div>
                 </article>
               ))}

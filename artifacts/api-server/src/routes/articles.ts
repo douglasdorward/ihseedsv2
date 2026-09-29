@@ -2,6 +2,8 @@ import { Router, type IRouter, type Response } from "express";
 import { desc, eq } from "drizzle-orm";
 import {
   ARTICLE_RELATED_PRODUCT_LIMIT,
+  articlePdfTitleSchema,
+  articlePdfUploadSchema,
   articlesTable,
   db,
   insertArticleSchema,
@@ -9,6 +11,11 @@ import {
   withArticleSearchMetadata,
   type Article,
 } from "@workspace/db";
+import {
+  ArticleLegacyUrlError,
+  articleLegacyUrlProblem,
+  syncArticleLegacyRedirect,
+} from "../lib/article-redirect";
 import { normalizeArticleBody } from "../lib/article-body";
 import {
   ARTICLE_AGENT_PROMPT,
@@ -25,6 +32,20 @@ import {
   publishDueArticles,
   publishValidationIssues,
 } from "../lib/article-publish";
+import {
+  adminArticlePdfs,
+  articlePdfPublicPath,
+  articlePdfStorageKey,
+  assertPdfRoom,
+  decodeArticlePdf,
+  pdfContentDisposition,
+  publicArticlePdfAccess,
+  publicArticlePdfs,
+  safePdfFilename,
+  storedArticlePdfs,
+  uniquePdfSlug,
+} from "../lib/article-pdf";
+import { getStoredFile, putStoredFile, removeStoredFile } from "../lib/app-storage";
 import { clearArticleMediaReferences, syncArticleMediaReferences } from "../lib/media-usage";
 import { absolutePublicUrl } from "../lib/public-site-url";
 
@@ -50,7 +71,11 @@ function escapeXml(value: string) {
 }
 
 function canonicalArticleUrl(slug: string) {
-  return absolutePublicUrl(`/resources/${encodeURIComponent(slug)}`);
+  return absolutePublicUrl(`/articles/${encodeURIComponent(slug)}`);
+}
+
+function canonicalArticlePdfUrl(articleSlug: string, pdfSlug: string) {
+  return absolutePublicUrl(articlePdfPublicPath(articleSlug, pdfSlug));
 }
 
 function toAdminArticle(article: Article) {
@@ -58,6 +83,7 @@ function toAdminArticle(article: Article) {
     ...article,
     tags: article.tags ?? [],
     relatedProductSlugs: article.relatedProductSlugs ?? [],
+    pdfs: adminArticlePdfs(storedArticlePdfs(article.pdfs)),
     heroImageAssetId: article.heroImageAssetId ?? null,
     publishedAt: article.publishedAt ? article.publishedAt.toISOString() : null,
     scheduledPublishAt: article.scheduledPublishAt ? article.scheduledPublishAt.toISOString() : null,
@@ -76,6 +102,7 @@ function toPublicArticle(article: Article) {
     tags: article.tags ?? [],
     heroImageSrc: article.heroImageSrc,
     relatedProductSlugs: (article.relatedProductSlugs ?? []).slice(0, ARTICLE_RELATED_PRODUCT_LIMIT),
+    pdfs: publicArticlePdfs(article.slug, storedArticlePdfs(article.pdfs)),
     publishedAt: (article.publishedAt ?? article.updatedAt).toISOString(),
     seoTitle: article.seoTitle,
     seoDescription: article.seoDescription,
@@ -85,6 +112,15 @@ function toPublicArticle(article: Article) {
     robotsIndex: article.robotsIndex,
     updatedAt: article.updatedAt.toISOString(),
   };
+}
+
+function sendPdf(res: Response, bytes: Buffer, filename: string, noindex: boolean) {
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", pdfContentDisposition(filename));
+  res.setHeader("Content-Length", String(bytes.length));
+  res.setHeader("Cache-Control", "public, max-age=300");
+  if (noindex) res.setHeader("X-Robots-Tag", "noindex");
+  res.send(bytes);
 }
 
 function sendRelatedProductError(res: Response, invalid: string[]) {
@@ -131,6 +167,29 @@ router.get("/articles/slug/:slug", async (req, res): Promise<void> => {
   res.json(toPublicArticle(article));
 });
 
+router.get("/articles/slug/:slug/pdfs/:pdfSlug", async (req, res): Promise<void> => {
+  const slug = String(req.params.slug ?? "").trim();
+  const pdfSlug = String(req.params.pdfSlug ?? "").trim();
+  if (!slug || !pdfSlug) {
+    res.status(404).json({ error: "PDF not found." });
+    return;
+  }
+  await publishDueArticles();
+  const [article] = await db.select().from(articlesTable).where(eq(articlesTable.slug, slug));
+  const access = publicArticlePdfAccess(article);
+  if (!access.ok) {
+    res.status(404).json({ error: "PDF not found." });
+    return;
+  }
+  const pdf = storedArticlePdfs(article?.pdfs).find((item) => item.slug === pdfSlug);
+  const stored = pdf ? await getStoredFile(pdf.storageKey) : null;
+  if (!pdf || !stored?.bytes.length) {
+    res.status(404).json({ error: "PDF not found." });
+    return;
+  }
+  sendPdf(res, stored.bytes, pdf.filename, access.noindex);
+});
+
 router.get("/sitemap-articles", async (_req, res): Promise<void> => {
   await publishDueArticles();
   const articles = await db.select({
@@ -138,13 +197,18 @@ router.get("/sitemap-articles", async (_req, res): Promise<void> => {
     robotsIndex: articlesTable.robotsIndex,
     publishedAt: articlesTable.publishedAt,
     updatedAt: articlesTable.updatedAt,
+    pdfs: articlesTable.pdfs,
   }).from(articlesTable).where(eq(articlesTable.publishStatus, "Published"));
   res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${
     articles
       .filter((article) => article.robotsIndex !== false)
-      .map((article) => {
+      .flatMap((article) => {
         const lastModified = (article.updatedAt ?? article.publishedAt).toISOString();
-        return `<url><loc>${escapeXml(canonicalArticleUrl(article.slug))}</loc><lastmod>${escapeXml(lastModified)}</lastmod></url>`;
+        const urls = [
+          canonicalArticleUrl(article.slug),
+          ...storedArticlePdfs(article.pdfs).map((pdf) => canonicalArticlePdfUrl(article.slug, pdf.slug)),
+        ];
+        return urls.map((url) => `<url><loc>${escapeXml(url)}</loc><lastmod>${escapeXml(lastModified)}</lastmod></url>`);
       })
       .join("")
   }</urlset>`);
@@ -173,16 +237,27 @@ router.post("/admin/articles", async (req, res): Promise<void> => {
     return;
   }
   try {
-    const [article] = await db.insert(articlesTable).values({
-      ...values,
-      publishStatus: "Draft",
-      publishedAt: null,
-      scheduledPublishAt: null,
-      updatedAt: new Date(),
-    }).returning();
+    const article = await db.transaction(async (tx) => {
+      const problem = await articleLegacyUrlProblem(tx, values.websiteUrlLegacy, values.slug, null);
+      if (problem) throw new ArticleLegacyUrlError(problem);
+      const [created] = await tx.insert(articlesTable).values({
+        ...values,
+        publishStatus: "Draft",
+        publishedAt: null,
+        scheduledPublishAt: null,
+        updatedAt: new Date(),
+      }).returning();
+      if (!created) throw new Error("Could not create the article.");
+      await syncArticleLegacyRedirect(tx, null, created);
+      return created;
+    });
     await persistMedia(article);
     res.status(201).json(toAdminArticle(article));
   } catch (error) {
+    if (error instanceof ArticleLegacyUrlError) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
     if (isPostgresError(error, "23505")) {
       res.status(409).json({ error: "An article with that slug already exists." });
       return;
@@ -279,11 +354,22 @@ router.patch("/admin/articles/:id", async (req, res): Promise<void> => {
     }
   }
   try {
-    const [article] = await db.update(articlesTable).set({
-      ...values,
-      ...(publishedAt ? { publishedAt } : {}),
-      updatedAt: new Date(),
-    }).where(eq(articlesTable.id, id)).returning();
+    const article = await db.transaction(async (tx) => {
+      const [current] = await tx.select().from(articlesTable).where(eq(articlesTable.id, id));
+      if (!current) return null;
+      const nextSlug = values.slug ?? current.slug;
+      const nextLegacy = values.websiteUrlLegacy ?? current.websiteUrlLegacy;
+      const problem = await articleLegacyUrlProblem(tx, nextLegacy, nextSlug, id, current.slug);
+      if (problem) throw new ArticleLegacyUrlError(problem);
+      const [updated] = await tx.update(articlesTable).set({
+        ...values,
+        ...(publishedAt ? { publishedAt } : {}),
+        updatedAt: new Date(),
+      }).where(eq(articlesTable.id, id)).returning();
+      if (!updated) return null;
+      await syncArticleLegacyRedirect(tx, current, updated);
+      return updated;
+    });
     if (!article) {
       res.status(404).json({ error: "Article not found." });
       return;
@@ -291,6 +377,10 @@ router.patch("/admin/articles/:id", async (req, res): Promise<void> => {
     await persistMedia(article);
     res.json(toAdminArticle(article));
   } catch (error) {
+    if (error instanceof ArticleLegacyUrlError) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
     if (isPostgresError(error, "23505")) {
       res.status(409).json({ error: "An article with that slug already exists." });
       return;
@@ -305,12 +395,18 @@ router.delete("/admin/articles/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Please provide a valid article id." });
     return;
   }
-  await clearArticleMediaReferences(id);
-  const [deleted] = await db.delete(articlesTable).where(eq(articlesTable.id, id)).returning({ id: articlesTable.id });
-  if (!deleted) {
+  const [existing] = await db.select().from(articlesTable).where(eq(articlesTable.id, id));
+  if (!existing) {
     res.status(404).json({ error: "Article not found." });
     return;
   }
+  const pdfs = storedArticlePdfs(existing.pdfs);
+  await db.transaction(async (tx) => {
+    await syncArticleLegacyRedirect(tx, existing, { slug: existing.slug, websiteUrlLegacy: [] });
+    await clearArticleMediaReferences(id, tx);
+    await tx.delete(articlesTable).where(eq(articlesTable.id, id));
+  });
+  await Promise.allSettled(pdfs.map((pdf) => removeStoredFile(pdf.storageKey)));
   res.status(204).end();
 });
 
@@ -435,6 +531,131 @@ router.post("/admin/articles/:id/unpublish", async (req, res): Promise<void> => 
     return;
   }
   await persistMedia(article);
+  res.json(toAdminArticle(article));
+});
+
+router.post("/admin/articles/:id/pdfs", async (req, res): Promise<void> => {
+  const id = validId(req.params.id);
+  const parsed = articlePdfUploadSchema.safeParse(req.body);
+  if (!id || !parsed.success) {
+    res.status(400).json({ error: "Upload a PDF with a title." });
+    return;
+  }
+  const [current] = await db.select().from(articlesTable).where(eq(articlesTable.id, id));
+  if (!current) {
+    res.status(404).json({ error: "Article not found." });
+    return;
+  }
+  const pdfs = storedArticlePdfs(current.pdfs);
+  try {
+    assertPdfRoom(pdfs.length);
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "An article can have up to 8 PDFs." });
+    return;
+  }
+  let buffer: Buffer;
+  try {
+    buffer = decodeArticlePdf(parsed.data.data, parsed.data.filename);
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Upload a PDF file." });
+    return;
+  }
+  const slug = uniquePdfSlug(parsed.data.title, pdfs.map((pdf) => pdf.slug));
+  const filename = safePdfFilename(parsed.data.filename);
+  const storageKey = articlePdfStorageKey(id, slug);
+  const next = [...pdfs, {
+    slug,
+    title: parsed.data.title.trim(),
+    filename,
+    storageKey,
+    bytes: buffer.length,
+  }];
+  await putStoredFile(storageKey, buffer, "application/pdf");
+  const [article] = await db.update(articlesTable).set({
+    pdfs: next,
+    updatedAt: new Date(),
+  }).where(eq(articlesTable.id, id)).returning();
+  if (!article) {
+    await removeStoredFile(storageKey);
+    res.status(404).json({ error: "Article not found." });
+    return;
+  }
+  res.status(201).json(toAdminArticle(article));
+});
+
+router.get("/admin/articles/:id/pdfs/:pdfSlug", async (req, res): Promise<void> => {
+  const id = validId(req.params.id);
+  const pdfSlug = String(req.params.pdfSlug ?? "").trim();
+  if (!id || !pdfSlug) {
+    res.status(404).json({ error: "PDF not found." });
+    return;
+  }
+  const [article] = await db.select().from(articlesTable).where(eq(articlesTable.id, id));
+  const pdf = storedArticlePdfs(article?.pdfs).find((item) => item.slug === pdfSlug);
+  const stored = pdf ? await getStoredFile(pdf.storageKey) : null;
+  if (!article || !pdf || !stored?.bytes.length) {
+    res.status(404).json({ error: "PDF not found." });
+    return;
+  }
+  sendPdf(res, stored.bytes, pdf.filename, true);
+});
+
+router.patch("/admin/articles/:id/pdfs/:pdfSlug", async (req, res): Promise<void> => {
+  const id = validId(req.params.id);
+  const pdfSlug = String(req.params.pdfSlug ?? "").trim();
+  const parsed = articlePdfTitleSchema.safeParse(req.body);
+  if (!id || !pdfSlug || !parsed.success) {
+    res.status(400).json({ error: "Provide a PDF title." });
+    return;
+  }
+  const [current] = await db.select().from(articlesTable).where(eq(articlesTable.id, id));
+  if (!current) {
+    res.status(404).json({ error: "Article not found." });
+    return;
+  }
+  const pdfs = storedArticlePdfs(current.pdfs);
+  if (!pdfs.some((pdf) => pdf.slug === pdfSlug)) {
+    res.status(404).json({ error: "PDF not found." });
+    return;
+  }
+  const [article] = await db.update(articlesTable).set({
+    pdfs: pdfs.map((pdf) => pdf.slug === pdfSlug ? { ...pdf, title: parsed.data.title.trim() } : pdf),
+    updatedAt: new Date(),
+  }).where(eq(articlesTable.id, id)).returning();
+  if (!article) {
+    res.status(404).json({ error: "Article not found." });
+    return;
+  }
+  res.json(toAdminArticle(article));
+});
+
+router.delete("/admin/articles/:id/pdfs/:pdfSlug", async (req, res): Promise<void> => {
+  const id = validId(req.params.id);
+  const pdfSlug = String(req.params.pdfSlug ?? "").trim();
+  if (!id || !pdfSlug) {
+    res.status(404).json({ error: "PDF not found." });
+    return;
+  }
+  const [current] = await db.select().from(articlesTable).where(eq(articlesTable.id, id));
+  if (!current) {
+    res.status(404).json({ error: "Article not found." });
+    return;
+  }
+  const pdfs = storedArticlePdfs(current.pdfs);
+  const pdf = pdfs.find((item) => item.slug === pdfSlug);
+  if (!pdf) {
+    res.status(404).json({ error: "PDF not found." });
+    return;
+  }
+  const [article] = await db.update(articlesTable).set({
+    pdfs: pdfs.filter((item) => item.slug !== pdfSlug),
+    updatedAt: new Date(),
+  }).where(eq(articlesTable.id, id)).returning();
+  if (!article) {
+    res.status(404).json({ error: "Article not found." });
+    return;
+  }
+  await removeStoredFile(pdf.storageKey);
   res.json(toAdminArticle(article));
 });
 

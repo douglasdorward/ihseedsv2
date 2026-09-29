@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { PublicArticlePdf } from './publicArticlePdf';
 
 export interface PublicArticle {
   id: number;
@@ -23,6 +24,8 @@ export interface PublicArticle {
      * @items.maxLength 180
      */
   relatedProductSlugs: string[];
+  /** @maxItems 8 */
+  pdfs: PublicArticlePdf[];
   publishedAt: Date;
   seoTitle: string;
   seoDescription: string;

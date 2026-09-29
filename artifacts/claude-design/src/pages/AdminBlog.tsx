@@ -7,6 +7,7 @@ import {
   useCommitArticleImport,
   useCreateArticle,
   useDeleteArticle,
+  useDeleteArticlePdf,
   useDryRunArticleImport,
   useGetAdminArticle,
   useListAdminArticles,
@@ -15,6 +16,8 @@ import {
   useScheduleArticle,
   useUnpublishArticle,
   useUpdateArticle,
+  useUpdateArticlePdfTitle,
+  useUploadArticlePdf,
   type Article,
   type ArticleImportReport,
   type ArticleInput,
@@ -31,6 +34,8 @@ import { SocialImagePreview } from "../components/SocialImagePreview";
 import "../admin-blog.css";
 
 const TAG_PRESETS = ["Editorial", "Sowing & Timing", "Feed Planning", "Regional Advice"];
+const ARTICLE_PDF_LIMIT = 8;
+const ARTICLE_LEGACY_URL_LIMIT = 12;
 const TITLE_RECOMMENDED = 60;
 const DESCRIPTION_RECOMMENDED = 155;
 
@@ -49,6 +54,20 @@ function forSearchMetadataInput(value: string) {
 
 function forSearchMetadata(value: string) {
   return forSearchMetadataInput(value).trim();
+}
+
+function titleFromPdfFilename(filename: string) {
+  const stem = filename.replace(/^.*[/\\]/, "").replace(/\.pdf$/i, "").replace(/[_-]+/g, " ").trim();
+  return stem.slice(0, 180) || "Document";
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error("Could not read that PDF."));
+    reader.readAsDataURL(file);
+  });
 }
 
 function errorMessage(error: unknown, fallback: string) {
@@ -110,6 +129,7 @@ function CharacterCount({ value, recommend }: { value: string; recommend: number
 type ArticleForm = {
   title: string;
   slug: string;
+  websiteUrlLegacy: string[];
   excerpt: string;
   body: string;
   tags: string[];
@@ -127,6 +147,7 @@ type ArticleForm = {
 const emptyForm: ArticleForm = {
   title: "",
   slug: "",
+  websiteUrlLegacy: [""],
   excerpt: "",
   body: "",
   tags: [],
@@ -145,6 +166,7 @@ function formFromArticle(article: Article): ArticleForm {
   return {
     title: article.title,
     slug: article.slug,
+    websiteUrlLegacy: article.websiteUrlLegacy?.length ? article.websiteUrlLegacy : [""],
     excerpt: article.excerpt,
     body: normalizeArticleBody(article.body),
     tags: article.tags ?? [],
@@ -164,6 +186,7 @@ function toInput(form: ArticleForm): ArticleInput {
   return {
     title: form.title.trim(),
     slug: form.slug.trim(),
+    websiteUrlLegacy: form.websiteUrlLegacy.map((url) => url.trim()).filter(Boolean),
     excerpt: form.excerpt.trim(),
     body: normalizeArticleBody(form.body),
     tags: form.tags,
@@ -319,7 +342,7 @@ function ImportDialog({
     <div className="admin-dialog-backdrop" role="presentation" onMouseDown={close}>
       <section className="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="article-import-title" onMouseDown={(event) => event.stopPropagation()}>
         <h2 id="article-import-title">Import articles</h2>
-        <p>Upload an Excel workbook with one row per article on the Articles sheet. Matching slugs update existing articles. Copy product slugs from the Products sheet into related_product_slugs, and use Categories.path or Products.path for in-article links. Put HTML or markdown in the body cell for headings, bold and lists. Use published_at to backdate the public date; use scheduled_publish_at for future go-live.</p>
+        <p>Upload an Excel workbook with one row per article on the Articles sheet. Matching slugs update existing articles. Copy product slugs from the Products sheet into related_product_slugs, and use Categories.path or Products.path for in-article links. Put HTML or markdown in the body cell for headings, bold and lists. Use published_at to backdate the public date; use scheduled_publish_at for future go-live. Put old www.irwinhunter.com.au addresses in website_url, separated with | or a comma, to redirect each path to the article.</p>
         {!report ? (
           <div className="admin-import-file-row">
             <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" data-testid="article-import-file" onChange={(event) => {
@@ -358,6 +381,47 @@ function ImportDialog({
   );
 }
 
+function ArticlePdfRow({
+  pdf,
+  articleId,
+  articleSlug,
+  busy,
+  onRename,
+  onRemove,
+}: {
+  pdf: Article["pdfs"][number];
+  articleId: number;
+  articleSlug: string;
+  busy: boolean;
+  onRename: (pdfSlug: string, title: string, current: string) => Promise<boolean>;
+  onRemove: (pdfSlug: string) => Promise<void>;
+}) {
+  const [title, setTitle] = useState(pdf.title);
+  useEffect(() => setTitle(pdf.title), [pdf.title]);
+  return (
+    <li>
+      <label>
+        Link title
+        <input
+          value={title}
+          maxLength={180}
+          onChange={(event) => setTitle(event.target.value)}
+          onBlur={() => {
+            void onRename(pdf.slug, title, pdf.title).then((saved) => {
+              if (!saved) setTitle(pdf.title);
+            });
+          }}
+        />
+      </label>
+      <small>/articles/{articleSlug}/{pdf.slug}.pdf</small>
+      <div className="admin-blog-pdf-actions">
+        <a className="admin-button ghost small" href={`/api/admin/articles/${articleId}/pdfs/${pdf.slug}`} target="_blank" rel="noreferrer">Open</a>
+        <button className="admin-text-button danger" type="button" onClick={() => { void onRemove(pdf.slug); }} disabled={busy}>Remove</button>
+      </div>
+    </li>
+  );
+}
+
 function ArticleEditor({ articleId }: { articleId: number | "new" }) {
   const queryClient = useQueryClient();
   const isNew = articleId === "new";
@@ -371,7 +435,12 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
   const scheduleArticle = useScheduleArticle();
   const unpublishArticle = useUnpublishArticle();
   const deleteArticle = useDeleteArticle();
+  const uploadArticlePdf = useUploadArticlePdf();
+  const updateArticlePdfTitle = useUpdateArticlePdfTitle();
+  const deleteArticlePdf = useDeleteArticlePdf();
   const [form, setForm] = useState<ArticleForm>(emptyForm);
+  const [pdfs, setPdfs] = useState<Article["pdfs"]>([]);
+  const [pdfTitle, setPdfTitle] = useState("");
   const [slugLocked, setSlugLocked] = useState(false);
   const [scheduleAt, setScheduleAt] = useState("");
   const [publishedOn, setPublishedOn] = useState("");
@@ -381,10 +450,12 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [message, setMessage] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const pdfFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!article || isNew) return;
     setForm(formFromArticle(article));
+    setPdfs(article.pdfs ?? []);
     setScheduleAt(toDatetimeLocal(article.scheduledPublishAt));
     setPublishedOn(toDatetimeLocal(article.publishedAt));
     setSlugLocked(true);
@@ -455,8 +526,8 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
       await publishArticle.mutateAsync({ id: saved.id, ...(publishedAt ? { data: { publishedAt } } : {}) });
       await refreshQueries(saved.id);
       setMessage(publishedAt
-        ? `Article published, dated ${formatDateTime(publishedAt)}. It appears on Resources immediately.`
-        : "Article published. It appears on Resources immediately.");
+        ? `Article published, dated ${formatDateTime(publishedAt)}. It appears on Articles immediately.`
+        : "Article published. It appears on Articles immediately.");
     } catch (caught) {
       setError(errorMessage(caught, "Could not publish this article."));
     } finally {
@@ -475,7 +546,7 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
       setScheduleAt("");
       setMessage(article?.publishStatus === "Scheduled"
         ? "Schedule cancelled. The article stays private."
-        : "Article unpublished. It is hidden from Resources.");
+        : "Article unpublished. It is hidden from Articles.");
     } catch (caught) {
       setError(errorMessage(caught, "Could not unpublish this article."));
     } finally {
@@ -521,6 +592,69 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
     }
   };
 
+  const attachPdf = async (file: File) => {
+    if (isNew) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const data = await readFileAsDataUrl(file);
+      const title = pdfTitle.trim() || titleFromPdfFilename(file.name);
+      const updated = await uploadArticlePdf.mutateAsync({
+        id: articleId,
+        data: { filename: file.name, title, data },
+      });
+      setPdfs(updated.pdfs ?? []);
+      setPdfTitle("");
+      setMessage(article?.publishStatus === "Published"
+        ? `Attached “${title}”. It is linked on the article.`
+        : `Attached “${title}”. It stays private until you publish.`);
+    } catch (caught) {
+      setError(errorMessage(caught, "Could not attach that PDF."));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const renamePdf = async (pdfSlug: string, title: string, current: string) => {
+    if (isNew) return false;
+    const next = title.trim();
+    if (!next) return false;
+    if (next === current) return true;
+    setBusy(true);
+    setError("");
+    try {
+      const updated = await updateArticlePdfTitle.mutateAsync({
+        id: articleId,
+        pdfSlug,
+        data: { title: next },
+      });
+      setPdfs(updated.pdfs ?? []);
+      return true;
+    } catch (caught) {
+      setError(errorMessage(caught, "Could not rename that PDF."));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removePdf = async (pdfSlug: string) => {
+    if (isNew) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const updated = await deleteArticlePdf.mutateAsync({ id: articleId, pdfSlug });
+      setPdfs(updated.pdfs ?? []);
+      setMessage("PDF removed.");
+    } catch (caught) {
+      setError(errorMessage(caught, "Could not remove that PDF."));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const uploadHero = async (file: File) => {
     setBusy(true);
     setError("");
@@ -555,7 +689,7 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
   const descriptionFallback = form.excerpt.trim() || "Excerpt copy is used when this is blank.";
   const previewTitle = form.seoTitle.trim() || titleFallback;
   const previewDescription = form.seoDescription.trim() || descriptionFallback;
-  const publicPath = `/resources/${form.slug || "article-slug"}`;
+  const publicPath = `/articles/${form.slug || "article-slug"}`;
 
   return (
     <>
@@ -615,7 +749,7 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
           <div className="admin-section-heading">
             <div>
               <h3>Article</h3>
-              <p>The title is the public H1. Tags filter the Resources list. Excerpt appears on the card.</p>
+              <p>The title is the public H1. Tags filter the Articles list. Excerpt appears on the card.</p>
             </div>
             <span className="admin-blog-path">{publicPath}</span>
           </div>
@@ -648,10 +782,50 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
               />
               <small>Public page: ihseeds.com.au{publicPath}</small>
             </label>
+            <div className="admin-blog-legacy-urls wide">
+              <span>Legacy website URL</span>
+              {form.websiteUrlLegacy.map((url, index) => (
+                <div className="admin-blog-legacy-url-row" key={index}>
+                  <input
+                    value={url}
+                    onChange={(event) => setForm((current) => ({
+                      ...current,
+                      websiteUrlLegacy: current.websiteUrlLegacy.map((item, itemIndex) => itemIndex === index ? event.target.value : item),
+                    }))}
+                    placeholder="https://www.irwinhunter.com.au/old-article-path"
+                    maxLength={500}
+                    aria-label={index === 0 ? "Legacy website URL" : `Legacy website URL ${index + 1}`}
+                    data-testid={index === 0 ? "article-legacy-url" : `article-legacy-url-${index + 1}`}
+                  />
+                  <button
+                    className="admin-button ghost small"
+                    type="button"
+                    onClick={() => setForm((current) => {
+                      const websiteUrlLegacy = current.websiteUrlLegacy.filter((_, itemIndex) => itemIndex !== index);
+                      return { ...current, websiteUrlLegacy: websiteUrlLegacy.length ? websiteUrlLegacy : [""] };
+                    })}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                className="admin-button outline small"
+                type="button"
+                disabled={form.websiteUrlLegacy.length >= ARTICLE_LEGACY_URL_LIMIT}
+                onClick={() => setForm((current) => ({
+                  ...current,
+                  websiteUrlLegacy: [...current.websiteUrlLegacy, ""],
+                }))}
+              >
+                Add URL
+              </button>
+              <small>Old www.irwinhunter.com.au addresses. Each one redirects to {publicPath}.</small>
+            </div>
             <label className="wide">
               <span>Excerpt<span className="required">*</span></span>
-              <textarea rows={3} value={form.excerpt} onChange={(event) => setField("excerpt", event.target.value)} placeholder="One or two sentences for the Resources card." />
-              <small>Shown on Resources cards and used as the search description if SEO description is blank.</small>
+              <textarea rows={3} value={form.excerpt} onChange={(event) => setField("excerpt", event.target.value)} placeholder="One or two sentences for the Articles card." />
+              <small>Shown on Articles cards and used as the search description if SEO description is blank.</small>
             </label>
           </div>
           <div className="admin-blog-tags">
@@ -708,6 +882,70 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
               <button className="admin-text-button danger" type="button" onClick={() => setForm((current) => ({ ...current, heroImageSrc: "", heroImageAssetId: null }))}>Remove</button>
             )}
           </div>
+        </section>
+
+        <section className="admin-panel admin-form-card">
+          <div className="admin-section-heading">
+            <div>
+              <h3>PDFs</h3>
+              <p>These files are linked on the article. Google can index them when the article is published and indexing is allowed. The link address stays the same if you edit the title later.</p>
+            </div>
+          </div>
+          {isNew ? (
+            <p className="admin-field-hint">Save the draft before attaching a PDF.</p>
+          ) : (
+            <>
+              <label>
+                PDF title
+                <input
+                  value={pdfTitle}
+                  onChange={(event) => setPdfTitle(event.target.value)}
+                  placeholder="Shown as the download link. Blank uses the file name."
+                  maxLength={180}
+                  data-testid="article-pdf-title"
+                />
+              </label>
+              <input
+                ref={pdfFileRef}
+                type="file"
+                accept="application/pdf,.pdf"
+                hidden
+                data-testid="article-pdf-file"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (file) void attachPdf(file);
+                }}
+              />
+              <div className="admin-blog-pdf-actions">
+                <button
+                  className="admin-button outline small"
+                  type="button"
+                  onClick={() => pdfFileRef.current?.click()}
+                  disabled={busy || pdfs.length >= ARTICLE_PDF_LIMIT}
+                  data-testid="article-pdf-attach"
+                >
+                  Attach PDF
+                </button>
+                <small>{pdfs.length} of {ARTICLE_PDF_LIMIT}. PDF files up to 15 MB.</small>
+              </div>
+              {pdfs.length > 0 && (
+                <ul className="admin-blog-pdfs">
+                  {pdfs.map((pdf) => (
+                    <ArticlePdfRow
+                      key={pdf.slug}
+                      pdf={pdf}
+                      articleId={articleId}
+                      articleSlug={article?.slug || form.slug}
+                      busy={busy}
+                      onRename={renamePdf}
+                      onRemove={removePdf}
+                    />
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
         </section>
 
         <section className="admin-panel admin-form-card">
@@ -820,7 +1058,7 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
       {confirmDelete && (
         <ConfirmDialog
           title="Delete this article?"
-          body="This removes the article from admin and the public Resources pages. This cannot be undone."
+          body="This removes the article from admin and the public Articles pages. This cannot be undone."
           confirmLabel="Delete article"
           busy={busy}
           onCancel={() => setConfirmDelete(false)}
@@ -869,11 +1107,11 @@ function ArticleList() {
       <div className="admin-content">
         <div className="admin-notice">
           <Icon name="info" size={20} />
-          <p>Drafts and scheduled articles stay private. Publishing makes the article appear on Resources immediately. Scheduled articles go live at the chosen time.</p>
+          <p>Drafts and scheduled articles stay private. Publishing makes the article appear on Articles immediately. Scheduled articles go live at the chosen time.</p>
         </div>
         {error && <div className="admin-notice" style={{ background: "#fef3f2", color: "#b42318" }}><p>{errorMessage(error, "Could not load articles.")}</p></div>}
         {isLoading ? <p className="admin-empty">Loading articles…</p> : null}
-        {!isLoading && articles.length === 0 && <p className="admin-empty">No articles yet. Publish the first one to replace the placeholder Resources cards, or import a workbook.</p>}
+        {!isLoading && articles.length === 0 && <p className="admin-empty">No articles yet. Publish the first one to replace the placeholder Articles cards, or import a workbook.</p>}
         {articles.length > 0 && (
           <div className="admin-table-card admin-blog-table">
             <table>
@@ -891,7 +1129,7 @@ function ArticleList() {
                   <tr key={item.id}>
                     <td>
                       <strong>{item.title}</strong>
-                      <small>/resources/{item.slug}</small>
+                      <small>/articles/{item.slug}</small>
                     </td>
                     <td>
                       {item.tags.length > 0 ? (

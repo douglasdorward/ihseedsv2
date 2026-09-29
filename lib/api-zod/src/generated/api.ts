@@ -7442,6 +7442,8 @@ export const listArticlesResponseRelatedProductSlugsItemMax = 180;
 
 export const listArticlesResponseRelatedProductSlugsMax = 3;
 
+export const listArticlesResponsePdfsMax = 8;
+
 
 
 export const ListArticlesResponseItem = zod.object({
@@ -7453,6 +7455,11 @@ export const ListArticlesResponseItem = zod.object({
   "tags": zod.array(zod.string().max(listArticlesResponseTagsItemMax)).max(listArticlesResponseTagsMax),
   "heroImageSrc": zod.string(),
   "relatedProductSlugs": zod.array(zod.string().max(listArticlesResponseRelatedProductSlugsItemMax)).max(listArticlesResponseRelatedProductSlugsMax),
+  "pdfs": zod.array(zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "href": zod.string()
+})).max(listArticlesResponsePdfsMax),
   "publishedAt": zod.coerce.date(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
@@ -7486,6 +7493,8 @@ export const getArticleBySlugResponseRelatedProductSlugsItemMax = 180;
 
 export const getArticleBySlugResponseRelatedProductSlugsMax = 3;
 
+export const getArticleBySlugResponsePdfsMax = 8;
+
 
 
 export const GetArticleBySlugResponse = zod.object({
@@ -7497,6 +7506,11 @@ export const GetArticleBySlugResponse = zod.object({
   "tags": zod.array(zod.string().max(getArticleBySlugResponseTagsItemMax)).max(getArticleBySlugResponseTagsMax),
   "heroImageSrc": zod.string(),
   "relatedProductSlugs": zod.array(zod.string().max(getArticleBySlugResponseRelatedProductSlugsItemMax)).max(getArticleBySlugResponseRelatedProductSlugsMax),
+  "pdfs": zod.array(zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "href": zod.string()
+})).max(getArticleBySlugResponsePdfsMax),
   "publishedAt": zod.coerce.date(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
@@ -7506,6 +7520,23 @@ export const GetArticleBySlugResponse = zod.object({
   "robotsIndex": zod.boolean(),
   "updatedAt": zod.coerce.date()
 })
+
+
+/**
+ * @summary Download a published article PDF
+ */
+export const getArticlePdfPathSlugMax = 180;
+
+export const getArticlePdfPathPdfSlugMax = 80;
+
+
+
+export const GetArticlePdfParams = zod.object({
+  "slug": zod.coerce.string().min(1).max(getArticlePdfPathSlugMax),
+  "pdfSlug": zod.coerce.string().min(1).max(getArticlePdfPathPdfSlugMax)
+})
+
+export const GetArticlePdfResponse = zod.unknown()
 
 
 /**
@@ -8761,6 +8792,10 @@ export const DeleteCategoryResponse = zod.void()
  */
 export const listAdminArticlesResponseIdMultipleOf = 1;
 
+export const listAdminArticlesResponseWebsiteUrlLegacyItemMax = 500;
+
+export const listAdminArticlesResponseWebsiteUrlLegacyMax = 12;
+
 export const listAdminArticlesResponseTagsItemMax = 80;
 
 export const listAdminArticlesResponseTagsMax = 12;
@@ -8769,11 +8804,16 @@ export const listAdminArticlesResponseRelatedProductSlugsItemMax = 180;
 
 export const listAdminArticlesResponseRelatedProductSlugsMax = 3;
 
+export const listAdminArticlesResponsePdfsItemBytesMultipleOf = 1;
+
+export const listAdminArticlesResponsePdfsMax = 8;
+
 
 
 export const ListAdminArticlesResponseItem = zod.object({
   "id": zod.number().multipleOf(listAdminArticlesResponseIdMultipleOf),
   "slug": zod.string(),
+  "websiteUrlLegacy": zod.array(zod.string().max(listAdminArticlesResponseWebsiteUrlLegacyItemMax)).max(listAdminArticlesResponseWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Each address redirects an old website path to this article'),
   "title": zod.string(),
   "excerpt": zod.string(),
   "body": zod.string(),
@@ -8781,6 +8821,12 @@ export const ListAdminArticlesResponseItem = zod.object({
   "heroImageSrc": zod.string(),
   "heroImageAssetId": zod.string().nullable(),
   "relatedProductSlugs": zod.array(zod.string().max(listAdminArticlesResponseRelatedProductSlugsItemMax)).max(listAdminArticlesResponseRelatedProductSlugsMax),
+  "pdfs": zod.array(zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "filename": zod.string(),
+  "bytes": zod.number().multipleOf(listAdminArticlesResponsePdfsItemBytesMultipleOf)
+})).max(listAdminArticlesResponsePdfsMax),
   "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
   "publishedAt": zod.coerce.date().nullable(),
   "scheduledPublishAt": zod.coerce.date().nullable(),
@@ -8803,6 +8849,10 @@ export const createArticleBodySlugMax = 180;
 
 
 export const createArticleBodySlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
+export const createArticleBodyWebsiteUrlLegacyItemMax = 500;
+
+export const createArticleBodyWebsiteUrlLegacyMax = 12;
+
 export const createArticleBodyTitleMax = 180;
 
 export const createArticleBodyExcerptMax = 500;
@@ -8835,6 +8885,7 @@ export const createArticleBodySocialImageMax = 500;
 
 export const CreateArticleBody = zod.object({
   "slug": zod.string().min(1).max(createArticleBodySlugMax).regex(createArticleBodySlugRegExp),
+  "websiteUrlLegacy": zod.array(zod.string().max(createArticleBodyWebsiteUrlLegacyItemMax)).max(createArticleBodyWebsiteUrlLegacyMax).optional().describe('Admin-only legacy URLs. Each address redirects an old website path to this article'),
   "title": zod.string().min(1).max(createArticleBodyTitleMax),
   "excerpt": zod.string().max(createArticleBodyExcerptMax).optional(),
   "body": zod.string().max(createArticleBodyBodyMax).optional(),
@@ -8852,6 +8903,10 @@ export const CreateArticleBody = zod.object({
 
 export const createArticleResponseIdMultipleOf = 1;
 
+export const createArticleResponseWebsiteUrlLegacyItemMax = 500;
+
+export const createArticleResponseWebsiteUrlLegacyMax = 12;
+
 export const createArticleResponseTagsItemMax = 80;
 
 export const createArticleResponseTagsMax = 12;
@@ -8860,11 +8915,16 @@ export const createArticleResponseRelatedProductSlugsItemMax = 180;
 
 export const createArticleResponseRelatedProductSlugsMax = 3;
 
+export const createArticleResponsePdfsItemBytesMultipleOf = 1;
+
+export const createArticleResponsePdfsMax = 8;
+
 
 
 export const CreateArticleResponse = zod.object({
   "id": zod.number().multipleOf(createArticleResponseIdMultipleOf),
   "slug": zod.string(),
+  "websiteUrlLegacy": zod.array(zod.string().max(createArticleResponseWebsiteUrlLegacyItemMax)).max(createArticleResponseWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Each address redirects an old website path to this article'),
   "title": zod.string(),
   "excerpt": zod.string(),
   "body": zod.string(),
@@ -8872,6 +8932,12 @@ export const CreateArticleResponse = zod.object({
   "heroImageSrc": zod.string(),
   "heroImageAssetId": zod.string().nullable(),
   "relatedProductSlugs": zod.array(zod.string().max(createArticleResponseRelatedProductSlugsItemMax)).max(createArticleResponseRelatedProductSlugsMax),
+  "pdfs": zod.array(zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "filename": zod.string(),
+  "bytes": zod.number().multipleOf(createArticleResponsePdfsItemBytesMultipleOf)
+})).max(createArticleResponsePdfsMax),
   "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
   "publishedAt": zod.coerce.date().nullable(),
   "scheduledPublishAt": zod.coerce.date().nullable(),
@@ -8981,6 +9047,10 @@ export const GetAdminArticleParams = zod.object({
 
 export const getAdminArticleResponseIdMultipleOf = 1;
 
+export const getAdminArticleResponseWebsiteUrlLegacyItemMax = 500;
+
+export const getAdminArticleResponseWebsiteUrlLegacyMax = 12;
+
 export const getAdminArticleResponseTagsItemMax = 80;
 
 export const getAdminArticleResponseTagsMax = 12;
@@ -8989,11 +9059,16 @@ export const getAdminArticleResponseRelatedProductSlugsItemMax = 180;
 
 export const getAdminArticleResponseRelatedProductSlugsMax = 3;
 
+export const getAdminArticleResponsePdfsItemBytesMultipleOf = 1;
+
+export const getAdminArticleResponsePdfsMax = 8;
+
 
 
 export const GetAdminArticleResponse = zod.object({
   "id": zod.number().multipleOf(getAdminArticleResponseIdMultipleOf),
   "slug": zod.string(),
+  "websiteUrlLegacy": zod.array(zod.string().max(getAdminArticleResponseWebsiteUrlLegacyItemMax)).max(getAdminArticleResponseWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Each address redirects an old website path to this article'),
   "title": zod.string(),
   "excerpt": zod.string(),
   "body": zod.string(),
@@ -9001,6 +9076,12 @@ export const GetAdminArticleResponse = zod.object({
   "heroImageSrc": zod.string(),
   "heroImageAssetId": zod.string().nullable(),
   "relatedProductSlugs": zod.array(zod.string().max(getAdminArticleResponseRelatedProductSlugsItemMax)).max(getAdminArticleResponseRelatedProductSlugsMax),
+  "pdfs": zod.array(zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "filename": zod.string(),
+  "bytes": zod.number().multipleOf(getAdminArticleResponsePdfsItemBytesMultipleOf)
+})).max(getAdminArticleResponsePdfsMax),
   "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
   "publishedAt": zod.coerce.date().nullable(),
   "scheduledPublishAt": zod.coerce.date().nullable(),
@@ -9030,6 +9111,10 @@ export const updateArticleBodySlugMax = 180;
 
 
 export const updateArticleBodySlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
+export const updateArticleBodyWebsiteUrlLegacyItemMax = 500;
+
+export const updateArticleBodyWebsiteUrlLegacyMax = 12;
+
 export const updateArticleBodyTitleMax = 180;
 
 export const updateArticleBodyExcerptMax = 500;
@@ -9062,6 +9147,7 @@ export const updateArticleBodySocialImageMax = 500;
 
 export const UpdateArticleBody = zod.object({
   "slug": zod.string().min(1).max(updateArticleBodySlugMax).regex(updateArticleBodySlugRegExp).optional(),
+  "websiteUrlLegacy": zod.array(zod.string().max(updateArticleBodyWebsiteUrlLegacyItemMax)).max(updateArticleBodyWebsiteUrlLegacyMax).optional().describe('Admin-only legacy URLs. Each address redirects an old website path to this article'),
   "title": zod.string().min(1).max(updateArticleBodyTitleMax).optional(),
   "excerpt": zod.string().max(updateArticleBodyExcerptMax).optional(),
   "body": zod.string().max(updateArticleBodyBodyMax).optional(),
@@ -9080,6 +9166,10 @@ export const UpdateArticleBody = zod.object({
 
 export const updateArticleResponseIdMultipleOf = 1;
 
+export const updateArticleResponseWebsiteUrlLegacyItemMax = 500;
+
+export const updateArticleResponseWebsiteUrlLegacyMax = 12;
+
 export const updateArticleResponseTagsItemMax = 80;
 
 export const updateArticleResponseTagsMax = 12;
@@ -9088,11 +9178,16 @@ export const updateArticleResponseRelatedProductSlugsItemMax = 180;
 
 export const updateArticleResponseRelatedProductSlugsMax = 3;
 
+export const updateArticleResponsePdfsItemBytesMultipleOf = 1;
+
+export const updateArticleResponsePdfsMax = 8;
+
 
 
 export const UpdateArticleResponse = zod.object({
   "id": zod.number().multipleOf(updateArticleResponseIdMultipleOf),
   "slug": zod.string(),
+  "websiteUrlLegacy": zod.array(zod.string().max(updateArticleResponseWebsiteUrlLegacyItemMax)).max(updateArticleResponseWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Each address redirects an old website path to this article'),
   "title": zod.string(),
   "excerpt": zod.string(),
   "body": zod.string(),
@@ -9100,6 +9195,12 @@ export const UpdateArticleResponse = zod.object({
   "heroImageSrc": zod.string(),
   "heroImageAssetId": zod.string().nullable(),
   "relatedProductSlugs": zod.array(zod.string().max(updateArticleResponseRelatedProductSlugsItemMax)).max(updateArticleResponseRelatedProductSlugsMax),
+  "pdfs": zod.array(zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "filename": zod.string(),
+  "bytes": zod.number().multipleOf(updateArticleResponsePdfsItemBytesMultipleOf)
+})).max(updateArticleResponsePdfsMax),
   "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
   "publishedAt": zod.coerce.date().nullable(),
   "scheduledPublishAt": zod.coerce.date().nullable(),
@@ -9145,6 +9246,10 @@ export const PublishArticleBody = zod.object({
 
 export const publishArticleResponseIdMultipleOf = 1;
 
+export const publishArticleResponseWebsiteUrlLegacyItemMax = 500;
+
+export const publishArticleResponseWebsiteUrlLegacyMax = 12;
+
 export const publishArticleResponseTagsItemMax = 80;
 
 export const publishArticleResponseTagsMax = 12;
@@ -9153,11 +9258,16 @@ export const publishArticleResponseRelatedProductSlugsItemMax = 180;
 
 export const publishArticleResponseRelatedProductSlugsMax = 3;
 
+export const publishArticleResponsePdfsItemBytesMultipleOf = 1;
+
+export const publishArticleResponsePdfsMax = 8;
+
 
 
 export const PublishArticleResponse = zod.object({
   "id": zod.number().multipleOf(publishArticleResponseIdMultipleOf),
   "slug": zod.string(),
+  "websiteUrlLegacy": zod.array(zod.string().max(publishArticleResponseWebsiteUrlLegacyItemMax)).max(publishArticleResponseWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Each address redirects an old website path to this article'),
   "title": zod.string(),
   "excerpt": zod.string(),
   "body": zod.string(),
@@ -9165,6 +9275,12 @@ export const PublishArticleResponse = zod.object({
   "heroImageSrc": zod.string(),
   "heroImageAssetId": zod.string().nullable(),
   "relatedProductSlugs": zod.array(zod.string().max(publishArticleResponseRelatedProductSlugsItemMax)).max(publishArticleResponseRelatedProductSlugsMax),
+  "pdfs": zod.array(zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "filename": zod.string(),
+  "bytes": zod.number().multipleOf(publishArticleResponsePdfsItemBytesMultipleOf)
+})).max(publishArticleResponsePdfsMax),
   "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
   "publishedAt": zod.coerce.date().nullable(),
   "scheduledPublishAt": zod.coerce.date().nullable(),
@@ -9192,6 +9308,10 @@ export const UnpublishArticleParams = zod.object({
 
 export const unpublishArticleResponseIdMultipleOf = 1;
 
+export const unpublishArticleResponseWebsiteUrlLegacyItemMax = 500;
+
+export const unpublishArticleResponseWebsiteUrlLegacyMax = 12;
+
 export const unpublishArticleResponseTagsItemMax = 80;
 
 export const unpublishArticleResponseTagsMax = 12;
@@ -9200,11 +9320,16 @@ export const unpublishArticleResponseRelatedProductSlugsItemMax = 180;
 
 export const unpublishArticleResponseRelatedProductSlugsMax = 3;
 
+export const unpublishArticleResponsePdfsItemBytesMultipleOf = 1;
+
+export const unpublishArticleResponsePdfsMax = 8;
+
 
 
 export const UnpublishArticleResponse = zod.object({
   "id": zod.number().multipleOf(unpublishArticleResponseIdMultipleOf),
   "slug": zod.string(),
+  "websiteUrlLegacy": zod.array(zod.string().max(unpublishArticleResponseWebsiteUrlLegacyItemMax)).max(unpublishArticleResponseWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Each address redirects an old website path to this article'),
   "title": zod.string(),
   "excerpt": zod.string(),
   "body": zod.string(),
@@ -9212,6 +9337,12 @@ export const UnpublishArticleResponse = zod.object({
   "heroImageSrc": zod.string(),
   "heroImageAssetId": zod.string().nullable(),
   "relatedProductSlugs": zod.array(zod.string().max(unpublishArticleResponseRelatedProductSlugsItemMax)).max(unpublishArticleResponseRelatedProductSlugsMax),
+  "pdfs": zod.array(zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "filename": zod.string(),
+  "bytes": zod.number().multipleOf(unpublishArticleResponsePdfsItemBytesMultipleOf)
+})).max(unpublishArticleResponsePdfsMax),
   "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
   "publishedAt": zod.coerce.date().nullable(),
   "scheduledPublishAt": zod.coerce.date().nullable(),
@@ -9243,6 +9374,10 @@ export const ScheduleArticleBody = zod.object({
 
 export const scheduleArticleResponseIdMultipleOf = 1;
 
+export const scheduleArticleResponseWebsiteUrlLegacyItemMax = 500;
+
+export const scheduleArticleResponseWebsiteUrlLegacyMax = 12;
+
 export const scheduleArticleResponseTagsItemMax = 80;
 
 export const scheduleArticleResponseTagsMax = 12;
@@ -9251,11 +9386,16 @@ export const scheduleArticleResponseRelatedProductSlugsItemMax = 180;
 
 export const scheduleArticleResponseRelatedProductSlugsMax = 3;
 
+export const scheduleArticleResponsePdfsItemBytesMultipleOf = 1;
+
+export const scheduleArticleResponsePdfsMax = 8;
+
 
 
 export const ScheduleArticleResponse = zod.object({
   "id": zod.number().multipleOf(scheduleArticleResponseIdMultipleOf),
   "slug": zod.string(),
+  "websiteUrlLegacy": zod.array(zod.string().max(scheduleArticleResponseWebsiteUrlLegacyItemMax)).max(scheduleArticleResponseWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Each address redirects an old website path to this article'),
   "title": zod.string(),
   "excerpt": zod.string(),
   "body": zod.string(),
@@ -9263,6 +9403,242 @@ export const ScheduleArticleResponse = zod.object({
   "heroImageSrc": zod.string(),
   "heroImageAssetId": zod.string().nullable(),
   "relatedProductSlugs": zod.array(zod.string().max(scheduleArticleResponseRelatedProductSlugsItemMax)).max(scheduleArticleResponseRelatedProductSlugsMax),
+  "pdfs": zod.array(zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "filename": zod.string(),
+  "bytes": zod.number().multipleOf(scheduleArticleResponsePdfsItemBytesMultipleOf)
+})).max(scheduleArticleResponsePdfsMax),
+  "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
+  "publishedAt": zod.coerce.date().nullable(),
+  "scheduledPublishAt": zod.coerce.date().nullable(),
+  "seoTitle": zod.string(),
+  "seoDescription": zod.string(),
+  "socialTitle": zod.string(),
+  "socialDescription": zod.string(),
+  "socialImage": zod.string(),
+  "robotsIndex": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Attach a PDF to a blog article
+ */
+export const uploadArticlePdfPathIdMultipleOf = 1;
+
+
+
+export const UploadArticlePdfParams = zod.object({
+  "id": zod.coerce.number().min(1).multipleOf(uploadArticlePdfPathIdMultipleOf)
+})
+
+export const uploadArticlePdfBodyFilenameMax = 160;
+
+export const uploadArticlePdfBodyTitleMax = 180;
+
+
+
+
+export const UploadArticlePdfBody = zod.object({
+  "filename": zod.string().min(1).max(uploadArticlePdfBodyFilenameMax),
+  "title": zod.string().min(1).max(uploadArticlePdfBodyTitleMax),
+  "data": zod.string().min(1)
+})
+
+export const uploadArticlePdfResponseIdMultipleOf = 1;
+
+export const uploadArticlePdfResponseWebsiteUrlLegacyItemMax = 500;
+
+export const uploadArticlePdfResponseWebsiteUrlLegacyMax = 12;
+
+export const uploadArticlePdfResponseTagsItemMax = 80;
+
+export const uploadArticlePdfResponseTagsMax = 12;
+
+export const uploadArticlePdfResponseRelatedProductSlugsItemMax = 180;
+
+export const uploadArticlePdfResponseRelatedProductSlugsMax = 3;
+
+export const uploadArticlePdfResponsePdfsItemBytesMultipleOf = 1;
+
+export const uploadArticlePdfResponsePdfsMax = 8;
+
+
+
+export const UploadArticlePdfResponse = zod.object({
+  "id": zod.number().multipleOf(uploadArticlePdfResponseIdMultipleOf),
+  "slug": zod.string(),
+  "websiteUrlLegacy": zod.array(zod.string().max(uploadArticlePdfResponseWebsiteUrlLegacyItemMax)).max(uploadArticlePdfResponseWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Each address redirects an old website path to this article'),
+  "title": zod.string(),
+  "excerpt": zod.string(),
+  "body": zod.string(),
+  "tags": zod.array(zod.string().max(uploadArticlePdfResponseTagsItemMax)).max(uploadArticlePdfResponseTagsMax),
+  "heroImageSrc": zod.string(),
+  "heroImageAssetId": zod.string().nullable(),
+  "relatedProductSlugs": zod.array(zod.string().max(uploadArticlePdfResponseRelatedProductSlugsItemMax)).max(uploadArticlePdfResponseRelatedProductSlugsMax),
+  "pdfs": zod.array(zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "filename": zod.string(),
+  "bytes": zod.number().multipleOf(uploadArticlePdfResponsePdfsItemBytesMultipleOf)
+})).max(uploadArticlePdfResponsePdfsMax),
+  "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
+  "publishedAt": zod.coerce.date().nullable(),
+  "scheduledPublishAt": zod.coerce.date().nullable(),
+  "seoTitle": zod.string(),
+  "seoDescription": zod.string(),
+  "socialTitle": zod.string(),
+  "socialDescription": zod.string(),
+  "socialImage": zod.string(),
+  "robotsIndex": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Open an article PDF, including drafts
+ */
+export const downloadAdminArticlePdfPathIdMultipleOf = 1;
+
+export const downloadAdminArticlePdfPathPdfSlugMax = 80;
+
+
+
+export const DownloadAdminArticlePdfParams = zod.object({
+  "id": zod.coerce.number().min(1).multipleOf(downloadAdminArticlePdfPathIdMultipleOf),
+  "pdfSlug": zod.coerce.string().min(1).max(downloadAdminArticlePdfPathPdfSlugMax)
+})
+
+export const DownloadAdminArticlePdfResponse = zod.unknown()
+
+
+/**
+ * @summary Rename an article PDF without changing its URL
+ */
+export const updateArticlePdfTitlePathIdMultipleOf = 1;
+
+export const updateArticlePdfTitlePathPdfSlugMax = 80;
+
+
+
+export const UpdateArticlePdfTitleParams = zod.object({
+  "id": zod.coerce.number().min(1).multipleOf(updateArticlePdfTitlePathIdMultipleOf),
+  "pdfSlug": zod.coerce.string().min(1).max(updateArticlePdfTitlePathPdfSlugMax)
+})
+
+export const updateArticlePdfTitleBodyTitleMax = 180;
+
+
+
+export const UpdateArticlePdfTitleBody = zod.object({
+  "title": zod.string().min(1).max(updateArticlePdfTitleBodyTitleMax)
+})
+
+export const updateArticlePdfTitleResponseIdMultipleOf = 1;
+
+export const updateArticlePdfTitleResponseWebsiteUrlLegacyItemMax = 500;
+
+export const updateArticlePdfTitleResponseWebsiteUrlLegacyMax = 12;
+
+export const updateArticlePdfTitleResponseTagsItemMax = 80;
+
+export const updateArticlePdfTitleResponseTagsMax = 12;
+
+export const updateArticlePdfTitleResponseRelatedProductSlugsItemMax = 180;
+
+export const updateArticlePdfTitleResponseRelatedProductSlugsMax = 3;
+
+export const updateArticlePdfTitleResponsePdfsItemBytesMultipleOf = 1;
+
+export const updateArticlePdfTitleResponsePdfsMax = 8;
+
+
+
+export const UpdateArticlePdfTitleResponse = zod.object({
+  "id": zod.number().multipleOf(updateArticlePdfTitleResponseIdMultipleOf),
+  "slug": zod.string(),
+  "websiteUrlLegacy": zod.array(zod.string().max(updateArticlePdfTitleResponseWebsiteUrlLegacyItemMax)).max(updateArticlePdfTitleResponseWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Each address redirects an old website path to this article'),
+  "title": zod.string(),
+  "excerpt": zod.string(),
+  "body": zod.string(),
+  "tags": zod.array(zod.string().max(updateArticlePdfTitleResponseTagsItemMax)).max(updateArticlePdfTitleResponseTagsMax),
+  "heroImageSrc": zod.string(),
+  "heroImageAssetId": zod.string().nullable(),
+  "relatedProductSlugs": zod.array(zod.string().max(updateArticlePdfTitleResponseRelatedProductSlugsItemMax)).max(updateArticlePdfTitleResponseRelatedProductSlugsMax),
+  "pdfs": zod.array(zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "filename": zod.string(),
+  "bytes": zod.number().multipleOf(updateArticlePdfTitleResponsePdfsItemBytesMultipleOf)
+})).max(updateArticlePdfTitleResponsePdfsMax),
+  "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
+  "publishedAt": zod.coerce.date().nullable(),
+  "scheduledPublishAt": zod.coerce.date().nullable(),
+  "seoTitle": zod.string(),
+  "seoDescription": zod.string(),
+  "socialTitle": zod.string(),
+  "socialDescription": zod.string(),
+  "socialImage": zod.string(),
+  "robotsIndex": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Remove an article PDF
+ */
+export const deleteArticlePdfPathIdMultipleOf = 1;
+
+export const deleteArticlePdfPathPdfSlugMax = 80;
+
+
+
+export const DeleteArticlePdfParams = zod.object({
+  "id": zod.coerce.number().min(1).multipleOf(deleteArticlePdfPathIdMultipleOf),
+  "pdfSlug": zod.coerce.string().min(1).max(deleteArticlePdfPathPdfSlugMax)
+})
+
+export const deleteArticlePdfResponseIdMultipleOf = 1;
+
+export const deleteArticlePdfResponseWebsiteUrlLegacyItemMax = 500;
+
+export const deleteArticlePdfResponseWebsiteUrlLegacyMax = 12;
+
+export const deleteArticlePdfResponseTagsItemMax = 80;
+
+export const deleteArticlePdfResponseTagsMax = 12;
+
+export const deleteArticlePdfResponseRelatedProductSlugsItemMax = 180;
+
+export const deleteArticlePdfResponseRelatedProductSlugsMax = 3;
+
+export const deleteArticlePdfResponsePdfsItemBytesMultipleOf = 1;
+
+export const deleteArticlePdfResponsePdfsMax = 8;
+
+
+
+export const DeleteArticlePdfResponse = zod.object({
+  "id": zod.number().multipleOf(deleteArticlePdfResponseIdMultipleOf),
+  "slug": zod.string(),
+  "websiteUrlLegacy": zod.array(zod.string().max(deleteArticlePdfResponseWebsiteUrlLegacyItemMax)).max(deleteArticlePdfResponseWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Each address redirects an old website path to this article'),
+  "title": zod.string(),
+  "excerpt": zod.string(),
+  "body": zod.string(),
+  "tags": zod.array(zod.string().max(deleteArticlePdfResponseTagsItemMax)).max(deleteArticlePdfResponseTagsMax),
+  "heroImageSrc": zod.string(),
+  "heroImageAssetId": zod.string().nullable(),
+  "relatedProductSlugs": zod.array(zod.string().max(deleteArticlePdfResponseRelatedProductSlugsItemMax)).max(deleteArticlePdfResponseRelatedProductSlugsMax),
+  "pdfs": zod.array(zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "filename": zod.string(),
+  "bytes": zod.number().multipleOf(deleteArticlePdfResponsePdfsItemBytesMultipleOf)
+})).max(deleteArticlePdfResponsePdfsMax),
   "publishStatus": zod.enum(['Draft', 'Published', 'Scheduled']),
   "publishedAt": zod.coerce.date().nullable(),
   "scheduledPublishAt": zod.coerce.date().nullable(),

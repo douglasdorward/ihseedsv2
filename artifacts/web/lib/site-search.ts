@@ -157,7 +157,7 @@ function articleDocument(article: CatalogueArticle): SearchDocument {
     id: `article:${article.id}`,
     kind: "article",
     title: article.title,
-    href: `/resources/${article.slug}`,
+    href: `/articles/${article.slug}`,
     fields,
   };
 }

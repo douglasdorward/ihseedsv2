@@ -1,12 +1,14 @@
 import { createHash } from "node:crypto";
 import * as XLSX from "xlsx";
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import {
   applyListingAvailability,
-  catalogueCategoriesTable, db, forSearchMetadata, isActiveListing, normalizeProductDetails, productOptionsTable,
+  catalogueCategoriesTable, db, forSearchMetadata, isActiveListing, mediaAssetsTable, normalizeProductDetails, productOptionsTable,
   withDefaultSocialImage,
   productDraftsTable, productsTable, redirectsTable, resolveListingState, saleLinesTable,
+  type ProductPhoto,
 } from "@workspace/db";
+import { mediaPublicPath } from "./app-storage.ts";
 import { clearProductMediaReferences, syncProductMediaReferences } from "./media-usage.ts";
 import { legacyWebsitePath, productPublicPath, requiredLegacyRedirects } from "./product-path.ts";
 
@@ -163,9 +165,59 @@ function applySeoRow(details: ReturnType<typeof normalizeProductDetails>, row: R
   }
 }
 
+const IMPORTED_PHOTO_SLOTS = ["Photo 1 · Hero", "Photo 2", "Photo 3"] as const;
+
 function photoValue(details: ReturnType<typeof normalizeProductDetails>, index: number) {
   const photo = details.photos[index];
   return photo?.src || photo?.file || "";
+}
+
+function mediaIdFromSrc(src: string) {
+  const match = src.trim().match(/^\/api\/media\/([^/?#]+)/);
+  return match?.[1]?.trim() ?? "";
+}
+
+type CatalogueTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Reconnect `/api/media/{id}` workbook paths to the library file, including its alt text. */
+async function linkImportedLibraryPhotos(
+  product: { id: number; packSize: string; details: unknown },
+  tx: CatalogueTx,
+) {
+  const details = normalizeProductDetails(product.details, product.packSize);
+  const ids = [...new Set(details.photos.map((photo) => mediaIdFromSrc(photo.src)).filter(Boolean))];
+  const assets = ids.length
+    ? await tx.select().from(mediaAssetsTable).where(inArray(mediaAssetsTable.id, ids))
+    : [];
+  const ready = new Map(assets.filter((asset) => asset.status === "Ready").map((asset) => [asset.id, asset]));
+  let changed = false;
+  const photos: ProductPhoto[] = details.photos.map((photo, index) => {
+    const asset = ready.get(mediaIdFromSrc(photo.src));
+    if (!asset) return photo;
+    changed = true;
+    const alt = asset.defaultAlt.trim();
+    const format = asset.contentType?.startsWith("image/") ? asset.contentType.slice("image/".length) : "";
+    return {
+      slot: IMPORTED_PHOTO_SLOTS[index] ?? photo.slot,
+      file: asset.originalFilename,
+      rating: photo.rating,
+      src: mediaPublicPath(asset.id),
+      assetId: asset.id,
+      ...(alt ? { alt } : {}),
+      role: index === 0 ? "hero" : "gallery",
+      ...(typeof asset.width === "number" && asset.width >= 1 ? { width: asset.width } : {}),
+      ...(typeof asset.height === "number" && asset.height >= 1 ? { height: asset.height } : {}),
+      ...(format ? { format } : {}),
+      ...(asset.objectPath ? { objectPath: asset.objectPath } : {}),
+    };
+  });
+  if (!changed) return details.photos;
+  const next = normalizeProductDetails({ ...details, photos }, product.packSize);
+  await tx.update(productsTable).set({
+    details: next,
+    updatedAt: new Date(),
+  }).where(eq(productsTable.id, product.id));
+  return next.photos;
 }
 
 function applyPhotoColumns(details: Record<string, unknown>, row: Row) {
@@ -611,16 +663,22 @@ export async function commitWorkbook(content: Buffer, token: string) {
         if (cell(row.h1) || isNull(row.h1)) d.h1 = isNull(row.h1) ? "" : cell(row.h1);
       });
     }
-    await tx.delete(redirectsTable);
+    await tx.delete(redirectsTable).where(sql`${redirectsTable.toPath} NOT LIKE '/articles/%'`);
     for (const row of rows["1 Products"]) {
       const product = productBySlug.get(cell(row.slug));
       const fromPath = legacyWebsitePath(cell(row.website_url));
       if (!product || !fromPath) continue;
       const toPath = productPublicPath(product.slug, product.category, categories);
       if (fromPath === toPath) throw new Error(`SELF_REDIRECT:${product.slug}`);
+      const [articleRedirect] = await tx.select({ toPath: redirectsTable.toPath }).from(redirectsTable).where(eq(redirectsTable.fromPath, fromPath));
+      if (articleRedirect) throw new Error(`Legacy website path "${fromPath}" is already used by a blog article.`);
       await tx.insert(redirectsTable).values({ fromPath, toPath });
     }
     for (const alias of requiredLegacyRedirects([...productBySlug.values()], categories)) {
+      const [articleRedirect] = await tx.select({ toPath: redirectsTable.toPath }).from(redirectsTable).where(eq(redirectsTable.fromPath, alias.fromPath));
+      if (articleRedirect?.toPath.startsWith("/articles/")) {
+        throw new Error(`Legacy website path "${alias.fromPath}" is already used by a blog article.`);
+      }
       await tx.insert(redirectsTable).values(alias).onConflictDoUpdate({
         target: redirectsTable.fromPath,
         set: { toPath: alias.toPath, updatedAt: new Date() },
@@ -639,7 +697,9 @@ export async function commitWorkbook(content: Buffer, token: string) {
     for (const slug of importedSlugs) {
       const product = productBySlug.get(slug);
       if (!product) continue;
-      await syncProductMediaReferences(product, normalizeProductDetails(product.details, product.packSize).photos, tx);
+      const photos = await linkImportedLibraryPhotos(product, tx);
+      productBySlug.set(slug, { ...product, details: normalizeProductDetails({ ...product.details, photos }, product.packSize) });
+      await syncProductMediaReferences(product, photos, tx);
     }
   });
   return report;
@@ -691,7 +751,8 @@ export async function exportWorkbook() {
       stand_life_notes: details.standLifeNotes, grazing_management_notes: details.grazingManagementNotes,
       pbr_protected: details.pbrProtected ? "Y" : "N", pbr_details: details.pbrDetails,
        certification: listedPipe("certification", details.certification), formulation_year: details.formulationYear,
-       related_products: details.relatedProducts.join("|"), photo_1: photoValue(details, 0),
+       related_products: details.relatedProducts.join("|"),
+       photo_1: photoValue(details, 0), photo_2: photoValue(details, 1), photo_3: photoValue(details, 2),
        tech_sheet_pdf_path: p.techSheet, website_url: p.websiteUrlLegacy,
        listing_state: p.listingState, listing_override: "",
        availability: ({ "in-stock": "Good stock", low: "Low stock", "very-low": "Very low", unavailable: "Unavailable" } as Record<string, string>)[p.status] ?? "Unavailable",
@@ -699,7 +760,7 @@ export async function exportWorkbook() {
          name: p.name, slug: p.slug, category: p.category, details,
        }).length ? "" : p.publishStatus,
     };
-   }), ["slug", "product_name", "category", "sub_category", "record_type", "botanical_name", "persistency_type", "australian_bred", "tagline", "blurb", "key_attributes", "description", "distribution_note", "rainfall_min_mm", "soil_ph_min", "soil_ph_scale", "soil_range_lightest", "soil_range_heaviest", "sowing_depth_min_cm", "sowing_depth_max_cm", "tolerance", "end_use", "livestock", "disease_pest_resistance", "stand_life_notes", "grazing_management_notes", "pbr_protected", "pbr_details", "certification", "formulation_year", "related_products", "photo_1", "tech_sheet_pdf_path", "website_url", "listing_state", "listing_override", "availability", "status"]);
+   }), ["slug", "product_name", "category", "sub_category", "record_type", "botanical_name", "persistency_type", "australian_bred", "tagline", "blurb", "key_attributes", "description", "distribution_note", "rainfall_min_mm", "soil_ph_min", "soil_ph_scale", "soil_range_lightest", "soil_range_heaviest", "sowing_depth_min_cm", "sowing_depth_max_cm", "tolerance", "end_use", "livestock", "disease_pest_resistance", "stand_life_notes", "grazing_management_notes", "pbr_protected", "pbr_details", "certification", "formulation_year", "related_products", "photo_1", "photo_2", "photo_3", "tech_sheet_pdf_path", "website_url", "listing_state", "listing_override", "availability", "status"]);
   append("2 Sowing rates", products.flatMap((p) => d(p).sowingRates.map((r) => ({
     slug: p.slug, context: listed("context", r.context), min: r.min, max: r.max, unit: listed("unit", r.unit),
   }))), ["slug", "context", "min", "max", "unit"]);

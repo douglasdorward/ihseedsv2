@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = forSearchMetadata(article.seoTitle?.trim() || `${article.title} | IH Seeds`);
   const description = forSearchMetadata(article.seoDescription?.trim() || article.excerpt);
   const settings = await loadSiteSettings();
-  const canonicalHref = `/resources/${article.slug}`;
+  const canonicalHref = `/articles/${article.slug}`;
   const social = socialMetadata(title, description, canonicalHref, {
     type: "article",
     override: article.socialImage,
@@ -64,7 +64,7 @@ export default async function ArticlePage({ params }: Props) {
     getProducts(),
     getCategories(),
   ]);
-  const canonicalHref = `/resources/${article.slug}`;
+  const canonicalHref = `/articles/${article.slug}`;
   const image = article.socialImage?.trim() || article.heroImageSrc;
   const bySlug = new Map(products.map((product) => [product.slug, product]));
   const linkedProducts = article.relatedProductSlugs
@@ -87,7 +87,7 @@ export default async function ArticlePage({ params }: Props) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Resources", item: absoluteSiteUrl("/resources") },
+      { "@type": "ListItem", position: 1, name: "Articles", item: absoluteSiteUrl("/articles") },
       { "@type": "ListItem", position: 2, name: article.title, item: absoluteSiteUrl(canonicalHref) },
     ],
   };
@@ -100,7 +100,7 @@ export default async function ArticlePage({ params }: Props) {
         {article.heroImageSrc ? <div className="article-hero-scrim" aria-hidden="true" /> : null}
         <div className="page-content article-hero-copy">
           <nav aria-label="Breadcrumb" className="article-breadcrumb">
-            <Link href="/resources">Resources</Link> › {article.tags[0] || "Article"}
+            <Link href="/articles">Articles</Link> › {article.tags[0] || "Article"}
           </nav>
           <h1>{article.title}</h1>
           <p>{[article.tags.join(" · "), formatArticleDate(article.publishedAt)].filter(Boolean).join(" · ")}</p>
@@ -110,6 +110,18 @@ export default async function ArticlePage({ params }: Props) {
         <div className="page-content article-layout">
           {article.excerpt ? <p className="article-lead">{article.excerpt}</p> : null}
           <ArticleMarkdown value={article.body} />
+          {(article.pdfs ?? []).length > 0 && (
+            <section className="article-downloads" aria-labelledby="article-downloads-heading">
+              <h2 id="article-downloads-heading">Downloads</h2>
+              <ul>
+                {(article.pdfs ?? []).map((pdf) => (
+                  <li key={pdf.slug}>
+                    <a href={pdf.href}>{pdf.title}</a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           {linkedProducts.length > 0 && (
             <aside className="article-related" aria-labelledby="article-related-heading">
               <h2 id="article-related-heading">Related products</h2>

@@ -790,6 +790,31 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/PublicArticle" }
         "404": { description: Article not found }
+  /articles/slug/{slug}/pdfs/{pdfSlug}:
+    get:
+      operationId: getArticlePdf
+      tags: [catalogue]
+      summary: Download a published article PDF
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 180 }
+        - name: pdfSlug
+          in: path
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 80 }
+      responses:
+        "200":
+          description: PDF file. Includes X-Robots-Tag noindex when the article is published but not indexable.
+          headers:
+            X-Robots-Tag:
+              schema: { type: string }
+              description: Present as noindex when the article opts out of indexing
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "404": { description: PDF not found }
   /resellers:
     get:
       operationId: listResellers
@@ -1465,6 +1490,86 @@ paths:
         "400": { description: Article is incomplete or the date is invalid, content: { application/json: { schema: { $ref: "#/components/schemas/PublishValidationError" } } } }
         "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
         "404": { description: Article not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/articles/{id}/pdfs:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: number, multipleOf: 1, minimum: 1 }
+    post:
+      operationId: uploadArticlePdf
+      tags: [admin]
+      summary: Attach a PDF to a blog article
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticlePdfInput" }
+      responses:
+        "201":
+          description: Article with the attached PDF
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { description: Invalid PDF or attachment limit reached, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: Article not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/articles/{id}/pdfs/{pdfSlug}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: number, multipleOf: 1, minimum: 1 }
+      - name: pdfSlug
+        in: path
+        required: true
+        schema: { type: string, minLength: 1, maxLength: 80 }
+    get:
+      operationId: downloadAdminArticlePdf
+      tags: [admin]
+      summary: Open an article PDF, including drafts
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: PDF file
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: PDF not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    patch:
+      operationId: updateArticlePdfTitle
+      tags: [admin]
+      summary: Rename an article PDF without changing its URL
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticlePdfTitleInput" }
+      responses:
+        "200":
+          description: Updated article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { description: Invalid title, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: PDF not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    delete:
+      operationId: deleteArticlePdf
+      tags: [admin]
+      summary: Remove an article PDF
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Updated article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: PDF not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
   /site-settings:
     get:
       operationId: getPublicSiteSettings
@@ -2572,12 +2677,44 @@ components:
       properties:
         filename: { type: string, minLength: 1, maxLength: 160 }
         data: { type: string, minLength: 1 }
+    ArticlePdf:
+      type: object
+      required: [slug, title, filename, bytes]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        filename: { type: string }
+        bytes: { type: number, multipleOf: 1 }
+    PublicArticlePdf:
+      type: object
+      required: [slug, title, href]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        href: { type: string }
+    ArticlePdfInput:
+      type: object
+      required: [filename, title, data]
+      properties:
+        filename: { type: string, minLength: 1, maxLength: 160 }
+        title: { type: string, minLength: 1, maxLength: 180 }
+        data: { type: string, minLength: 1 }
+    ArticlePdfTitleInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 180 }
     Article:
       type: object
-      required: [id, slug, title, excerpt, body, tags, heroImageSrc, heroImageAssetId, relatedProductSlugs, publishStatus, publishedAt, scheduledPublishAt, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, robotsIndex, createdAt, updatedAt]
+      required: [id, slug, websiteUrlLegacy, title, excerpt, body, tags, heroImageSrc, heroImageAssetId, relatedProductSlugs, pdfs, publishStatus, publishedAt, scheduledPublishAt, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, robotsIndex, createdAt, updatedAt]
       properties:
         id: { type: number, multipleOf: 1 }
         slug: { type: string }
+        websiteUrlLegacy:
+          type: array
+          maxItems: 12
+          description: Admin-only legacy URLs. Each address redirects an old website path to this article
+          items: { type: string, maxLength: 500 }
         title: { type: string }
         excerpt: { type: string }
         body: { type: string }
@@ -2585,6 +2722,7 @@ components:
         heroImageSrc: { type: string }
         heroImageAssetId: { type: [string, "null"] }
         relatedProductSlugs: { type: array, maxItems: 3, items: { type: string, maxLength: 180 } }
+        pdfs: { type: array, maxItems: 8, items: { $ref: "#/components/schemas/ArticlePdf" } }
         publishStatus: { type: string, enum: [Draft, Published, Scheduled] }
         publishedAt: { type: [string, "null"], format: date-time }
         scheduledPublishAt: { type: [string, "null"], format: date-time }
@@ -2598,7 +2736,7 @@ components:
         updatedAt: { type: string, format: date-time }
     PublicArticle:
       type: object
-      required: [id, slug, title, excerpt, body, tags, heroImageSrc, relatedProductSlugs, publishedAt, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, robotsIndex, updatedAt]
+      required: [id, slug, title, excerpt, body, tags, heroImageSrc, relatedProductSlugs, pdfs, publishedAt, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, robotsIndex, updatedAt]
       properties:
         id: { type: number, multipleOf: 1 }
         slug: { type: string }
@@ -2608,6 +2746,7 @@ components:
         tags: { type: array, maxItems: 12, items: { type: string, maxLength: 80 } }
         heroImageSrc: { type: string }
         relatedProductSlugs: { type: array, maxItems: 3, items: { type: string, maxLength: 180 } }
+        pdfs: { type: array, maxItems: 8, items: { $ref: "#/components/schemas/PublicArticlePdf" } }
         publishedAt: { type: string, format: date-time }
         seoTitle: { type: string }
         seoDescription: { type: string }
@@ -2621,6 +2760,11 @@ components:
       required: [slug, title]
       properties:
         slug: { type: string, minLength: 1, maxLength: 180, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        websiteUrlLegacy:
+          type: array
+          maxItems: 12
+          description: Admin-only legacy URLs. Each address redirects an old website path to this article
+          items: { type: string, maxLength: 500 }
         title: { type: string, minLength: 1, maxLength: 180 }
         excerpt: { type: string, maxLength: 500 }
         body: { type: string, maxLength: 200000 }
@@ -2638,6 +2782,11 @@ components:
       type: object
       properties:
         slug: { type: string, minLength: 1, maxLength: 180, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        websiteUrlLegacy:
+          type: array
+          maxItems: 12
+          description: Admin-only legacy URLs. Each address redirects an old website path to this article
+          items: { type: string, maxLength: 500 }
         title: { type: string, minLength: 1, maxLength: 180 }
         excerpt: { type: string, maxLength: 500 }
         body: { type: string, maxLength: 200000 }

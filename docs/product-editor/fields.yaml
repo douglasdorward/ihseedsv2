@@ -1031,8 +1031,8 @@ fields:
     publicApi: true
     visibility: customer
     customerSurfaces: [product-hero, product-photos, related-cards, also-popular, social-fallback]
-    workbook: 1 Products.photo_1
-    fillGuidance: First non-blank src is the hero background. Every src is also a Photos card image with its alt (or the product name); desktop under the sidebar, mobile after About this variety. Omitted when no src. Upload JPEG/PNG/WebP to the Images library (converted to WebP) or paste an external URL. Alt is filled from the product name on upload or attach (filename only while unassigned). AI never fills photos. Deleting from Images removes in-use files and compacts remaining product photos. Category grids currently use placeholders.
+    workbook: 1 Products.photo_1, photo_2, photo_3
+    fillGuidance: First non-blank src is the hero background. Every src is also a Photos card image with its alt (or the product name); desktop under the sidebar, mobile after About this variety. Omitted when no src. Upload JPEG/PNG/WebP to the Images library (converted to WebP) or paste an external URL. Alt is filled from the product name on upload or attach (filename only while unassigned). Workbook import exports all three photo addresses. A /api/media/{id} cell reconnects that library file and copies its alt text. Any other address is stored without a library link. A blank cell leaves that slot unset, and NULL clears it. AI never fills photos. Deleting from Images removes in-use files and compacts remaining product photos. Category grids currently use placeholders.
 
   - id: techSheet
     tab: 5
