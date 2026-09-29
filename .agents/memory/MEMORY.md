@@ -11,7 +11,7 @@
 - [Imported product redirects](imported-product-redirects.md) — only imported current-site Legacy website URLs create redirects; destinations derive from category and product slugs.
 - [Cache freshness regressions](cache-freshness-regressions.md) — prime cached content before a mutation when testing that published changes become visible immediately.
 - [Git reconciliation safety](git-reconciliation-safety.md) — use normal fetch/merge or pull for concurrent GitHub work; never reconstruct overlapping commits through the API.
-- [Migration name collisions](migration-name-collisions.md) — when an applied migration name created a different schema, repair it with a new forward migration rather than editing history.
+- [Migration name collisions](migration-name-collisions.md) — never schema-push an existing DB; repair drift with idempotent forward migrations, never history edits.
 - [Catalogue workbook replacement](catalogue-workbook-replacement.md) — imports replace the full product catalogue; require a current export and secure backup before commit.
 - [Empty catalogue is valid](empty-catalogue.md) — an intentional wipe must remain empty until an administrator imports or creates products.
 - [Admin bootstrap availability](admin-bootstrap-availability.md) — authentication bootstrap failure must fail admin access closed without taking down the public catalogue API.
