@@ -5,7 +5,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:tech-sheets": "node --experimental-strip-types --test lib/chrome-executable.test.ts lib/tech-sheet-version.test.ts",
+    "check:tech-sheet-downloads": "node scripts/check-tech-sheet-downloads.mjs"
   },
   "dependencies": {
     "@puppeteer/browsers": "3.2.2",

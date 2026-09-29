@@ -9,6 +9,11 @@ localPort = 8080
 name = "API Server"
 paths = ["/api", "/admin"]
 
+# The public website (artifacts/claude-design, PORT 24722) draws tech sheet PDFs.
+# The API asks it to prepare them after catalogue changes.
+[services.env]
+WEB_BASE = "http://127.0.0.1:24722"
+
 [services.development]
 run = "pnpm --filter @workspace/api-server run dev"
 

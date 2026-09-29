@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { PUPPETEER_REVISIONS } from "puppeteer-core/internal/revisions.js";
-import { nixStoreChromiumPaths, rankChromeCandidates, shouldInstallTechSheetBrowser, TECH_SHEET_BROWSER_BUILD } from "./chrome-executable.ts";
+import { nixStoreChromiumPaths, pathChromium, rankChromeCandidates, shouldInstallTechSheetBrowser, TECH_SHEET_BROWSER_BUILD } from "./chrome-executable.ts";
 
 test("a configured browser path is used only when that file exists", () => {
   const files = new Set(["/opt/chromium"]);
@@ -31,4 +31,24 @@ test("linux publishes install a browser even when another Chrome is already on t
 
 test("the bundled browser build matches puppeteer-core", () => {
   assert.equal(TECH_SHEET_BROWSER_BUILD, PUPPETEER_REVISIONS["chrome-headless-shell"]);
+});
+
+test("the newest nix chromium is tried first", () => {
+  const store = "/nix/store";
+  const entries = ["a-ungoogled-chromium-92.0.4515.159", "b-chromium-138.0.7204.100", "c-chromium-98.0.4758.102", "d-chromium-131.0.6778.204"];
+  assert.deepEqual(
+    nixStoreChromiumPaths(entries, () => true, store),
+    [
+      `${store}/b-chromium-138.0.7204.100/bin/chromium`,
+      `${store}/d-chromium-131.0.6778.204/bin/chromium`,
+      `${store}/c-chromium-98.0.4758.102/bin/chromium`,
+      `${store}/a-ungoogled-chromium-92.0.4515.159/bin/chromium`,
+    ],
+  );
+});
+
+test("chromium on the PATH is found", () => {
+  const files = new Set(["/opt/nix/bin/chromium"]);
+  assert.deepEqual(pathChromium("/usr/local/bin:/opt/nix/bin", (file) => files.has(file)), ["/opt/nix/bin/chromium"]);
+  assert.deepEqual(pathChromium(undefined, () => true), []);
 });

@@ -19,3 +19,4 @@
 - [Build API maintenance isolation](build-api-maintenance.md) — temporary build API startup must not perform catalogue repair work before listening.
 - [Social image fallback intent](social-image-fallbacks.md) — blank editor overrides remain dynamic; workbook imports retain their explicit compatibility behavior.
 - [Test upload isolation](test-upload-isolation.md) — disposable databases do not protect app uploads; local-storage tests also need temporary upload directories.
+- [Generated tech sheet storage](tech-sheet-storage.md) — PDFs keyed by content fingerprint, env-namespaced bucket, token-gated store; only nix chromium launches.

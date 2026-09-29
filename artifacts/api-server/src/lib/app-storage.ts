@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,6 +12,9 @@ type ObjectStore = {
   put(key: string, bytes: Buffer, contentType: string): Promise<void>;
   get(key: string): Promise<StoredObject | null>;
   remove(key: string): Promise<void>;
+  exists(key: string): Promise<boolean>;
+  /** Keys that start with prefix. The prefix must end with "/". */
+  list(prefix: string): Promise<string[]>;
 };
 
 export type AppStorageBackend = "local" | "replit";
@@ -71,6 +74,20 @@ const localStore: ObjectStore = {
       /* already gone */
     }
   },
+  async exists(key) {
+    return existsSync(localPath(key));
+  },
+  async list(prefix) {
+    const root = localPath(prefix);
+    try {
+      const entries = await readdir(root, { recursive: true, withFileTypes: true });
+      return entries
+        .filter((entry) => entry.isFile())
+        .map((entry) => `${prefix}${path.relative(root, path.join(entry.parentPath, entry.name)).split(path.sep).join("/")}`);
+    } catch {
+      return [];
+    }
+  },
 };
 
 let replitStore: ObjectStore | undefined;
@@ -92,6 +109,8 @@ async function replitObjectStore(): Promise<ObjectStore> {
         uploadFromBytes(name: string, contents: Buffer): Promise<{ ok: boolean; error?: unknown }>;
         downloadAsBytes(name: string): Promise<{ ok: boolean; value?: [Buffer | Uint8Array] | Buffer | Uint8Array; error?: unknown }>;
         delete(name: string): Promise<{ ok: boolean }>;
+        exists(name: string): Promise<{ ok: boolean; value?: boolean; error?: unknown }>;
+        list(options?: { prefix?: string }): Promise<{ ok: boolean; value?: Array<{ name: string }>; error?: unknown }>;
       };
     };
     const client = new mod.Client();
@@ -109,6 +128,16 @@ async function replitObjectStore(): Promise<ObjectStore> {
       },
       async remove(key) {
         await client.delete(key);
+      },
+      async exists(key) {
+        const result = await client.exists(key);
+        if (!result.ok) throw new Error(String(result.error ?? "App Storage lookup failed"));
+        return Boolean(result.value);
+      },
+      async list(prefix) {
+        const result = await client.list({ prefix });
+        if (!result.ok) throw new Error(String(result.error ?? "App Storage listing failed"));
+        return (result.value ?? []).map((object) => object.name);
       },
     };
     return replitStore;
@@ -145,6 +174,15 @@ export async function getStoredFile(key: string): Promise<StoredObject | null> {
 
 export async function removeStoredFile(key: string) {
   await (await activeStore()).remove(key);
+}
+
+export async function storedFileExists(key: string) {
+  return (await activeStore()).exists(key);
+}
+
+export async function listStoredFiles(prefix: string) {
+  if (!prefix.endsWith("/")) throw new Error("Storage listing prefixes must end with /.");
+  return (await activeStore()).list(prefix);
 }
 
 export function techSheetPublicPath(id: number) {

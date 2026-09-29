@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
-import { getProductBySlug } from "../../../lib/catalogue";
-import { isTechSheetRefresh, TECH_SHEET_REFRESH_HEADER, techSheetDownloadName, techSheetPdf } from "../../../lib/tech-sheet-pdf";
+import {
+  currentTechSheet,
+  ensureTechSheetStored,
+  isTechSheetRefresh,
+  TECH_SHEET_REFRESH_HEADER,
+  techSheetDownloadName,
+  techSheetPdf,
+} from "../../../lib/tech-sheet-pdf";
 
 export const dynamic = "force-dynamic";
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-function pdfResponse(bytes: Buffer, filename: string, request: Request) {
+function pdfResponse(bytes: Buffer, filename: string, request: Request, etag: string) {
   const size = bytes.length;
   const headers = {
+    ETag: etag,
     "Content-Type": "application/pdf",
     "Content-Disposition": `inline; filename="${filename}"`,
     "Accept-Ranges": "bytes",
@@ -49,27 +56,25 @@ function pdfResponse(bytes: Buffer, filename: string, request: Request) {
 export async function GET(request: Request, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params;
   if (!SLUG.test(slug)) return new NextResponse("Not found", { status: 404 });
-  const product = await getProductBySlug(slug);
-  if (!product) return new NextResponse("Not found", { status: 404 });
+  const prepareOnly = isTechSheetRefresh(request.headers.get(TECH_SHEET_REFRESH_HEADER));
   try {
-    const bytes = await techSheetPdf(slug, isTechSheetRefresh(request.headers.get(TECH_SHEET_REFRESH_HEADER)));
-    if (!bytes) return new NextResponse("Not found", { status: 404 });
-    return pdfResponse(bytes, techSheetDownloadName(product.name), request);
+    const sheet = await currentTechSheet(slug);
+    if (!sheet) return new NextResponse("Not found", { status: 404 });
+    if (prepareOnly) {
+      const state = await ensureTechSheetStored(slug, sheet);
+      return new NextResponse(null, { status: 204, headers: { "X-Tech-Sheet": state } });
+    }
+    if (request.headers.get("if-none-match") === `"${sheet.version}"`) {
+      return new NextResponse(null, { status: 304, headers: { ETag: `"${sheet.version}"`, "Cache-Control": "private, no-cache" } });
+    }
+    const pdf = await techSheetPdf(slug, sheet);
+    if (!pdf) return new NextResponse("Not found", { status: 404 });
+    return pdfResponse(pdf.bytes, techSheetDownloadName(pdf.sheet.product.name), request, `"${pdf.sheet.version}"`);
   } catch (error) {
     console.error(`Tech sheet generation failed for ${slug}`, error);
-    return new NextResponse(techSheetFailureMessage(error), { status: 500 });
+    return new NextResponse(
+      "Sorry, this tech sheet can't be downloaded right now. Please try again in a few minutes, or contact us and we'll send it to you.",
+      { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "Retry-After": "60" } },
+    );
   }
-}
-
-function techSheetFailureMessage(error: unknown) {
-  const raw = error instanceof Error ? error.message : "Unknown error";
-  const compact = raw
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .slice(0, 4)
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .slice(0, 300);
-  return compact ? `Tech sheet could not be generated. ${compact}` : "Tech sheet could not be generated.";
 }

@@ -55,6 +55,7 @@ try {
   run(process.execPath, ["artifacts/api-server/test/products-lifecycle.test.mjs"], isolatedEnv);
   run(process.execPath, ["--test", "artifacts/api-server/test/site-settings.test.mjs"], isolatedEnv);
   run(process.execPath, ["--test", "artifacts/api-server/test/resellers.test.mjs"], isolatedEnv);
+  run("pnpm", ["--filter", "@workspace/api-server", "run", "test:enquiry"], isolatedEnv);
 } finally {
   try {
     run("dropdb", [`--maintenance-db=${process.env.DATABASE_URL}`, "--if-exists", databaseName]);
