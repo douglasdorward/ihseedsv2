@@ -51,6 +51,7 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+artifacts/web/.chrome/
 artifacts/web/.next-lifecycle/
 
 # Runtime copy of API uploads when the server is started from the repo root

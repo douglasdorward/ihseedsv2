@@ -1,16 +1,11 @@
-import { Router, type IRouter, type Request } from "express";
+import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, isActiveListing, productsTable } from "@workspace/db";
 import { getStoredFile, putStoredFile } from "../lib/app-storage";
-import { generatedTechSheetKey } from "../lib/generated-tech-sheet";
+import { canStoreGeneratedTechSheet, generatedTechSheetKey, TECH_SHEET_REFRESH_HEADER } from "../lib/generated-tech-sheet";
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const router: IRouter = Router();
-
-function loopback(req: Request) {
-  const address = req.socket.remoteAddress ?? "";
-  return address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1";
-}
 
 async function publishedProduct(slug: string) {
   const [product] = await db.select().from(productsTable).where(eq(productsTable.slug, slug));
@@ -35,7 +30,8 @@ router.get("/generated-tech-sheets/:slug", async (req, res): Promise<void> => {
 });
 
 router.put("/generated-tech-sheets/:slug", async (req, res): Promise<void> => {
-  if (!loopback(req)) {
+  const header = req.get(TECH_SHEET_REFRESH_HEADER);
+  if (!canStoreGeneratedTechSheet(req.socket.remoteAddress, header)) {
     res.status(403).json({ error: "Tech sheet storage is only available locally." });
     return;
   }

@@ -52,6 +52,11 @@ function stopProcessGroup(child) {
   }
 }
 
+await runPnpm([
+  "--filter", "@workspace/web", "exec",
+  "node", "--experimental-strip-types", "scripts/ensure-tech-sheet-browser.ts",
+]);
+
 if (!skipApiBuild) {
   await runPnpm(["run", "typecheck"]);
   await runPnpm(["--filter", "@workspace/api-server", "run", "build"]);

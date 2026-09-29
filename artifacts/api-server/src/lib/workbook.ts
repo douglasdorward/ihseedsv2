@@ -10,6 +10,7 @@ import {
 } from "@workspace/db";
 import { mediaPublicPath } from "./app-storage.ts";
 import { clearProductMediaReferences, syncProductMediaReferences } from "./media-usage.ts";
+import { appendProductColumnGuide, PRODUCT_SHEET_HEADERS } from "./product-column-guide.ts";
 import { legacyWebsitePath, productPublicPath, requiredLegacyRedirects } from "./product-path.ts";
 
 export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "7 Website SEO", "10 Product FAQs"] as const;
@@ -723,9 +724,11 @@ export async function exportWorkbook() {
   // self-contained without changing the office-managed option records.
   (optionLists.get("rate_unit") ?? optionLists.set("rate_unit", new Set()).get("rate_unit")!).add("%");
   const d = (p: typeof products[number]) => normalizeProductDetails(p.details, p.packSize);
-  const append = (name: string, data: object[], headers?: string[]) => {
-    const sheet = XLSX.utils.json_to_sheet(data);
-    if (!data.length && headers) XLSX.utils.sheet_add_aoa(sheet, [headers], { origin: "A1" });
+  appendProductColumnGuide(book);
+  const append = (name: string, data: object[], headers?: readonly string[]) => {
+    const header = headers?.length ? [...headers] : undefined;
+    const sheet = header ? XLSX.utils.json_to_sheet(data, { header }) : XLSX.utils.json_to_sheet(data);
+    if (!data.length && header) XLSX.utils.sheet_add_aoa(sheet, [header], { origin: "A1" });
     XLSX.utils.book_append_sheet(book, sheet, name);
   };
   const listed = (column: string, value: string) => listedValue(optionLists, column, value);
@@ -760,16 +763,16 @@ export async function exportWorkbook() {
          name: p.name, slug: p.slug, category: p.category, details,
        }).length ? "" : p.publishStatus,
     };
-   }), ["slug", "product_name", "category", "sub_category", "record_type", "botanical_name", "persistency_type", "australian_bred", "tagline", "blurb", "key_attributes", "description", "distribution_note", "rainfall_min_mm", "soil_ph_min", "soil_ph_scale", "soil_range_lightest", "soil_range_heaviest", "sowing_depth_min_cm", "sowing_depth_max_cm", "tolerance", "end_use", "livestock", "disease_pest_resistance", "stand_life_notes", "grazing_management_notes", "pbr_protected", "pbr_details", "certification", "formulation_year", "related_products", "photo_1", "photo_2", "photo_3", "tech_sheet_pdf_path", "website_url", "listing_state", "listing_override", "availability", "status"]);
+   }), PRODUCT_SHEET_HEADERS["1 Products"]);
   append("2 Sowing rates", products.flatMap((p) => d(p).sowingRates.map((r) => ({
     slug: p.slug, context: listed("context", r.context), min: r.min, max: r.max, unit: listed("unit", r.unit),
-  }))), ["slug", "context", "min", "max", "unit"]);
+  }))), PRODUCT_SHEET_HEADERS["2 Sowing rates"]);
   append("3 Category specifics", products.map((p) => ({ slug: p.slug, category: p.category, ...Object.fromEntries(Object.entries(SPECIFICS).map(([column, key]) => {
     const value = (d(p) as unknown as Record<string, unknown>)[key];
     return [column, typeof value === "string" ? listed(column, value) : typeof value === "boolean" ? (value ? "Y" : "N") : value];
-  })) })), ["slug", "category", ...Object.keys(SPECIFICS)]);
-  append("4 Sale lines", lines.map((x) => ({ slug: products.find((p) => p.id === x.productId)?.slug ?? "", stock_code: x.stockCode, seed_form: x.seedForm, pack_kg: x.packKg, pack_unit: x.packUnit, availability: x.availability, price_display: x.priceDisplay, is_default: x.isDefault ? "Y" : "N" })), ["slug", "stock_code", "seed_form", "pack_kg", "pack_unit", "availability", "price_display", "is_default"]);
-  append("5 Mix components", products.flatMap((p) => d(p).components.map((x) => ({ mix_slug: p.slug, component_slug: x.productLink, component_name: x.speciesName, inclusion_rate: x.inclusionRate, rate_unit: x.unit, component_description: x.description }))), ["mix_slug", "component_slug", "component_name", "inclusion_rate", "rate_unit", "component_description"]);
+  })) })), PRODUCT_SHEET_HEADERS["3 Category specifics"]);
+  append("4 Sale lines", lines.map((x) => ({ slug: products.find((p) => p.id === x.productId)?.slug ?? "", stock_code: x.stockCode, seed_form: x.seedForm, pack_kg: x.packKg, pack_unit: x.packUnit, availability: x.availability, price_display: x.priceDisplay, is_default: x.isDefault ? "Y" : "N" })), PRODUCT_SHEET_HEADERS["4 Sale lines"]);
+  append("5 Mix components", products.flatMap((p) => d(p).components.map((x) => ({ mix_slug: p.slug, component_slug: x.productLink, component_name: x.speciesName, inclusion_rate: x.inclusionRate, rate_unit: x.unit, component_description: x.description }))), PRODUCT_SHEET_HEADERS["5 Mix components"]);
   append("7 Website SEO", products.map((p) => {
     const details = d(p);
     return {
@@ -779,15 +782,15 @@ export async function exportWorkbook() {
       social_image: details.socialImage, canonical_url: details.canonicalUrl,
       robots_index: details.robotsIndex ? "Y" : "N",
     };
-  }), ["product_slug", "h1", "seo_title", "meta_description", "social_title", "social_description", "social_image", "canonical_url", "robots_index"]);
+  }), PRODUCT_SHEET_HEADERS["7 Website SEO"]);
   const faqRows = products.flatMap((p) => d(p).faqs.map((faq) => ({
     slug: p.slug, product_name: p.name, question: faq.question, answer: faq.answer,
   })));
-  append(PRODUCT_FAQ_SHEET, faqRows.length ? faqRows : [{ slug: "", product_name: "", question: "", answer: "" }], ["slug", "product_name", "question", "answer"]);
+  append(PRODUCT_FAQ_SHEET, faqRows.length ? faqRows : [{ slug: "", product_name: "", question: "", answer: "" }], PRODUCT_SHEET_HEADERS["10 Product FAQs"]);
   const listNames = [...optionLists.keys()];
   const listRows = Array.from({ length: Math.max(0, ...[...optionLists.values()].map((values) => values.size)) }, (_, index) =>
     Object.fromEntries(listNames.map((name) => [name, [...(optionLists.get(name) ?? [])][index] ?? ""])));
-  append("Lists", listRows);
+  append("Lists", listRows, listNames);
   book.Workbook = book.Workbook ?? {};
   book.Workbook.Sheets = book.SheetNames.map(() => ({ Hidden: 0 }));
   return XLSX.write(book, { type: "buffer", bookType: "xlsx" });

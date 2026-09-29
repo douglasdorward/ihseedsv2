@@ -1,5 +1,5 @@
-import { existsSync } from "node:fs";
 import puppeteer, { type Browser } from "puppeteer-core";
+import { chromeExecutableCandidates } from "./chrome-executable";
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -20,26 +20,42 @@ function apiBase() {
   return base;
 }
 
-function chromeExecutable() {
-  const configured = process.env.CHROMIUM_PATH?.trim();
-  if (configured) return configured;
-  if (process.platform === "darwin") {
-    const mac = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-    if (existsSync(mac)) return mac;
-  }
-  return "chromium";
-}
+const launchArgs = [
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  "--disable-dev-shm-usage",
+  "--disable-gpu",
+  "--no-first-run",
+];
 
 let browserPromise: Promise<Browser> | null = null;
 let printChain: Promise<unknown> = Promise.resolve();
 
+async function launchBrowser() {
+  const candidates = chromeExecutableCandidates();
+  if (candidates.length === 0) {
+    throw new Error("No Chromium binary is available to render tech sheets.");
+  }
+  let lastError: unknown;
+  for (const executablePath of candidates) {
+    try {
+      const args = process.platform === "linux" ? [...launchArgs, "--no-zygote"] : launchArgs;
+      return await withTimeout(puppeteer.launch({
+        executablePath,
+        headless: true,
+        args,
+      }), 20_000, "Tech sheet browser launch");
+    } catch (error) {
+      lastError = error;
+      console.error(`Tech sheet browser failed to launch: ${executablePath}`, error);
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Tech sheet browser failed to launch.");
+}
+
 function browser() {
   if (!browserPromise) {
-    browserPromise = puppeteer.launch({
-      executablePath: chromeExecutable(),
-      headless: true,
-      args: ["--no-sandbox", "--disable-dev-shm-usage"],
-    }).catch((error: unknown) => {
+    browserPromise = launchBrowser().catch((error: unknown) => {
       browserPromise = null;
       throw error;
     });
@@ -105,7 +121,10 @@ async function readStored(slug: string) {
 async function writeStored(slug: string, bytes: Buffer) {
   const response = await fetch(`${apiBase()}/api/generated-tech-sheets/${encodeURIComponent(slug)}`, {
     method: "PUT",
-    headers: { "content-type": "application/pdf" },
+    headers: {
+      "content-type": "application/pdf",
+      [TECH_SHEET_REFRESH_HEADER]: refreshToken(),
+    },
     body: new Uint8Array(bytes),
   });
   if (!response.ok) throw new Error(`Stored tech sheet write failed (${response.status}).`);
@@ -127,7 +146,11 @@ export async function techSheetPdf(slug: string, refresh: boolean) {
         if (again) return again;
       }
       const bytes = await renderTechSheetPdf(slug);
-      await writeStored(slug, bytes);
+      try {
+        await writeStored(slug, bytes);
+      } catch (error) {
+        console.error(`Tech sheet for ${slug} was rendered but not stored`, error);
+      }
       return bytes;
     })().finally(() => {
       pending.delete(slug);
