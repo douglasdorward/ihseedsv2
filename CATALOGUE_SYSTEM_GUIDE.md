@@ -307,7 +307,7 @@ The admin export writes the numbered import sheets and a visible `Lists` sheet:
 - Booleans become `Y`/`N`.
 - Options are sorted into canonical list order.
 - Product SEO extras (H1 override, social title, description, image, canonical URL, index flag) are exported on `7 Website SEO`.
-- Only `photo_1` is exported. The importer still accepts `photo_2` and `photo_3` when supplied.
+- `photo_1`, `photo_2`, and `photo_3` are exported. A `/api/media/{id}` value reconnects that library image, including its alt text. Any other address is stored as the photo and is not linked in the library. A blank cell leaves that slot unset. `NULL` clears it.
 - Categories are managed in the back office and are not workbook sheets.
 - Product FAQs are exported on `10 Product FAQs`. Omitting FAQ rows clears the imported product's FAQs.
 - Each product's redirect source is exported in `1 Products.website_url`; the destination is calculated during import.
@@ -331,7 +331,7 @@ This compatibility marker prevents the export from claiming an incomplete legacy
 The authoritative export headers, in order, are:
 
 ```text
-1 Products: slug, product_name, category, sub_category, record_type, botanical_name, persistency_type, australian_bred, tagline, blurb, key_attributes, description, distribution_note, rainfall_min_mm, soil_ph_min, soil_ph_scale, soil_range_lightest, soil_range_heaviest, sowing_depth_min_cm, sowing_depth_max_cm, tolerance, end_use, livestock, disease_pest_resistance, stand_life_notes, grazing_management_notes, pbr_protected, pbr_details, certification, formulation_year, related_products, photo_1, tech_sheet_pdf_path, website_url, listing_state, listing_override, availability, status
+1 Products: slug, product_name, category, sub_category, record_type, botanical_name, persistency_type, australian_bred, tagline, blurb, key_attributes, description, distribution_note, rainfall_min_mm, soil_ph_min, soil_ph_scale, soil_range_lightest, soil_range_heaviest, sowing_depth_min_cm, sowing_depth_max_cm, tolerance, end_use, livestock, disease_pest_resistance, stand_life_notes, grazing_management_notes, pbr_protected, pbr_details, certification, formulation_year, related_products, photo_1, photo_2, photo_3, tech_sheet_pdf_path, website_url, listing_state, listing_override, availability, status
 2 Sowing rates: slug, context, min, max, unit
 3 Category specifics: slug, category, ploidy, heading_date, heading_offset_days, argt_resistant, endophyte, growth_season, maturity_days, hard_seed_level, oestrogen_level, bloat_risk, flower_colour, winter_activity, growing_season, weeks_to_first_grazing, prussic_acid_risk, regrowth, flowering_window, product_form, application_rate
 4 Sale lines: slug, stock_code, seed_form, pack_kg, pack_unit, availability, price_display, is_default
@@ -341,7 +341,7 @@ The authoritative export headers, in order, are:
 Lists: visible validation columns
 ```
 
-`NULL` explicitly clears a supported value; `|` separates multi-values. The export emits only `photo_1`, leaves `listing_override` blank, and keeps `Lists` visible. Category management remains in the back office rather than a workbook sheet.
+`NULL` explicitly clears a supported value; `|` separates multi-values. The export emits `photo_1`, `photo_2`, and `photo_3`, leaves `listing_override` blank, and keeps `Lists` visible. Category management remains in the back office rather than a workbook sheet.
 
 ### `1 Products` through `5 Mix components`
 
@@ -475,7 +475,7 @@ The following matrix groups related fields. “Publish required” means require
 | Default sale line | `is_default` | Selling | No | At most one | Controls preferred sales presentation |
 | PBR/certification | product fields | Selling | No | No | Limited public metadata below the order panel |
 | Tech-sheet URL | `tech_sheet_pdf_path` | Content & publishing | No | No | Conditional download link |
-| Photos | `photo_1` exported; `photo_2` and `photo_3` import-only | Content & publishing | No | No | The first nonblank photo is the hero background. Every photo with a src is shown in a Photos card under the sidebar on desktop and after About this variety on mobile, using its alt text or the product name. The card is omitted when none have a src |
+| Photos | `photo_1`, `photo_2`, `photo_3` | Content & publishing | No | No | The first nonblank photo is the hero background. Every photo with a src is shown in a Photos card under the sidebar on desktop and after About this variety on mobile, using its alt text or the product name. The card is omitted when none have a src. A library path reconnects that image and its alt text; any other address is stored without a library link |
 | FAQs | `10 Product FAQs` | Content & publishing (Form and Product page) | No | No | Accordion band above Also popular, max ten. Incomplete question/answer cards are hidden. Imported products receive exactly the FAQ rows supplied |
 | Also popular | `relatedProducts` slugs | Content & publishing (Form and Product page) | No | No | Chosen Active or New published products on the Also popular band, max three. A Legacy or missing pick is replaced in that slot with another current product from the same category. An empty list uses three other same-category Active or New products |
 | Legacy URL | `website_url` | Content & publishing | No | No | Old current-site URL; its path redirects to the imported category-and-slug product path |

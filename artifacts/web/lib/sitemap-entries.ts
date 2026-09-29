@@ -8,7 +8,8 @@ export const SITEMAP_STATIC_PATHS = [
   "/",
   CATALOGUE_INDEX_PATH,
   "/availability",
-  "/resources",
+  "/articles",
+  "/tech-sheets",
   "/guide",
   "/pasture-selector",
   "/about",
@@ -54,10 +55,11 @@ export function buildPublicSitemap(input: {
 
   for (const article of input.articles) {
     if (article.robotsIndex === false) continue;
-    entries.push(entry(
-      absoluteSiteUrl(`/resources/${article.slug}`),
-      sitemapDate(article.updatedAt || article.publishedAt),
-    ));
+    const lastModified = sitemapDate(article.updatedAt || article.publishedAt);
+    entries.push(entry(absoluteSiteUrl(`/articles/${article.slug}`), lastModified));
+    for (const pdf of article.pdfs ?? []) {
+      entries.push(entry(absoluteSiteUrl(`/articles/${article.slug}/${pdf.slug}.pdf`), lastModified));
+    }
   }
 
   return entries;

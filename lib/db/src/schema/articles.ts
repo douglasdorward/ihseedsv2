@@ -6,15 +6,28 @@ import { forSearchMetadata } from "./products";
 export type ArticlePublishStatus = "Draft" | "Published" | "Scheduled";
 
 export const ARTICLE_RELATED_PRODUCT_LIMIT = 3;
+export const ARTICLE_PDF_LIMIT = 8;
 export const ARTICLE_TAG_LIMIT = 12;
+export const ARTICLE_LEGACY_URL_LIMIT = 12;
 export const ARTICLE_TAG_PRESETS = ["Editorial", "Sowing & Timing", "Feed Planning", "Regional Advice"] as const;
 
+export type ArticlePdfRecord = {
+  slug: string;
+  title: string;
+  filename: string;
+  storageKey: string;
+  bytes: number;
+};
+
 const emptyTags: string[] = [];
+const emptyLegacyUrls: string[] = [];
 const emptyRelated: string[] = [];
+const emptyPdfs: ArticlePdfRecord[] = [];
 
 export const articlesTable = pgTable("ih_articles", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   slug: text("slug").notNull(),
+  websiteUrlLegacy: text("website_url_legacy").array().notNull().default(sql`'{}'::text[]`),
   title: text("title").notNull(),
   excerpt: text("excerpt").notNull().default(""),
   body: text("body").notNull().default(""),
@@ -22,6 +35,7 @@ export const articlesTable = pgTable("ih_articles", {
   heroImageSrc: text("hero_image_src").notNull().default(""),
   heroImageAssetId: text("hero_image_asset_id"),
   relatedProductSlugs: jsonb("related_product_slugs").$type<string[]>().notNull().default(emptyRelated),
+  pdfs: jsonb("pdfs").$type<ArticlePdfRecord[]>().notNull().default(emptyPdfs),
   publishStatus: text("publish_status").$type<ArticlePublishStatus>().notNull().default("Draft"),
   publishedAt: timestamp("published_at", { withTimezone: true }),
   scheduledPublishAt: timestamp("scheduled_publish_at", { withTimezone: true }),
@@ -53,11 +67,14 @@ function uniqueTrimmed(items: string[], limit: number) {
 }
 
 const tagsSchema = z.array(z.string().trim().max(80)).max(ARTICLE_TAG_LIMIT).transform((items) => uniqueTrimmed(items, ARTICLE_TAG_LIMIT));
+const legacyUrlsSchema = z.array(z.string().trim().max(500)).max(ARTICLE_LEGACY_URL_LIMIT)
+  .transform((items) => uniqueTrimmed(items, ARTICLE_LEGACY_URL_LIMIT));
 const relatedProductSlugsSchema = z.array(z.string().trim().max(180)).max(ARTICLE_RELATED_PRODUCT_LIMIT)
   .transform((items) => uniqueTrimmed(items, ARTICLE_RELATED_PRODUCT_LIMIT));
 
 const articleFieldsSchema = z.object({
   slug: slugSchema,
+  websiteUrlLegacy: legacyUrlsSchema,
   title: z.string().trim().min(1).max(180),
   excerpt: z.string().trim().max(500),
   body: z.string().max(200000),
@@ -74,6 +91,7 @@ const articleFieldsSchema = z.object({
 });
 
 export const insertArticleSchema = articleFieldsSchema.extend({
+  websiteUrlLegacy: legacyUrlsSchema.default(emptyLegacyUrls),
   excerpt: articleFieldsSchema.shape.excerpt.default(""),
   body: articleFieldsSchema.shape.body.default(""),
   tags: tagsSchema.default(emptyTags),
@@ -88,6 +106,16 @@ export const insertArticleSchema = articleFieldsSchema.extend({
   robotsIndex: articleFieldsSchema.shape.robotsIndex.default(true),
 });
 export const updateArticleSchema = articleFieldsSchema.partial();
+
+export const articlePdfUploadSchema = z.object({
+  filename: z.string().trim().min(1).max(160),
+  title: z.string().trim().min(1).max(180),
+  data: z.string().min(1),
+});
+
+export const articlePdfTitleSchema = z.object({
+  title: z.string().trim().min(1).max(180),
+});
 
 export function withArticleSearchMetadata<T extends {
   seoTitle?: string;

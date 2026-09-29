@@ -53,8 +53,8 @@ export function Footer({ company = DEFAULT_COMPANY }: { company?: CompanyContact
           </div>
           <div>
             <p className="footer-column-title">Resources</p>
-            <Link href="/resources" className="footer-link" data-testid="footer-resources">Tips &amp; Advice</Link>
-            <Link href="/resources?tab=sheets" className="footer-link" data-testid="footer-tech-sheets">Tech sheets</Link>
+            <Link href="/articles" className="footer-link" data-testid="footer-resources">Articles</Link>
+            <Link href="/tech-sheets" className="footer-link" data-testid="footer-tech-sheets">Tech Sheets</Link>
             <Link href="/guide" className="footer-link" data-testid="footer-guide">Pasture Seed Guide</Link>
             <Link href="/availability" className="footer-link" data-testid="footer-availability">Seed Availability</Link>
           </div>

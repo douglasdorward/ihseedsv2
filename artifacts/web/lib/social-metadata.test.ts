@@ -20,7 +20,7 @@ test("page-specific titles, descriptions and URLs survive nested OG/Twitter over
 });
 
 test("product and article precedence is override, hero, site asset, then bundled default", () => {
-  const hero = socialMetadata("Article", "Description", "/resources/story", {
+  const hero = socialMetadata("Article", "Description", "/articles/story", {
     override: "javascript:alert(1)",
     hero: "/article-hero.jpg",
     siteAssetId: "site-asset",
@@ -61,12 +61,14 @@ test("public route metadata keeps each page's own title and description in both 
   t.mock.method(globalThis, "fetch", async () => Response.json({ homepage: { socialImageSrc: "/configured-share.jpg" } }));
   const { generateMetadata: homepage } = await import("../app/page");
   const { generateMetadata: availability } = await import("../app/availability/page");
-  const { generateMetadata: resources } = await import("../app/resources/page");
+  const { generateMetadata: articles } = await import("../app/articles/page");
+  const { generateMetadata: techSheets } = await import("../app/tech-sheets/page");
   const { generateMetadata: contact } = await import("../app/contact/page");
   for (const [metadata, path] of await Promise.all([
     homepage().then((value) => [value, "/"]),
     availability().then((value) => [value, "/availability"]),
-    resources().then((value) => [value, "/resources"]),
+    articles().then((value) => [value, "/articles"]),
+    techSheets().then((value) => [value, "/tech-sheets"]),
     contact().then((value) => [value, "/contact"]),
   ] as const)) {
     assert.equal(metadata.openGraph?.title, metadata.title);
@@ -99,13 +101,13 @@ test("published article route falls back to its hero and retains article-specifi
         }
       : { homepage: { socialImageSrc: "/configured-share.jpg" } },
   ));
-  const { generateMetadata } = await import("../app/resources/[slug]/page");
+  const { generateMetadata } = await import("../app/articles/[slug]/page");
   const metadata = await generateMetadata({ params: Promise.resolve({ slug: "soil-health" }) });
   assert.equal(metadata.title, "Soil health | IH Seeds");
   assert.equal(metadata.description, "Improve your soil.");
   assert.equal(metadata.openGraph?.title, "Healthy soil, healthy pasture");
   assert.equal(metadata.openGraph?.description, "Read our soil tips.");
-  assert.equal(metadata.openGraph?.url, `${apex}/resources/soil-health`);
+  assert.equal(metadata.openGraph?.url, `${apex}/articles/soil-health`);
   assert.deepEqual(metadata.twitter?.images, [`${apex}/api/media/article-hero`]);
   assert.equal(metadata.openGraph?.type, "article");
 });

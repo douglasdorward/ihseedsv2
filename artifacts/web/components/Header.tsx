@@ -2,53 +2,44 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type FocusEvent } from "react";
 import { CATALOGUE_INDEX_PATH, categoryPublicPath, type NavCategory } from "../lib/catalogue-paths";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
 import { SiteSearch } from "./SiteSearch";
 
-export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 2026" }: { productCategories?: NavCategory[]; seedGuideTitle?: string }) {
-  const location = usePathname();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [productsMenuDismissed, setProductsMenuDismissed] = useState(false);
-  const productsMenuRef = useRef<HTMLDivElement>(null);
-  const pointerInsideProductsMenu = useRef(false);
-  const skipProductsDismiss = useRef(true);
-  const closeSearch = useCallback(() => setSearchOpen(false), []);
-  const closeSearchAndMenu = useCallback(() => {
-    setMenuOpen(false);
-    setSearchOpen(false);
-  }, []);
-  const dismissProductsMenu = useCallback(() => {
-    setProductsMenuDismissed(true);
+function useDismissableMenu(location: string) {
+  const [dismissed, setDismissed] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const pointerInside = useRef(false);
+  const skipDismiss = useRef(true);
+
+  const dismiss = useCallback(() => {
+    setDismissed(true);
     const active = document.activeElement;
-    if (active instanceof HTMLElement && productsMenuRef.current?.contains(active)) {
+    if (active instanceof HTMLElement && ref.current?.contains(active)) {
       active.blur();
     }
   }, []);
 
   useEffect(() => {
-    setMenuOpen(false);
-    setSearchOpen(false);
-    if (skipProductsDismiss.current) {
-      skipProductsDismiss.current = false;
+    if (skipDismiss.current) {
+      skipDismiss.current = false;
       return;
     }
-    if (productsMenuRef.current?.contains(document.activeElement)) {
-      dismissProductsMenu();
+    if (ref.current?.contains(document.activeElement)) {
+      dismiss();
     }
-  }, [location, dismissProductsMenu]);
+  }, [location, dismiss]);
 
   useEffect(() => {
-    if (!productsMenuDismissed) return;
+    if (!dismissed) return;
     const releaseIfPointerOutside = (event: PointerEvent) => {
-      const menu = productsMenuRef.current;
+      const menu = ref.current;
       const target = event.target;
       const inside = Boolean(menu && target instanceof Node && menu.contains(target));
-      pointerInsideProductsMenu.current = inside;
-      if (!inside) setProductsMenuDismissed(false);
+      pointerInside.current = inside;
+      if (!inside) setDismissed(false);
     };
     document.addEventListener("pointermove", releaseIfPointerOutside);
     document.addEventListener("pointerdown", releaseIfPointerOutside);
@@ -56,7 +47,49 @@ export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 20
       document.removeEventListener("pointermove", releaseIfPointerOutside);
       document.removeEventListener("pointerdown", releaseIfPointerOutside);
     };
-  }, [productsMenuDismissed]);
+  }, [dismissed]);
+
+  return {
+    dismiss,
+    menuProps: {
+      ref,
+      className: `nav-dropdown${dismissed ? " is-dismissed" : ""}`,
+      onMouseEnter: () => {
+        pointerInside.current = true;
+      },
+      onMouseLeave: () => {
+        pointerInside.current = false;
+        setDismissed(false);
+      },
+      onFocus: () => {
+        if (pointerInside.current) return;
+        setDismissed(false);
+      },
+      onBlur: (event: FocusEvent<HTMLDivElement>) => {
+        if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+        if (pointerInside.current) return;
+        setDismissed(false);
+      },
+    },
+  };
+}
+
+export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 2026" }: { productCategories?: NavCategory[]; seedGuideTitle?: string }) {
+  const location = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const productsMenu = useDismissableMenu(location);
+  const resourcesMenu = useDismissableMenu(location);
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
+  const closeSearchAndMenu = useCallback(() => {
+    setMenuOpen(false);
+    setSearchOpen(false);
+  }, []);
+
+  useEffect(() => {
+    setMenuOpen(false);
+    setSearchOpen(false);
+  }, [location]);
 
   const isActive = (path: string) => {
     if (path === "/products") {
@@ -68,34 +101,20 @@ export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 20
   const closeMenu = () => setMenuOpen(false);
   const selectProductsLink = () => {
     closeMenu();
-    dismissProductsMenu();
+    productsMenu.dismiss();
   };
+  const selectResourcesLink = () => {
+    closeMenu();
+    resourcesMenu.dismiss();
+  };
+  const resourcesActive = isActive("/articles") || isActive("/tech-sheets");
 
   return (
     <header className="site-header">
       <Logo />
       <nav className={`desktop-nav ${menuOpen ? "mobile-nav-open" : ""}`} aria-label="Main navigation">
         <Link href="/" className={navItemClass("/")} aria-current={isActive("/") ? "page" : undefined} onClick={closeMenu} data-testid="link-home">Home</Link>
-        <div
-          ref={productsMenuRef}
-          className={`nav-dropdown${productsMenuDismissed ? " is-dismissed" : ""}`}
-          onMouseEnter={() => {
-            pointerInsideProductsMenu.current = true;
-          }}
-          onMouseLeave={() => {
-            pointerInsideProductsMenu.current = false;
-            setProductsMenuDismissed(false);
-          }}
-          onFocus={() => {
-            if (pointerInsideProductsMenu.current) return;
-            setProductsMenuDismissed(false);
-          }}
-          onBlur={(event) => {
-            if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
-            if (pointerInsideProductsMenu.current) return;
-            setProductsMenuDismissed(false);
-          }}
-        >
+        <div {...productsMenu.menuProps}>
           <Link href={CATALOGUE_INDEX_PATH} className={navItemClass("/products")} aria-current={isActive("/products") ? "page" : undefined} aria-haspopup="true" aria-controls="products-nav-menu" onClick={selectProductsLink} data-testid="link-products">Products</Link>
           <div id="products-nav-menu" className="nav-dropdown-panel">
             <ul className="nav-dropdown-list" aria-label="Product categories">
@@ -114,7 +133,19 @@ export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 20
         </div>
         <Link href="/guide" className={navItemClass("/guide")} aria-current={isActive("/guide") ? "page" : undefined} onClick={closeMenu} data-testid="link-guide">{seedGuideTitle}</Link>
         <Link href="/availability" className={navItemClass("/availability")} aria-current={isActive("/availability") ? "page" : undefined} onClick={closeMenu} data-testid="link-availability">Seed Availability</Link>
-        <Link href="/resources" className={navItemClass("/resources")} aria-current={isActive("/resources") ? "page" : undefined} onClick={closeMenu} data-testid="link-resources">Resources</Link>
+        <div {...resourcesMenu.menuProps}>
+          <button type="button" className={`nav-link${resourcesActive ? " active" : ""}`} aria-haspopup="true" aria-controls="resources-nav-menu" data-testid="link-resources">Resources</button>
+          <div id="resources-nav-menu" className="nav-dropdown-panel">
+            <ul className="nav-dropdown-list" aria-label="Resources">
+              <li>
+                <Link href="/articles" className={isActive("/articles") ? "is-current" : undefined} aria-current={isActive("/articles") ? "page" : undefined} onClick={selectResourcesLink} data-testid="link-resources-articles">Articles</Link>
+              </li>
+              <li>
+                <Link href="/tech-sheets" className={isActive("/tech-sheets") ? "is-current" : undefined} aria-current={isActive("/tech-sheets") ? "page" : undefined} onClick={selectResourcesLink} data-testid="link-resources-tech-sheets">Tech Sheets</Link>
+              </li>
+            </ul>
+          </div>
+        </div>
         <Link href="/about" className={navItemClass("/about")} aria-current={isActive("/about") ? "page" : undefined} onClick={closeMenu} data-testid="link-about">About</Link>
         <Link href="/contact" className="button button-accent nav-cta" onClick={closeMenu} data-testid="button-get-in-touch">Get in Touch</Link>
         <button type="button" className="utility-button" data-testid="button-search" aria-label="Search catalogue" aria-expanded={searchOpen} aria-controls="site-search-dialog" onClick={() => setSearchOpen(true)}><Icon name="search" size={18} /></button>

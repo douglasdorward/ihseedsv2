@@ -5,11 +5,18 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ArticlePdf } from './articlePdf';
 import type { ArticlePublishStatus } from './articlePublishStatus';
 
 export interface Article {
   id: number;
   slug: string;
+  /**
+     * Admin-only legacy URLs. Each address redirects an old website path to this article
+     * @maxItems 12
+     * @items.maxLength 500
+     */
+  websiteUrlLegacy: string[];
   title: string;
   excerpt: string;
   body: string;
@@ -26,6 +33,8 @@ export interface Article {
      * @items.maxLength 180
      */
   relatedProductSlugs: string[];
+  /** @maxItems 8 */
+  pdfs: ArticlePdf[];
   publishStatus: ArticlePublishStatus;
   /** @nullable */
   publishedAt: Date | null;

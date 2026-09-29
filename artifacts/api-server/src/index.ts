@@ -4,6 +4,7 @@ import { logger } from "./lib/logger";
 import { configureSimpleAdminAccounts } from "./lib/admin-accounts";
 import { setAdminAuthReady } from "./lib/admin-readiness";
 import { startArticlePublishScheduler } from "./lib/article-publish";
+import { backfillGeneratedTechSheets } from "./lib/generated-tech-sheet";
 
 const rawPort = process.env["PORT"];
 
@@ -40,4 +41,7 @@ app.listen(port, (err) => {
 
   logger.info({ port, storageBackend }, "Server listening");
   startArticlePublishScheduler();
+  void backfillGeneratedTechSheets().catch((err) => {
+    logger.error({ err }, "Tech sheet backfill failed");
+  });
 });

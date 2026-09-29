@@ -45,6 +45,7 @@ function article(partial: Partial<CatalogueArticle> & Pick<CatalogueArticle, "id
     tags: [],
     heroImageSrc: "",
     relatedProductSlugs: [],
+    pdfs: [],
     publishedAt: "",
     seoTitle: "",
     seoDescription: "",
@@ -203,7 +204,7 @@ test("a word inside article markdown matches the article", () => {
     ],
   }));
   assert.deepEqual(hits.map((hit) => hit.id), ["article:11"]);
-  assert.equal(hits[0]?.href, "/resources/autumn-sowing-notes");
+  assert.equal(hits[0]?.href, "/articles/autumn-sowing-notes");
   assert.match(visibleText(hits[0]?.snippet), /subterranean/);
   assert.deepEqual(matchedText(hits[0]?.snippet), ["subterranean"]);
 });

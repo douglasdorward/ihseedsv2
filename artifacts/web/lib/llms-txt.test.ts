@@ -60,6 +60,7 @@ function article(overrides: Partial<CatalogueArticle> = {}): CatalogueArticle {
     tags: [],
     heroImageSrc: "",
     relatedProductSlugs: [],
+    pdfs: [],
     publishedAt: "2026-09-01T00:00:00.000Z",
     seoTitle: "",
     seoDescription: "",
@@ -200,10 +201,10 @@ test("products are grouped by public category, with canonical URLs and soil when
   assert.equal(text.includes("CAP-441"), false);
   assert.equal(text.includes("Contact for pricing"), false);
   assert.equal(text.includes("$18.00"), false);
-  const newer = text.indexOf("/resources/newer");
-  const older = text.indexOf("/resources/older");
+  const newer = text.indexOf("/articles/newer");
+  const older = text.indexOf("/articles/older");
   assert.ok(newer >= 0 && newer < older);
-  assert.match(text, /\/resources\/newer\): Second\./);
+  assert.match(text, /\/articles\/newer\): Second\./);
   assert.match(text, /Clovers\]\(https:\/\/irwinhunter\.com\.au\/products\/clovers#faqs\): 1 question/);
   assert.equal(text.includes("Blank"), false);
   assert.match(text, new RegExp(`Pasture selector.*${PASTURE_SELECTOR_FAQS.length} questions`));

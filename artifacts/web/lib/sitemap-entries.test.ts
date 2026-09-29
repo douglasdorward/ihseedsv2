@@ -52,6 +52,7 @@ test("public sitemap uses the product page canonical and article lastmod", () =>
     tags: [],
     heroImageSrc: "",
     relatedProductSlugs: [],
+    pdfs: [{ slug: "ryegrass-sowing-rates", title: "Ryegrass sowing rates", href: "/articles/autumn-sowing/ryegrass-sowing-rates.pdf" }],
     publishedAt: "2026-09-01T00:00:00.000Z",
     seoTitle: "",
     seoDescription: "",
@@ -71,17 +72,21 @@ test("public sitemap uses the product page canonical and article lastmod", () =>
     productDates: [{ slug: "safeguard-annual-ryegrass", lastModified: "2026-09-17T12:00:00.000Z" }],
   });
   const urls = entries.map((entry) => entry.url);
-  assert.equal(urls.includes("https://www.irwinhunter.com.au/pasture-selector"), true);
-  assert.equal(urls.includes("https://www.irwinhunter.com.au/privacy"), true);
-  assert.equal(urls.includes("https://www.irwinhunter.com.au/terms-and-conditions"), true);
-  assert.equal(urls.includes("https://www.irwinhunter.com.au/products/ryegrass"), true);
-  assert.equal(urls.includes("https://www.irwinhunter.com.au/products/ryegrass/annual"), false);
-  assert.equal(urls.includes("https://www.irwinhunter.com.au/products/ryegrass/hidden-ryegrass"), false);
-  assert.equal(urls.includes("https://www.irwinhunter.com.au/resources/private-note"), false);
+  assert.equal(urls.includes("https://irwinhunter.com.au/pasture-selector"), true);
+  assert.equal(urls.includes("https://irwinhunter.com.au/privacy"), true);
+  assert.equal(urls.includes("https://irwinhunter.com.au/terms-and-conditions"), true);
+  assert.equal(urls.includes("https://irwinhunter.com.au/products/ryegrass"), true);
+  assert.equal(urls.includes("https://irwinhunter.com.au/products/ryegrass/annual"), false);
+  assert.equal(urls.includes("https://irwinhunter.com.au/products/ryegrass/hidden-ryegrass"), false);
+  assert.equal(urls.includes("https://irwinhunter.com.au/articles"), true);
+  assert.equal(urls.includes("https://irwinhunter.com.au/tech-sheets"), true);
+  assert.equal(urls.includes("https://irwinhunter.com.au/articles/private-note"), false);
+  assert.equal(urls.includes("https://irwinhunter.com.au/articles/autumn-sowing/ryegrass-sowing-rates.pdf"), true);
+  assert.equal(urls.includes("https://irwinhunter.com.au/articles/private-note/ryegrass-sowing-rates.pdf"), false);
   const productEntry = entries.find((entry) => entry.url.endsWith("/products/ryegrass/safeguard-annual-ryegrass"));
   assert.ok(productEntry);
   assert.equal(lastmod(productEntry), "2026-09-17T12:00:00.000Z");
-  const articleEntry = entries.find((entry) => entry.url.endsWith("/resources/autumn-sowing"));
+  const articleEntry = entries.find((entry) => entry.url.endsWith("/articles/autumn-sowing"));
   assert.ok(articleEntry);
   assert.equal(lastmod(articleEntry), "2026-09-18T04:00:00.000Z");
 });

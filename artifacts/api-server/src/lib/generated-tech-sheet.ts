@@ -1,3 +1,6 @@
+import { eq } from "drizzle-orm";
+import { db, isActiveListing, productsTable } from "@workspace/db";
+import { getStoredFile } from "./app-storage";
 import { logger } from "./logger";
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -14,15 +17,47 @@ function refreshToken() {
 }
 
 /** Rebuild the stored PDF after publish. A failed render does not fail the publish. */
-export function scheduleGeneratedTechSheet(slug: string) {
-  if (!SLUG.test(slug)) return;
+export async function scheduleGeneratedTechSheet(slug: string) {
+  if (!SLUG.test(slug)) return false;
   const base = (process.env.WEB_BASE ?? "http://127.0.0.1:3000").replace(/\/+$/, "");
-  void fetch(`${base}/tech-sheets/${encodeURIComponent(slug)}`, {
-    headers: { [TECH_SHEET_REFRESH_HEADER]: refreshToken() },
-    signal: AbortSignal.timeout(90_000),
-  }).then((response) => {
-    if (!response.ok) logger.warn({ slug, status: response.status }, "Generated tech sheet was not stored");
-  }).catch((error) => {
+  try {
+    const response = await fetch(`${base}/tech-sheets/${encodeURIComponent(slug)}`, {
+      headers: { [TECH_SHEET_REFRESH_HEADER]: refreshToken() },
+      signal: AbortSignal.timeout(90_000),
+    });
+    await response.body?.cancel();
+    if (!response.ok) {
+      logger.warn({ slug, status: response.status }, "Generated tech sheet was not stored");
+      return false;
+    }
+    return true;
+  } catch (error) {
     logger.warn({ slug, err: error }, "Generated tech sheet could not be started");
-  });
+    return false;
+  }
+}
+
+/** Stored sheets are created on publish. Fill in products that were already published. */
+export async function backfillGeneratedTechSheets() {
+  const products = await db.select().from(productsTable).where(eq(productsTable.publishStatus, "Published"));
+  const missing: string[] = [];
+  for (const product of products) {
+    if (!isActiveListing(product) || !SLUG.test(product.slug)) continue;
+    const stored = await getStoredFile(generatedTechSheetKey(product.slug));
+    if (stored) continue;
+    missing.push(product.slug);
+  }
+  if (missing.length === 0) {
+    logger.info("Published products already have tech sheets");
+    return { queued: 0, stored: 0, failed: 0 };
+  }
+  logger.info({ count: missing.length }, "Generating tech sheets for published products");
+  let stored = 0;
+  let failed = 0;
+  for (const slug of missing) {
+    if (await scheduleGeneratedTechSheet(slug)) stored += 1;
+    else failed += 1;
+  }
+  logger.info({ stored, failed }, "Finished generating tech sheets for published products");
+  return { queued: missing.length, stored, failed };
 }

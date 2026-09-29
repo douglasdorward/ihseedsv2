@@ -31,6 +31,8 @@ import type {
   Article,
   ArticleImportReport,
   ArticleInput,
+  ArticlePdfInput,
+  ArticlePdfTitleInput,
   ArticlePublishInput,
   ArticleScheduleInput,
   ArticleUpdate,
@@ -3401,6 +3403,88 @@ export function useGetArticleBySlug<TData = Awaited<ReturnType<typeof getArticle
 
 
 
+export const getGetArticlePdfUrl = (slug: string,
+    pdfSlug: string,) => {
+
+
+
+
+  return `/api/articles/slug/${slug}/pdfs/${pdfSlug}`
+}
+
+/**
+ * @summary Download a published article PDF
+ */
+export const getArticlePdf = async (slug: string,
+    pdfSlug: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetArticlePdfUrl(slug,pdfSlug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetArticlePdfQueryKey = (slug: string,
+    pdfSlug: string,) => {
+    return [
+    `/api/articles/slug/${slug}/pdfs/${pdfSlug}`
+    ] as const;
+    }
+
+
+export const getGetArticlePdfQueryOptions = <TData = Awaited<ReturnType<typeof getArticlePdf>>, TError = ErrorType<void>>(slug: string,
+    pdfSlug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArticlePdf>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetArticlePdfQueryKey(slug,pdfSlug);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getArticlePdf>>> = ({ signal }) => getArticlePdf(slug,pdfSlug, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: slug !== null && slug !== undefined && pdfSlug !== null && pdfSlug !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getArticlePdf>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetArticlePdfQueryResult = NonNullable<Awaited<ReturnType<typeof getArticlePdf>>>
+export type GetArticlePdfQueryError = ErrorType<void>
+
+
+/**
+ * @summary Download a published article PDF
+ */
+
+export function useGetArticlePdf<TData = Awaited<ReturnType<typeof getArticlePdf>>, TError = ErrorType<void>>(
+ slug: string,
+    pdfSlug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArticlePdf>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetArticlePdfQueryOptions(slug,pdfSlug,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getListResellersUrl = () => {
 
 
@@ -6258,6 +6342,307 @@ export const useScheduleArticle = <TError = ErrorType<PublishValidationError | A
         TContext
       > => {
       return useMutation(getScheduleArticleMutationOptions(options));
+    }
+
+export const getUploadArticlePdfUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/articles/${id}/pdfs`
+}
+
+/**
+ * @summary Attach a PDF to a blog article
+ */
+export const uploadArticlePdf = async (id: number,
+    articlePdfInput: ArticlePdfInput, options?: Parameters<typeof customFetch>[1]): Promise<Article> => {
+
+  return customFetch<Article>(getUploadArticlePdfUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(articlePdfInput)
+  }
+);}
+
+
+
+
+
+export const getUploadArticlePdfMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadArticlePdf>>, TError,{id: number;data: BodyType<ArticlePdfInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadArticlePdf>>, TError,{id: number;data: BodyType<ArticlePdfInput>}, TContext> => {
+
+const mutationKey = ['uploadArticlePdf'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadArticlePdf>>, {id: number;data: BodyType<ArticlePdfInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  uploadArticlePdf(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadArticlePdfMutationResult = NonNullable<Awaited<ReturnType<typeof uploadArticlePdf>>>
+    export type UploadArticlePdfMutationBody = BodyType<ArticlePdfInput>
+    export type UploadArticlePdfMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Attach a PDF to a blog article
+ */
+export const useUploadArticlePdf = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadArticlePdf>>, TError,{id: number;data: BodyType<ArticlePdfInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof uploadArticlePdf>>,
+        TError,
+        {id: number;data: BodyType<ArticlePdfInput>},
+        TContext
+      > => {
+      return useMutation(getUploadArticlePdfMutationOptions(options));
+    }
+
+export const getDownloadAdminArticlePdfUrl = (id: number,
+    pdfSlug: string,) => {
+
+
+
+
+  return `/api/admin/articles/${id}/pdfs/${pdfSlug}`
+}
+
+/**
+ * @summary Open an article PDF, including drafts
+ */
+export const downloadAdminArticlePdf = async (id: number,
+    pdfSlug: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadAdminArticlePdfUrl(id,pdfSlug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadAdminArticlePdfQueryKey = (id: number,
+    pdfSlug: string,) => {
+    return [
+    `/api/admin/articles/${id}/pdfs/${pdfSlug}`
+    ] as const;
+    }
+
+
+export const getDownloadAdminArticlePdfQueryOptions = <TData = Awaited<ReturnType<typeof downloadAdminArticlePdf>>, TError = ErrorType<ApiError>>(id: number,
+    pdfSlug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminArticlePdf>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadAdminArticlePdfQueryKey(id,pdfSlug);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadAdminArticlePdf>>> = ({ signal }) => downloadAdminArticlePdf(id,pdfSlug, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && pdfSlug !== null && pdfSlug !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadAdminArticlePdf>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadAdminArticlePdfQueryResult = NonNullable<Awaited<ReturnType<typeof downloadAdminArticlePdf>>>
+export type DownloadAdminArticlePdfQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Open an article PDF, including drafts
+ */
+
+export function useDownloadAdminArticlePdf<TData = Awaited<ReturnType<typeof downloadAdminArticlePdf>>, TError = ErrorType<ApiError>>(
+ id: number,
+    pdfSlug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminArticlePdf>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadAdminArticlePdfQueryOptions(id,pdfSlug,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateArticlePdfTitleUrl = (id: number,
+    pdfSlug: string,) => {
+
+
+
+
+  return `/api/admin/articles/${id}/pdfs/${pdfSlug}`
+}
+
+/**
+ * @summary Rename an article PDF without changing its URL
+ */
+export const updateArticlePdfTitle = async (id: number,
+    pdfSlug: string,
+    articlePdfTitleInput: ArticlePdfTitleInput, options?: Parameters<typeof customFetch>[1]): Promise<Article> => {
+
+  return customFetch<Article>(getUpdateArticlePdfTitleUrl(id,pdfSlug),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(articlePdfTitleInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateArticlePdfTitleMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateArticlePdfTitle>>, TError,{id: number;pdfSlug: string;data: BodyType<ArticlePdfTitleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateArticlePdfTitle>>, TError,{id: number;pdfSlug: string;data: BodyType<ArticlePdfTitleInput>}, TContext> => {
+
+const mutationKey = ['updateArticlePdfTitle'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateArticlePdfTitle>>, {id: number;pdfSlug: string;data: BodyType<ArticlePdfTitleInput>}> = (props) => {
+          const {id,pdfSlug,data} = props ?? {};
+
+          return  updateArticlePdfTitle(id,pdfSlug,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateArticlePdfTitleMutationResult = NonNullable<Awaited<ReturnType<typeof updateArticlePdfTitle>>>
+    export type UpdateArticlePdfTitleMutationBody = BodyType<ArticlePdfTitleInput>
+    export type UpdateArticlePdfTitleMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Rename an article PDF without changing its URL
+ */
+export const useUpdateArticlePdfTitle = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateArticlePdfTitle>>, TError,{id: number;pdfSlug: string;data: BodyType<ArticlePdfTitleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateArticlePdfTitle>>,
+        TError,
+        {id: number;pdfSlug: string;data: BodyType<ArticlePdfTitleInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateArticlePdfTitleMutationOptions(options));
+    }
+
+export const getDeleteArticlePdfUrl = (id: number,
+    pdfSlug: string,) => {
+
+
+
+
+  return `/api/admin/articles/${id}/pdfs/${pdfSlug}`
+}
+
+/**
+ * @summary Remove an article PDF
+ */
+export const deleteArticlePdf = async (id: number,
+    pdfSlug: string, options?: Parameters<typeof customFetch>[1]): Promise<Article> => {
+
+  return customFetch<Article>(getDeleteArticlePdfUrl(id,pdfSlug),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteArticlePdfMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteArticlePdf>>, TError,{id: number;pdfSlug: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteArticlePdf>>, TError,{id: number;pdfSlug: string}, TContext> => {
+
+const mutationKey = ['deleteArticlePdf'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteArticlePdf>>, {id: number;pdfSlug: string}> = (props) => {
+          const {id,pdfSlug} = props ?? {};
+
+          return  deleteArticlePdf(id,pdfSlug,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteArticlePdfMutationResult = NonNullable<Awaited<ReturnType<typeof deleteArticlePdf>>>
+
+    export type DeleteArticlePdfMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Remove an article PDF
+ */
+export const useDeleteArticlePdf = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteArticlePdf>>, TError,{id: number;pdfSlug: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteArticlePdf>>,
+        TError,
+        {id: number;pdfSlug: string},
+        TContext
+      > => {
+      return useMutation(getDeleteArticlePdfMutationOptions(options));
     }
 
 export const getGetPublicSiteSettingsUrl = () => {
