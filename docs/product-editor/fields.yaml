@@ -717,7 +717,7 @@ fields:
     apiPath: details.components[].description
     label: Public description
     type: string
-    maxLength: 10000
+    maxLength: 2000
     requiredForDraft: false
     requiredForPublish: false
     visibleWhen: Mixes

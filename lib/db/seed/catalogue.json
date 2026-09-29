@@ -23148,8 +23148,13 @@
     },
     {
       "listName": "listing_state",
-      "value": "Legacy",
+      "value": "New",
       "sortOrder": 1
+    },
+    {
+      "listName": "listing_state",
+      "value": "Legacy",
+      "sortOrder": 2
     },
     {
       "listName": "livestock",

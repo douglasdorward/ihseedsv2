@@ -52,8 +52,8 @@ const RULES: GuideRow[] = [
     "Workbook rules",
     "Identity and replacement",
     "Always",
-    "Start from a current admin export. slug is the permanent identity. Never change an existing slug and never invent a replacement slug for a product that already exists. The uploaded file replaces the whole catalogue: a product missing from 1 Products is deleted. Sheets 2, 3, 4, 5, and 10 replace the stored set for every product in 1 Products. No rows on one of those sheets clears that set. Do not change lifecycle, category, sale lines, redirects, or FAQs unless the assignment asks for that change.",
-    "A deleted or Draft product disappears from the public site. A cleared set disappears from the product page.",
+    "Start from a current admin export. slug is the permanent identity. Never change an existing slug and never invent a replacement slug for a product that already exists. A slug already in the catalogue is updated. A new slug is added. A product missing from 1 Products is left unchanged. Sheets 2, 3, 4, 5, and 10 replace the stored set for every product in 1 Products. No rows on one of those sheets clears that set for those products only. Do not change lifecycle, category, sale lines, redirects, or FAQs unless the assignment asks for that change.",
+    "A Draft product disappears from the public site. A product left out of the file stays as it is. A cleared set disappears from the product page.",
   ],
   [
     "Workbook rules",
@@ -328,7 +328,7 @@ const PRODUCTS: GuideRow[] = [
     "1 Products",
     "website_url",
     "No",
-    "Old public address on www.irwinhunter.com.au, including https://. No query string and no fragment. The apex host is also accepted. Blank means this product has no old-address redirect. Do not put the new /products/... address here. Each import replaces the whole redirect set.",
+    "Old public address on www.irwinhunter.com.au, including https://. No query string and no fragment. The apex host is also accepted. Blank means this product has no old-address redirect. Do not put the new /products/... address here. Import replaces redirects only for products in this file.",
     "Not shown. Visitors to that old path are redirected to /products/{category-slug}/{slug}.",
   ],
   [
@@ -647,8 +647,8 @@ const MIXES: GuideRow[] = [
   [
     "5 Mix components",
     "component_description",
-    "No. Max 10,000 characters.",
-    "Why this ingredient is in this mix. Plain text. Write it for the mix. Do not paste the linked product's blurb. Blank means no description.",
+    "No. Max 2,000 characters.",
+    "Why this ingredient is in this mix. Plain text, 2,000 characters or fewer. Write it for the mix. Do not paste the linked product's blurb. Blank means no description.",
     "Smaller text under that ingredient's name in the mix table.",
   ],
 ];

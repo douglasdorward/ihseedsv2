@@ -181,7 +181,7 @@ export const listProductsResponseDetailsComponentsItemInclusionRateMin = 0;
 
 export const listProductsResponseDetailsComponentsItemUnitMax = 20;
 
-export const listProductsResponseDetailsComponentsItemDescriptionMax = 10000;
+export const listProductsResponseDetailsComponentsItemDescriptionMax = 2000;
 
 export const listProductsResponseDetailsComponentsItemNoteMax = 4000;
 
@@ -426,7 +426,7 @@ export const createProductBodyDetailsComponentsItemInclusionRateMin = 0;
 
 export const createProductBodyDetailsComponentsItemUnitMax = 20;
 
-export const createProductBodyDetailsComponentsItemDescriptionMax = 10000;
+export const createProductBodyDetailsComponentsItemDescriptionMax = 2000;
 
 export const createProductBodyDetailsComponentsItemNoteMax = 4000;
 
@@ -703,7 +703,7 @@ export const createProductResponseDetailsComponentsItemInclusionRateMin = 0;
 
 export const createProductResponseDetailsComponentsItemUnitMax = 20;
 
-export const createProductResponseDetailsComponentsItemDescriptionMax = 10000;
+export const createProductResponseDetailsComponentsItemDescriptionMax = 2000;
 
 export const createProductResponseDetailsComponentsItemNoteMax = 4000;
 
@@ -939,7 +939,7 @@ export const getProductBySlugResponseDetailsComponentsItemInclusionRateMin = 0;
 
 export const getProductBySlugResponseDetailsComponentsItemUnitMax = 20;
 
-export const getProductBySlugResponseDetailsComponentsItemDescriptionMax = 10000;
+export const getProductBySlugResponseDetailsComponentsItemDescriptionMax = 2000;
 
 export const getProductBySlugResponseDetailsComponentsItemNoteMax = 4000;
 
@@ -1189,7 +1189,7 @@ export const updateProductBodyDetailsComponentsItemInclusionRateMin = 0;
 
 export const updateProductBodyDetailsComponentsItemUnitMax = 20;
 
-export const updateProductBodyDetailsComponentsItemDescriptionMax = 10000;
+export const updateProductBodyDetailsComponentsItemDescriptionMax = 2000;
 
 export const updateProductBodyDetailsComponentsItemNoteMax = 4000;
 
@@ -1456,7 +1456,7 @@ export const updateProductResponseDetailsComponentsItemInclusionRateMin = 0;
 
 export const updateProductResponseDetailsComponentsItemUnitMax = 20;
 
-export const updateProductResponseDetailsComponentsItemDescriptionMax = 10000;
+export const updateProductResponseDetailsComponentsItemDescriptionMax = 2000;
 
 export const updateProductResponseDetailsComponentsItemNoteMax = 4000;
 
@@ -1754,7 +1754,7 @@ export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemInclu
 
 export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemUnitMax = 20;
 
-export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemDescriptionMax = 10000;
+export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemDescriptionMax = 2000;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsComponentsItemNoteMax = 4000;
 
@@ -2051,7 +2051,7 @@ export const listAdminProductsResponseOneDetailsComponentsItemInclusionRateMin =
 
 export const listAdminProductsResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const listAdminProductsResponseOneDetailsComponentsItemDescriptionMax = 10000;
+export const listAdminProductsResponseOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const listAdminProductsResponseOneDetailsComponentsItemNoteMax = 4000;
 
@@ -2200,7 +2200,7 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemInclusi
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
+export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
@@ -2643,7 +2643,7 @@ export const getAdminProductResponseOneDetailsComponentsItemInclusionRateMin = 0
 
 export const getAdminProductResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const getAdminProductResponseOneDetailsComponentsItemDescriptionMax = 10000;
+export const getAdminProductResponseOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const getAdminProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
@@ -2792,7 +2792,7 @@ export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemInclusion
 
 export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
+export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
@@ -3250,7 +3250,7 @@ export const saveProductDraftRevisionBodyDetailsComponentsItemInclusionRateMin =
 
 export const saveProductDraftRevisionBodyDetailsComponentsItemUnitMax = 20;
 
-export const saveProductDraftRevisionBodyDetailsComponentsItemDescriptionMax = 10000;
+export const saveProductDraftRevisionBodyDetailsComponentsItemDescriptionMax = 2000;
 
 export const saveProductDraftRevisionBodyDetailsComponentsItemNoteMax = 4000;
 
@@ -3530,7 +3530,7 @@ export const saveProductDraftRevisionResponseOneDetailsComponentsItemInclusionRa
 
 export const saveProductDraftRevisionResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const saveProductDraftRevisionResponseOneDetailsComponentsItemDescriptionMax = 10000;
+export const saveProductDraftRevisionResponseOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const saveProductDraftRevisionResponseOneDetailsComponentsItemNoteMax = 4000;
 
@@ -3679,7 +3679,7 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItem
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
@@ -4137,7 +4137,7 @@ export const publishProductBodyDetailsComponentsItemInclusionRateMin = 0;
 
 export const publishProductBodyDetailsComponentsItemUnitMax = 20;
 
-export const publishProductBodyDetailsComponentsItemDescriptionMax = 10000;
+export const publishProductBodyDetailsComponentsItemDescriptionMax = 2000;
 
 export const publishProductBodyDetailsComponentsItemNoteMax = 4000;
 
@@ -4417,7 +4417,7 @@ export const publishProductResponseOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const publishProductResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const publishProductResponseOneDetailsComponentsItemDescriptionMax = 10000;
+export const publishProductResponseOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const publishProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
@@ -4566,7 +4566,7 @@ export const publishProductResponseTwoDraftOneOneDetailsComponentsItemInclusionR
 
 export const publishProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const publishProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
+export const publishProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const publishProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
@@ -5008,7 +5008,7 @@ export const archiveProductResponseOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const archiveProductResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const archiveProductResponseOneDetailsComponentsItemDescriptionMax = 10000;
+export const archiveProductResponseOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const archiveProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
@@ -5157,7 +5157,7 @@ export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemInclusionR
 
 export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
+export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const archiveProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
@@ -5599,7 +5599,7 @@ export const restoreProductResponseOneDetailsComponentsItemInclusionRateMin = 0;
 
 export const restoreProductResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const restoreProductResponseOneDetailsComponentsItemDescriptionMax = 10000;
+export const restoreProductResponseOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const restoreProductResponseOneDetailsComponentsItemNoteMax = 4000;
 
@@ -5748,7 +5748,7 @@ export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemInclusionR
 
 export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
+export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const restoreProductResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 
@@ -6190,7 +6190,7 @@ export const discardProductDraftResponseOneDetailsComponentsItemInclusionRateMin
 
 export const discardProductDraftResponseOneDetailsComponentsItemUnitMax = 20;
 
-export const discardProductDraftResponseOneDetailsComponentsItemDescriptionMax = 10000;
+export const discardProductDraftResponseOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const discardProductDraftResponseOneDetailsComponentsItemNoteMax = 4000;
 
@@ -6339,7 +6339,7 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemInclu
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemUnitMax = 20;
 
-export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 10000;
+export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemDescriptionMax = 2000;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsComponentsItemNoteMax = 4000;
 

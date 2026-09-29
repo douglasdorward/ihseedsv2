@@ -421,7 +421,7 @@ export interface ProductComponent {
   inclusionRate: number | null;
   /** @maxLength 20 */
   unit: string;
-  /** @maxLength 10000 */
+  /** @maxLength 2000 */
   description: string;
   /** @maxLength 4000 */
   note: string;

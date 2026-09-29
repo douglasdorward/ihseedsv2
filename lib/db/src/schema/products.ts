@@ -506,7 +506,7 @@ const productDetailsObjectSchema = z.object({
   distributionNote: z.string(),
   description: z.string().max(200000),
   notes: z.string().max(2000),
-  components: z.array(z.object({ productLink: z.string().max(180), speciesName: z.string().max(120), inclusionRate: z.number().nullable(), unit: z.string().max(20), description: z.string().max(10000), note: z.string().max(4000) })),
+  components: z.array(z.object({ productLink: z.string().max(180), speciesName: z.string().max(120), inclusionRate: z.number().nullable(), unit: z.string().max(20), description: z.string().max(2000), note: z.string().max(4000) })),
   faqs: z.array(z.object({ question: z.string().max(180), answer: z.string().max(4000) })).max(10).default([]),
   formulationYear: z.string().max(20),
   photos: z.array(z.object({

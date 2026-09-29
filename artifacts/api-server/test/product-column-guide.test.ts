@@ -46,3 +46,26 @@ test("column guide is ignored by catalogue import", async () => {
   assert.equal(report.sheets[COLUMN_GUIDE_SHEET], undefined);
   assert.equal(report.plannedChanges.includes("upsert product guide-check"), true);
 });
+
+test("listing state New is accepted when Lists only has Active and Legacy", async () => {
+  process.env.DATABASE_URL ||= "postgres://unused:unused@127.0.0.1:1/unused";
+  const { dryRunWorkbook } = await import("../src/lib/workbook.ts");
+  const book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, XLSX.utils.json_to_sheet([{
+    slug: "wattlebrook-demo-tall-fescue",
+    product_name: "Wattlebrook demo tall fescue",
+    category: "Fescues & Other Grasses",
+    record_type: "Variety",
+    listing_state: "New",
+    status: "Draft",
+  }]), "1 Products");
+  XLSX.utils.book_append_sheet(book, XLSX.utils.json_to_sheet([{
+    category: "Fescues & Other Grasses",
+    record_type: "Variety",
+    listing_state: "Active",
+  }, {
+    listing_state: "Legacy",
+  }]), "Lists");
+  const report = dryRunWorkbook(XLSX.write(book, { type: "buffer", bookType: "xlsx" }) as Buffer);
+  assert.equal(report.issues.some((issue) => issue.column === "listing_state"), false);
+});

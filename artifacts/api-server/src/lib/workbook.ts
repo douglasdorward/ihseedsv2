@@ -9,7 +9,7 @@ import {
   type ProductPhoto,
 } from "@workspace/db";
 import { mediaPublicPath } from "./app-storage.ts";
-import { clearProductMediaReferences, syncProductMediaReferences } from "./media-usage.ts";
+import { syncProductMediaReferences } from "./media-usage.ts";
 import { appendProductColumnGuide, PRODUCT_SHEET_HEADERS } from "./product-column-guide.ts";
 import { legacyWebsitePath, productPublicPath, requiredLegacyRedirects } from "./product-path.ts";
 
@@ -18,6 +18,7 @@ const PRODUCT_FAQ_SHEET = "10 Product FAQs";
 const PRODUCT_FAQ_LIMIT = 10;
 const PRODUCT_FAQ_QUESTION_MAX = 180;
 const PRODUCT_FAQ_ANSWER_MAX = 4000;
+const MIX_COMPONENT_DESCRIPTION_MAX = 2000;
 type Row = Record<string, unknown>;
 type SheetReport = { rows: number; accepted: number; skipped: number; reasons: string[] };
 export type WorkbookReport = {
@@ -59,6 +60,7 @@ const BOOL_COLUMNS: Record<string, string> = {
   argt_resistant: "argtResistant",
 };
 const LIFECYCLE_STATUSES = new Set(["Published", "Draft", "Archived"]);
+const LISTING_STATES = ["Active", "New", "Legacy"] as const;
 const OPTION_ALIASES: Record<string, string> = {
   soil_ph_scale: "soil_ph_scale", context: "rate_context", unit: "rate_unit", rate_unit: "rate_unit",
   soil_range_lightest: "soil_code", soil_range_heaviest: "soil_code",
@@ -386,13 +388,25 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
       for (const reference of name === "5 Mix components" ? ["component_slug"] : []) {
         if (cell(row[reference]) && !productSlugs.has(cell(row[reference]))) issues.push({ sheet: name, row: rowNo, column: reference, problem: "Unresolved product reference" });
       }
+      if (name === "5 Mix components" && cell(row.component_description).length > MIX_COMPONENT_DESCRIPTION_MAX) {
+        issues.push({
+          sheet: name,
+          row: rowNo,
+          column: "component_description",
+          problem: `Description must be ${MIX_COMPONENT_DESCRIPTION_MAX} characters or fewer`,
+        });
+      }
       if (name === "1 Products" && cell(row.related_products)) {
         for (const related of pipe(row.related_products)) {
           if (!productSlugs.has(related)) issues.push({ sheet: name, row: rowNo, column: "related_products", problem: `Unresolved product reference "${related}"` });
         }
       }
       for (const [column, raw] of Object.entries(row)) {
-        const value = cell(raw), list = optionLists.get(OPTION_ALIASES[column] ?? column);
+        const value = cell(raw), listName = OPTION_ALIASES[column] ?? column;
+        const storedList = optionLists.get(listName);
+        const list = listName === "listing_state"
+          ? new Set([...(storedList ?? []), ...LISTING_STATES])
+          : storedList;
         if (!value || isNull(raw) || !list) continue;
         for (const rawSelected of pipe(value)) {
           const selected = column === "tolerance" ? rawSelected.replace(/^mild\s+/i, "") : rawSelected;
@@ -470,15 +484,14 @@ export async function commitWorkbook(content: Buffer, token: string) {
       product.slug,
       normalizeProductDetails(product.details, product.packSize).components,
     ]));
-    for (const product of existingProducts) {
-      if (importedSlugs.has(product.slug)) continue;
-      await clearProductMediaReferences(product.id, tx);
-      await tx.delete(productsTable).where(eq(productsTable.id, product.id));
-    }
     // A deployment may predate the v2 taxonomy and therefore only have roots.
     // Build the workbook taxonomy inside this transaction. Existing slugs stay
     // immutable while workbook names become the canonical display labels.
+    // Products absent from 1 Products are left unchanged.
     let categories = await tx.select().from(catalogueCategoriesTable);
+    const previousImportedPaths = existingProducts
+      .filter((product) => importedSlugs.has(product.slug))
+      .map((product) => productPublicPath(product.slug, product.category, categories));
     const uniqueSlug = (name: string, parentId: number | null = null) => {
       const base = taxonomySlug(name); let candidate = base, n = 2;
       while (categories.some((category) => category.parentId === parentId && category.slug === candidate)) candidate = `${base}-${n++}`;
@@ -664,7 +677,15 @@ export async function commitWorkbook(content: Buffer, token: string) {
         if (cell(row.h1) || isNull(row.h1)) d.h1 = isNull(row.h1) ? "" : cell(row.h1);
       });
     }
-    await tx.delete(redirectsTable).where(sql`${redirectsTable.toPath} NOT LIKE '/articles/%'`);
+    const importedRedirectPaths = new Set(previousImportedPaths);
+    for (const slug of importedSlugs) {
+      const product = productBySlug.get(slug);
+      if (!product) continue;
+      importedRedirectPaths.add(productPublicPath(product.slug, product.category, categories));
+    }
+    if (importedRedirectPaths.size) {
+      await tx.delete(redirectsTable).where(inArray(redirectsTable.toPath, [...importedRedirectPaths]));
+    }
     for (const row of rows["1 Products"]) {
       const product = productBySlug.get(cell(row.slug));
       const fromPath = legacyWebsitePath(cell(row.website_url));
@@ -723,6 +744,9 @@ export async function exportWorkbook() {
   // carries sowing-rate units, so make the export's hidden validation sheet
   // self-contained without changing the office-managed option records.
   (optionLists.get("rate_unit") ?? optionLists.set("rate_unit", new Set()).get("rate_unit")!).add("%");
+  const listingStates = new Set<string>(LISTING_STATES);
+  for (const value of optionLists.get("listing_state") ?? []) listingStates.add(value);
+  optionLists.set("listing_state", listingStates);
   const d = (p: typeof products[number]) => normalizeProductDetails(p.details, p.packSize);
   appendProductColumnGuide(book);
   const append = (name: string, data: object[], headers?: readonly string[]) => {

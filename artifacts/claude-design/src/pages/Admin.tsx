@@ -428,7 +428,7 @@ function mixComponentFieldIssues(
     else if ((!unit || unit === "%") && component.inclusionRate > 100) issues.inclusionRate = "A percentage rate cannot be more than 100.";
   }
   if (unit.length > 20) issues.unit = "Unit must be 20 characters or fewer.";
-  if (component.description.length > 10000) issues.description = "Description must be 10,000 characters or fewer.";
+  if (component.description.length > 2000) issues.description = "Description must be 2,000 characters or fewer.";
   return issues;
 }
 
@@ -1092,7 +1092,7 @@ function ProductTable() {
             <h2 id="admin-import-title">Import catalogue</h2>
             <div className="admin-notice" role="alert">
               <Icon name="alert-triangle" size={20}/>
-              <p><strong>Back up before importing.</strong> This upload replaces the entire product catalogue. Products and product data omitted from the workbook will be deleted or cleared. Export the current catalogue and securely back up that file before continuing.</p>
+              <p><strong>Back up before importing.</strong> Products are matched by slug. A slug already in the catalogue is updated, a new slug is added, and a product left out of the file is kept. Data for products that are in the file can still be cleared when a sheet omits it. Export the current catalogue and securely back up that file before continuing.</p>
             </div>
             <p>Upload an XLSX file, dry run to review planned changes, then confirm to apply them.</p>
             {!importReport ? (
@@ -1124,7 +1124,7 @@ function ProductTable() {
               <button className="admin-button ghost" type="button" onClick={closeImportDialog} disabled={importing}>Cancel</button>
               {importReport && !importReport.error && importReport.issues?.length === 0 && (
                 <button className="admin-button primary" data-testid="commit-import-btn" onClick={() => {
-                  if (window.confirm("I have exported and securely backed up the current catalogue. I understand this upload replaces the entire product catalogue, and omitted products or data will be deleted or cleared.")) void handleCommitImport();
+                  if (window.confirm("I have exported and securely backed up the current catalogue. I understand products are matched by slug: existing slugs are updated, new slugs are added, and products left out of the file are kept. Data for products in the file can still be cleared.")) void handleCommitImport();
                 }} disabled={importing}>{importing ? "Committing..." : "Confirm import"}</button>
               )}
             </div>
@@ -2041,9 +2041,9 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                                   </label>
                                   <label className={`admin-component-description ${fieldIssues.description ? "admin-field-invalid" : ""}`}>Public description
                                     <span className="admin-field-hint">Shown under this component on the mix page.</span>
-                                    <textarea rows={5} maxLength={10000} value={component.description ?? ""} onChange={(event) => updateComponent(index, { description: event.target.value })} placeholder="What this ingredient contributes to the mix" aria-invalid={Boolean(fieldIssues.description)} />
+                                    <textarea rows={5} maxLength={2000} value={component.description ?? ""} onChange={(event) => updateComponent(index, { description: event.target.value })} placeholder="What this ingredient contributes to the mix" aria-invalid={Boolean(fieldIssues.description)} />
                                     {fieldIssues.description && <span className="admin-inline-field-error">{fieldIssues.description}</span>}
-                                    <span className="admin-character-count">{(component.description ?? "").length}/10000</span>
+                                    <span className="admin-character-count">{(component.description ?? "").length}/2000</span>
                                   </label>
                                 </div>
                               </div>

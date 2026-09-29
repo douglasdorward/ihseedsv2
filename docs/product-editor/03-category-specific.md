@@ -232,7 +232,7 @@ The customer website prints a fixed like-for-like substitution disclaimer (grey 
 - **Required:** no
 - **Customer website:** Under the component name in the mix table. Blank means no description — never fall back to the linked product’s blurb.
 - **Public API:** yes
-- **Constraints:** max 10,000 characters.
+- **Constraints:** max 2,000 characters.
 
 ## Biologicals
 

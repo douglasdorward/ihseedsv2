@@ -28,7 +28,7 @@ Excel workbook
   -> category and product pages, SEO and sitemap
 ```
 
-The public website does **not** read the workbook directly. The back-office export is the authoritative replacement workbook: before importing, export and securely back up the current catalogue. An upload replaces the entire product catalogue; omitted products are deleted and omitted imported values are cleared.
+The public website does **not** read the workbook directly. The back-office export is the workbook to start from: before importing, export and securely back up the current catalogue. An upload matches products by slug. An existing slug is updated, a new slug is added, and a product omitted from the file is kept. Imported values omitted for a product that is in the file are cleared.
 
 ### Source-of-truth boundaries
 
@@ -166,7 +166,7 @@ Workbook imports may create missing root or child categories. Existing display n
 
 Redirect records map the path from each product's current `www.irwinhunter.com.au` URL to its new canonical product path.
 
-`1 Products.website_url` is the only redirect input. Import validates that it is an HTTP(S) URL on `www.irwinhunter.com.au` (the apex host is also accepted), extracts its path, and derives the destination from the resolved category slug and product slug. Each catalogue import replaces the entire redirect table. No built-in, historical, category-change, or product-change redirects are added automatically.
+`1 Products.website_url` is the only redirect input. Import validates that it is an HTTP(S) URL on `www.irwinhunter.com.au` (the apex host is also accepted), extracts its path, and derives the destination from the resolved category slug and product slug. Each catalogue import replaces redirects only for products in the file, including a product whose previous public path changed. Redirects for products left out of the file stay. No built-in, historical, category-change, or product-change redirects are added automatically.
 
 ### Product options
 
@@ -244,9 +244,8 @@ Warnings should be reviewed but do not necessarily block import. Issues block im
 ### Replacement behavior
 
 - Products are matched by immutable slug.
-- The uploaded workbook is authoritative for the entire product catalogue.
-- Products omitted from `1 Products` are deleted.
-- Imported product values omitted from the workbook contract use their empty/default value, except retired stored compatibility fields, which remain untouched on matching products.
+- An existing slug is updated. A new slug is inserted. A product omitted from `1 Products` is left unchanged.
+- For products that are in the file, imported values omitted from the workbook contract use their empty/default value, except retired stored compatibility fields, which remain untouched on matching products.
 - New products with blank lifecycle status default to Draft.
 - Existing products with blank lifecycle status also become Draft.
 - Only `Published`, `Draft`, and `Archived` are valid explicit lifecycle values.
@@ -261,7 +260,7 @@ Sale lines are authoritative for every product represented in `1 Products`.
 - Stock codes must be globally unique.
 - Blank or unresolved sale-line ownership cannot produce a valid line.
 
-Do not create partial workbooks. Start from a current admin export and supply the complete intended catalogue.
+A workbook may omit products that should stay as they are. For every product it includes, supply the complete child sheets, because an omitted sowing rate, sale line, mix component, category specific, or FAQ is cleared for that product. Start from a current admin export.
 
 ### Taxonomy behavior
 
@@ -645,8 +644,8 @@ After that upload, the running implementation was refined further:
 - Independent Active/New/Legacy listing chosen by the administrator, taking precedence over availability
 - Separate name-only Legacy section on category pages
 - Immutable product and category slugs, plus redirects derived from imported Legacy website URLs
-- Authoritative replacement workbook with dry-run/token/commit workflow
-- Replacement product and sale-line data; omitted products are deleted and omitted imported values are cleared
+- Authoritative workbook for included products, with dry-run/token/commit workflow
+- Products matched by slug: existing slugs updated, new slugs added, omitted products kept; imported values omitted for included products are cleared
 - Taxonomy creation and controlled-value validation through `Lists`
 - Preservation of unchanged legacy Published records without weakening new publication rules
 - Import/editor schema parity checks
@@ -757,9 +756,10 @@ PostgreSQL-backed website. Treat these as hard compatibility rules:
    required visible Lists sheet. Column guide is not imported.
 2. Product slug is the permanent identity and join key. Never change an existing
    slug. Never invent a replacement slug for an existing product.
-3. Treat the uploaded workbook as authoritative replacement data. Export and
-   securely back up before importing; omission may remove or clear catalogue data.
-   Lifecycle accepts only Published, Draft or Archived.
+3. Match products by slug. Update an existing slug, add a new slug, and leave a
+   product out of the file when it should stay unchanged. For products in the
+   file, omitted child rows clear that set. Export and securely back up before
+   importing. Lifecycle accepts only Published, Draft or Archived.
 4. A blank lifecycle status imports the product as Draft. Use explicit Published
    only when publication is intended.
 5. Draft minimum fields are product_name, slug, category and record_type.
@@ -845,4 +845,4 @@ This guide was checked against:
 - Generated public/admin API schemas
 - The approved workbook and its accompanying change note
 
-The lifecycle test suite covers public eligibility, archive/restore, unpublished revision privacy, authoritative workbook replacement, blank-status Draft imports, import/export compatibility, redirects and concurrent lifecycle writes.
+The lifecycle test suite covers public eligibility, archive/restore, unpublished revision privacy, workbook upsert by slug, blank-status Draft imports, import/export compatibility, redirects and concurrent lifecycle writes.

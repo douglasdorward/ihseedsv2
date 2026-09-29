@@ -1550,7 +1550,7 @@ test("malformed product identities and legacy URLs cannot trigger catalogue repl
     /Duplicate legacy website path/.test(issue.problem)), true);
 });
 
-test("published workbook rows enforce content fields and delete products absent from an upsert", async () => {
+test("published workbook rows enforce content fields and keep products absent from an upsert", async () => {
   const categories = assertStatus(await request("GET", "/categories"), 200);
   const other = categories.find((category) => category.slug === "other");
   assert.ok(other, "Expected the seeded Other category");
@@ -1594,7 +1594,12 @@ test("published workbook rows enforce content fields and delete products absent 
   const sourceDescription = "First editorial paragraph.\n\nSecond editorial paragraph.";
   const legacyWebsiteUrl = `https://irwinhunter.com.au/product/${imported.slug}/`;
   const staleRedirectPath = `/product/stale-${testRunId}`;
-  sql(`INSERT INTO ih_redirects (from_path, to_path) VALUES ('${staleRedirectPath}', '/products/other/stale')`);
+  const absentRedirectPath = `/product/${absent.slug}`;
+  sql(`
+    INSERT INTO ih_redirects (from_path, to_path) VALUES
+      ('${staleRedirectPath}', '/products/${other.slug}/${imported.slug}'),
+      ('${absentRedirectPath}', '/products/${other.slug}/${absent.slug}');
+  `);
   const productRow = {
     slug: imported.slug,
     product_name: imported.name,
@@ -1684,18 +1689,19 @@ test("published workbook rows enforce content fields and delete products absent 
   assert.equal(importedAdmin.draft, null);
   assert.equal(sql(`SELECT count(*) FROM ih_media_references WHERE owner_type = 'product' AND owner_id = '${imported.id}'`), "0");
   assert.equal(importedAdmin.websiteUrlLegacy, legacyWebsiteUrl);
-  assert.equal(sql("SELECT count(*) FROM ih_redirects WHERE to_path NOT LIKE '/articles/%'"), "1");
   assert.equal(sql(`SELECT to_path FROM ih_redirects WHERE from_path = '/product/${imported.slug}'`),
     `/products/${other.slug}/${imported.slug}`);
   assert.equal(sql(`SELECT count(*) FROM ih_redirects WHERE from_path = '${staleRedirectPath}'`), "0");
+  assert.equal(sql(`SELECT to_path FROM ih_redirects WHERE from_path = '${absentRedirectPath}'`),
+    `/products/${other.slug}/${absent.slug}`);
   assert.equal(importedAdmin.details.seoTitle, "Workbook SEO title");
   assert.equal((await adminProduct(imported.id)).details.socialTitle, "Workbook social title");
   assert.equal((await adminProduct(imported.id)).details.socialDescription, "Workbook social description.");
   assert.equal((await adminProduct(imported.id)).details.socialImage, "https://example.com/share.jpg");
   assert.equal((await adminProduct(imported.id)).details.canonicalUrl, "https://example.com/product/canonical");
   assert.equal((await adminProduct(imported.id)).details.robotsIndex, false);
-  assert.equal((await request("GET", `/admin/products/${absent.id}`)).response.status, 404,
-    "Products absent from the authoritative workbook are deleted");
+  assert.equal((await request("GET", `/admin/products/${absent.id}`)).response.status, 200,
+    "Products absent from the workbook are kept");
 
   const exported = Buffer.from(await (await fetch(`${baseUrl}/api/admin/import/export`)).arrayBuffer());
   const exportedBook = xlsx.read(exported);
