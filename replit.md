@@ -34,6 +34,7 @@ Responsive pasture seed catalogue, weekly availability view, regional advice con
 - The site remains a single responsive, anchor-navigated experience to preserve the imported homepage structure.
 - Catalogue and availability data come from PostgreSQL; the API seeds the imported catalogue only when the table is empty.
 - Farmer enquiries are validated at the API boundary and persisted in PostgreSQL.
+- Each saved enquiry sends separate Resend emails: one to the sales inbox (`ENQUIRY_EMAIL_TO`) and, if set, one developer copy (`ENQUIRY_EMAIL_DEVELOPER_COPY`), both from `ENQUIRY_EMAIL_FROM`. Only the sales email decides whether the visitor sees "sent" or "saved"; a failed or invalid developer copy is logged only. Leave the developer copy blank to stop it.
 - This Replit is an independent working copy of the original `douglasdorward/ihseeds` repository. Do not push changes from this workspace back to that original repository; publish them to a separate fork repository and retain the original as a read-only upstream.
 - A fresh database imports the committed catalogue seed only when `ih_products` is empty. Catalogue exports intentionally exclude enquiries and other user-submitted data.
 
