@@ -289,7 +289,14 @@ test("public sitemap.xml and robots.txt are the crawl contract", async () => {
   assert.equal(robots.status, 200);
   const robotsBody = await robots.text();
   assert.match(robotsBody, /Disallow:\s*\/admin/i);
-  assert.match(robotsBody, /Disallow:\s*\/api/i);
+  assert.match(robotsBody, /^Disallow:\s*\/api$/im);
+  assert.match(robotsBody, /^Disallow:\s*\/api\/$/im);
+  assert.match(robotsBody, /^Allow:\s*\/api\/media\/$/im);
+  assert.match(robotsBody, /^Allow:\s*\/api\/site\/$/im);
+  assert.deepEqual(
+    [...robotsBody.matchAll(/^Allow:\s*(\/api\S*)$/gim)].map((match) => match[1]).sort(),
+    ["/api/media/", "/api/site/"],
+  );
   assert.match(robotsBody, new RegExp(`Sitemap:\\s*${origin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/sitemap\\.xml`));
 
   const response = await fetch(`${webBaseUrl}/sitemap.xml`);
