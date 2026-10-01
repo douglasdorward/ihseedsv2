@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Raleway } from "next/font/google";
+import localFont from "next/font/local";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { getCategories } from "../lib/catalogue";
@@ -10,9 +10,12 @@ import { absoluteSiteUrl, publicSiteUrl } from "../lib/site-url";
 import { socialMetadata } from "../lib/social-metadata";
 import "./styles.css";
 
-const raleway = Raleway({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
+// Raleway is bundled locally (SIL Open Font License) so production builds do
+// not depend on fetching from Google Fonts, which intermittently broke publishing.
+const raleway = localFont({
+  src: "./fonts/raleway-latin-variable.woff2",
+  weight: "300 900",
+  style: "normal",
   display: "swap",
   variable: "--font-raleway",
 });
