@@ -405,7 +405,7 @@ export function ProductPageEditor(props: ProductPageEditorProps) {
             <aside className="product-sidebar-col">
               <div className="product-sidebar-card mobile-order-2">
                 <section className="quick-facts-section">
-                  <h2 className="sidebar-card-heading">Quick facts</h2>
+                  <h2 className="sidebar-card-heading">Product Overview</h2>
                   <div className="quick-facts-list">
                     {slots.map((slot) => (
                       <div className="quick-fact-item" key={slot.id}>

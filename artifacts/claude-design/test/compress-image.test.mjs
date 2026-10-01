@@ -60,6 +60,25 @@ test("a file that stays over 12 MB is rejected", async () => {
   );
 });
 
+test("a JPEG reported as image/jpg is given a standard type", async () => {
+  const result = await compressImageForUpload(photo(2000, "paddock.jpg", "image/jpg"), {
+    decode: async () => null,
+    encode: async () => { throw new Error("encode should not run"); },
+  });
+  assert.equal(result.type, "image/jpeg");
+  assert.equal(result.name, "paddock.jpg");
+});
+
+test("an undecodable HEIC is rejected with a clear error", async () => {
+  await assert.rejects(
+    () => compressImageForUpload(photo(2000, "paddock.heic", "image/heic"), {
+      decode: async () => null,
+      encode: async () => { throw new Error("encode should not run"); },
+    }),
+    /saved as JPEG/,
+  );
+});
+
 test("a photo the browser cannot decode is left unchanged", async () => {
   const original = photo(2000);
   const result = await compressImageForUpload(original, {

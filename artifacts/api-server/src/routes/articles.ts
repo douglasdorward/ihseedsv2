@@ -46,6 +46,7 @@ import {
   uniquePdfSlug,
 } from "../lib/article-pdf";
 import { getStoredFile, putStoredFile, removeStoredFile } from "../lib/app-storage";
+import { logger } from "../lib/logger";
 import { clearArticleMediaReferences, syncArticleMediaReferences } from "../lib/media-usage";
 import { absolutePublicUrl } from "../lib/public-site-url";
 
@@ -131,7 +132,11 @@ function sendRelatedProductError(res: Response, invalid: string[]) {
 }
 
 async function persistMedia(article: Article) {
-  await syncArticleMediaReferences(article);
+  try {
+    await syncArticleMediaReferences(article);
+  } catch (error) {
+    logger.error({ err: error, articleId: article.id }, "Article media references could not be updated");
+  }
 }
 
 function workbookFromBody(body: unknown) {
@@ -262,7 +267,8 @@ router.post("/admin/articles", async (req, res): Promise<void> => {
       res.status(409).json({ error: "An article with that slug already exists." });
       return;
     }
-    throw error;
+    req.log.error({ err: error }, "Article create failed");
+    res.status(500).json({ error: "Could not save this article." });
   }
 });
 
@@ -385,7 +391,8 @@ router.patch("/admin/articles/:id", async (req, res): Promise<void> => {
       res.status(409).json({ error: "An article with that slug already exists." });
       return;
     }
-    throw error;
+    req.log.error({ err: error, articleId: id }, "Article update failed");
+    res.status(500).json({ error: "Could not save this article." });
   }
 });
 
@@ -570,17 +577,23 @@ router.post("/admin/articles/:id/pdfs", async (req, res): Promise<void> => {
     storageKey,
     bytes: buffer.length,
   }];
-  await putStoredFile(storageKey, buffer, "application/pdf");
-  const [article] = await db.update(articlesTable).set({
-    pdfs: next,
-    updatedAt: new Date(),
-  }).where(eq(articlesTable.id, id)).returning();
-  if (!article) {
+  try {
+    await putStoredFile(storageKey, buffer, "application/pdf");
+    const [article] = await db.update(articlesTable).set({
+      pdfs: next,
+      updatedAt: new Date(),
+    }).where(eq(articlesTable.id, id)).returning();
+    if (!article) {
+      await removeStoredFile(storageKey);
+      res.status(404).json({ error: "Article not found." });
+      return;
+    }
+    res.status(201).json(toAdminArticle(article));
+  } catch (error) {
     await removeStoredFile(storageKey);
-    res.status(404).json({ error: "Article not found." });
-    return;
+    req.log.error({ err: error, articleId: id }, "Article PDF upload failed");
+    res.status(500).json({ error: "Could not attach that file." });
   }
-  res.status(201).json(toAdminArticle(article));
 });
 
 router.get("/admin/articles/:id/pdfs/:pdfSlug", async (req, res): Promise<void> => {

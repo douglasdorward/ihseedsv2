@@ -16,21 +16,40 @@ export function categoryPublicPath(category: Pick<CatalogueCategory, "slug">) {
 export type NavCategory = Pick<CatalogueCategory, "name" | "slug">;
 
 const FEATURED_NAV_LIMIT = 6;
-const PINNED_NAV_SLUG = "mixes";
+const FEATURED_NAV_ORDER = [
+  /mixes/,
+  /ryegrass/,
+  /clover/,
+  /serradella/,
+  /forage/,
+  /sub[- ]?tropical/,
+];
+
+function featuredNavRank(category: Pick<CatalogueCategory, "slug" | "name">) {
+  const key = `${category.slug} ${category.name}`.toLowerCase();
+  const index = FEATURED_NAV_ORDER.findIndex((pattern) => pattern.test(key));
+  return index === -1 ? FEATURED_NAV_ORDER.length : index;
+}
+
+function compareNavCategories(a: CatalogueCategory, b: CatalogueCategory) {
+  const rankDiff = featuredNavRank(a) - featuredNavRank(b);
+  if (rankDiff !== 0) return rankDiff;
+  const orderDiff = a.sortOrder - b.sortOrder;
+  if (orderDiff !== 0) return orderDiff;
+  return a.name.localeCompare(b.name);
+}
+
+export function allNavCategories(categories: CatalogueCategory[]): NavCategory[] {
+  return categories
+    .filter((category) => category.parentId === null && category.active && (category.productCount ?? 0) > 0)
+    .sort(compareNavCategories)
+    .map(({ name, slug }) => ({ name, slug }));
+}
 
 export function featuredNavCategories(categories: CatalogueCategory[]): NavCategory[] {
-  const roots = categories.filter((category) => category.parentId === null && category.active);
-  const pinned = roots.find((category) => category.slug === PINNED_NAV_SLUG);
-  const rest = roots
-    .filter((category) => category.slug !== PINNED_NAV_SLUG)
-    .sort((a, b) => {
-      const countDiff = (b.productCount ?? 0) - (a.productCount ?? 0);
-      if (countDiff !== 0) return countDiff;
-      const orderDiff = a.sortOrder - b.sortOrder;
-      if (orderDiff !== 0) return orderDiff;
-      return a.name.localeCompare(b.name);
-    });
-  return (pinned ? [pinned, ...rest] : rest)
+  return categories
+    .filter((category) => category.parentId === null && category.active)
+    .sort(compareNavCategories)
     .slice(0, FEATURED_NAV_LIMIT)
     .map(({ name, slug }) => ({ name, slug }));
 }

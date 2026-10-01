@@ -3,7 +3,7 @@ import { Raleway } from "next/font/google";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { getCategories } from "../lib/catalogue";
-import { featuredNavCategories } from "../lib/catalogue-paths";
+import { allNavCategories, featuredNavCategories } from "../lib/catalogue-paths";
 import { DEFAULT_COMPANY, organizationJsonLd } from "../lib/company";
 import { FALLBACK_SITE_SETTINGS, loadSiteSettings } from "../lib/site-settings";
 import { absoluteSiteUrl, publicSiteUrl } from "../lib/site-url";
@@ -38,6 +38,7 @@ export default async function RootLayout({ children }: { children: any }) {
     loadSiteSettings().catch(() => FALLBACK_SITE_SETTINGS),
   ]);
   const productCategories = featuredNavCategories(categories);
+  const footerCategories = allNavCategories(categories);
   const company = settings.company ?? DEFAULT_COMPANY;
 
   return (
@@ -53,7 +54,7 @@ export default async function RootLayout({ children }: { children: any }) {
         <div className="site-shell">
           <Header productCategories={productCategories} seedGuideTitle={settings.seedGuide.navTitle} />
           <main>{children}</main>
-          <Footer company={company} />
+          <Footer company={company} productCategories={footerCategories} />
         </div>
       </body>
     </html>

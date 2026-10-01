@@ -21,6 +21,7 @@ import {
   type SiteHomepageSettings,
   type SiteSeedGuideSettings,
 } from "@workspace/db";
+import { articleBodyAssetIds } from "./article-body";
 
 type DbLike = Pick<typeof db, "delete" | "insert" | "select" | "update">;
 
@@ -141,8 +142,19 @@ export function seedGuideWithoutAssets(
   });
 }
 
+function stripArticleBodyAssets(body: string, assetIds: Set<string>) {
+  if (!body || !assetIds.size) return body;
+  let next = body;
+  for (const id of assetIds) {
+    const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    next = next.replace(new RegExp(`<p>\\s*<img\\b[^>]*\\/api\\/(?:admin\\/)?media\\/${escaped}[^>]*>\\s*<\\/p>`, "gi"), "");
+    next = next.replace(new RegExp(`<img\\b[^>]*\\/api\\/(?:admin\\/)?media\\/${escaped}[^>]*>`, "gi"), "");
+  }
+  return next;
+}
+
 export function articleFieldsWithoutAssets(
-  article: Pick<Article, "heroImageSrc" | "heroImageAssetId" | "socialImage">,
+  article: Pick<Article, "heroImageSrc" | "heroImageAssetId" | "socialImage" | "body">,
   assetIds: Iterable<string>,
 ) {
   const ids = assetIdSet(assetIds);
@@ -152,6 +164,7 @@ export function articleFieldsWithoutAssets(
     heroImageSrc: heroMatches ? "" : article.heroImageSrc,
     heroImageAssetId: heroMatches ? null : article.heroImageAssetId,
     socialImage: matchesAsset(null, article.socialImage, ids, srcs) ? "" : article.socialImage,
+    body: stripArticleBodyAssets(article.body ?? "", ids),
   };
 }
 
@@ -241,11 +254,13 @@ export async function unlinkAndDeleteMediaRecords(ids: string[]): Promise<MediaA
         next.heroImageSrc === article.heroImageSrc
         && next.heroImageAssetId === article.heroImageAssetId
         && next.socialImage === article.socialImage
+        && next.body === article.body
       ) continue;
       const [saved] = await tx.update(articlesTable).set({
         heroImageSrc: next.heroImageSrc,
         heroImageAssetId: next.heroImageAssetId,
         socialImage: next.socialImage,
+        body: next.body,
         updatedAt: new Date(),
       }).where(eq(articlesTable.id, article.id)).returning();
       await syncArticleMediaReferences(saved ?? { ...article, ...next }, tx);
@@ -404,8 +419,19 @@ export async function clearProductMediaReferences(productId: number, tx: DbLike 
   ));
 }
 
+export function articleMediaReferenceRows(
+  article: Pick<Article, "id" | "title" | "publishStatus" | "heroImageAssetId" | "body">,
+) {
+  const heroId = article.heroImageAssetId?.trim() || "";
+  const bodyIds = articleBodyAssetIds(article.body ?? "");
+  return [
+    ...(heroId ? [{ assetId: heroId, field: "heroImage", role: "hero" }] : []),
+    ...bodyIds.map((assetId, index) => ({ assetId, field: `bodyImage:${index}`, role: "body" })),
+  ];
+}
+
 export async function syncArticleMediaReferences(
-  article: Pick<Article, "id" | "title" | "publishStatus" | "heroImageAssetId">,
+  article: Pick<Article, "id" | "title" | "publishStatus" | "heroImageAssetId" | "body">,
   tx: DbLike = db,
 ) {
   const ownerId = String(article.id);
@@ -413,19 +439,26 @@ export async function syncArticleMediaReferences(
     eq(mediaReferencesTable.ownerType, "article"),
     eq(mediaReferencesTable.ownerId, ownerId),
   ));
-  const assetId = article.heroImageAssetId?.trim();
-  if (!assetId) return;
-  await tx.insert(mediaReferencesTable).values({
-    assetId,
-    ownerType: "article",
+  const rows = articleMediaReferenceRows(article);
+  if (!rows.length) return;
+  const wanted = [...new Set(rows.map((row) => row.assetId))];
+  const existing = await tx.select({ id: mediaAssetsTable.id })
+    .from(mediaAssetsTable)
+    .where(inArray(mediaAssetsTable.id, wanted));
+  const existingIds = new Set(existing.map((row) => row.id));
+  const usable = rows.filter((row) => existingIds.has(row.assetId));
+  if (!usable.length) return;
+  await tx.insert(mediaReferencesTable).values(usable.map((row) => ({
+    assetId: row.assetId,
+    ownerType: "article" as const,
     ownerId,
     ownerName: article.title,
-    field: "heroImage",
-    role: "hero",
+    field: row.field,
+    role: row.role,
     usageState: mediaUsageState(article.publishStatus),
     editPath: `/admin/blog/${article.id}`,
     metadata: {},
-  });
+  })));
 }
 
 export async function clearArticleMediaReferences(articleId: number, tx: DbLike = db) {
@@ -585,6 +618,7 @@ export async function backfillMediaUsage() {
     title: articlesTable.title,
     publishStatus: articlesTable.publishStatus,
     heroImageAssetId: articlesTable.heroImageAssetId,
+    body: articlesTable.body,
   }).from(articlesTable);
   const articleIds = articles.map((article) => String(article.id));
   if (articleIds.length) {

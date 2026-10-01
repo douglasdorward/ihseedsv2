@@ -38,13 +38,12 @@ export default async function TechSheetsPage() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", border: "1px solid var(--line)", borderRadius: 16, overflow: "hidden" }}>
               {products.map((product, index) => (
-                <div className="tech-sheet-row" key={product.id} style={{ display: "grid", gridTemplateColumns: "44px minmax(0,2fr) minmax(0,1.2fr) 120px 160px", gap: 20, alignItems: "center", padding: "18px 24px", borderBottom: index === products.length - 1 ? "none" : "1px solid var(--line)" }}>
+                <div className="tech-sheet-row" key={product.id} style={{ display: "grid", gridTemplateColumns: "44px minmax(0,1fr) 120px 160px", gap: 20, alignItems: "center", padding: "18px 24px", borderBottom: index === products.length - 1 ? "none" : "1px solid var(--line)" }}>
                   <span style={{ color: "var(--green)", display: "flex" }}><Icon name="file-text" size={22} /></span>
                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <div style={{ fontSize: 16, fontWeight: 700, color: "var(--green)" }}>{product.name}</div>
                     <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.45 }}>{product.details.tagline}</div>
                   </div>
-                  <div style={{ fontSize: 14, color: "var(--black-green)" }}>{product.packSize}</div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>2026 range</div>
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
                     <a href={`/tech-sheets/${product.slug}`} className="button button-outline" style={{ padding: "8px 16px", minHeight: "auto", fontSize: 14 }} target="_blank" rel="noreferrer">Download tech sheet</a>

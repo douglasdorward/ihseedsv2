@@ -206,24 +206,29 @@ router.post("/admin/media/upload-request", async (req, res): Promise<void> => {
   }
   const id = randomUUID();
   const stagingPath = mediaObjectPath(id, `original${extensionFor(originalFilename, contentType)}`);
-  const [created] = await db.insert(mediaAssetsTable).values({
-    id,
-    status: "Pending",
-    originalFilename,
-    contentType: contentType as "image/jpeg" | "image/png" | "image/webp",
-    bytes,
-    storageKind: "managed",
-    objectPath: stagingPath,
-    stagingPath,
-  }).returning();
-  res.status(201).json({
-    duplicate: false,
-    asset: toPublicAsset(created),
-    assetId: id,
-    uploadURL: `/api/admin/media/${id}/object`,
-    objectPath: stagingPath,
-    previewURL: mediaPreviewPath(id),
-  });
+  try {
+    const [created] = await db.insert(mediaAssetsTable).values({
+      id,
+      status: "Pending",
+      originalFilename,
+      contentType: contentType as "image/jpeg" | "image/png" | "image/webp",
+      bytes,
+      storageKind: "managed",
+      objectPath: stagingPath,
+      stagingPath,
+    }).returning();
+    res.status(201).json({
+      duplicate: false,
+      asset: toPublicAsset(created),
+      assetId: id,
+      uploadURL: `/api/admin/media/${id}/object`,
+      objectPath: stagingPath,
+      previewURL: mediaPreviewPath(id),
+    });
+  } catch (error) {
+    req.log.error({ err: error }, "Media upload request failed");
+    res.status(500).json({ error: "Could not start that image upload." });
+  }
 });
 
 router.put("/admin/media/:id/object", async (req, res): Promise<void> => {
@@ -276,7 +281,14 @@ router.post("/admin/media/:id/complete", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Upload the image bytes before completing." });
     return;
   }
-  const stored = await getStoredFile(stagingPath);
+  let stored: Awaited<ReturnType<typeof getStoredFile>>;
+  try {
+    stored = await getStoredFile(stagingPath);
+  } catch (error) {
+    req.log.error({ err: error, assetId: id }, "Image storage read failed");
+    res.status(503).json({ error: "Image storage is temporarily unavailable. Please try the upload again." });
+    return;
+  }
   if (!stored?.bytes?.length) {
     await db.update(mediaAssetsTable).set({
       status: "Failed",
@@ -421,23 +433,29 @@ router.post("/admin/media/:id/attach", async (req, res): Promise<void> => {
     const nextDefaultAlt = shouldReplaceGeneratedAlt(asset.defaultAlt, asset.originalFilename)
       ? imageAltFromContext({ ownerName: article.title, filename: asset.originalFilename, role: "hero" })
       : asset.defaultAlt;
-    const updatedArticle = await db.transaction(async (tx) => {
-      const [saved] = await tx.update(articlesTable).set({
-        heroImageSrc: mediaPublicPath(asset.id),
-        heroImageAssetId: asset.id,
-        updatedAt: new Date(),
-      }).where(eq(articlesTable.id, article.id)).returning();
-      if (nextDefaultAlt !== asset.defaultAlt) {
-        await tx.update(mediaAssetsTable).set({
-          defaultAlt: nextDefaultAlt,
+    try {
+      const updatedArticle = await db.transaction(async (tx) => {
+        const [saved] = await tx.update(articlesTable).set({
+          heroImageSrc: mediaPublicPath(asset.id),
+          heroImageAssetId: asset.id,
           updatedAt: new Date(),
-        }).where(eq(mediaAssetsTable.id, asset.id));
-      }
-      await syncArticleMediaReferences(saved, tx);
-      return saved;
-    });
-    const usage = (await usageByAssetId([asset.id])).get(asset.id) ?? emptyUsage();
-    res.json(toPublicAsset({ ...asset, defaultAlt: nextDefaultAlt }, usage, updatedArticle.publishStatus === "Published"));
+        }).where(eq(articlesTable.id, article.id)).returning();
+        if (!saved) throw new Error("Article not found.");
+        if (nextDefaultAlt !== asset.defaultAlt) {
+          await tx.update(mediaAssetsTable).set({
+            defaultAlt: nextDefaultAlt,
+            updatedAt: new Date(),
+          }).where(eq(mediaAssetsTable.id, asset.id));
+        }
+        await syncArticleMediaReferences(saved, tx);
+        return saved;
+      });
+      const usage = (await usageByAssetId([asset.id])).get(asset.id) ?? emptyUsage();
+      res.json(toPublicAsset({ ...asset, defaultAlt: nextDefaultAlt }, usage, updatedArticle.publishStatus === "Published"));
+    } catch (error) {
+      req.log.error({ err: error, assetId: id, articleId: target.id }, "Article image attach failed");
+      res.status(500).json({ error: "Could not attach that image to the article." });
+    }
     return;
   }
   const [product] = await db.select().from(productsTable).where(eq(productsTable.id, target.id));

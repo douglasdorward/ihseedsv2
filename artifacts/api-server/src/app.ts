@@ -103,6 +103,24 @@ app.use(
 app.use("/api/admin/administrators", requireSuperadmin);
 app.use("/api/admin", requireAdmin);
 app.use("/api", router);
+app.use((error: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (res.headersSent) {
+    next(error);
+    return;
+  }
+  const path = req.originalUrl.split("?")[0] ?? "";
+  if (!path.startsWith("/api")) {
+    next(error);
+    return;
+  }
+  req.log?.error({ err: error }, "Unhandled API error");
+  const status = error && typeof error === "object" && typeof (error as { status?: unknown }).status === "number"
+    ? (error as { status: number }).status
+    : 500;
+  res.status(status >= 400 && status < 600 ? status : 500).json({
+    error: status === 413 ? "That file is too large." : "Something went wrong. Please try again.",
+  });
+});
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
 // The admin remains the existing Vite application. Express only delivers its

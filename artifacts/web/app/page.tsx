@@ -92,6 +92,38 @@ export default async function Home() {
         </div>
       </section>
 
+      <section id="pasture-selector" className="section selector-feature-section" aria-labelledby="selector-feature-heading">
+        <div className="content-width">
+          <div className="section-heading">
+            <h2 id="selector-feature-heading"><span>Pasture</span> Seed Selector</h2>
+            <Link href="/pasture-selector" className="button button-outline" data-testid="button-try-selector">Try the selector</Link>
+          </div>
+          <p className="selector-feature-intro">Answer four questions about your paddock — rainfall, soil, what you are growing it for and how long it needs to last — and see pasture seed that suits it.</p>
+          <div className="selector-feature-grid">
+            <div className="selector-feature-card">
+              <Icon name="cloud-rain" size={27} />
+              <h3>Rainfall</h3>
+              <p>How much rain does the paddock get?</p>
+            </div>
+            <div className="selector-feature-card">
+              <Icon name="layers" size={27} />
+              <h3>Soil</h3>
+              <p>What is the ground like?</p>
+            </div>
+            <div className="selector-feature-card">
+              <Icon name="target" size={27} />
+              <h3>Use</h3>
+              <p>What is the paddock for?</p>
+            </div>
+            <div className="selector-feature-card">
+              <Icon name="calendar" size={27} />
+              <h3>Stand life</h3>
+              <p>How long do you want it to last?</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="about" className="section about-section">
         <div className="feature-panel">
           <div className="feature-image">

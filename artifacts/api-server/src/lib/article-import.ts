@@ -125,7 +125,7 @@ const INSTRUCTION_ROWS: Array<[string, string]> = [
   ["Allowed HTML", "p, h2, h3, strong, em, u, a, ul, ol, li, blockquote, br. Example: <h2>Heading</h2><p>Copy with <strong>bold</strong>.</p>"],
   ["Markdown", "## Heading, ### Subheading, **bold**, *italic*, [link](/contact), lists and blockquotes also work."],
   ["Cell limit", `Excel cells are limited to ${EXCEL_CELL_LIMIT.toLocaleString()} characters. Longer articles should be edited in admin.`],
-  ["Hero images", "Use an image URL. Upload files in the article editor after import."],
+  ["Hero images", "Use an image URL. Upload hero and in-article photos in the article editor after import."],
   ["Tags", "Separate tags with |. Example: Editorial|Sowing & Timing"],
   ["Linked products", "Copy up to three slugs from the Products sheet into related_product_slugs, separated with |. Example: urana-subterranean-clover|haifa-white-clover. Use slug, not the product name. Products.path is the public product URL for body links."],
   ["Category links", "Copy a slug or path from the Categories sheet into body links, e.g. <a href=\"/products/ryegrass\">Ryegrass</a>. Categories are a lookup and are not imported."],

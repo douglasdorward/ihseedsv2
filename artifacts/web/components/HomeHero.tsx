@@ -100,8 +100,9 @@ export function HomeHero({
       <h1><span>{eyebrow}</span><strong>{heading}</strong></h1>
       <p>{body}</p>
       <div className="hero-actions">
-        <Link href="/contact" className="button button-primary" data-testid="button-advice">Advice</Link>
-        <Link href={CATALOGUE_INDEX_PATH} className="button button-light" data-testid="button-browse-catalogue">Browse the catalogue</Link>
+        <Link href={CATALOGUE_INDEX_PATH} className="button button-primary" data-testid="button-browse-products">Browse products</Link>
+        <Link href="/pasture-selector" className="button button-light" data-testid="button-pasture-selector">Pasture Seed Selector</Link>
+        <Link href="/contact" className="button button-light" data-testid="button-advice">Advice</Link>
       </div>
     </div>
   );

@@ -107,7 +107,11 @@ export async function publishDueArticles(now = new Date()) {
       eq(articlesTable.publishStatus, "Scheduled"),
     )).returning();
     if (!updated) continue;
-    await syncArticleMediaReferences(updated);
+    try {
+      await syncArticleMediaReferences(updated);
+    } catch (error) {
+      logger.error({ err: error, articleId: updated.id }, "Scheduled article media references could not be updated");
+    }
     published.push(updated);
   }
   return published;

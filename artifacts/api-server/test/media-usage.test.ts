@@ -5,6 +5,8 @@ process.env.DATABASE_URL ??= "postgres://127.0.0.1:5432/ih_media_usage_unit_test
 
 const {
   aboutWithoutAssets,
+  articleFieldsWithoutAssets,
+  articleMediaReferenceRows,
   assetIdFromPhoto,
   detailsWithoutAssets,
   homepageWithoutAssets,
@@ -77,6 +79,32 @@ test("article, site, and reseller usages stay protected", () => {
   assert.equal(isProtectedMediaReference({ ownerType: "static", role: "social", field: "socialImage" }), true);
   assert.equal(isProtectedMediaReference({ ownerType: "reseller", role: "logo" }), true);
   assert.equal(isProtectedMediaReference({ ownerType: "category", role: "" }), true);
+});
+
+test("article media rows include the hero and in-body library images", () => {
+  const rows = articleMediaReferenceRows({
+    id: 4,
+    title: "Spring sowing",
+    publishStatus: "Draft",
+    heroImageAssetId: "hero-asset",
+    body: '<p>Notes</p><p><img src="/api/media/4bb9e866-9848-4894-8bd3-95198eb7fb92" alt="Clover"></p>',
+  });
+  assert.deepEqual(rows, [
+    { assetId: "hero-asset", field: "heroImage", role: "hero" },
+    { assetId: "4bb9e866-9848-4894-8bd3-95198eb7fb92", field: "bodyImage:0", role: "body" },
+  ]);
+});
+
+test("deleting a library image removes it from the article body", () => {
+  const next = articleFieldsWithoutAssets({
+    heroImageSrc: "/api/media/keep",
+    heroImageAssetId: "keep",
+    socialImage: "",
+    body: '<p>Notes</p><p><img src="/api/media/4bb9e866-9848-4894-8bd3-95198eb7fb92" alt="Clover"></p>',
+  }, ["4bb9e866-9848-4894-8bd3-95198eb7fb92"]);
+  assert.equal(next.heroImageAssetId, "keep");
+  assert.equal(next.body.includes("4bb9e866-9848-4894-8bd3-95198eb7fb92"), false);
+  assert.equal(next.body.includes("<p>Notes</p>"), true);
 });
 
 test("photosWithoutAssets compacts remaining photos into hero slots", () => {
