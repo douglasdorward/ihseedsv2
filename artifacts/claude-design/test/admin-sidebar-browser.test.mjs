@@ -206,6 +206,37 @@ import "../../src/styles.css";
 
 window.__harnessErrors = [];
 window.__signOutCalls = 0;
+window.__deleteAllCalls = [];
+window.__catalogueProducts = [
+  {
+    id: 7,
+    name: "Persian Clover",
+    slug: "persian-clover",
+    category: "Clovers",
+    lifecycleStatus: "Draft",
+    listingState: "Active",
+    note: "",
+    hasDraft: false,
+    updatedAt: "2026-09-30T00:00:00.000Z",
+    subcategoryId: null,
+    saleLines: [],
+    details: { recordType: "Variety" },
+  },
+  {
+    id: 8,
+    name: "Archived Lucerne",
+    slug: "archived-lucerne",
+    category: "Lucerne",
+    lifecycleStatus: "Archived",
+    listingState: "Active",
+    note: "",
+    hasDraft: false,
+    updatedAt: "2026-09-29T00:00:00.000Z",
+    subcategoryId: null,
+    saleLines: [],
+    details: { recordType: "Variety" },
+  },
+];
 window.addEventListener("error", (event) => window.__harnessErrors.push(String(event.error?.stack || event.message)));
 window.addEventListener("unhandledrejection", (event) => window.__harnessErrors.push(String(event.reason?.stack || event.reason)));
 
@@ -217,8 +248,23 @@ const summary = {
   missingTechSheets: 0,
   recentProducts: [],
 };
-window.fetch = async (input) => {
+window.fetch = async (input, init) => {
   const url = String(input);
+  const method = String(init?.method || "GET").toUpperCase();
+  if (method === "POST" && url.includes("/admin/products/delete-all")) {
+    window.__deleteAllCalls.push(String(init?.body ?? ""));
+    window.__catalogueProducts = [];
+    return new Response(JSON.stringify({ deleted: 2 }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  if (method === "GET" && (url.endsWith("/api/admin/products") || url.includes("/api/admin/products?"))) {
+    return new Response(JSON.stringify(window.__catalogueProducts), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   const emptyList = url.includes("/articles") || url.includes("/products") || url.includes("/categories") || url.includes("/media") || url.includes("/resellers");
   return new Response(JSON.stringify(url.includes("/summary") ? summary : emptyList ? [] : {}), {
     status: 200,
@@ -377,6 +423,86 @@ test("blog is enabled and opens the article list", async () => {
     () => cdp.evaluate('Boolean([...document.querySelectorAll("button")].find((item) => item.textContent.includes("New article")))'),
     "blog article list",
   );
+});
+
+test("delete all stays below the product list and requires the confirmation phrase", async () => {
+  await setViewport(1280, 900);
+  await navigate(`/test/${basename(harnessRoot)}/`);
+  await waitFor(() => cdp.evaluate('Boolean(document.querySelector("#admin-sidebar-nav"))'), "admin navigation");
+  await cdp.evaluate(`[...document.querySelectorAll("#admin-sidebar-nav button")].find((item) => item.textContent.includes("Products"))?.click()`);
+  await waitFor(
+    () => cdp.evaluate(`(() => {
+      const button = document.querySelector("[data-testid='delete-all-products']");
+      return Boolean(button && !button.disabled);
+    })()`),
+    "enabled delete-all button",
+  );
+  const placement = await cdp.evaluate(`(() => {
+    const button = document.querySelector("[data-testid='delete-all-products']");
+    const table = document.querySelector(".admin-table-card");
+    const buttonRect = button.getBoundingClientRect();
+    const tableRect = table.getBoundingClientRect();
+    const publishedEmpty = document.querySelector(".admin-empty")?.textContent ?? "";
+    return {
+      belowTable: buttonRect.top >= tableRect.bottom - 1,
+      publishedEmpty,
+      draftCount: document.querySelectorAll(".admin-table-tabs button")[1]?.textContent ?? "",
+    };
+  })()`);
+  assert.equal(placement.belowTable, true);
+  assert.match(placement.publishedEmpty, /No products match/);
+  assert.match(placement.draftCount, /Draft/);
+  assert.match(placement.draftCount, /1/);
+
+  await clickSelector("[data-testid='delete-all-products']");
+  await waitFor(
+    () => cdp.evaluate("Boolean(document.querySelector('#delete-all-products-title'))"),
+    "delete-all warning",
+  );
+  const warning = await cdp.evaluate(`(() => {
+    const panel = document.querySelector(".admin-delete-all-warning");
+    const confirm = document.querySelector("[data-testid='delete-all-products-confirm']");
+    const style = getComputedStyle(panel);
+    return {
+      text: panel.textContent,
+      background: style.backgroundColor,
+      color: style.color,
+      confirmDisabled: confirm.disabled,
+    };
+  })()`);
+  assert.match(warning.text, /unpublished draft changes/);
+  assert.match(warning.text, /draft-only/);
+  assert.match(warning.text, /archived/);
+  assert.match(warning.text, /cannot be undone/);
+  assert.equal(warning.confirmDisabled, true);
+  assert.notEqual(warning.background, "rgba(0, 0, 0, 0)");
+
+  await cdp.evaluate(`(() => {
+    const input = document.querySelector("#delete-all-products-phrase");
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+    setter.call(input, "delete");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  })()`);
+  assert.equal(await cdp.evaluate(`document.querySelector("[data-testid='delete-all-products-confirm']").disabled`), true);
+
+  await cdp.evaluate(`(() => {
+    const input = document.querySelector("#delete-all-products-phrase");
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+    setter.call(input, "1,2,3,4");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  })()`);
+  await waitFor(
+    () => cdp.evaluate(`document.querySelector("[data-testid='delete-all-products-confirm']").disabled === false`),
+    "confirmation phrase enabling delete",
+  );
+  await clickSelector("[data-testid='delete-all-products-confirm']");
+  await waitFor(
+    () => cdp.evaluate(`!document.querySelector("#delete-all-products-title") && document.body.textContent.includes("Deleted 2 products")`),
+    "delete-all success",
+  );
+  const calls = await cdp.evaluate("window.__deleteAllCalls");
+  assert.deepEqual(calls, [JSON.stringify({ confirm: "1,2,3,4" })]);
+  assert.equal(await cdp.evaluate(`document.querySelector("[data-testid='delete-all-products']").disabled`), true);
 });
 
 test("resellers is enabled and opens the store list", async () => {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import {
+  categoryPageHeading,
   getCategories,
   getLegacyProducts,
   getProducts,
@@ -55,8 +56,7 @@ export function resolveCategoryPage(
 }
 
 function headingFor(page: ResolvedCategoryPage) {
-  if (page.root.pageHeading.trim()) return page.root.pageHeading.trim();
-  return `${page.root.name} Seed`;
+  return categoryPageHeading(page.root);
 }
 
 function completeCategoryFaqs(faqs: CatalogueCategory["faqs"]) {
@@ -99,7 +99,7 @@ export async function categoryMetadata(params: RouteParams): Promise<Metadata> {
     return {};
   }
 
-  const title = forSearchMetadata(page.root.seoTitle.trim() || `${page.root.name} Seed | IH Seeds`);
+  const title = forSearchMetadata(page.root.seoTitle.trim() || `${categoryPageHeading(page.root)} | IH Seeds`);
   const description = forSearchMetadata(page.root.seoDescription.trim() || page.root.lead.trim());
   return {
     title,

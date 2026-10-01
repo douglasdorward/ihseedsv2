@@ -1,3 +1,4 @@
+import { compressImageForUpload } from "./compress-image.ts";
 import { resolveImageAlt } from "./image-alt.ts";
 
 export type UploadedMediaPhoto = {
@@ -12,6 +13,7 @@ export type UploadedMediaPhoto = {
 };
 
 export type UploadMediaProgress =
+  | { stage: "compressing"; percent: 0 }
   | { stage: "requesting"; percent: 0 }
   | { stage: "uploading"; percent: number }
   | { stage: "processing"; percent: 100 }
@@ -98,14 +100,16 @@ function putFileWithProgress(
 }
 
 export async function uploadMediaAsset(file: File, options: UploadMediaOptions = {}): Promise<UploadedMediaPhoto> {
+  options.onProgress?.({ stage: "compressing", percent: 0 });
+  const prepared = await compressImageForUpload(file);
   options.onProgress?.({ stage: "requesting", percent: 0 });
   const request = await fetch("/api/admin/media/upload-request", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      originalFilename: file.name,
-      contentType: file.type,
-      bytes: file.size,
+      originalFilename: prepared.name,
+      contentType: prepared.type,
+      bytes: prepared.size,
     }),
   });
   const requested = await request.json().catch(() => null);
@@ -113,12 +117,12 @@ export async function uploadMediaAsset(file: File, options: UploadMediaOptions =
   if (!request.ok) throw new Error(errorMessage(requested, `Upload failed (${request.status})`));
   if (requested?.duplicate && requested.asset?.id) {
     options.onProgress?.({ stage: "complete", percent: 100 });
-    return photoFromAsset(requested.asset, file.name, options);
+    return photoFromAsset(requested.asset, prepared.name, options);
   }
 
   const assetId = String(requested.assetId ?? requested.asset?.id ?? "");
   const uploadURL = String(requested.uploadURL ?? `/api/admin/media/${assetId}/object`);
-  await putFileWithProgress(uploadURL, file, options.onProgress);
+  await putFileWithProgress(uploadURL, prepared, options.onProgress);
 
   options.onProgress?.({ stage: "processing", percent: 100 });
   const completeBody = options.ownerName || options.role
@@ -133,11 +137,11 @@ export async function uploadMediaAsset(file: File, options: UploadMediaOptions =
   if (complete.status === 401 || complete.status === 403) window.dispatchEvent(new Event("admin:unauthorized"));
   if (complete.status === 409 && completed?.asset?.id) {
     options.onProgress?.({ stage: "complete", percent: 100 });
-    return photoFromAsset(completed.asset, file.name, options);
+    return photoFromAsset(completed.asset, prepared.name, options);
   }
   if (!complete.ok) throw new Error(errorMessage(completed, `Upload failed (${complete.status})`));
   options.onProgress?.({ stage: "complete", percent: 100 });
-  return photoFromAsset(completed, file.name, options);
+  return photoFromAsset(completed, prepared.name, options);
 }
 
 export function photoDisplaySrc(photo: { src?: string; assetId?: string } | undefined) {

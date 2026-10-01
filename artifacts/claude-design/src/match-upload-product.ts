@@ -4,8 +4,26 @@ export type MatchableProduct = {
   slug: string;
 };
 
+export type MatchableArticle = {
+  id: number;
+  title: string;
+  slug: string;
+};
+
 export type FilenameMatch = {
   productId: string;
+  unsure: boolean;
+  score: number;
+};
+
+export type ArticleFilenameMatch = {
+  articleId: string;
+  unsure: boolean;
+  score: number;
+};
+
+type RankedMatch = {
+  id: string;
   unsure: boolean;
   score: number;
 };
@@ -70,27 +88,43 @@ export function scoreFilenameAgainstLabel(stem: string, candidate: string) {
   return Math.max(containedScore(stem, candidate), similarity(stem, candidate));
 }
 
-export function matchUploadToProduct(filename: string, products: MatchableProduct[]): FilenameMatch {
+function rankFilename(filename: string, candidates: { id: number; labels: string[] }[]): RankedMatch {
   const stem = normalizeUploadStem(filename);
-  if (!stem || !products.length) return { productId: "", unsure: false, score: 0 };
+  if (!stem || !candidates.length) return { id: "", unsure: false, score: 0 };
 
-  const ranked = products
-    .map((product) => ({
-      product,
-      score: Math.max(
-        scoreFilenameAgainstLabel(stem, slugifyLabel(product.slug ?? "")),
-        scoreFilenameAgainstLabel(stem, slugifyLabel(product.name ?? "")),
+  const ranked = candidates
+    .map((candidate) => ({
+      id: candidate.id,
+      score: candidate.labels.reduce(
+        (best, label) => Math.max(best, scoreFilenameAgainstLabel(stem, slugifyLabel(label))),
+        0,
       ),
     }))
-    .sort((first, second) => second.score - first.score || first.product.id - second.product.id);
+    .sort((first, second) => second.score - first.score || first.id - second.id);
 
   const best = ranked[0];
   const runnerUp = ranked[1];
   const tied = Boolean(runnerUp && best.score - runnerUp.score < TIE_GAP);
 
-  if (best.score < WEAK) return { productId: "", unsure: false, score: best.score };
+  if (best.score < WEAK) return { id: "", unsure: false, score: best.score };
   if (best.score > STRONG && !tied) {
-    return { productId: String(best.product.id), unsure: false, score: best.score };
+    return { id: String(best.id), unsure: false, score: best.score };
   }
-  return { productId: String(best.product.id), unsure: true, score: best.score };
+  return { id: String(best.id), unsure: true, score: best.score };
+}
+
+export function matchUploadToProduct(filename: string, products: MatchableProduct[]): FilenameMatch {
+  const match = rankFilename(filename, products.map((product) => ({
+    id: product.id,
+    labels: [product.slug ?? "", product.name ?? ""],
+  })));
+  return { productId: match.id, unsure: match.unsure, score: match.score };
+}
+
+export function matchUploadToArticle(filename: string, articles: MatchableArticle[]): ArticleFilenameMatch {
+  const match = rankFilename(filename, articles.map((article) => ({
+    id: article.id,
+    labels: [article.slug ?? "", article.title ?? ""],
+  })));
+  return { articleId: match.id, unsure: match.unsure, score: match.score };
 }

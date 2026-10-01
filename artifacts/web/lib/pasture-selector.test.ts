@@ -146,6 +146,27 @@ test("a blank field keeps the product in may also suit and a known miss removes 
   assert.equal(names([...groups.mixes, ...groups.varieties, ...groups.maybe]).includes("Fails rain and soil is blank"), false);
 });
 
+test("a rainfall band keeps a variety whose minimum sits inside it", () => {
+  const mid = selectPastureProducts([
+    product("Dry edge", { rainfallMinMm: 300 }),
+    product("Inside", { rainfallMinMm: 400 }),
+    product("Top of band", { rainfallMinMm: 450 }),
+    product("Above band", { rainfallMinMm: 500 }),
+  ], categories, { ...EMPTY_FILTERS, rainfall: 350 });
+  assert.deepEqual(names(mid.varieties), ["Dry edge", "Inside", "Top of band"]);
+
+  const low = selectPastureProducts([
+    product("Three hundred", { rainfallMinMm: 300 }),
+    product("Three fifty", { rainfallMinMm: 350 }),
+  ], categories, { ...EMPTY_FILTERS, rainfall: 300 });
+  assert.deepEqual(names(low.varieties), ["Three hundred"]);
+
+  const high = selectPastureProducts([
+    product("Seven hundred", { rainfallMinMm: 700 }),
+  ], categories, { ...EMPTY_FILTERS, rainfall: 650 });
+  assert.deepEqual(names(high.varieties), ["Seven hundred"]);
+});
+
 test("tolerance and livestock promote matches and never remove the rest", () => {
   const filters = {
     ...EMPTY_FILTERS,

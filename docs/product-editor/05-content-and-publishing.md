@@ -38,7 +38,7 @@ Public copy, media, FAQs, Also popular, and display flags. Tagline, blurb, at le
 - **API path:** `details.description`
 - **Workbook:** `1 Products.description`
 - **Required:** Draft no / Publish yes
-- **Customer website:** “About this variety” — blank-line-separated paragraphs are preserved.
+- **Customer website:** “About this variety”, “About this seed blend” when the record type is Mix, or “About this product” in Biologicals — blank-line-separated paragraphs are preserved.
 - **Public API:** yes
 - **Purpose:** The long public story. Do not repeat rainfall, pH, or other Quick facts. Do not include breeder or supplier names.
 - **Constraints:** max 200,000 characters. Line breaks are meaningful.
@@ -67,10 +67,10 @@ Public copy, media, FAQs, Also popular, and display flags. Tagline, blurb, at le
 - **API path:** `details.photos[]` (`slot`, `file`, `rating`, `src`, optional `assetId`, `alt`, `format`, dimensions)
 - **Workbook:** `1 Products.photo_1`, `photo_2`, and `photo_3`
 - **Required:** no
-- **Customer website:** First non-blank `src` is the product-page hero background and the social image when no Social sharing image override is set (then the Site settings sharing image, then `/social-share-default.jpg`; see Tab 6). Every photo with a `src` is also shown in a Photos card (real `<img>` tags, alt text or the product name): under the sidebar on desktop, after About this variety on mobile. The card is omitted when no photo has a `src`. Also popular cards use the hero. Category grid cards currently use rotating placeholder images, not these photos.
+- **Customer website:** First non-blank `src` is the product-page hero background and the social image when no Social sharing image override is set (then the Site settings sharing image, then `/social-share-default.jpg`; see Tab 6). Every photo with a `src` is also shown in a Photos card (real `<img>` tags, alt text or the product name): under the sidebar on desktop, after the description section on mobile. The card is omitted when no photo has a `src`. Also popular cards use the hero. Category grid cards currently use rotating placeholder images, not these photos.
 - **Public API:** yes
 - **Purpose:** Product photography. The Form tab lists slots. The Product page view uploads or pastes a URL onto the hero (first non-blank `src`).
-- **How to fill:** Upload JPEG, PNG, or WebP from the Product page hero, the Form Photos card, or **Images** at `/admin/images`. Uploads are converted to WebP in the shared library and stored as `src=/api/media/{id}` with an `assetId`. Alt text is filled from the product name when the image is uploaded or attached; a library-only upload uses a humanized filename until it is assigned to a product. Editors can change the alt on the photo row. In **Images**, the plus button on a card's "Appears on" line assigns that image as the hero of a chosen product (existing photos move down) or a chosen blog article (replacing its hero; a published article updates immediately); the grid can also be sorted by file name. External/WordPress URLs can still be pasted (no `assetId`; they are not converted). Workbook import exports all three photo addresses. A `/api/media/{id}` cell reconnects that library file and copies its alt text onto the product photo. Any other address is stored as the photo and is not linked in the library. A blank cell leaves that slot unset, and `NULL` clears it. AI never fills photos. Deleting from **Images** removes the file even when it is in use on a product, article, or site page; remaining product photos move up into the hero slot when needed.
+- **How to fill:** Upload JPEG, PNG, or WebP from the Product page hero, the Form Photos card, or **Images** at `/admin/images`. Uploads are compressed in the browser (longest side 2400 px) and stored as WebP at `src=/api/media/{id}` with an `assetId`. Alt text is filled from the product name when the image is uploaded or attached; a library-only upload uses a humanized filename until it is assigned to a product. Editors can change the alt on the photo row. In **Images**, the plus button on a card's "Appears on" line assigns that image as the hero of a chosen product (existing photos move down) or a chosen blog article (replacing its hero; a published article updates immediately); the grid can also be sorted by file name. External/WordPress URLs can still be pasted (no `assetId`; they are not converted). Workbook import exports all three photo addresses. A `/api/media/{id}` cell reconnects that library file and copies its alt text onto the product photo. Any other address is stored as the photo and is not linked in the library. A blank cell leaves that slot unset, and `NULL` clears it. AI never fills photos. Deleting from **Images** removes the file even when it is in use on a product, article, or site page; remaining product photos move up into the hero slot when needed.
 
 ## Tech sheet URL
 
@@ -103,8 +103,10 @@ Public copy, media, FAQs, Also popular, and display flags. Tagline, blurb, at le
 - **Shown when:** Form Content & publishing, and the Product page Also popular band
 - **Customer website:** “Also popular” cards, max three. The picker only offers Published products with Active or New listing. If a stored pick is later set to Legacy (or is otherwise not public), that slot is filled with another current product from the same category using a slug-seeded shuffle that is stable across loads. An empty list still shows three other Active or New products in the same category. Featured does not rank this list.
 - **Public API:** yes (`relatedProducts`)
-- **How to fill:** Choose up to three Active or New published products by name. Leave empty for the automatic same-category set.
+- **How to fill:** Choose up to three Active or New published products by name. Leave empty for the automatic same-category set. Deleting a chosen product removes it from this list on the live product and on any saved draft. The delete confirmation names those products.
 
 ## Permanent delete
 
 Not a catalogue field. Permanently deletes the product and cascaded sale lines. Use Archive if the product should leave the public site but remain recoverable.
+
+If the product is a linked mix ingredient or an Also popular pick, the on-page confirmation names those products and asks you to confirm. Deleting it clears `details.components[].productLink` and removes the slug from `details.relatedProducts`, on the live product and on any saved draft. The mix ingredient row stays, with its name, rate, and description.

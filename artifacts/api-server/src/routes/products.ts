@@ -1,14 +1,16 @@
 import { Router, type IRouter, type Response } from "express";
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import {
   db,
   catalogueCategoriesTable,
   forSearchMetadata,
+  mediaReferencesTable,
   normalizeProductDetails,
   resolveProductH1,
   productDraftSchema,
   productDraftsTable,
   productsTable,
+  redirectsTable,
   saleLineSchema,
   saleLinesTable,
   type SaleLine,
@@ -24,7 +26,7 @@ import {
 } from "@workspace/db";
 import { insertProductSchema } from "@workspace/db";
 import { publicRedirectTo } from "../lib/public-redirect";
-import { productPublicPath } from "../lib/product-path";
+import { legacyWebsitePath, productPublicPath } from "../lib/product-path";
 import { absolutePublicUrl, canonicalPublicPath } from "../lib/public-site-url";
 import { clearProductMediaReferences, syncProductMediaReferences } from "../lib/media-usage";
 import { discardGeneratedTechSheets, queueGeneratedTechSheets } from "../lib/generated-tech-sheet";
@@ -985,39 +987,103 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
   res.json(updateResult.product);
 });
 
+function withoutDeletedProductLinks(details: ReturnType<typeof normalizeProductDetails>, slug: string) {
+  const componentLinked = details.components.some((component) => component.productLink === slug);
+  const popularLinked = details.relatedProducts.includes(slug);
+  if (!componentLinked && !popularLinked) return null;
+  return {
+    ...details,
+    relatedProducts: details.relatedProducts.filter((item) => item !== slug),
+    components: details.components.map((component) =>
+      component.productLink === slug ? { ...component, productLink: "" } : component,
+    ),
+  };
+}
+
+const DELETE_ALL_PRODUCTS_PHRASE = "1,2,3,4";
+
+router.post("/admin/products/delete-all", async (req, res): Promise<void> => {
+  const confirm = typeof req.body?.confirm === "string" ? req.body.confirm.trim() : "";
+  if (confirm !== DELETE_ALL_PRODUCTS_PHRASE) {
+    res.status(400).json({ error: "Type 1,2,3,4 to delete every product." });
+    return;
+  }
+  const removed = await db.transaction(async (tx) => {
+    const products = await tx.select().from(productsTable);
+    if (products.length === 0) return { count: 0, slugs: [] as string[] };
+    const categories = await tx.select({
+      parentId: catalogueCategoriesTable.parentId,
+      slug: catalogueCategoriesTable.slug,
+      name: catalogueCategoriesTable.name,
+    }).from(catalogueCategoriesTable);
+    const productPaths = [...new Set(products.map((product) => productPublicPath(product.slug, product.category, categories)))];
+    const legacyPaths = [...new Set(products.flatMap((product) => {
+      const path = legacyWebsitePath(product.websiteUrlLegacy);
+      return path ? [path] : [];
+    }))];
+    if (productPaths.length) {
+      await tx.delete(redirectsTable).where(inArray(redirectsTable.toPath, productPaths));
+    }
+    if (legacyPaths.length) {
+      const legacyRedirects = await tx.select({ id: redirectsTable.id, toPath: redirectsTable.toPath })
+        .from(redirectsTable)
+        .where(inArray(redirectsTable.fromPath, legacyPaths));
+      const removableIds = legacyRedirects
+        .filter((redirect) => !redirect.toPath.startsWith("/articles/"))
+        .map((redirect) => redirect.id);
+      if (removableIds.length) await tx.delete(redirectsTable).where(inArray(redirectsTable.id, removableIds));
+    }
+    await tx.delete(mediaReferencesTable).where(and(
+      eq(mediaReferencesTable.ownerType, "product"),
+      inArray(mediaReferencesTable.ownerId, products.map((product) => String(product.id))),
+    ));
+    await tx.delete(productsTable).where(inArray(productsTable.id, products.map((product) => product.id)));
+    return { count: products.length, slugs: products.map((product) => product.slug) };
+  });
+  for (const slug of removed.slugs) discardGeneratedTechSheets(slug);
+  res.json({ deleted: removed.count });
+});
+
 router.delete("/products/:id", async (req, res): Promise<void> => {
   const id = validId(req.params.id);
   if (!id) {
     res.status(400).json({ error: "Invalid product id." });
     return;
   }
-  const target = await findProduct(id);
-  if (!target) {
+  const removed = await db.transaction(async (tx) => {
+    const [target] = await tx.select().from(productsTable).where(eq(productsTable.id, id)).for("update");
+    if (!target) return { kind: "not-found" as const };
+    const catalogue = await tx.select().from(productsTable);
+    const drafts = await tx.select().from(productDraftsTable);
+    const refreshedSlugs: string[] = [];
+    for (const product of catalogue) {
+      if (product.id === id) continue;
+      const details = normalizeProductDetails(product.details, product.packSize);
+      const next = withoutDeletedProductLinks(details, target.slug);
+      if (!next) continue;
+      await tx.update(productsTable).set({ details: next, updatedAt: new Date() }).where(eq(productsTable.id, product.id));
+      if (product.publishStatus === "Published") refreshedSlugs.push(product.slug);
+    }
+    for (const draft of drafts) {
+      if (draft.productId === id) continue;
+      const details = normalizeProductDetails(draft.snapshot.details, draft.snapshot.packSize);
+      const next = withoutDeletedProductLinks(details, target.slug);
+      if (!next) continue;
+      await tx.update(productDraftsTable).set({
+        snapshot: { ...draft.snapshot, details: next },
+        updatedAt: new Date(),
+      }).where(eq(productDraftsTable.id, draft.id));
+    }
+    await tx.delete(productsTable).where(eq(productsTable.id, id));
+    return { kind: "deleted" as const, slug: target.slug, refreshedSlugs };
+  });
+  if (removed.kind === "not-found") {
     res.status(404).json({ error: "Product not found." });
     return;
   }
-  const catalogue = await db.select().from(productsTable);
-  const drafts = await db.select().from(productDraftsTable);
-  const referencedBy = catalogue.filter((product) => {
-    if (product.id === id) return false;
-    const details = normalizeProductDetails(product.details, product.packSize);
-    return details.relatedProducts.includes(target.slug) ||
-      details.components.some((component) => component.productLink === target.slug);
-  });
-  const draftReferences = drafts.filter((draft) => {
-    if (draft.productId === id) return false;
-    const details = normalizeProductDetails(draft.snapshot.details, draft.snapshot.packSize);
-    return details.relatedProducts.includes(target.slug) ||
-      details.components.some((component) => component.productLink === target.slug);
-  });
-  if (referencedBy.length > 0 || draftReferences.length > 0) {
-    const names = referencedBy.map((product) => product.name);
-    res.status(409).json({ error: `This product is linked from: ${names.join(", ") || "a draft revision"}. Remove those links before deleting it.` });
-    return;
-  }
-  await db.delete(productsTable).where(eq(productsTable.id, id));
   await clearProductMediaReferences(id);
-  discardGeneratedTechSheets(target.slug);
+  discardGeneratedTechSheets(removed.slug);
+  if (removed.refreshedSlugs.length) queueGeneratedTechSheets(removed.refreshedSlugs);
   res.sendStatus(204);
 });
 

@@ -89,6 +89,26 @@
 .admin-import-report p { margin: 0 0 12px; font-size: 13px; }
 .admin-import-report ul { margin: 0; padding-left: 20px; color: #536059; }
 .admin-import-report li { margin-bottom: 4px; }
+.admin-import-errors { display: grid; gap: 10px; }
+.admin-import-errors-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.admin-import-errors-head p { margin: 0; color: #8f2720; font-weight: 700; }
+.admin-import-errors textarea {
+  width: 100%;
+  min-height: 140px;
+  max-height: 240px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #e9a6a0;
+  border-radius: 10px;
+  background: #fff;
+  color: #8f2720;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  resize: vertical;
+  user-select: text;
+  white-space: pre;
+}
 .admin-import-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
 .admin-derived-info { font-size: 13px; color: #536059; margin-top: 4px; display: block; }

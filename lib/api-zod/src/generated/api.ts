@@ -2561,6 +2561,22 @@ export const ListAdminProductsResponse = zod.array(ListAdminProductsResponseItem
 
 
 /**
+ * @summary Delete every product, including drafts and archived records
+ */
+export const DeleteAllProductsBody = zod.object({
+  "confirm": zod.string().describe('Must be exactly 1,2,3,4')
+})
+
+export const deleteAllProductsResponseDeletedMin = 0;
+
+
+
+export const DeleteAllProductsResponse = zod.object({
+  "deleted": zod.number().min(deleteAllProductsResponseDeletedMin)
+})
+
+
+/**
  * @summary Get a product and its current draft revision
  */
 export const GetAdminProductParams = zod.object({

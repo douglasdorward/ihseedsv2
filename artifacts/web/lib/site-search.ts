@@ -1,5 +1,5 @@
 import type { CatalogueArticle, CatalogueCategory, CatalogueProduct } from "./catalogue";
-import { productPageHeading } from "./catalogue";
+import { categoryPageHeading, productPageHeading } from "./catalogue";
 import { categoryPublicPath, productPublicPath } from "./catalogue-paths";
 import { getProductQuickFacts } from "./product-quick-facts";
 
@@ -129,7 +129,7 @@ function categoryDocument(category: CatalogueCategory): SearchDocument | null {
   const faqs = completeFaqs(category.faqs, 20);
   const lead = category.lead?.trim() ?? "";
   if (!lead && faqs.length === 0) return null;
-  const heading = category.pageHeading.trim() || `${category.name} Seed`;
+  const heading = categoryPageHeading(category);
   const fields: SearchField[] = [];
   addField(fields, "title", category.name);
   addField(fields, "title", heading);

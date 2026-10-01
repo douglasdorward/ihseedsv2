@@ -208,8 +208,8 @@ function RootCategoryEditor({ category }: { category: CatalogueCategory }) {
   const [message, setMessage] = useState("");
   const [savedJson, setSavedJson] = useState(() => snapshot(category, category.pageHeading ?? "", category.seoTitle ?? "", category.seoDescription ?? "", editorFaqSlots(category.faqs)));
 
-  const headingFallback = `${category.name} Seed`;
-  const titleFallback = `${category.name} Seed | IH Seeds`;
+  const headingFallback = category.slug === "mixes" ? "Seed Mixes" : `${category.name} Seed`;
+  const titleFallback = `${headingFallback} | IH Seeds`;
   const descriptionFallback = category.lead?.trim() || "Category lead copy is used when this is blank.";
   const previewTitle = seoTitle.trim() || titleFallback;
   const previewDescription = seoDescription.trim() || descriptionFallback;

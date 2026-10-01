@@ -444,6 +444,91 @@ test("creating a product with a taken name or slug returns 409 with the clashing
   assert.match(draftRename.data.error, /name already exists/);
 });
 
+test("delete-all refuses a catalogue wipe without the confirmation phrase", async () => {
+  const product = await createProduct("delete-all-guard");
+  const refused = await request("POST", "/admin/products/delete-all", { confirm: "delete" });
+  assert.equal(refused.response.status, 400);
+  assert.match(refused.data.error, /1,2,3,4/);
+  assert.equal((await request("GET", `/admin/products/${product.id}`)).response.status, 200);
+  const blank = await request("POST", "/admin/products/delete-all", {});
+  assert.equal(blank.response.status, 400);
+  assert.equal((await request("GET", `/admin/products/${product.id}`)).response.status, 200);
+});
+
+test("deleting a linked ingredient clears the mix component link and keeps the row", async () => {
+  const ingredient = await createProduct("unlink-ingredient");
+  const mix = await createProduct("unlink-mix");
+  const saved = assertStatus(await request("POST", `/admin/products/${mix.id}/draft`, draftPayload(mix, {
+    details: {
+      ...mix.details,
+      recordType: "Mix",
+      components: [{
+        productLink: ingredient.slug,
+        speciesName: "Linked lucerne",
+        inclusionRate: 40,
+        unit: "%",
+        description: "Kept after unlink",
+        note: "Keep this note",
+      }],
+    },
+  })), 200);
+  insertLeftoverDraft(saved, {
+    details: {
+      ...saved.details,
+      components: [{
+        productLink: ingredient.slug,
+        speciesName: "Draft lucerne",
+        inclusionRate: 10,
+        unit: "%",
+        description: "Draft row",
+        note: "",
+      }],
+    },
+  });
+
+  assertStatus(await request("DELETE", `/products/${ingredient.id}`), 204);
+  const updated = await adminProduct(mix.id);
+  assert.equal(updated.details.components.length, 1);
+  assert.equal(updated.details.components[0].productLink, "");
+  assert.equal(updated.details.components[0].speciesName, "Linked lucerne");
+  assert.equal(updated.details.components[0].inclusionRate, 40);
+  assert.equal(updated.details.components[0].description, "Kept after unlink");
+  assert.equal(updated.draft.details.components[0].productLink, "");
+  assert.equal(updated.draft.details.components[0].speciesName, "Draft lucerne");
+  assertStatus(await request("GET", `/admin/products/${ingredient.id}`), 404);
+
+  const popular = await createProduct("popular-host");
+  const stillLinked = await createProduct("popular-target");
+  const popularSaved = assertStatus(await request("POST", `/admin/products/${popular.id}/draft`, draftPayload(popular, {
+    details: {
+      ...popular.details,
+      relatedProducts: [stillLinked.slug],
+      components: [{
+        productLink: stillLinked.slug,
+        speciesName: "Popular lucerne",
+        inclusionRate: 15,
+        unit: "%",
+        description: "Kept with the Also popular pick",
+        note: "",
+      }],
+    },
+  })), 200);
+  insertLeftoverDraft(popularSaved, {
+    details: {
+      ...popularSaved.details,
+      relatedProducts: [stillLinked.slug],
+    },
+  });
+  assertStatus(await request("DELETE", `/products/${stillLinked.id}`), 204);
+  const host = await adminProduct(popular.id);
+  assert.deepEqual(host.details.relatedProducts, []);
+  assert.equal(host.details.components[0].productLink, "");
+  assert.equal(host.details.components[0].speciesName, "Popular lucerne");
+  assert.equal(host.details.components[0].inclusionRate, 15);
+  assert.deepEqual(host.draft.details.relatedProducts, []);
+  assertStatus(await request("GET", `/admin/products/${stillLinked.id}`), 404);
+});
+
 test("draft saves persist sale lines without making the product public", async () => {
   const product = await createProduct("sale-lines-draft");
   const saleLines = [{

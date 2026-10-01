@@ -7,12 +7,20 @@ import {
 } from "./product-filters";
 
 export const SELECTOR_RAINFALL = [
-  { value: 300, label: "Under 350 mm", note: "Wheatbelt / mallee margin" },
-  { value: 350, label: "350–450 mm", note: "" },
-  { value: 450, label: "450–550 mm", note: "" },
-  { value: 550, label: "550–650 mm", note: "" },
-  { value: 650, label: "650 mm and above", note: "South West, Great Southern" },
+  { value: 300, label: "Under 350 mm", note: "Wheatbelt / mallee margin", ceilingMm: 350, ceilingInclusive: false },
+  { value: 350, label: "350–450 mm", note: "", ceilingMm: 450, ceilingInclusive: true },
+  { value: 450, label: "450–550 mm", note: "", ceilingMm: 550, ceilingInclusive: true },
+  { value: 550, label: "550–650 mm", note: "", ceilingMm: 650, ceilingInclusive: true },
+  { value: 650, label: "650 mm and above", note: "South West, Great Southern", ceilingMm: null, ceilingInclusive: true },
 ] as const;
+
+/** A variety stays when its minimum is inside the selected band or lower. The open top band has no ceiling. */
+function rainfallAboveBand(minimum: number, selected: number) {
+  const band = SELECTOR_RAINFALL.find((option) => option.value === selected);
+  if (!band) return minimum > selected;
+  if (band.ceilingMm == null) return false;
+  return band.ceilingInclusive ? minimum > band.ceilingMm : minimum >= band.ceilingMm;
+}
 
 export const SELECTOR_SOIL = [
   { value: "LS", label: "Deep sand — free-draining, low fertility", short: "deep sand" },
@@ -250,7 +258,7 @@ export function selectPastureProducts(
     if (filters.rainfall != null) {
       const minimum = product.details.rainfallMinMm;
       if (minimum == null) gaps.push(RAINFALL_GAP);
-      else if (minimum > filters.rainfall) excluded = true;
+      else if (rainfallAboveBand(minimum, filters.rainfall)) excluded = true;
       else why.push(`${minimum} mm+`);
     }
 

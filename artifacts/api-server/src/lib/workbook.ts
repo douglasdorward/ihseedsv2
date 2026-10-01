@@ -11,7 +11,7 @@ import {
 import { mediaPublicPath } from "./app-storage.ts";
 import { syncProductMediaReferences } from "./media-usage.ts";
 import { appendProductColumnGuide, PRODUCT_SHEET_HEADERS } from "./product-column-guide.ts";
-import { legacyWebsitePath, productPublicPath, requiredLegacyRedirects } from "./product-path.ts";
+import { legacyRedirectConflict, legacyWebsitePath, productPublicPath, requiredLegacyRedirects } from "./product-path.ts";
 
 export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "7 Website SEO", "10 Product FAQs"] as const;
 const PRODUCT_FAQ_SHEET = "10 Product FAQs";
@@ -686,15 +686,22 @@ export async function commitWorkbook(content: Buffer, token: string) {
     if (importedRedirectPaths.size) {
       await tx.delete(redirectsTable).where(inArray(redirectsTable.toPath, [...importedRedirectPaths]));
     }
+    const liveProductPaths = new Set([...productBySlug.values()].map((product) =>
+      productPublicPath(product.slug, product.category, categories)));
     for (const row of rows["1 Products"]) {
       const product = productBySlug.get(cell(row.slug));
       const fromPath = legacyWebsitePath(cell(row.website_url));
       if (!product || !fromPath) continue;
       const toPath = productPublicPath(product.slug, product.category, categories);
       if (fromPath === toPath) throw new Error(`SELF_REDIRECT:${product.slug}`);
-      const [articleRedirect] = await tx.select({ toPath: redirectsTable.toPath }).from(redirectsTable).where(eq(redirectsTable.fromPath, fromPath));
-      if (articleRedirect) throw new Error(`Legacy website path "${fromPath}" is already used by a blog article.`);
-      await tx.insert(redirectsTable).values({ fromPath, toPath });
+      const [existingRedirect] = await tx.select({ toPath: redirectsTable.toPath }).from(redirectsTable).where(eq(redirectsTable.fromPath, fromPath));
+      const conflict = legacyRedirectConflict(existingRedirect?.toPath, toPath, liveProductPaths);
+      if (conflict === "article") throw new Error(`Legacy website path "${fromPath}" is already used by a blog article.`);
+      if (conflict === "other-product") throw new Error(`Legacy website path "${fromPath}" already points at another product.`);
+      await tx.insert(redirectsTable).values({ fromPath, toPath }).onConflictDoUpdate({
+        target: redirectsTable.fromPath,
+        set: { toPath, updatedAt: new Date() },
+      });
     }
     for (const alias of requiredLegacyRedirects([...productBySlug.values()], categories)) {
       const [articleRedirect] = await tx.select({ toPath: redirectsTable.toPath }).from(redirectsTable).where(eq(redirectsTable.fromPath, alias.fromPath));

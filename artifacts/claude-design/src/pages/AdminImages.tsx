@@ -5,7 +5,7 @@ import { Icon } from "../components/ui";
 import { ConfirmDialog, PageHeader } from "./Admin";
 import { downloadImageListCsv, productListingState } from "../image-list-csv";
 import { MEDIA_SORT_OPTIONS, sortMediaAssets, type MediaSort } from "../image-sort";
-import { matchUploadToProduct } from "../match-upload-product";
+import { matchUploadToArticle, matchUploadToProduct } from "../match-upload-product";
 import { imageUsageLine, type ImageUsageSummary } from "../image-usage-line";
 import { photoDisplaySrc, uploadMediaAsset, type UploadedMediaPhoto, type UploadMediaProgress } from "../upload-image";
 import { runUploadBatch, successfulUploadValues } from "../upload-batch";
@@ -25,12 +25,20 @@ type MediaAsset = {
   createdAt: string;
 };
 
+type UploadKind = "product" | "article" | "general";
+
+type MatchKind = Exclude<UploadKind, "general">;
+
 type MatchRow = {
   assetId: string;
   filename: string;
-  productId: string;
+  targetId: string;
   unsure: boolean;
   error: string;
+};
+
+type KindPrompt = {
+  files: File[] | null;
 };
 
 type MediaPage = {
@@ -47,7 +55,7 @@ type UploadQueueItem = {
   id: string;
   file: File;
   filename: string;
-  status: "queued" | "requesting" | "uploading" | "processing" | "complete" | "failed";
+  status: "queued" | "compressing" | "requesting" | "uploading" | "processing" | "complete" | "failed";
   percent: number;
   error: string;
   photo?: UploadedMediaPhoto;
@@ -131,6 +139,10 @@ export default function AdminImages() {
   const [alt, setAlt] = useState("");
   const [caption, setCaption] = useState("");
   const [matchRows, setMatchRows] = useState<MatchRow[] | null>(null);
+  const [matchKind, setMatchKind] = useState<MatchKind | null>(null);
+  const [kindPrompt, setKindPrompt] = useState<KindPrompt | null>(null);
+  const [activeUploadKind, setActiveUploadKind] = useState<UploadKind>("general");
+  const uploadKindRef = useRef<UploadKind | null>(null);
   const [pendingCancel, setPendingCancel] = useState<PendingUploadCancel | null>(null);
   const [preview, setPreview] = useState<{ assetId: string; filename: string } | null>(null);
   const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[] | null>(null);
@@ -178,7 +190,8 @@ export default function AdminImages() {
     refresh().catch((caught) => setError(caught instanceof Error ? caught.message : "Could not load images.")).finally(() => setLoading(false));
   }, []);
 
-  const uploadFiles = async (files: FileList | File[]) => {
+  const uploadFiles = async (files: FileList | File[], kind: UploadKind) => {
+    setActiveUploadKind(kind);
     const selected = [...files];
     const queue = selected.map((file, index): UploadQueueItem => {
       const supported = /image\/(jpeg|png|webp)/.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
@@ -240,27 +253,57 @@ export default function AdminImages() {
 
   const closeUploadQueue = () => {
     if (!uploadFinished || !uploadQueue) return;
-    const uploaded = successfulUploadValues(uploadQueue.map((item) => ({
+    const kind = activeUploadKind;
+    const uploaded = kind === "general" ? [] : successfulUploadValues(uploadQueue.map((item) => ({
       status: item.status,
       value: item.photo ? { photo: item.photo, filename: item.filename } : undefined,
     }))).map(({ photo, filename: selectedFilename }): MatchRow => {
       const filename = photo.file || selectedFilename;
+      if (kind === "article") {
+        const guess = matchUploadToArticle(filename, assignArticles);
+        return {
+          assetId: photo.assetId,
+          filename,
+          targetId: guess.articleId,
+          unsure: guess.unsure,
+          error: "",
+        };
+      }
       const guess = matchUploadToProduct(filename, matchProducts);
       return {
         assetId: photo.assetId,
         filename,
-        productId: guess.productId,
+        targetId: guess.productId,
         unsure: guess.unsure,
         error: "",
       };
     });
     setUploadQueue(null);
     setUploadFinished(false);
-    if (uploaded.length) setMatchRows(uploaded);
+    if (kind !== "general" && uploaded.length) {
+      setMatchKind(kind);
+      setMatchRows(uploaded);
+    }
+  };
+
+  const chooseUploadKind = (kind: UploadKind) => {
+    const files = kindPrompt?.files ?? null;
+    setKindPrompt(null);
+    uploadKindRef.current = kind;
+    if (files?.length) {
+      void uploadFiles(files, kind);
+      return;
+    }
+    inputRef.current?.click();
+  };
+
+  const openKindPrompt = (files: File[] | null) => {
+    if (busy || uploadQueue || matchRows || kindPrompt) return;
+    setKindPrompt({ files });
   };
 
   const attachSelected = async () => {
-    if (!matchRows?.some((row) => row.productId)) return;
+    if (!matchKind || !matchRows?.some((row) => row.targetId)) return;
     setBusy(true);
     setError("");
     const next = matchRows.map((row) => ({ ...row, error: "" }));
@@ -268,11 +311,13 @@ export default function AdminImages() {
     try {
       for (let index = 0; index < next.length; index += 1) {
         const row = next[index];
-        if (!row.productId) continue;
+        if (!row.targetId) continue;
         const response = await fetch(`/api/admin/media/${row.assetId}/attach`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productId: Number(row.productId) }),
+          body: JSON.stringify(matchKind === "article"
+            ? { articleId: Number(row.targetId) }
+            : { productId: Number(row.targetId) }),
         });
         const body = await response.json().catch(() => null);
         if (!response.ok) {
@@ -283,9 +328,14 @@ export default function AdminImages() {
       }
       setMatchRows(next);
       await refresh();
-      await queryClient.invalidateQueries({ queryKey: getListAdminProductsQueryKey() });
-      if (next.every((row) => !row.productId || !row.error)) {
-        if (attached) setMatchRows(null);
+      await queryClient.invalidateQueries({
+        queryKey: matchKind === "article" ? getListAdminArticlesQueryKey() : getListAdminProductsQueryKey(),
+      });
+      if (next.every((row) => !row.targetId || !row.error)) {
+        if (attached) {
+          setMatchRows(null);
+          setMatchKind(null);
+        }
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not attach those images.");
@@ -377,10 +427,9 @@ export default function AdminImages() {
         await deleteLibraryAssets([assetId]);
       }
       const cancelled = new Set(pendingCancel.assetIds);
-      setMatchRows((current) => {
-        const remaining = current?.filter((row) => !cancelled.has(row.assetId)) ?? [];
-        return remaining.length ? remaining : null;
-      });
+      const remaining = (matchRows ?? []).filter((row) => !cancelled.has(row.assetId));
+      setMatchRows(remaining.length ? remaining : null);
+      if (!remaining.length) setMatchKind(null);
       setPendingCancel(null);
       await refresh();
     } catch (caught) {
@@ -414,23 +463,43 @@ export default function AdminImages() {
           <div className="admin-section-heading">
             <div>
               <h2>Shared photos</h2>
-              <p className="admin-field-hint">Uploads are converted to WebP and stored with tech sheets. After upload, match files to a product to set the hero photo. External URL pastes stay outside this library.</p>
+              <p className="admin-field-hint">Photos are compressed on upload, then stored as WebP. Choose product, article, or general before upload. Product and article files can be matched to set the hero photo. External URL pastes stay outside this library.</p>
             </div>
           </div>
-          <label className="admin-techsheet-drop">
+          <div
+            className="admin-techsheet-drop"
+            role="button"
+            tabIndex={busy ? -1 : 0}
+            aria-disabled={busy}
+            data-testid="image-upload-drop"
+            onClick={() => openKindPrompt(null)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              openKindPrompt(null);
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              const files = [...event.dataTransfer.files];
+              if (files.length) openKindPrompt(files);
+            }}
+          >
             <input
               ref={inputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp"
               multiple
               disabled={busy}
+              data-testid="image-upload-input"
               onChange={(event) => {
-                if (event.target.files?.length) void uploadFiles(event.target.files);
+                const kind = uploadKindRef.current;
+                if (kind && event.target.files?.length) void uploadFiles(event.target.files, kind);
                 event.target.value = "";
               }}
             />
             <span>{busy ? "Uploads in progress…" : "Drop images or click to upload"}</span>
-          </label>
+          </div>
           {error && <p className="admin-inline-field-error">{error}</p>}
         </section>
         {loading ? <p className="admin-empty">Loading images…</p> : (
@@ -586,6 +655,7 @@ export default function AdminImages() {
                     <strong title={item.filename}>{item.filename}</strong>
                     <span>
                       {item.status === "queued" && "Waiting…"}
+                      {item.status === "compressing" && "Compressing…"}
                       {item.status === "requesting" && "Preparing upload…"}
                       {item.status === "uploading" && `Uploading ${item.percent}%`}
                       {item.status === "processing" && "Converting to WebP…"}
@@ -609,7 +679,27 @@ export default function AdminImages() {
           </section>
         </div>
       )}
-      {matchRows && (
+      {kindPrompt && (
+        <div className="admin-dialog-backdrop" role="presentation" onMouseDown={() => setKindPrompt(null)}>
+          <section
+            className="admin-dialog admin-upload-kind-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="upload-kind-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <h2 id="upload-kind-title">What are these images for?</h2>
+            <p>Product and article uploads can be matched after they finish. General uploads stay in the library.</p>
+            <div className="admin-upload-kind-actions">
+              <button className="admin-button primary" type="button" data-testid="upload-kind-product" onClick={() => chooseUploadKind("product")}>Product</button>
+              <button className="admin-button outline" type="button" data-testid="upload-kind-article" onClick={() => chooseUploadKind("article")}>Article</button>
+              <button className="admin-button outline" type="button" data-testid="upload-kind-general" onClick={() => chooseUploadKind("general")}>General</button>
+              <button className="admin-button ghost" type="button" data-testid="upload-kind-cancel" onClick={() => setKindPrompt(null)}>Cancel</button>
+            </div>
+          </section>
+        </div>
+      )}
+      {matchRows && matchKind && (
         <div className="admin-dialog-backdrop" role="presentation">
           <section
             className="admin-dialog admin-image-match-dialog"
@@ -619,7 +709,7 @@ export default function AdminImages() {
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="admin-image-match-header">
-              <h2 id="match-images-title">Match uploads to products</h2>
+              <h2 id="match-images-title">{matchKind === "article" ? "Match uploads to articles" : "Match uploads to products"}</h2>
               <button
                 type="button"
                 className="admin-image-match-close"
@@ -634,7 +724,11 @@ export default function AdminImages() {
                 <Icon name="close" size={20} />
               </button>
             </div>
-            <p>The new photo becomes the hero. Existing photos move down. Click a thumbnail to inspect it. Skip keeps these files in the library without attaching them.</p>
+            <p>
+              {matchKind === "article"
+                ? "The photo replaces the article hero. A published article updates straight away. Click a thumbnail to inspect it. Skip keeps these files in the library without attaching them."
+                : "The new photo becomes the hero. Existing photos move down. Click a thumbnail to inspect it. Skip keeps these files in the library without attaching them."}
+            </p>
             {error && <p className="admin-inline-field-error">{error}</p>}
             <div className="admin-image-match-list">
               {matchRows.map((row, index) => (
@@ -651,19 +745,24 @@ export default function AdminImages() {
                     <strong>{row.filename}</strong>
                   </div>
                   <label>
-                    Product
+                    {matchKind === "article" ? "Article" : "Product"}
                     <select
-                      value={row.productId}
+                      value={row.targetId}
                       disabled={busy}
+                      data-testid={matchKind === "article" ? "match-article-select" : "match-product-select"}
                       onChange={(event) => {
-                        const productId = event.target.value;
-                        setMatchRows((current) => current?.map((item, itemIndex) => itemIndex === index ? { ...item, productId, unsure: false, error: "" } : item) ?? null);
+                        const targetId = event.target.value;
+                        setMatchRows((current) => current?.map((item, itemIndex) => itemIndex === index ? { ...item, targetId, unsure: false, error: "" } : item) ?? null);
                       }}
                     >
-                      <option value="">No product</option>
-                      {matchProducts.map((product) => (
-                        <option key={product.id} value={product.id}>{product.name} ({productListingState(product).toLowerCase()})</option>
-                      ))}
+                      <option value="">{matchKind === "article" ? "No article" : "No product"}</option>
+                      {matchKind === "article"
+                        ? assignArticles.map((article) => (
+                          <option key={article.id} value={article.id}>{article.title} ({article.publishStatus.toLowerCase()})</option>
+                        ))
+                        : matchProducts.map((product) => (
+                          <option key={product.id} value={product.id}>{product.name} ({productListingState(product).toLowerCase()})</option>
+                        ))}
                     </select>
                     {row.unsure && <p className="admin-image-match-unsure">Unsure</p>}
                   </label>
@@ -682,11 +781,11 @@ export default function AdminImages() {
               ))}
             </div>
             <div className="admin-dialog-actions">
-              <button className="admin-button ghost" type="button" disabled={busy} onClick={() => setMatchRows(null)}>Skip matching</button>
+              <button className="admin-button ghost" type="button" disabled={busy} onClick={() => { setMatchRows(null); setMatchKind(null); }}>Skip matching</button>
               <button
                 className="admin-button primary"
                 type="button"
-                disabled={busy || !matchRows.some((row) => row.productId)}
+                disabled={busy || !matchRows.some((row) => row.targetId)}
                 onClick={() => void attachSelected()}
               >
                 Attach selected

@@ -208,7 +208,7 @@ The importer recognizes sheets `1`–`5`, `7`, and `10`; `Lists` is required and
 | Product FAQ | `10 Product FAQs.slug` |
 | Category | `1 Products.category` + optional `sub_category` |
 
-Product slug is the import identity. Renaming it does not rename a product; it risks creating another product and leaving the original untouched. Never change an existing slug to improve wording or SEO. Use redirects when a historic address must point somewhere else.
+Product slug is the import identity. Renaming it does not rename a product; it risks creating another product and leaving the original untouched. Never change an existing slug to improve wording or SEO. Use redirects when a historic address must point somewhere else. Deleting a product clears `component_slug` on every mix that linked it, and removes it from Also popular. The ingredient row stays, with its name and rate, and the delete confirmation names those mixes and Also popular picks.
 
 ### Import formats
 
@@ -368,7 +368,10 @@ The applicable fields depend on category. Examples:
 
 `mix_slug` identifies the owning Mix. `component_slug` optionally links an
 existing catalogue product. Components carry their display name, inclusion
-rate/unit, and component-specific public description.
+rate/unit, and component-specific public description. Deleting the linked
+product clears `component_slug` and leaves that ingredient row in place. It
+also removes the product from Also popular. The admin delete confirmation
+names those mixes and Also popular picks first.
 
 The public Mix page must use `component_description` from the component row. It must never substitute the linked product’s Blurb.
 
@@ -450,7 +453,7 @@ The following matrix groups related fields. “Publish required” means require
 | Tagline | `tagline` | Content & publishing | No | Yes | Under H1 and on product cards |
 | Blurb | `blurb` | Content & publishing | No | Yes | Introductory paragraph; SEO fallback where needed |
 | Key attributes | `key_attributes`, pipe list | Content & publishing | No | Yes | Bullet list |
-| Description | `description`, multiline | Content & publishing | No | Yes | Paragraph-preserving “About this variety” |
+| Description | `description`, multiline | Content & publishing | No | Yes | Paragraph-preserving “About this variety”, “About this seed blend” when the record type is Mix, or “About this product” in Biologicals |
 | Distribution note | `distribution_note` | Content & publishing | No | No | Conditional highlighted public note |
 | Minimum rainfall | `rainfall_min_mm` | Agronomy & fit | No | No | Quick facts and comparisons |
 | Soil pH/scale | `soil_ph_min`, `soil_ph_scale` | Agronomy & fit | No | No | Quick facts and comparisons |
@@ -476,7 +479,7 @@ The following matrix groups related fields. “Publish required” means require
 | Default sale line | `is_default` | Selling | No | At most one | Controls preferred sales presentation |
 | PBR/certification | product fields | Selling | No | No | Limited public metadata below the order panel |
 | Tech-sheet URL | `tech_sheet_pdf_path` | Content & publishing | No | No | Conditional download link |
-| Photos | `photo_1`, `photo_2`, `photo_3` | Content & publishing | No | No | The first nonblank photo is the hero background. Every photo with a src is shown in a Photos card under the sidebar on desktop and after About this variety on mobile, using its alt text or the product name. The card is omitted when none have a src. A library path reconnects that image and its alt text; any other address is stored without a library link |
+| Photos | `photo_1`, `photo_2`, `photo_3` | Content & publishing | No | No | The first nonblank photo is the hero background. Every photo with a src is shown in a Photos card under the sidebar on desktop and after the description section on mobile, using its alt text or the product name. The card is omitted when none have a src. A library path reconnects that image and its alt text; any other address is stored without a library link |
 | FAQs | `10 Product FAQs` | Content & publishing (Form and Product page) | No | No | Accordion band above Also popular, max ten. Incomplete question/answer cards are hidden. Imported products receive exactly the FAQ rows supplied |
 | Also popular | `relatedProducts` slugs | Content & publishing (Form and Product page) | No | No | Chosen Active or New published products on the Also popular band, max three. A Legacy or missing pick is replaced in that slot with another current product from the same category. An empty list uses three other same-category Active or New products |
 | Legacy URL | `website_url` | Content & publishing | No | No | Old current-site URL; its path redirects to the imported category-and-slug product path |
@@ -501,6 +504,7 @@ The admin provides:
 - Leftover unpublished-change badges for any remaining `ih_product_drafts` rows
 - Bulk stock-status updates
 - Lifecycle actions with confirmation
+- Delete all products, below the list. It removes every published, draft, and archived product, including unpublished draft changes, sale lines, and redirects to those product pages. The button stays disabled until the administrator types `1,2,3,4`. Categories, articles, resellers, and media-library files are kept.
 - Catalogue summary and attention panels
 - Missing-tech-sheet and low/unavailable-stock indicators
 - Workbook export, dry run and confirmed import
@@ -573,12 +577,12 @@ The current public hierarchy is:
 4. Key attributes
 5. Conditional Distribution note
 6. Mix formulation/components where applicable
-7. Multiline Description under “About this variety”
+7. Multiline Description under “About this variety”, “About this seed blend” when the record type is Mix, or “About this product” in Biologicals
 8. Conditional accordions for grazing, disease/pest and stand life
 9. “How it’s sold”
 10. Order/contact panel
 11. Certification/PBR metadata
-12. Conditional Photos card, when at least one photo has a src. On desktop it is its own card under the sidebar, after the order panel and certification/PBR. On mobile it follows About this variety and comes before the growing-note accordions. Each image is a visible `img` with the stored alt text, or the product name when alt is blank
+12. Conditional Photos card, when at least one photo has a src. On desktop it is its own card under the sidebar, after the order panel and certification/PBR. On mobile it follows the description section and comes before the growing-note accordions. Each image is a visible `img` with the stored alt text, or the product name when alt is blank
 13. Conditional “FAQs” accordion (complete question/answer pairs only, max ten)
 14. “Also popular”
 

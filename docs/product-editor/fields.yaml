@@ -679,7 +679,7 @@ fields:
     visibility: customer
     customerSurfaces: [mix-component-link]
     workbook: 5 Mix components.component_slug
-    fillGuidance: Optional catalogue slug. Not self. Not duplicated.
+    fillGuidance: Optional catalogue slug. Not self. Not duplicated. Deleting the linked product clears this slug and keeps the ingredient row. The delete confirmation names those mixes and any Also popular picks.
 
   - id: components.inclusionRate
     tab: 3
@@ -987,7 +987,7 @@ fields:
     visibleWhen: always
     publicApi: true
     visibility: customer
-    customerSurfaces: [about-this-variety, llms-full-txt]
+    customerSurfaces: [about-this-variety, about-this-seed-blend-when-Mix, about-this-product-when-Biologicals, llms-full-txt]
     workbook: 1 Products.description
     fillGuidance: Paragraphs separated by blank lines. No Quick facts, breeder, or supplier.
 
@@ -1032,7 +1032,7 @@ fields:
     visibility: customer
     customerSurfaces: [product-hero, product-photos, related-cards, also-popular, social-fallback]
     workbook: 1 Products.photo_1, photo_2, photo_3
-    fillGuidance: First non-blank src is the hero background. Every src is also a Photos card image with its alt (or the product name); desktop under the sidebar, mobile after About this variety. Omitted when no src. Upload JPEG/PNG/WebP to the Images library (converted to WebP) or paste an external URL. Alt is filled from the product name on upload or attach (filename only while unassigned). Workbook import exports all three photo addresses. A /api/media/{id} cell reconnects that library file and copies its alt text. Any other address is stored without a library link. A blank cell leaves that slot unset, and NULL clears it. AI never fills photos. Deleting from Images removes in-use files and compacts remaining product photos. Category grids currently use placeholders.
+    fillGuidance: First non-blank src is the hero background. Every src is also a Photos card image with its alt (or the product name); desktop under the sidebar, mobile after the description section. Omitted when no src. Upload JPEG/PNG/WebP to the Images library (compressed in the browser to a 2400 px longest side, then stored as WebP) or paste an external URL. Alt is filled from the product name on upload or attach (filename only while unassigned). Workbook import exports all three photo addresses. A /api/media/{id} cell reconnects that library file and copies its alt text. Any other address is stored without a library link. A blank cell leaves that slot unset, and NULL clears it. AI never fills photos. Deleting from Images removes in-use files and compacts remaining product photos. Category grids currently use placeholders.
 
   - id: techSheet
     tab: 5
@@ -1107,7 +1107,7 @@ fields:
     visibility: customer
     customerSurfaces: [also-popular]
     workbook: product related slugs
-    fillGuidance: Choose up to three Active or New published products by name. Empty list uses three other same-category current products. A Legacy or otherwise ineligible pick is replaced in that slot.
+    fillGuidance: Choose up to three Active or New published products by name. Empty list uses three other same-category current products. A Legacy or otherwise ineligible pick is replaced in that slot. Deleting a chosen product removes it from this list. The delete confirmation names the products that picked it.
 
   - id: h1
     tab: 6

@@ -65,7 +65,8 @@ export default async function ArticlePage({ params }: Props) {
     getCategories(),
   ]);
   const canonicalHref = `/articles/${article.slug}`;
-  const image = article.socialImage?.trim() || article.heroImageSrc;
+  const photoSrc = article.heroImageSrc.trim();
+  const image = article.socialImage?.trim() || photoSrc;
   const bySlug = new Map(products.map((product) => [product.slug, product]));
   const linkedProducts = article.relatedProductSlugs
     .map((productSlug) => bySlug.get(productSlug))
@@ -75,7 +76,7 @@ export default async function ArticlePage({ params }: Props) {
     "@type": "Article",
     headline: forSearchMetadata(article.title),
     description: forSearchMetadata(article.seoDescription || article.excerpt),
-    image: image || undefined,
+    image: image ? absoluteSiteUrl(image) : undefined,
     datePublished: article.publishedAt,
     dateModified: article.updatedAt,
     author: { "@type": "Organization", name: "IH Seeds" },
@@ -143,6 +144,14 @@ export default async function ArticlePage({ params }: Props) {
                 ))}
               </div>
             </aside>
+          )}
+          {photoSrc && (
+            <section className="product-photos" aria-labelledby="article-photos-heading">
+              <h2 id="article-photos-heading" className="sidebar-card-heading">Photos</h2>
+              <div className="product-photos-list">
+                <img src={photoSrc} alt={article.title} loading="lazy" />
+              </div>
+            </section>
           )}
         </div>
       </section>

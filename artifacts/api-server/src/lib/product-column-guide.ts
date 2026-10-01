@@ -161,7 +161,7 @@ const PRODUCTS: GuideRow[] = [
     "description",
     "Required to publish.",
     "Three to five plain-text paragraphs about the variety or mix. Separate paragraphs with a blank line inside the cell. No HTML and no headings. Do not repeat quick facts, grazing notes, disease notes, stand life, the breeder, or the supplier. Stay under Excel's 32,767-character cell limit.",
-    "Section headed About this variety. Each blank-line block becomes its own paragraph.",
+    "Section headed About this variety, About this seed blend when the record type is Mix, or About this product in Biologicals. Each blank-line block becomes its own paragraph.",
   ],
   [
     "1 Products",
@@ -293,7 +293,7 @@ const PRODUCTS: GuideRow[] = [
     "1 Products",
     "related_products",
     "No",
-    "Up to three other product slugs, separated with |. Example: holdfast-gt|haifa-white-clover. Use slugs from 1 Products, not names. Each slug must exist in this file. Leave blank to let the site choose.",
+    "Up to three other product slugs, separated with |. Example: holdfast-gt|haifa-white-clover. Use slugs from 1 Products, not names. Each slug must exist in this file. Leave blank to let the site choose. Deleting a chosen product removes it from this list. The delete confirmation names the products that picked it.",
     "Bottom section Also popular. Cards show that product's photo, name, tagline, stock pill, and NEW stamp. A blank cell lets the site pick three other current products in the same category. A Legacy or unpublished slug is replaced.",
   ],
   [
@@ -308,7 +308,7 @@ const PRODUCTS: GuideRow[] = [
     "photo_2",
     "No",
     "Second image address. Same rules as photo_1.",
-    "Second image in the Photos section (desktop beside the page, mobile after About this variety). Not the hero.",
+    "Second image in the Photos section (desktop beside the page, mobile after the description section). Not the hero.",
   ],
   [
     "1 Products",
@@ -620,7 +620,7 @@ const MIXES: GuideRow[] = [
     "5 Mix components",
     "component_slug",
     "No",
-    "Optional slug of another product in this file. Not the mix's own slug, and not repeated. Leave blank when the ingredient is not its own catalogue product. An unknown slug fails import.",
+    "Optional slug of another product in this file. Not the mix's own slug, and not repeated. Leave blank when the ingredient is not its own catalogue product. An unknown slug fails import. Deleting the linked product clears this slug and keeps the ingredient row. The delete confirmation names those mixes and any Also popular picks.",
     "When the slug matches a product, the ingredient name links to that product page. The slug is not printed.",
   ],
   [

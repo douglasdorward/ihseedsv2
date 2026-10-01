@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { matchUploadToProduct, normalizeUploadStem } from "../src/match-upload-product.ts";
+import { matchUploadToArticle, matchUploadToProduct, normalizeUploadStem } from "../src/match-upload-product.ts";
 
 const products = [
   { id: 1, name: "Astound", slug: "astound" },
@@ -40,4 +40,30 @@ test("close-but-weak guesses are selected with Unsure", () => {
   assert.equal(match.unsure, true);
   assert.ok(match.score >= 0.35);
   assert.ok(match.score <= 0.5);
+});
+
+const articles = [
+  { id: 11, title: "Spring sowing notes", slug: "spring-sowing-notes" },
+  { id: 12, title: "Clover establishment", slug: "clover-establishment" },
+];
+
+test("exact article slug filenames select silently", () => {
+  const match = matchUploadToArticle("spring-sowing-notes.jpg", articles);
+  assert.equal(match.articleId, "11");
+  assert.equal(match.unsure, false);
+  assert.equal(match.score, 1);
+});
+
+test("close-but-weak article title guesses are selected with Unsure", () => {
+  const match = matchUploadToArticle("clover.jpg", articles);
+  assert.equal(match.articleId, "12");
+  assert.equal(match.unsure, true);
+  assert.ok(match.score >= 0.35);
+  assert.ok(match.score <= 0.5);
+});
+
+test("random camera names stay unmatched for articles", () => {
+  const match = matchUploadToArticle("DSC_0091.jpg", articles);
+  assert.equal(match.articleId, "");
+  assert.equal(match.unsure, false);
 });

@@ -113,7 +113,7 @@ export function PastureSelector({
           <legend className="visually-hidden">How much rain does the paddock get?</legend>
           <h2 id="pasture-step-rain">How much rain does the paddock get?</h2>
           <p className="pasture-help">Your long-term average annual rainfall. If you are not sure, use the nearest town&apos;s average. We only use this to rule out varieties that need more rain than you get.</p>
-          <p className="pasture-limit">A minimum rules varieties out at the dry end. It cannot rank what remains, and it never means a variety is the best choice at that rainfall.</p>
+          <p className="pasture-limit">A variety drops out when its stated minimum is above this band. It cannot rank what remains, and it never means a variety is the best choice at that rainfall.</p>
           <div className="pasture-options">
             {SELECTOR_RAINFALL.map((option) => (
               <Option

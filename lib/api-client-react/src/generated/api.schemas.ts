@@ -1299,6 +1299,16 @@ export interface MediaBackfillResult {
   message: string;
 }
 
+export interface DeleteAllProductsRequest {
+  /** Must be exactly 1,2,3,4 */
+  confirm: string;
+}
+
+export interface DeleteAllProductsResult {
+  /** @minimum 0 */
+  deleted: number;
+}
+
 export interface AdminSummary {
   totalProducts: number;
   publishedProducts: number;

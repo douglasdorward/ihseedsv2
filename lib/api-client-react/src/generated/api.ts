@@ -43,6 +43,8 @@ import type {
   CatalogueCategoryUpdate,
   CategoryFaqImportReport,
   CreateAdministratorInput,
+  DeleteAllProductsRequest,
+  DeleteAllProductsResult,
   DeleteProductImageRequest,
   EnquiryCreated,
   EnquiryInput,
@@ -1232,6 +1234,77 @@ export function useListAdminProducts<TData = Awaited<ReturnType<typeof listAdmin
 
 
 
+
+export const getDeleteAllProductsUrl = () => {
+
+
+
+
+  return `/api/admin/products/delete-all`
+}
+
+/**
+ * @summary Delete every product, including drafts and archived records
+ */
+export const deleteAllProducts = async (deleteAllProductsRequest: DeleteAllProductsRequest, options?: Parameters<typeof customFetch>[1]): Promise<DeleteAllProductsResult> => {
+
+  return customFetch<DeleteAllProductsResult>(getDeleteAllProductsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(deleteAllProductsRequest)
+  }
+);}
+
+
+
+
+
+export const getDeleteAllProductsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAllProducts>>, TError,{data: BodyType<DeleteAllProductsRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAllProducts>>, TError,{data: BodyType<DeleteAllProductsRequest>}, TContext> => {
+
+const mutationKey = ['deleteAllProducts'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAllProducts>>, {data: BodyType<DeleteAllProductsRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  deleteAllProducts(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAllProductsMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAllProducts>>>
+    export type DeleteAllProductsMutationBody = BodyType<DeleteAllProductsRequest>
+    export type DeleteAllProductsMutationError = ErrorType<void>
+
+    /**
+ * @summary Delete every product, including drafts and archived records
+ */
+export const useDeleteAllProducts = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAllProducts>>, TError,{data: BodyType<DeleteAllProductsRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAllProducts>>,
+        TError,
+        {data: BodyType<DeleteAllProductsRequest>},
+        TContext
+      > => {
+      return useMutation(getDeleteAllProductsMutationOptions(options));
+    }
 
 export const getGetAdminProductUrl = (id: number,) => {
 

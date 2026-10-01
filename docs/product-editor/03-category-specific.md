@@ -213,7 +213,7 @@ The customer website prints a fixed like-for-like substitution disclaimer (grey 
 - **Required:** no
 - **Customer website:** Turns the display name into a link to `/products/{category}/{slug}` when that product is in the public catalogue. Unlinked names stay plain text.
 - **Public API:** yes
-- **How to fill:** Choose a catalogue product, or leave empty for species IH Seeds does not sell alone. Cannot link to this mix. Cannot reuse the same slug on two rows.
+- **How to fill:** Choose a catalogue product, or leave empty for species IH Seeds does not sell alone. Cannot link to this mix. Cannot reuse the same slug on two rows. Deleting the linked product clears this link and leaves the ingredient row in place. The delete confirmation names the mixes and any Also popular picks that will be removed.
 
 #### Inclusion rate / Unit
 

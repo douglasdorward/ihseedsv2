@@ -30,6 +30,7 @@ import {
   useCreateProduct,
   useUpdateProduct,
   useDeleteProduct,
+  useDeleteAllProducts,
   useSaveProductDraftRevision,
   usePublishProduct,
   useArchiveProduct,
@@ -273,6 +274,8 @@ function getPublishIssues(form: any): PublishIssue[] {
 const stripHttpErrorPrefix = (message: string) =>
   message.replace(/^HTTP \d+(?: [^:]+)?:\s*/i, "");
 
+const DELETE_ALL_PRODUCTS_PHRASE = "1,2,3,4";
+
 function RequiredStar() {
   return <span className="admin-required-star" aria-hidden="true">*</span>;
 }
@@ -307,6 +310,7 @@ export function ConfirmDialog({
   confirmLabel,
   busyLabel,
   busy = false,
+  confirmDisabled = false,
   onCancel,
   onConfirm,
 }: {
@@ -315,6 +319,7 @@ export function ConfirmDialog({
   confirmLabel: string;
   busyLabel?: string;
   busy?: boolean;
+  confirmDisabled?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -330,7 +335,7 @@ export function ConfirmDialog({
         <h2 id="admin-confirm-title">{title}</h2>
         <p>{body}</p>
         <div className="admin-dialog-actions">
-          <button className="admin-button primary" type="button" onClick={onConfirm} disabled={busy}>
+          <button className="admin-button primary" type="button" onClick={onConfirm} disabled={busy || confirmDisabled}>
             {busy ? (busyLabel ?? confirmLabel) : confirmLabel}
           </button>
           <button className="admin-button ghost" type="button" onClick={onCancel} disabled={busy}>
@@ -732,6 +737,105 @@ function Dashboard() {
   );
 }
 
+type CatalogueImportIssue = {
+  sheet?: string;
+  row?: number;
+  column?: string;
+  problem?: string;
+};
+
+function catalogueImportFailureText(report: { error?: unknown; issues?: CatalogueImportIssue[] }) {
+  const lines: string[] = [];
+  if (typeof report.error === "string" && report.error.trim()) lines.push(report.error.trim());
+  for (const issue of report.issues ?? []) {
+    const place = [
+      issue.sheet ? `Sheet "${issue.sheet}"` : "",
+      typeof issue.row === "number" ? `row ${issue.row}` : "",
+      issue.column ? `col ${issue.column}` : "",
+    ].filter(Boolean).join(" ");
+    const problem = issue.problem ?? "Import problem";
+    lines.push(place ? `${place}: ${problem}` : problem);
+  }
+  return lines.join("\n");
+}
+
+function CatalogueImportErrors({ text, copied, onCopied }: { text: string; copied: boolean; onCopied: (ok: boolean) => void }) {
+  const areaRef = useRef<HTMLTextAreaElement>(null);
+  const copy = async () => {
+    const area = areaRef.current;
+    try {
+      await navigator.clipboard.writeText(text);
+      onCopied(true);
+      return;
+    } catch {
+      if (!area) {
+        onCopied(false);
+        return;
+      }
+      area.focus();
+      area.select();
+      try {
+        if (document.execCommand("copy")) {
+          onCopied(true);
+          return;
+        }
+      } catch {
+        // The message stays selected so it can be copied manually.
+      }
+      onCopied(false);
+    }
+  };
+  return (
+    <div className="admin-import-errors">
+      <div className="admin-import-errors-head">
+        <p>Import problems</p>
+        <button className="admin-button outline small" type="button" data-testid="copy-import-errors" onClick={() => void copy()}>
+          {copied ? "Copied" : "Copy errors"}
+        </button>
+      </div>
+      <textarea ref={areaRef} readOnly spellCheck={false} aria-label="Import errors" value={text} />
+    </div>
+  );
+}
+
+function quotedList(names: string[]) {
+  const quoted = names.map((name) => `“${name}”`);
+  if (quoted.length <= 1) return quoted[0] ?? "";
+  return `${quoted.slice(0, -1).join(", ")} and ${quoted.at(-1)}`;
+}
+
+function catalogueLinksForSlug(products: Array<{
+  name?: string;
+  slug?: string;
+  details?: { components?: Array<{ productLink?: string }>; relatedProducts?: string[] };
+  draft?: { details?: { components?: Array<{ productLink?: string }>; relatedProducts?: string[] } } | null;
+}>, slug: string) {
+  const mixes: string[] = [];
+  const popular: string[] = [];
+  for (const product of products) {
+    if (!slug || product.slug === slug) continue;
+    const name = product.name?.trim();
+    if (!name) continue;
+    const components = [...(product.details?.components ?? []), ...(product.draft?.details?.components ?? [])];
+    if (components.some((component) => component.productLink === slug) && !mixes.includes(name)) mixes.push(name);
+    const related = [...(product.details?.relatedProducts ?? []), ...(product.draft?.details?.relatedProducts ?? [])];
+    if (related.includes(slug) && !popular.includes(name)) popular.push(name);
+  }
+  return { mixes, popular };
+}
+
+function deleteProductWarning(name: string, links: { mixes: string[]; popular: string[] }) {
+  const mixText = links.mixes.length ? `linked in a product mix on ${quotedList(links.mixes)}` : "";
+  const popularText = links.popular.length ? `chosen in Also popular on ${quotedList(links.popular)}` : "";
+  if (!mixText && !popularText) return `Delete ${name} permanently? This cannot be undone.`;
+  const where = [mixText, popularText].filter(Boolean).join(" and ");
+  const effects = [
+    links.mixes.length ? "Those mixes will keep the ingredient name and rate, but the link to this product will be removed." : "",
+    links.popular.length ? "Those Also popular picks will be removed." : "",
+  ].filter(Boolean).join(" ");
+  return `Delete ${name} permanently? This product is ${where}. ${effects} Are you sure you want to delete it? This cannot be undone.`;
+}
+
 function ProductTable() {
   const { data: products = [], isLoading } = useListAdminProducts();
   const { data: taxonomy = [] } = useListAdminCategories();
@@ -741,6 +845,7 @@ function ProductTable() {
   const restoreProduct = useRestoreProduct();
   const discardDraft = useDiscardProductDraft();
   const deleteProduct = useDeleteProduct();
+  const deleteAllProducts = useDeleteAllProducts();
   const queryClient = useQueryClient();
   const dryRunImport = useDryRunProductImport();
   const commitImport = useCommitProductImport();
@@ -762,17 +867,29 @@ function ProductTable() {
   const [messageTone, setMessageTone] = useState<"success" | "error">("success");
   const messageRef = useRef<HTMLParagraphElement>(null);
   const [pendingPublish, setPendingPublish] = useState<AdminProduct | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<AdminProduct | null>(null);
+  const [showDeleteAll, setShowDeleteAll] = useState(false);
+  const [deleteAllPhrase, setDeleteAllPhrase] = useState("");
+  const [deleteAllError, setDeleteAllError] = useState("");
   
   const [importing, setImporting] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importReport, setImportReport] = useState<any | null>(null);
+  const [importErrorsCopied, setImportErrorsCopied] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const importFailureText = importReport ? catalogueImportFailureText(importReport) : "";
 
   const closeImportDialog = () => {
     if (importing) return;
     setShowImportDialog(false);
     setImportFile(null);
     setImportReport(null);
+    setImportErrorsCopied(false);
+  };
+
+  const markImportErrorsCopied = (ok: boolean) => {
+    setImportErrorsCopied(ok);
+    if (ok) window.setTimeout(() => setImportErrorsCopied(false), 2000);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -789,8 +906,10 @@ function ProductTable() {
       try {
         const base64 = (reader.result as string).split(',')[1];
         const res = await dryRunImport.mutateAsync({ data: { workbookBase64: base64 } }) as any;
+        setImportErrorsCopied(false);
         setImportReport({ ...res, base64 });
       } catch (err) {
+        setImportErrorsCopied(false);
         setImportReport({ error: err instanceof Error ? err.message : "Upload failed" });
       } finally {
         setImporting(false);
@@ -812,6 +931,7 @@ function ProductTable() {
       setMessageTone("success");
       setMessage("Catalogue imported successfully.");
     } catch (err) {
+      setImportErrorsCopied(false);
       setImportReport({ ...importReport, error: err instanceof Error ? err.message : "Commit failed" });
     } finally {
       setImporting(false);
@@ -873,11 +993,14 @@ function ProductTable() {
     product: AdminProduct,
     action: "publish" | "archive" | "restore" | "discard" | "delete",
   ) => {
+    if (action === "delete") {
+      setPendingDelete(product);
+      return;
+    }
     const prompts = {
       archive: `Archive ${product.name}? It will be removed from the public site immediately, but its data will be kept.`,
       restore: `Restore ${product.name} to Draft? It will remain off the public site until explicitly published.`,
       discard: `Discard leftover unpublished changes for ${product.name}? The live public version will remain unchanged.`,
-      delete: `Delete ${product.name} permanently? This cannot be undone.`,
     };
     if (action === "publish") {
       const issues = getPublishIssues(product);
@@ -895,10 +1018,9 @@ function ProductTable() {
       if (action === "archive") await archiveProduct.mutateAsync({ id: product.id });
       if (action === "restore") await restoreProduct.mutateAsync({ id: product.id });
       if (action === "discard") await discardDraft.mutateAsync({ id: product.id });
-      if (action === "delete") await deleteProduct.mutateAsync({ id: product.id });
       await refreshCatalogue();
       setMessageTone("success");
-      setMessage(action === "restore" ? "Product restored to Draft." : action === "discard" ? "Draft changes discarded." : action === "archive" ? "Product archived." : "Product deleted.");
+      setMessage(action === "restore" ? "Product restored to Draft." : action === "discard" ? "Draft changes discarded." : "Product archived.");
     } catch (error) {
       setMessageTone("error");
       setMessage(error instanceof Error ? stripHttpErrorPrefix(error.message) : "Unable to update this product.");
@@ -927,6 +1049,53 @@ function ProductTable() {
       }
       setMessageTone("error");
       setMessage(text);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const closeDeleteAll = () => {
+    if (saving) return;
+    setShowDeleteAll(false);
+    setDeleteAllPhrase("");
+    setDeleteAllError("");
+  };
+
+  const confirmDeleteAll = async () => {
+    if (deleteAllPhrase.trim() !== DELETE_ALL_PRODUCTS_PHRASE) return;
+    setSaving(true);
+    setDeleteAllError("");
+    setMessage("");
+    try {
+      const deleted = (await deleteAllProducts.mutateAsync({ data: { confirm: DELETE_ALL_PRODUCTS_PHRASE } })).deleted;
+      await refreshCatalogue();
+      setSelected([]);
+      setShowDeleteAll(false);
+      setDeleteAllPhrase("");
+      setMessageTone("success");
+      setMessage(deleted === 1 ? "Deleted 1 product." : `Deleted ${deleted} products.`);
+    } catch (error) {
+      setDeleteAllError(error instanceof Error ? stripHttpErrorPrefix(error.message) : "Unable to delete products.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmPendingDelete = async () => {
+    if (!pendingDelete) return;
+    const product = pendingDelete;
+    setSaving(true);
+    setMessage("");
+    try {
+      await deleteProduct.mutateAsync({ id: product.id });
+      await refreshCatalogue();
+      setMessageTone("success");
+      setMessage("Product deleted.");
+      setPendingDelete(null);
+    } catch (error) {
+      setPendingDelete(null);
+      setMessageTone("error");
+      setMessage(error instanceof Error ? stripHttpErrorPrefix(error.message) : "Unable to delete this product.");
     } finally {
       setSaving(false);
     }
@@ -1068,6 +1237,21 @@ function ProductTable() {
             </tbody>
           </table>
         </div>
+        <div className="admin-catalogue-danger-zone">
+          <button
+            type="button"
+            className="admin-button danger"
+            data-testid="delete-all-products"
+            disabled={saving || isLoading || products.length === 0}
+            onClick={() => {
+              setDeleteAllPhrase("");
+              setDeleteAllError("");
+              setShowDeleteAll(true);
+            }}
+          >
+            Delete all products
+          </button>
+        </div>
       </div>
       {pendingPublish && (
         <ConfirmDialog
@@ -1079,6 +1263,71 @@ function ProductTable() {
           onCancel={() => !saving && setPendingPublish(null)}
           onConfirm={() => void confirmPendingPublish()}
         />
+      )}
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Are you sure you want to delete this product?"
+          body={isLoading
+            ? "Checking where this product is used…"
+            : deleteProductWarning(pendingDelete.name ?? "this product", catalogueLinksForSlug(products, pendingDelete.slug))}
+          confirmLabel="Delete permanently"
+          busyLabel="Deleting…"
+          busy={saving}
+          confirmDisabled={isLoading}
+          onCancel={() => !saving && setPendingDelete(null)}
+          onConfirm={() => void confirmPendingDelete()}
+        />
+      )}
+      {showDeleteAll && (
+        <div className="admin-dialog-backdrop" role="presentation" onMouseDown={closeDeleteAll}>
+          <section
+            className="admin-dialog admin-delete-all-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-all-products-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <h2 id="delete-all-products-title">Delete every product?</h2>
+            <div className="admin-delete-all-warning" role="alert">
+              <p>This permanently deletes the whole product catalogue. It is not limited to the products on this tab, and it cannot be undone.</p>
+              <ul>
+                <li>Every published product, including unpublished draft changes saved against it</li>
+                <li>Every draft-only product</li>
+                <li>Every archived product</li>
+                <li>Sale lines and stock codes for those products</li>
+                <li>Redirects that send visitors to those product pages</li>
+              </ul>
+              <p>Those products disappear from the public website. Categories, blog articles, resellers, and image files in the media library stay. Product photos are unlinked from the deleted products.</p>
+            </div>
+            <label className="admin-delete-all-confirm" htmlFor="delete-all-products-phrase">
+              Type 1,2,3,4 to delete everything
+              <input
+                id="delete-all-products-phrase"
+                data-testid="delete-all-products-phrase"
+                value={deleteAllPhrase}
+                autoComplete="off"
+                spellCheck={false}
+                disabled={saving}
+                onChange={(event) => setDeleteAllPhrase(event.target.value)}
+              />
+            </label>
+            {deleteAllError && <p className="admin-delete-all-error" role="alert">{deleteAllError}</p>}
+            <div className="admin-dialog-actions">
+              <button
+                className="admin-button danger"
+                type="button"
+                data-testid="delete-all-products-confirm"
+                disabled={saving || deleteAllPhrase.trim() !== DELETE_ALL_PRODUCTS_PHRASE}
+                onClick={() => void confirmDeleteAll()}
+              >
+                {saving ? "Deleting…" : "Delete everything"}
+              </button>
+              <button className="admin-button ghost" type="button" onClick={closeDeleteAll} disabled={saving}>
+                Cancel
+              </button>
+            </div>
+          </section>
+        </div>
       )}
       {showImportDialog && (
         <div className="admin-dialog-backdrop" role="presentation" onMouseDown={importing ? undefined : closeImportDialog}>
@@ -1103,7 +1352,7 @@ function ProductTable() {
             ) : (
               <div className="admin-import-report">
                 {importReport.error ? (
-                  <p style={{color:'red'}}>{importReport.error}</p>
+                  <CatalogueImportErrors text={importFailureText} copied={importErrorsCopied} onCopied={markImportErrorsCopied} />
                 ) : (
                   <>
                     <p><strong>Dry run successful.</strong> Review planned changes before committing.</p>
@@ -1113,8 +1362,8 @@ function ProductTable() {
                     {importReport.warnings?.length > 0 && (
                       <ul>{importReport.warnings.map((c: string, i: number) => <li key={i} style={{color:'#af7909'}}>{c}</li>)}</ul>
                     )}
-                    {importReport.issues?.length > 0 && (
-                      <ul>{importReport.issues.map((issue: any, i: number) => <li key={i} style={{color:'red'}}>Sheet "{issue.sheet}" row {issue.row} col {issue.column}: {issue.problem}</li>)}</ul>
+                    {importFailureText && (
+                      <CatalogueImportErrors text={importFailureText} copied={importErrorsCopied} onCopied={markImportErrorsCopied} />
                     )}
                   </>
                 )}
@@ -1138,7 +1387,7 @@ function ProductTable() {
 function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: number }) {
   const queryClient = useQueryClient();
   const { data: product, isLoading: loadingProduct } = useGetAdminProduct(productId!, { query: { enabled: !!productId, queryKey: getGetAdminProductQueryKey(productId!) } });
-  const { data: products = [] } = useListAdminProducts();
+  const { data: products = [], isLoading: productsLoading } = useListAdminProducts();
   const {
     data: taxonomy = [],
     isLoading: loadingTaxonomy,
@@ -1232,6 +1481,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const errorBannerRef = useRef<HTMLDivElement>(null);
   const [showSectionCompletion, setShowSectionCompletion] = useState(false);
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
+  const [showDeletePrompt, setShowDeletePrompt] = useState(false);
   const [showPublishPrompt, setShowPublishPrompt] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [aiHighlighted, setAiHighlighted] = useState<Set<string>>(new Set());
@@ -1598,8 +1848,12 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
     }
   };
 
-  const remove = async () => {
-    if (!product || !window.confirm(`Delete ${product.name}? This cannot be undone.`)) return;
+  const remove = () => {
+    if (product) setShowDeletePrompt(true);
+  };
+
+  const confirmRemove = async () => {
+    if (!product) return;
     setSaving(true);
     setError("");
     try {
@@ -1608,6 +1862,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
       await queryClient.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
       navigate("/admin/products");
     } catch (err) {
+      setShowDeletePrompt(false);
       setError(err instanceof Error ? err.message : "Unable to delete product.");
       setSaving(false);
     }
@@ -2341,6 +2596,20 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
           </fieldset>
         </form>
       </div>
+      {showDeletePrompt && product && (
+        <ConfirmDialog
+          title="Are you sure you want to delete this product?"
+          body={productsLoading
+            ? "Checking where this product is used…"
+            : deleteProductWarning(product.name, catalogueLinksForSlug(products, product.slug))}
+          confirmLabel="Delete permanently"
+          busyLabel="Deleting…"
+          busy={saving}
+          confirmDisabled={productsLoading}
+          onCancel={() => !saving && setShowDeletePrompt(false)}
+          onConfirm={() => void confirmRemove()}
+        />
+      )}
       {showPublishPrompt && (
         <ConfirmDialog
           title="Are you sure?"

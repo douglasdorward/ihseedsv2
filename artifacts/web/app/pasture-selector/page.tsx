@@ -72,7 +72,7 @@ export default async function PastureSelectorPage({
             What pasture should I sow on this paddock? Start with the four things that decide it: your average rainfall, your soil, what you are growing the feed for, and how long you need the stand to last. This page asks those questions and shows the Western Australian pasture seed — varieties and ready-made mixes — that fits the answers.
           </p>
           <p>
-            Use it when you are asking what pasture should I sow, which pasture seed suits sandy soil in Western Australia, what grows on 400 mm of rainfall, or which pasture comes back every year. The rainfall figure is the supplier&apos;s stated minimum. It only rules out varieties that need more rain than you reliably get. It does not rank what remains, and it is not a verdict that a variety is the best choice at that rainfall. If the block holds more than one soil, run the selector once for each.
+            Use it when you are asking what pasture should I sow, which pasture seed suits sandy soil in Western Australia, what grows on 400 mm of rainfall, or which pasture comes back every year. The rainfall figure is the supplier&apos;s stated minimum. It only rules out varieties whose minimum sits above the band you picked. It does not rank what remains, and it is not a verdict that a variety is the best choice at that rainfall. If the block holds more than one soil, run the selector once for each.
           </p>
         </div>
 

@@ -21,6 +21,24 @@ export function normalizePublicPath(path: string) {
   return pathname.replace(/\/+$/, "") || "/";
 }
 
+/**
+ * A legacy path may be claimed by the product being imported when nothing else
+ * still owns it. Article redirects stay put. A redirect that still lands on
+ * another live product stays put too. An old product page with no live owner
+ * can be pointed at the imported product.
+ */
+export function legacyRedirectConflict(
+  existingToPath: string | null | undefined,
+  nextToPath: string,
+  liveProductPaths: ReadonlySet<string>,
+): "article" | "other-product" | null {
+  if (!existingToPath) return null;
+  if (existingToPath.startsWith("/articles/")) return "article";
+  const existingPath = normalizePublicPath(existingToPath);
+  if (existingPath !== nextToPath && liveProductPaths.has(existingPath)) return "other-product";
+  return null;
+}
+
 export function legacyWebsitePath(value: unknown) {
   const raw = typeof value === "string" ? value.trim() : String(value ?? "").trim();
   if (!raw) return null;

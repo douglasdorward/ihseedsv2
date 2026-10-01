@@ -299,6 +299,28 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AdminProduct"
+  /admin/products/delete-all:
+    post:
+      operationId: deleteAllProducts
+      tags: [admin]
+      summary: Delete every product, including drafts and archived records
+      security:
+        - clerkSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteAllProductsRequest"
+      responses:
+        "200":
+          description: Every product was deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteAllProductsResult"
+        "400":
+          description: Confirmation phrase was not 1,2,3,4
   /admin/products/{id}:
     parameters:
       - name: id
@@ -2375,6 +2397,20 @@ components:
       properties:
         ok: { type: boolean }
         message: { type: string }
+    DeleteAllProductsRequest:
+      type: object
+      required: [confirm]
+      properties:
+        confirm:
+          type: string
+          description: Must be exactly 1,2,3,4
+    DeleteAllProductsResult:
+      type: object
+      required: [deleted]
+      properties:
+        deleted:
+          type: number
+          minimum: 0
     AdminSummary:
       type: object
       properties:

@@ -242,6 +242,13 @@ export function productPageHeading(product: CatalogueProduct) {
   return product.details.h1?.trim() || product.name;
 }
 
+export function categoryPageHeading(category: Pick<CatalogueCategory, "slug" | "name" | "pageHeading">) {
+  const custom = category.pageHeading.trim();
+  if (custom) return custom;
+  if (category.slug === "mixes") return "Seed Mixes";
+  return `${category.name} Seed`;
+}
+
 export function defaultSaleLine(product: CatalogueProduct) {
   return product.saleLines?.find((line) => line.isDefault) ?? product.saleLines?.[0];
 }

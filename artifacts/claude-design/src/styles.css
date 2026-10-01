@@ -581,6 +581,19 @@ h1 strong { display:block; font-weight:800; }
 .admin-dialog p { margin:12px 0 24px; color:#536059; font-size:16px; line-height:1.6; }
 .admin-dialog-actions { display:flex; flex-wrap:wrap; gap:10px; }
 .admin-button-danger { color:#9c372d; border-color:#9c372d; }
+.admin-button.danger { background:#9c1c1c; border-color:#9c1c1c; color:#fff; }
+.admin-button.danger:hover:not(:disabled) { background:#7e1616; }
+.admin-button.danger:disabled { opacity:.45; cursor:not-allowed; }
+.admin-catalogue-danger-zone { display:flex; justify-content:flex-start; }
+.admin-delete-all-dialog { width:min(100%,560px); }
+.admin-delete-all-dialog h2 { color:#9c1c1c; }
+.admin-delete-all-warning { margin-top:16px; padding:16px 18px; border:1px solid #e7a8a4; border-radius:12px; background:#fff1f0; color:#8f1d18; }
+.admin-delete-all-warning p { margin:0 0 12px; color:#8f1d18; font-size:15px; }
+.admin-delete-all-warning ul { margin:0 0 12px; padding-left:18px; }
+.admin-delete-all-warning li { margin:4px 0; line-height:1.45; }
+.admin-delete-all-confirm { display:flex; flex-direction:column; gap:8px; margin:18px 0 8px; color:#8f1d18; font-weight:750; }
+.admin-delete-all-confirm input { width:100%; border:1px solid #e7a8a4; border-radius:8px; padding:12px 13px; background:#fff; color:#223027; font-weight:650; }
+.admin-delete-all-dialog .admin-delete-all-error { margin:0 0 16px; color:#9c1c1c; font-weight:700; }
 .admin-row-actions { display:flex; align-items:flex-start; flex-direction:column; gap:7px; }
 .admin-mobile-row-actions { display:none; margin-top:9px; }
 .admin-text-button.danger { color:#a3312b; }

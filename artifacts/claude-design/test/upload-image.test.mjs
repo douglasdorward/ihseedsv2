@@ -53,6 +53,7 @@ test("reports byte progress and WebP processing as distinct stages", async () =>
     );
     assert.equal(photo.assetId, "asset-1");
     assert.deepEqual(stages, [
+      { stage: "compressing", percent: 0 },
       { stage: "requesting", percent: 0 },
       { stage: "uploading", percent: 0 },
       { stage: "uploading", percent: 50 },
