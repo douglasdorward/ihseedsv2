@@ -1,4 +1,5 @@
-import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { check, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export type MediaAssetStatus = "Pending" | "Ready" | "Failed";
 export type MediaStorageKind = "managed" | "legacy" | "external";
@@ -37,7 +38,12 @@ export const mediaReferencesTable = pgTable("ih_media_references", {
   metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => [
+  check(
+    "ih_media_references_owner_type_check",
+    sql`${table.ownerType} IN ('product', 'category', 'static', 'article', 'reseller')`,
+  ),
+]);
 
 export type MediaAsset = typeof mediaAssetsTable.$inferSelect;
 export type MediaReference = typeof mediaReferencesTable.$inferSelect;
