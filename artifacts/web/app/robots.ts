@@ -5,7 +5,8 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: "/",
+      // Product photos and site images are served from these public API paths.
+      allow: ["/", "/api/media/", "/api/site/"],
       disallow: ["/admin", "/admin/", "/api", "/api/", "/internal", "/internal/"],
     },
     sitemap: absoluteSiteUrl("/sitemap.xml"),
