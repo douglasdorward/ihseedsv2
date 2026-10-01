@@ -40,7 +40,9 @@ export const mediaReferencesTable = pgTable("ih_media_references", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   check(
-    "ih_media_references_owner_type_check",
+    // Renamed from ih_media_references_owner_type_check so the publish
+    // schema diff replaces production's older owner list (see 0043).
+    "ih_media_references_owner_type_allowed",
     sql`${table.ownerType} IN ('product', 'category', 'static', 'article', 'reseller')`,
   ),
 ]);
