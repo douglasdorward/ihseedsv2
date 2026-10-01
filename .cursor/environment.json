@@ -1,0 +1,20 @@
+{
+  "name": "IH Seeds",
+  "user": "ubuntu",
+  "install": "bash scripts/cloud/install.sh",
+  "start": "bash scripts/cloud/start.sh",
+  "terminals": [
+    {
+      "name": "api",
+      "command": "bash -lc 'source scripts/cloud/env.sh && PORT=\"$API_PORT\" pnpm --filter @workspace/api-server run start'"
+    },
+    {
+      "name": "web",
+      "command": "bash -lc 'source scripts/cloud/env.sh && pnpm --filter @workspace/web run dev'"
+    }
+  ],
+  "ports": [
+    { "name": "web", "port": 3000 },
+    { "name": "api", "port": 8080 }
+  ]
+}
