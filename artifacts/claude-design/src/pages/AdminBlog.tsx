@@ -952,7 +952,7 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
             </button>
             <small>{pdfs.length} of {ARTICLE_PDF_LIMIT} PDFs. Images go into the article body. PDFs up to 15 MB.</small>
           </div>
-          {pdfs.length > 0 && (
+          {!isNew && pdfs.length > 0 && (
             <ul className="admin-blog-pdfs">
               {pdfs.map((pdf) => (
                 <ArticlePdfRow
