@@ -233,6 +233,13 @@
   background: #f7f9f6;
   color: #536059;
 }
+.admin-doc-surface img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  margin: 8px 0;
+}
 .admin-blog-seo-preview {
   display: flex;
   flex-direction: column;

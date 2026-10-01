@@ -1,4 +1,5 @@
-import { compressImageForUpload } from "./compress-image.ts";
+import { adminErrorMessage } from "./admin-error.ts";
+import { compressImageForUpload, isAllowedUploadImageType, normalizeImageContentType } from "./compress-image.ts";
 import { resolveImageAlt } from "./image-alt.ts";
 
 export type UploadedMediaPhoto = {
@@ -36,12 +37,7 @@ type MediaAssetPayload = {
 };
 
 function errorMessage(body: unknown, fallback: string) {
-  if (body && typeof body === "object") {
-    const record = body as { error?: unknown; message?: unknown };
-    if (typeof record.error === "string") return record.error;
-    if (typeof record.message === "string") return record.message;
-  }
-  return fallback;
+  return adminErrorMessage(body, fallback);
 }
 
 function photoFromAsset(asset: MediaAssetPayload, filename: string, options: UploadMediaOptions = {}): UploadedMediaPhoto {
@@ -102,13 +98,17 @@ function putFileWithProgress(
 export async function uploadMediaAsset(file: File, options: UploadMediaOptions = {}): Promise<UploadedMediaPhoto> {
   options.onProgress?.({ stage: "compressing", percent: 0 });
   const prepared = await compressImageForUpload(file);
+  const contentType = normalizeImageContentType(prepared);
+  if (!isAllowedUploadImageType(contentType)) {
+    throw new Error("Use a JPEG, PNG, or WebP image up to 12 MB.");
+  }
   options.onProgress?.({ stage: "requesting", percent: 0 });
   const request = await fetch("/api/admin/media/upload-request", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       originalFilename: prepared.name,
-      contentType: prepared.type,
+      contentType,
       bytes: prepared.size,
     }),
   });

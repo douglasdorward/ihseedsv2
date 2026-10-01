@@ -1,6 +1,32 @@
 export const IMAGE_MAX_EDGE = 2400;
 export const IMAGE_MAX_BYTES = 12 * 1024 * 1024;
 const WEBP_QUALITIES = [0.8, 0.65, 0.5];
+const ALLOWED_UPLOAD_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const CONVERTIBLE_TYPES = new Set([
+  "image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp", "image/heic", "image/heif", "image/tiff",
+]);
+
+export function normalizeImageContentType(file: Pick<File, "type" | "name">) {
+  const type = (file.type || "").toLowerCase();
+  if (type === "image/jpg" || type === "image/pjpeg") return "image/jpeg";
+  if (type === "image/x-png") return "image/png";
+  if (type === "image/x-webp") return "image/webp";
+  if (!type && /\.jpe?g$/i.test(file.name)) return "image/jpeg";
+  if (!type && /\.png$/i.test(file.name)) return "image/png";
+  if (!type && /\.webp$/i.test(file.name)) return "image/webp";
+  return type;
+}
+
+export function isAllowedUploadImageType(type: string) {
+  return ALLOWED_UPLOAD_TYPES.has(type);
+}
+
+export function isArticleImageFile(file: Pick<File, "type" | "name">) {
+  const type = normalizeImageContentType(file);
+  return isAllowedUploadImageType(type)
+    || CONVERTIBLE_TYPES.has(type)
+    || /\.(jpe?g|png|webp|gif|bmp|heic|heif|tiff?)$/i.test(file.name);
+}
 
 export type DecodedImage = {
   width: number;
@@ -56,17 +82,30 @@ function browserImageCompressor(): ImageCompressor {
   };
 }
 
+function withNormalizedType(file: File) {
+  const type = normalizeImageContentType(file);
+  if (!type || type === file.type) return file;
+  return new File([file], renamed(file.name, type), { type, lastModified: file.lastModified });
+}
+
 export async function compressImageForUpload(file: File, compressor: ImageCompressor = browserImageCompressor()): Promise<File> {
-  const supported = /^image\/(jpeg|png|webp)$/.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
-  if (!file.size || !supported) return file;
+  if (!file.size) throw new Error("That file is empty.");
+  const convertible = isArticleImageFile(file);
+  const normalized = withNormalizedType(file);
+  if (!convertible) {
+    throw new Error("Use a JPEG, PNG, or WebP image up to 12 MB.");
+  }
 
   let decoded: DecodedImage | null = null;
   try {
     decoded = await compressor.decode(file);
   } catch {
-    return file;
+    decoded = null;
   }
-  if (!decoded?.width || !decoded.height) return file;
+  if (!decoded?.width || !decoded.height) {
+    if (isAllowedUploadImageType(normalizeImageContentType(file))) return normalized;
+    throw new Error("Use a JPEG, PNG, or WebP image up to 12 MB. iPhone HEIC photos need to be saved as JPEG first.");
+  }
 
   try {
     const size = targetSize(decoded.width, decoded.height);
@@ -82,7 +121,10 @@ export async function compressImageForUpload(file: File, compressor: ImageCompre
     if (file.size > IMAGE_MAX_BYTES && (!chosen || chosen.size > IMAGE_MAX_BYTES)) {
       throw new Error("This image is still over 12 MB after compression. Use a smaller photo.");
     }
-    if (!chosen || chosen.size >= file.size) return file;
+    if (!chosen || chosen.size >= file.size) {
+      if (isAllowedUploadImageType(normalizeImageContentType(file))) return normalized;
+      throw new Error("Use a JPEG, PNG, or WebP image up to 12 MB.");
+    }
     const type = chosen.type || "image/webp";
     return new File([chosen], renamed(file.name, type), { type, lastModified: file.lastModified });
   } finally {

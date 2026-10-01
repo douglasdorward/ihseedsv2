@@ -1,9 +1,16 @@
 import Link from "next/link";
+import { categoryPublicPath, type NavCategory } from "../lib/catalogue-paths";
 import { companyMapsUrl, companyTelHref, DEFAULT_COMPANY, type CompanyContact } from "../lib/company";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
 
-export function Footer({ company = DEFAULT_COMPANY }: { company?: CompanyContact }) {
+export function Footer({
+  company = DEFAULT_COMPANY,
+  productCategories = [],
+}: {
+  company?: CompanyContact;
+  productCategories?: NavCategory[];
+}) {
   const mapsUrl = companyMapsUrl(company.address);
   const phone = company.phone.trim();
   const phoneHref = companyTelHref(phone);
@@ -47,9 +54,16 @@ export function Footer({ company = DEFAULT_COMPANY }: { company?: CompanyContact
         <div className="footer-columns">
           <div>
             <p className="footer-column-title">Products</p>
-            <Link href="/products/mixes" className="footer-link" data-testid="footer-products">Mixes</Link>
-            <Link href="/products/ryegrass" className="footer-link" data-testid="footer-ryegrass">Ryegrasses</Link>
-            <Link href="/products/clovers" className="footer-link" data-testid="footer-clovers">Clovers</Link>
+            {productCategories.map((category) => (
+              <Link
+                key={category.slug}
+                href={categoryPublicPath(category)}
+                className="footer-link"
+                data-testid={`footer-${category.slug}`}
+              >
+                {category.name}
+              </Link>
+            ))}
           </div>
           <div>
             <p className="footer-column-title">Resources</p>

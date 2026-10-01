@@ -219,8 +219,9 @@ export function HomePageEditor({
               Preview: {expandProductCount(homepage.heroBody, productCount) || "Add introduction copy."} Use {"{productCount}"} to insert the live variety count.
             </p>
             <div className="hero-actions">
-              <span className="button button-primary">Advice</span>
-              <span className="button button-light">Browse the catalogue</span>
+              <span className="button button-primary">Browse products</span>
+              <span className="button button-light">Pasture Seed Selector</span>
+              <span className="button button-light">Advice</span>
             </div>
           </div>
           <div className="ppe-hero-upload hpe-hero-photos">
@@ -359,6 +360,39 @@ export function HomePageEditor({
                 </div>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      <section id="pasture-selector" className="section selector-feature-section" aria-labelledby="selector-feature-heading">
+        <p className="hpe-readonly-note" style={{ maxWidth: 1180, margin: "16px auto 0", padding: "0 40px" }}>The Pasture Seed Selector feature is not editable here.</p>
+        <div className="content-width">
+          <div className="section-heading">
+            <h2 id="selector-feature-heading"><span>Pasture</span> Seed Selector</h2>
+            <span className="button button-outline">Try the selector</span>
+          </div>
+          <p className="selector-feature-intro">Answer four questions about your paddock — rainfall, soil, what you are growing it for and how long it needs to last — and see pasture seed that suits it.</p>
+          <div className="selector-feature-grid">
+            <div className="selector-feature-card">
+              <Icon name="cloud-rain" size={27} />
+              <h3>Rainfall</h3>
+              <p>How much rain does the paddock get?</p>
+            </div>
+            <div className="selector-feature-card">
+              <Icon name="layers" size={27} />
+              <h3>Soil</h3>
+              <p>What is the ground like?</p>
+            </div>
+            <div className="selector-feature-card">
+              <Icon name="target" size={27} />
+              <h3>Use</h3>
+              <p>What is the paddock for?</p>
+            </div>
+            <div className="selector-feature-card">
+              <Icon name="calendar" size={27} />
+              <h3>Stand life</h3>
+              <p>How long do you want it to last?</p>
+            </div>
           </div>
         </div>
       </section>

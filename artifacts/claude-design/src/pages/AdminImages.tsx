@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getListAdminArticlesQueryKey, getListAdminProductsQueryKey, useListAdminArticles, useListAdminProducts } from "@workspace/api-client-react";
+import { adminErrorMessage } from "../admin-error";
 import { Icon } from "../components/ui";
 import { ConfirmDialog, PageHeader } from "./Admin";
 import { downloadImageListCsv, productListingState } from "../image-list-csv";
 import { MEDIA_SORT_OPTIONS, sortMediaAssets, type MediaSort } from "../image-sort";
 import { matchUploadToArticle, matchUploadToProduct } from "../match-upload-product";
 import { imageUsageLine, type ImageUsageSummary } from "../image-usage-line";
+import { isArticleImageFile } from "../compress-image";
 import { photoDisplaySrc, uploadMediaAsset, type UploadedMediaPhoto, type UploadMediaProgress } from "../upload-image";
 import { runUploadBatch, successfulUploadValues } from "../upload-batch";
 import { uploadCancelCopy } from "../upload-cancel-copy";
@@ -128,7 +130,7 @@ export default function AdminImages() {
   const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { data: products = [], isLoading: loadingProducts } = useListAdminProducts();
-  const { data: articles = [] } = useListAdminArticles();
+  const { data: articles = [], isLoading: loadingArticles, error: articlesError } = useListAdminArticles();
   const [items, setItems] = useState<MediaAsset[]>([]);
   const [sort, setSort] = useState<MediaSort>("newest");
   const [assign, setAssign] = useState<AssignState | null>(null);
@@ -165,7 +167,9 @@ export default function AdminImages() {
   );
 
   const assignArticles = useMemo(
-    () => [...articles].sort((first, second) => first.title.localeCompare(second.title, undefined, { numeric: true, sensitivity: "base" }) || second.id - first.id),
+    () => [...(Array.isArray(articles) ? articles : [])].sort((first, second) => (
+      (first.title ?? "").localeCompare(second.title ?? "", undefined, { numeric: true, sensitivity: "base" }) || second.id - first.id
+    )),
     [articles],
   );
 
@@ -194,7 +198,7 @@ export default function AdminImages() {
     setActiveUploadKind(kind);
     const selected = [...files];
     const queue = selected.map((file, index): UploadQueueItem => {
-      const supported = /image\/(jpeg|png|webp)/.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
+      const supported = isArticleImageFile(file);
       return {
         id: `${Date.now()}-${index}-${file.name}`,
         file,
@@ -304,6 +308,10 @@ export default function AdminImages() {
 
   const attachSelected = async () => {
     if (!matchKind || !matchRows?.some((row) => row.targetId)) return;
+    if (matchKind === "article" && !assignArticles.length) {
+      setError(articlesError ? "Articles could not be loaded. Refresh the page and try again." : "No articles yet. Add one under Blog, then match again.");
+      return;
+    }
     setBusy(true);
     setError("");
     const next = matchRows.map((row) => ({ ...row, error: "" }));
@@ -312,35 +320,45 @@ export default function AdminImages() {
       for (let index = 0; index < next.length; index += 1) {
         const row = next[index];
         if (!row.targetId) continue;
-        const response = await fetch(`/api/admin/media/${row.assetId}/attach`, {
+        const targetId = Number(row.targetId);
+        if (!Number.isInteger(targetId) || targetId < 1) {
+          next[index] = { ...row, error: matchKind === "article" ? "Choose an article." : "Choose a product." };
+          continue;
+        }
+        const response = await fetch(`/api/admin/media/${encodeURIComponent(row.assetId)}/attach`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(matchKind === "article"
-            ? { articleId: Number(row.targetId) }
-            : { productId: Number(row.targetId) }),
+          credentials: "same-origin",
+          body: JSON.stringify(matchKind === "article" ? { articleId: targetId } : { productId: targetId }),
         });
-        const body = await response.json().catch(() => null);
+        const body = await response.json().catch(() => null) as { error?: string } | null;
         if (!response.ok) {
-          next[index] = { ...row, error: body?.error ?? "Could not attach that image." };
+          next[index] = { ...row, error: body?.error ?? `Could not attach that image (${response.status}).` };
           continue;
         }
         attached += 1;
       }
       setMatchRows(next);
+      const failed = next.filter((row) => row.targetId && row.error);
+      if (failed.length) {
+        setError(failed.length === 1 ? failed[0].error : `Could not attach ${failed.length} images. See the rows above.`);
+      } else if (attached) {
+        setMatchRows(null);
+        setMatchKind(null);
+      }
+    } catch (caught) {
+      setError(adminErrorMessage(caught, "Could not attach those images."));
+      setMatchRows(next);
+    } finally {
+      setBusy(false);
+    }
+    try {
       await refresh();
       await queryClient.invalidateQueries({
         queryKey: matchKind === "article" ? getListAdminArticlesQueryKey() : getListAdminProductsQueryKey(),
       });
-      if (next.every((row) => !row.targetId || !row.error)) {
-        if (attached) {
-          setMatchRows(null);
-          setMatchKind(null);
-        }
-      }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not attach those images.");
-    } finally {
-      setBusy(false);
+      setError((current) => current || (caught instanceof Error ? caught.message : "Attached, but the image library could not refresh."));
     }
   };
 
@@ -488,7 +506,7 @@ export default function AdminImages() {
             <input
               ref={inputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif"
               multiple
               disabled={busy}
               data-testid="image-upload-input"
@@ -730,6 +748,13 @@ export default function AdminImages() {
                 : "The new photo becomes the hero. Existing photos move down. Click a thumbnail to inspect it. Skip keeps these files in the library without attaching them."}
             </p>
             {error && <p className="admin-inline-field-error">{error}</p>}
+            {matchKind === "article" && loadingArticles && <p className="admin-field-hint">Loading articles…</p>}
+            {matchKind === "article" && articlesError && (
+              <p className="admin-inline-field-error">Could not load articles. Refresh the page, then match again.</p>
+            )}
+            {matchKind === "article" && !loadingArticles && !articlesError && assignArticles.length === 0 && (
+              <p className="admin-field-hint">No articles yet. Add one under Blog, then match again.</p>
+            )}
             <div className="admin-image-match-list">
               {matchRows.map((row, index) => (
                 <div className="admin-image-match-row" key={`${row.assetId}-${index}`}>
@@ -758,10 +783,10 @@ export default function AdminImages() {
                       <option value="">{matchKind === "article" ? "No article" : "No product"}</option>
                       {matchKind === "article"
                         ? assignArticles.map((article) => (
-                          <option key={article.id} value={article.id}>{article.title} ({article.publishStatus.toLowerCase()})</option>
+                          <option key={article.id} value={String(article.id)}>{article.title} ({(article.publishStatus ?? "Draft").toLowerCase()})</option>
                         ))
                         : matchProducts.map((product) => (
-                          <option key={product.id} value={product.id}>{product.name} ({productListingState(product).toLowerCase()})</option>
+                          <option key={product.id} value={String(product.id)}>{product.name} ({productListingState(product).toLowerCase()})</option>
                         ))}
                     </select>
                     {row.unsure && <p className="admin-image-match-unsure">Unsure</p>}
@@ -785,7 +810,8 @@ export default function AdminImages() {
               <button
                 className="admin-button primary"
                 type="button"
-                disabled={busy || !matchRows.some((row) => row.targetId)}
+                data-testid="match-attach-btn"
+                disabled={busy || !matchRows.some((row) => row.targetId) || (matchKind === "article" && !assignArticles.length)}
                 onClick={() => void attachSelected()}
               >
                 Attach selected
@@ -875,7 +901,7 @@ export default function AdminImages() {
                 >
                   <option value="">Choose an article</option>
                   {assignArticleOptions.map((article) => (
-                    <option key={article.id} value={article.id}>{article.title} ({article.publishStatus.toLowerCase()})</option>
+                    <option key={article.id} value={String(article.id)}>{article.title} ({(article.publishStatus ?? "Draft").toLowerCase()})</option>
                   ))}
                 </select>
               )}

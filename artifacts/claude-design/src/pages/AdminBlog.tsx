@@ -25,8 +25,10 @@ import {
 import { AlsoPopularPicker } from "../components/AlsoPopularPicker";
 import { Icon } from "../components/ui";
 import { isAlsoPopularEligible } from "../also-popular";
-import { normalizeArticleBody } from "../article-body";
+import { adminErrorMessage } from "../admin-error";
+import { appendArticleImage, normalizeArticleBody } from "../article-body";
 import { ArticleBodyEditor } from "../components/ArticleBodyEditor";
+import { isArticleImageFile } from "../compress-image";
 import { navigate, useLocation } from "../router";
 import { photoDisplaySrc, uploadMediaAsset } from "../upload-image";
 import { ConfirmDialog, PageHeader } from "./Admin";
@@ -57,7 +59,7 @@ function forSearchMetadata(value: string) {
 }
 
 function titleFromPdfFilename(filename: string) {
-  const stem = filename.replace(/^.*[/\\]/, "").replace(/\.pdf$/i, "").replace(/[_-]+/g, " ").trim();
+  const stem = filename.replace(/^.*[/\\]/, "").replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
   return stem.slice(0, 180) || "Document";
 }
 
@@ -71,9 +73,7 @@ function readFileAsDataUrl(file: File) {
 }
 
 function errorMessage(error: unknown, fallback: string) {
-  if (error && typeof error === "object" && "error" in error && typeof error.error === "string") return error.error;
-  if (error instanceof Error) return error.message.replace(/^HTTP \d+ [^:]+:\s*/, "");
-  return fallback;
+  return adminErrorMessage(error, fallback);
 }
 
 function formatDate(value: string | null) {
@@ -592,7 +592,31 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
     }
   };
 
-  const attachPdf = async (file: File) => {
+  const attachArticleFile = async (file: File) => {
+    if (!isArticleImageFile(file) && isNew) {
+      setError("Save the draft before attaching a PDF.");
+      return;
+    }
+    if (isArticleImageFile(file)) {
+      setBusy(true);
+      setError("");
+      setMessage("");
+      try {
+        const uploaded = await uploadMediaAsset(file, { ownerName: form.title, role: "body" });
+        setForm((current) => ({
+          ...current,
+          body: appendArticleImage(current.body, uploaded.src, uploaded.alt || current.title || uploaded.file),
+          heroImageSrc: current.heroImageSrc || uploaded.src,
+          heroImageAssetId: current.heroImageAssetId || uploaded.assetId,
+        }));
+        setMessage("Image added to the article. Save to keep it.");
+      } catch (caught) {
+        setError(errorMessage(caught, "Could not upload that image."));
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     if (isNew) return;
     setBusy(true);
     setError("");
@@ -610,7 +634,7 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
         ? `Attached “${title}”. It is linked on the article.`
         : `Attached “${title}”. It stays private until you publish.`);
     } catch (caught) {
-      setError(errorMessage(caught, "Could not attach that PDF."));
+      setError(errorMessage(caught, "Could not attach that file."));
     } finally {
       setBusy(false);
     }
@@ -871,7 +895,7 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
             )}
           </div>
           <div className="admin-blog-hero-actions">
-            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(event) => {
+            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif" hidden onChange={(event) => {
               const file = event.target.files?.[0];
               event.target.value = "";
               if (file) void uploadHero(file);
@@ -887,64 +911,61 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
         <section className="admin-panel admin-form-card">
           <div className="admin-section-heading">
             <div>
-              <h3>PDFs</h3>
-              <p>These files are linked on the article. Google can index them when the article is published and indexing is allowed. The link address stays the same if you edit the title later.</p>
+              <h3>Files</h3>
+              <p>Attach a PDF download, or add a JPEG, PNG, or WebP into the article. Google can index published PDFs. The PDF link address stays the same if you edit the title later.</p>
             </div>
           </div>
           {isNew ? (
-            <p className="admin-field-hint">Save the draft before attaching a PDF.</p>
-          ) : (
-            <>
-              <label>
-                PDF title
-                <input
-                  value={pdfTitle}
-                  onChange={(event) => setPdfTitle(event.target.value)}
-                  placeholder="Shown as the download link. Blank uses the file name."
-                  maxLength={180}
-                  data-testid="article-pdf-title"
+            <p className="admin-field-hint">Images can be added now. Save the draft before attaching a PDF.</p>
+          ) : null}
+          <label>
+            PDF title
+            <input
+              value={pdfTitle}
+              onChange={(event) => setPdfTitle(event.target.value)}
+              placeholder="Shown as the download link. Blank uses the file name."
+              maxLength={180}
+              data-testid="article-pdf-title"
+            />
+          </label>
+          <input
+            ref={pdfFileRef}
+            type="file"
+            accept="application/pdf,.pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif"
+            hidden
+            data-testid="article-pdf-file"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file) void attachArticleFile(file);
+            }}
+          />
+          <div className="admin-blog-pdf-actions">
+            <button
+              className="admin-button outline small"
+              type="button"
+              onClick={() => pdfFileRef.current?.click()}
+              disabled={busy || (!isNew && pdfs.length >= ARTICLE_PDF_LIMIT)}
+              data-testid="article-pdf-attach"
+            >
+              Attach file
+            </button>
+            <small>{pdfs.length} of {ARTICLE_PDF_LIMIT} PDFs. Images go into the article body. PDFs up to 15 MB.</small>
+          </div>
+          {pdfs.length > 0 && (
+            <ul className="admin-blog-pdfs">
+              {pdfs.map((pdf) => (
+                <ArticlePdfRow
+                  key={pdf.slug}
+                  pdf={pdf}
+                  articleId={articleId}
+                  articleSlug={article?.slug || form.slug}
+                  busy={busy}
+                  onRename={renamePdf}
+                  onRemove={removePdf}
                 />
-              </label>
-              <input
-                ref={pdfFileRef}
-                type="file"
-                accept="application/pdf,.pdf"
-                hidden
-                data-testid="article-pdf-file"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  event.target.value = "";
-                  if (file) void attachPdf(file);
-                }}
-              />
-              <div className="admin-blog-pdf-actions">
-                <button
-                  className="admin-button outline small"
-                  type="button"
-                  onClick={() => pdfFileRef.current?.click()}
-                  disabled={busy || pdfs.length >= ARTICLE_PDF_LIMIT}
-                  data-testid="article-pdf-attach"
-                >
-                  Attach PDF
-                </button>
-                <small>{pdfs.length} of {ARTICLE_PDF_LIMIT}. PDF files up to 15 MB.</small>
-              </div>
-              {pdfs.length > 0 && (
-                <ul className="admin-blog-pdfs">
-                  {pdfs.map((pdf) => (
-                    <ArticlePdfRow
-                      key={pdf.slug}
-                      pdf={pdf}
-                      articleId={articleId}
-                      articleSlug={article?.slug || form.slug}
-                      busy={busy}
-                      onRename={renamePdf}
-                      onRemove={removePdf}
-                    />
-                  ))}
-                </ul>
-              )}
-            </>
+              ))}
+            </ul>
           )}
         </section>
 
@@ -952,10 +973,15 @@ function ArticleEditor({ articleId }: { articleId: number | "new" }) {
           <div className="admin-section-heading">
             <div>
               <h3>Article body</h3>
-              <p>Write as you would in a document. Highlight text to bold, italicise, add headings, lists or links. The title is already the page H1.</p>
+              <p>Write as you would in a document. Highlight text to bold, italicise, add headings, lists, links or images. The title is already the page H1.</p>
             </div>
           </div>
-          <ArticleBodyEditor value={form.body} onChange={(body) => setField("body", body)} />
+          <ArticleBodyEditor
+            value={form.body}
+            ownerName={form.title}
+            onChange={(body) => setField("body", body)}
+            onError={(message) => setError(message)}
+          />
         </section>
 
         <section className="admin-panel admin-form-card">

@@ -1,6 +1,7 @@
-const ALLOWED_TAGS = new Set(["p", "h2", "h3", "strong", "b", "em", "i", "u", "a", "ul", "ol", "li", "blockquote", "br"]);
-const VOID_TAGS = new Set(["br"]);
+const ALLOWED_TAGS = new Set(["p", "h2", "h3", "strong", "b", "em", "i", "u", "a", "ul", "ol", "li", "blockquote", "br", "img"]);
+const VOID_TAGS = new Set(["br", "img"]);
 const RENAME_TAGS: Record<string, string> = { b: "strong", i: "em", h1: "h2", div: "p" };
+const MEDIA_SRC = /^\/api\/(?:admin\/)?media\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\/preview)?(?:\?.*)?$/i;
 
 export function safeHref(href: string) {
   const value = href.trim();
@@ -14,11 +15,32 @@ export function safeHref(href: string) {
   }
 }
 
+export function safeImageSrc(src: string) {
+  const value = src.trim();
+  const media = value.match(MEDIA_SRC);
+  if (media) return `/api/media/${media[1].toLowerCase()}`;
+  return safeHref(value);
+}
+
+export function articleBodyAssetIds(html: string) {
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  const matches = html.matchAll(/\/api\/(?:admin\/)?media\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gi);
+  for (const match of matches) {
+    const id = match[1].toLowerCase();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+  }
+  return ids;
+}
+
 export function looksLikeHtml(value: string) {
   return /<\/?[a-z][\s\S]*>/i.test(value.trim());
 }
 
 export function bodyHasText(value: string) {
+  if (/<img\b/i.test(value)) return true;
   return value
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/gi, " ")
@@ -76,6 +98,13 @@ export function sanitizeArticleHtml(html: string) {
       }
       continue;
     }
+    if (mapped === "img") {
+      const src = safeImageSrc(decodeEntities(attributeValue(match[2] ?? "", "src")));
+      if (!src) continue;
+      const alt = decodeEntities(attributeValue(match[2] ?? "", "alt"));
+      output += `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}">`;
+      continue;
+    }
     if (VOID_TAGS.has(mapped)) {
       output += `<${mapped}>`;
       continue;
@@ -128,6 +157,17 @@ export function markdownToHtml(value: string) {
     }
     return `<p>${inlineMarkdownToHtml(block).replace(/\n/g, "<br>")}</p>`;
   }).join("");
+}
+
+export function articleImageMarkup(src: string, alt: string) {
+  const safeSrc = safeImageSrc(src);
+  if (!safeSrc) return "";
+  return `<p><img src="${escapeHtml(safeSrc)}" alt="${escapeHtml(alt.trim())}"></p>`;
+}
+
+export function appendArticleImage(body: string, src: string, alt: string) {
+  const markup = articleImageMarkup(src, alt);
+  return markup ? normalizeArticleBody(`${body}${markup}`) : normalizeArticleBody(body);
 }
 
 export function editorHtmlFromBody(value: string) {

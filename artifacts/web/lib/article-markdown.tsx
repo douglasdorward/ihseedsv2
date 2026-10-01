@@ -72,8 +72,16 @@ function looksLikeHtml(value: string) {
   return /<\/?[a-z][\s\S]*>/i.test(value.trim());
 }
 
-const ALLOWED_TAGS = new Set(["p", "h2", "h3", "strong", "b", "em", "i", "u", "a", "ul", "ol", "li", "blockquote", "br"]);
+const ALLOWED_TAGS = new Set(["p", "h2", "h3", "strong", "b", "em", "i", "u", "a", "ul", "ol", "li", "blockquote", "br", "img"]);
 const RENAME_TAGS: Record<string, string> = { b: "strong", i: "em", h1: "h2", div: "p" };
+const MEDIA_SRC = /^\/api\/(?:admin\/)?media\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\/preview)?(?:\?.*)?$/i;
+
+function safeImageSrc(src: string) {
+  const value = src.trim();
+  const media = value.match(MEDIA_SRC);
+  if (media) return `/api/media/${media[1].toLowerCase()}`;
+  return safeHref(value);
+}
 
 function sanitizeArticleHtml(html: string) {
   const source = html
@@ -112,6 +120,15 @@ function sanitizeArticleHtml(html: string) {
     }
     if (mapped === "br") {
       output += "<br>";
+      continue;
+    }
+    if (mapped === "img") {
+      const srcMatch = (match[2] ?? "").match(/(?:^|\s)src\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const altMatch = (match[2] ?? "").match(/(?:^|\s)alt\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const src = safeImageSrc(decode(srcMatch?.[2] ?? srcMatch?.[3] ?? srcMatch?.[4] ?? ""));
+      if (!src) continue;
+      const alt = decode(altMatch?.[2] ?? altMatch?.[3] ?? altMatch?.[4] ?? "");
+      output += `<img src="${escape(src)}" alt="${escape(alt)}">`;
       continue;
     }
     if (mapped === "a") {

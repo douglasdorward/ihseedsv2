@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { bodyHasText, editorHtmlFromBody, sanitizeArticleHtml } from "../article-body";
+import { adminErrorMessage } from "../admin-error";
+import { articleImageMarkup, bodyHasText, editorHtmlFromBody, sanitizeArticleHtml } from "../article-body";
+import { isArticleImageFile } from "../compress-image";
+import { uploadMediaAsset } from "../upload-image";
 
 type Props = {
   value: string;
   onChange: (html: string) => void;
+  ownerName?: string;
+  onError?: (message: string) => void;
 };
 
 type ToolbarState = {
@@ -22,12 +27,14 @@ function currentHeading(): "" | "h2" | "h3" {
   return "";
 }
 
-export function ArticleBodyEditor({ value, onChange }: Props) {
+export function ArticleBodyEditor({ value, onChange, ownerName, onError }: Props) {
   const surface = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLInputElement>(null);
   const lastEmitted = useRef("");
   const savedSelection = useRef<Range | null>(null);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
+  const [imageBusy, setImageBusy] = useState(false);
   const [toolbar, setToolbar] = useState<ToolbarState>({ bold: false, italic: false, underline: false, heading: "" });
 
   useEffect(() => {
@@ -80,6 +87,28 @@ export function ArticleBodyEditor({ value, onChange }: Props) {
     });
   };
 
+  const insertUploadedImage = async (file: File) => {
+    if (!isArticleImageFile(file)) {
+      onError?.("Use a JPEG, PNG, or WebP image up to 12 MB.");
+      return;
+    }
+    setImageBusy(true);
+    onError?.("");
+    try {
+      const uploaded = await uploadMediaAsset(file, { ownerName, role: "body" });
+      const markup = articleImageMarkup(uploaded.src, uploaded.alt || ownerName || uploaded.file);
+      if (!markup) throw new Error("Could not upload that image.");
+      surface.current?.focus();
+      restoreSelection();
+      document.execCommand("insertHTML", false, markup);
+      emit();
+    } catch (caught) {
+      onError?.(adminErrorMessage(caught, "Could not upload that image."));
+    } finally {
+      setImageBusy(false);
+    }
+  };
+
   const applyLink = () => {
     const href = linkUrl.trim();
     surface.current?.focus();
@@ -113,6 +142,27 @@ export function ArticleBodyEditor({ value, onChange }: Props) {
           rememberSelection();
           setLinkOpen((open) => !open);
         }}>Link</button>
+        <input
+          ref={imageRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif"
+          hidden
+          data-testid="article-body-image-file"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (file) void insertUploadedImage(file);
+          }}
+        />
+        <button
+          type="button"
+          disabled={imageBusy}
+          data-testid="article-body-image"
+          onMouseDown={(event) => { event.preventDefault(); rememberSelection(); }}
+          onClick={() => imageRef.current?.click()}
+        >
+          {imageBusy ? "Uploading…" : "Image"}
+        </button>
         <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => run("undo")}>Undo</button>
         <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => run("redo")}>Redo</button>
       </div>
@@ -141,12 +191,19 @@ export function ArticleBodyEditor({ value, onChange }: Props) {
         role="textbox"
         aria-label="Article body"
         aria-multiline="true"
-        data-placeholder="Start writing. Use the toolbar for headings, lists, links and emphasis. The article title is already the page heading."
+        data-placeholder="Start writing. Use the toolbar for headings, lists, links, images and emphasis. The article title is already the page heading."
         onInput={emit}
         onBlur={emit}
         onMouseUp={syncToolbar}
         onKeyUp={syncToolbar}
         onPaste={(event) => {
+          const image = [...event.clipboardData.files].find((file) => isArticleImageFile(file));
+          if (image) {
+            event.preventDefault();
+            rememberSelection();
+            void insertUploadedImage(image);
+            return;
+          }
           event.preventDefault();
           const html = event.clipboardData.getData("text/html");
           const text = event.clipboardData.getData("text/plain");
