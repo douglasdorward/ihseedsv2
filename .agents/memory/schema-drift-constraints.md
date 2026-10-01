@@ -16,3 +16,10 @@ the dev schema with pg_dump first, which does catch this kind of drift.
 `pg_get_constraintdef` in dev and prod (prod read-only) before trusting tests.
 Fix with an idempotent DROP IF EXISTS / ADD migration in dev, and declare the
 constraint in the Drizzle schema. Republishing then diffs dev into prod.
+
+**Publish diff gap (seen 2026-10-01):** the publish schema diff did NOT update a
+CHECK constraint whose definition changed but whose name stayed the same; prod
+kept the old rule after a successful publish. Give the replacement constraint a
+NEW name (drop old name + add new name) so the diff sees a drop and an add.
+Name-only changes (e.g. a unique-constraint rename) have reached prod this way.
+After publishing, verify prod with read-only `pg_get_constraintdef`.

@@ -19,5 +19,5 @@
 - [Build API maintenance isolation](build-api-maintenance.md) — temporary build API startup must not perform catalogue repair work before listening.
 - [Social image fallback intent](social-image-fallbacks.md) — blank editor overrides remain dynamic; workbook imports retain their explicit compatibility behavior.
 - [Test upload isolation](test-upload-isolation.md) — disposable databases do not protect app uploads; local-storage tests also need temporary upload directories.
-- [Schema drift outside migrations](schema-drift-constraints.md) — real DBs can hold constraints no migration creates; check dev/prod constraint defs on live-only DB errors.
+- [Schema drift outside migrations](schema-drift-constraints.md) — real DBs can hold constraints no migration creates; check dev/prod constraint defs on live-only DB errors; rename changed CHECKs so publish applies them.
 - [Generated tech sheet storage](tech-sheet-storage.md) — PDFs keyed by content fingerprint, env-namespaced bucket, token-gated store; only nix chromium launches.
