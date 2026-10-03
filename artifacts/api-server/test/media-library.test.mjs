@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { after, afterEach, before, test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -286,19 +286,80 @@ test("unpublished media stays private even when a card size is requested", async
   assert.equal(unpublished.response.status, 404);
 });
 
-test("refine recompresses ready library assets", async (t) => {
+function sql(query) {
+  return execFileSync("psql", [process.env.DATABASE_URL, "-X", "-v", "ON_ERROR_STOP=1", "-At", "-c", query], {
+    encoding: "utf8",
+  }).trim();
+}
+
+function quoted(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+async function refineNeeded() {
+  return assertStatus(await request("GET", "/admin/media/refine-status"), 200).needed;
+}
+
+async function refineAll(limit) {
+  const totals = { refined: 0, upToDate: 0, skipped: 0, failed: 0, batches: 0, firstTotal: null };
+  let after = null;
+  for (;;) {
+    const body = after ? { after, limit } : { limit };
+    const batch = assertStatus(await request("POST", "/admin/media/refine", body), 200);
+    totals.batches += 1;
+    const count = batch.refined + batch.upToDate + batch.skipped + batch.failed;
+    assert.ok(count <= limit, "a batch never exceeds its limit");
+    for (const key of ["refined", "upToDate", "skipped", "failed"]) totals[key] += batch[key];
+    const handled = totals.refined + totals.upToDate + totals.skipped + totals.failed;
+    // The client's total is what it has handled plus what the server says is left.
+    if (totals.firstTotal === null) totals.firstTotal = handled + batch.remaining;
+    assert.equal(handled + batch.remaining, totals.firstTotal, "the progress total stays stable");
+    if (batch.done) {
+      assert.equal(batch.nextCursor, null);
+      assert.equal(batch.remaining, 0);
+      return totals;
+    }
+    assert.equal(typeof batch.nextCursor, "string");
+    after = batch.nextCursor;
+    assert.ok(totals.batches < 1000, "refine batches must finish");
+  }
+}
+
+test("new uploads are already refined and current images are never re-encoded", async (t) => {
   if (!process.env.DATABASE_URL) {
     t.skip("DATABASE_URL is not set");
     return;
   }
-  assertStatus((await uploadPng(`refine-${testRunId}.png`)).completed, 200);
-  const refined = assertStatus(await request("POST", "/admin/media/refine"), 200);
-  assert.ok(refined.refined >= 1);
-  assert.equal(typeof refined.skipped, "number");
-  assert.equal(typeof refined.failed, "number");
+  const before = await refineNeeded();
+  const current = await uploadPng(`refine-current-${testRunId}.png`, PNG_1X1);
+  assertStatus(current.completed, 200);
+  const oversized = await uploadPng(`refine-oversized-${testRunId}.png`, PNG_RED_1X1);
+  assertStatus(oversized.completed, 200);
+  assert.equal(await refineNeeded(), before, "fresh uploads already have both variants");
+
+  // Simulate assets from before variant tracking: one whose files are already
+  // current, and one recorded as larger than the 1600px master.
+  const currentId = current.requested.assetId;
+  const oversizedId = oversized.requested.assetId;
+  const currentSha = sql(`SELECT sha256 FROM ih_media_assets WHERE id = ${quoted(currentId)}`);
+  sql(`UPDATE ih_media_assets SET variants_version = 0 WHERE id IN (${quoted(currentId)}, ${quoted(oversizedId)})`);
+  sql(`UPDATE ih_media_assets SET width = 3200 WHERE id = ${quoted(oversizedId)}`);
+  assert.equal(await refineNeeded(), before + 2);
+
+  const totals = await refineAll(5);
+  assert.equal(totals.upToDate + totals.refined + totals.skipped + totals.failed, before + 2);
+  assert.ok(totals.upToDate >= 1, "the already-current asset is stamped, not re-encoded");
+  assert.ok(totals.refined >= 1, "the oversized asset is re-encoded");
+  assert.equal(await refineNeeded(), totals.skipped + totals.failed);
+
+  assert.equal(sql(`SELECT variants_version || ':' || sha256 FROM ih_media_assets WHERE id = ${quoted(currentId)}`), `1:${currentSha}`);
+  assert.equal(sql(`SELECT variants_version || ':' || width FROM ih_media_assets WHERE id = ${quoted(oversizedId)}`), "1:1");
+
+  const again = await refineAll(5);
+  assert.equal(again.refined + again.upToDate, 0, "a second run has nothing left to refine");
 });
 
-test("refine walks the library in batches and reports progress", async (t) => {
+test("refine walks images that need it in batches and reports progress", async (t) => {
   if (!process.env.DATABASE_URL) {
     t.skip("DATABASE_URL is not set");
     return;
@@ -309,38 +370,17 @@ test("refine walks the library in batches and reports progress", async (t) => {
     assertStatus(completed, 200);
     ours.push(requested.assetId);
   }
+  sql(`UPDATE ih_media_assets SET variants_version = 0 WHERE id IN (${ours.map(quoted).join(", ")})`);
+  const needed = await refineNeeded();
+  assert.ok(needed >= ours.length);
 
-  let after = null;
-  let lastProcessed = 0;
-  let handled = 0;
-  let batches = 0;
-  let final;
-  for (;;) {
-    const batch = assertStatus(await request("POST", "/admin/media/refine", after ? { after, limit: 1 } : { limit: 1 }), 200);
-    batches += 1;
-    const count = batch.refined + batch.skipped + batch.failed;
-    assert.ok(count <= 1, "a batch never exceeds its limit");
-    handled += count;
-    assert.ok(batch.processed >= lastProcessed, "progress never goes backwards");
-    assert.ok(batch.processed <= batch.total);
-    lastProcessed = batch.processed;
-    if (batch.done) {
-      assert.equal(batch.nextCursor, null);
-      final = batch;
-      break;
-    }
-    assert.equal(typeof batch.nextCursor, "string");
-    after = batch.nextCursor;
-    assert.ok(batches < 1000, "refine batches must finish");
-  }
-  assert.ok(final.total >= ours.length);
-  assert.equal(final.processed, final.total);
-  assert.equal(handled, final.total, "every Ready asset is handled exactly once");
-  assert.equal(batches, Math.max(1, final.total));
+  const totals = await refineAll(1);
+  assert.equal(totals.firstTotal, needed);
+  assert.equal(totals.refined + totals.upToDate + totals.skipped + totals.failed, needed, "every image needing it is handled exactly once");
+  assert.equal(totals.batches, needed);
 
   for (const id of ours) {
-    const asset = assertStatus(await request("GET", `/admin/media/${id}`), 200);
-    assert.equal(asset.contentType, "image/webp");
+    assert.equal(sql(`SELECT variants_version FROM ih_media_assets WHERE id = ${quoted(id)}`), "1");
   }
 
   assert.equal((await request("POST", "/admin/media/refine", { limit: 0 })).response.status, 400);

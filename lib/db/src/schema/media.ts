@@ -21,6 +21,10 @@ export const mediaAssetsTable = pgTable("ih_media_assets", {
   storageKind: text("storage_kind").$type<MediaStorageKind>().notNull().default("managed"),
   objectPath: text("object_path"),
   stagingPath: text("staging_path"),
+  // Which generation of stored variants (full + card WebP) this asset has.
+  // Below MEDIA_VARIANTS_VERSION in the API means "Refine existing images"
+  // still needs to process it.
+  variantsVersion: integer("variants_version").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

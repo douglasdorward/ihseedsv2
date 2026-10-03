@@ -153,6 +153,7 @@ export default function AdminImages() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [pendingDelete, setPendingDelete] = useState<MediaAsset[] | null>(null);
   const [pendingRefine, setPendingRefine] = useState(false);
+  const [refineNeeded, setRefineNeeded] = useState(0);
   const [notice, setNotice] = useState("");
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -191,6 +192,19 @@ export default function AdminImages() {
     const body = await response.json().catch(() => null) as MediaPage | { error?: string } | null;
     if (!response.ok) throw new Error((body as { error?: string })?.error ?? "Could not load images.");
     setItems((body as MediaPage).items ?? []);
+    await refreshRefineNeeded();
+  };
+
+  // Only offers "Refine existing images" when some photos still need it. If the
+  // count cannot be loaded the button stays hidden; the library itself still works.
+  const refreshRefineNeeded = async () => {
+    try {
+      const response = await fetch("/api/admin/media/refine-status");
+      const body = await response.json().catch(() => null) as { needed?: number } | null;
+      setRefineNeeded(response.ok && typeof body?.needed === "number" ? body.needed : 0);
+    } catch {
+      setRefineNeeded(0);
+    }
   };
 
   useEffect(() => {
@@ -484,8 +498,9 @@ export default function AdminImages() {
           <div className="admin-section-heading">
             <div>
               <h2>Shared photos</h2>
-              <p className="admin-field-hint">Photos are compressed on upload, then stored as a 1600px WebP plus an 800px card. Refine existing images to apply the same sizes to the current library. Choose product, article, or general before upload. Product and article files can be matched to set the hero photo. External URL pastes stay outside this library.</p>
+              <p className="admin-field-hint">Photos are compressed on upload, then stored as a 1600px WebP plus an 800px card. Older photos that still need these sizes can be refined from here. Choose product, article, or general before upload. Product and article files can be matched to set the hero photo. External URL pastes stay outside this library.</p>
             </div>
+            {refineNeeded > 0 && (
             <button
               className="admin-button outline"
               type="button"
@@ -494,10 +509,11 @@ export default function AdminImages() {
                 setNotice("");
                 setPendingRefine(true);
               }}
-              disabled={busy || loading || items.length === 0}
+              disabled={busy || loading}
             >
-              Refine existing images
+              Refine {refineNeeded === 1 ? "1 image" : `${refineNeeded} images`}
             </button>
+            )}
           </div>
           <div
             className="admin-techsheet-drop"
@@ -988,10 +1004,11 @@ export default function AdminImages() {
       )}
       {pendingRefine && (
         <RefineImagesDialog
+          needed={refineNeeded}
           onFinished={refresh}
           onClose={(summary) => {
             setPendingRefine(false);
-            if (summary) setNotice(`Refined ${summary.refined} images. Skipped ${summary.skipped}. Failed ${summary.failed}.`);
+            if (summary) setNotice(`Refined ${summary.refined} images. ${summary.upToDate} were already done. Skipped ${summary.skipped}. Failed ${summary.failed}.`);
           }}
         />
       )}

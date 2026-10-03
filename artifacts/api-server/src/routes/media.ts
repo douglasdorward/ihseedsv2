@@ -21,8 +21,8 @@ import {
 } from "../lib/app-storage";
 import { queueGeneratedTechSheets } from "../lib/generated-tech-sheet";
 import { imageAltFromContext, resolveImageAlt, shouldReplaceGeneratedAlt } from "../lib/image-alt";
-import { convertMediaVariants, mediaVariantObjectPath, PUBLIC_MEDIA_CACHE_CONTROL, requestedMediaSize, storedMediaVariant } from "../lib/media-image";
-import { REFINE_BATCH_DEFAULT, REFINE_BATCH_MAX, refineReadyMediaAssetBatch } from "../lib/media-refine";
+import { convertMediaVariants, MEDIA_VARIANTS_VERSION, mediaVariantObjectPath, PUBLIC_MEDIA_CACHE_CONTROL, requestedMediaSize, storedMediaVariant } from "../lib/media-image";
+import { countMediaNeedingRefine, REFINE_BATCH_DEFAULT, REFINE_BATCH_MAX, refineReadyMediaAssetBatch } from "../lib/media-refine";
 import { backfillMediaUsage, insertHeroPhoto, isProtectedMediaReference, SocialImageInUseError, syncArticleMediaReferences, syncProductMediaReferences, unlinkAndDeleteMediaRecords } from "../lib/media-usage";
 
 const router: IRouter = Router();
@@ -337,6 +337,7 @@ router.post("/admin/media/:id/complete", async (req, res): Promise<void> => {
       sha256: digest,
       defaultAlt,
       objectPath,
+      variantsVersion: MEDIA_VARIANTS_VERSION,
       stagingPath: null,
       failureReason: null,
       updatedAt: new Date(),
@@ -356,6 +357,10 @@ router.post("/admin/media/:id/complete", async (req, res): Promise<void> => {
 router.post("/admin/media/backfill", async (_req, res): Promise<void> => {
   const result = await backfillMediaUsage();
   res.json({ ok: true, message: `Reconciled media usage for ${result.products} products.` });
+});
+
+router.get("/admin/media/refine-status", async (_req, res): Promise<void> => {
+  res.json({ needed: await countMediaNeedingRefine() });
 });
 
 // Refines one batch per request; the admin screen loops on nextCursor so it can

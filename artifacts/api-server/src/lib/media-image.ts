@@ -68,8 +68,19 @@ export function requestedMediaSize(value: unknown): MediaVariantSize {
   return value === "card" ? "card" : "full";
 }
 
+/**
+ * Bump when the stored variant format changes (sizes, quality, new variants),
+ * so "Refine existing images" offers to bring older assets up to date.
+ * Version 1: 1600px full WebP plus an 800px card WebP.
+ */
+export const MEDIA_VARIANTS_VERSION = 1;
+
 export function isRefineCandidate(asset: { status: string; objectPath: string | null }) {
   return asset.status === "Ready" && Boolean(asset.objectPath);
+}
+
+export function needsRefine(asset: { status: string; objectPath: string | null; variantsVersion: number }) {
+  return isRefineCandidate(asset) && asset.variantsVersion < MEDIA_VARIANTS_VERSION;
 }
 
 export async function storedMediaVariant(

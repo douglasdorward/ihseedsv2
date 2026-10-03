@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 
 type RefineBatchResponse = {
   refined: number;
+  upToDate: number;
   skipped: number;
   failed: number;
-  processed: number;
-  total: number;
+  remaining: number;
   nextCursor: string | null;
   done: boolean;
   error?: string;
@@ -13,7 +13,7 @@ type RefineBatchResponse = {
 
 type RefinePhase = "confirm" | "running" | "done" | "error";
 
-export type RefineSummary = { refined: number; skipped: number; failed: number };
+export type RefineSummary = { refined: number; upToDate: number; skipped: number; failed: number };
 
 type RefineState = RefineSummary & {
   phase: RefinePhase;
@@ -26,6 +26,7 @@ type RefineState = RefineSummary & {
 const INITIAL_STATE: RefineState = {
   phase: "confirm",
   refined: 0,
+  upToDate: 0,
   skipped: 0,
   failed: 0,
   processed: 0,
@@ -51,13 +52,16 @@ async function refineBatch(after: string | null): Promise<RefineBatchResponse> {
  * where the run stopped instead of starting over.
  */
 export function RefineImagesDialog({
+  needed,
   onClose,
   onFinished,
 }: {
+  /** How many images need refining when the dialog opens. */
+  needed: number;
   onClose: (summary: RefineSummary | null) => void;
   onFinished: () => Promise<void> | void;
 }) {
-  const [state, setState] = useState<RefineState>(INITIAL_STATE);
+  const [state, setState] = useState<RefineState>({ ...INITIAL_STATE, total: needed });
   const mounted = useRef(true);
   const running = state.phase === "running";
 
@@ -79,16 +83,22 @@ export function RefineImagesDialog({
         const batch = await refineBatch(cursor);
         if (!mounted.current) return;
         cursor = batch.nextCursor;
-        setState((current) => ({
+        setState((current) => {
+          const processed = current.processed + batch.refined + batch.upToDate + batch.skipped + batch.failed;
+          return {
           ...current,
           refined: current.refined + batch.refined,
+          upToDate: current.upToDate + batch.upToDate,
           skipped: current.skipped + batch.skipped,
           failed: current.failed + batch.failed,
-          processed: batch.processed,
-          total: batch.total,
+          processed,
+          // The server reports what is left after this batch, so the total
+          // stays right even if images were added or removed during the run.
+          total: processed + batch.remaining,
           cursor,
           phase: batch.done ? "done" : "running",
-        }));
+          };
+        });
         if (batch.done) break;
       }
     } catch (caught) {
@@ -111,16 +121,16 @@ export function RefineImagesDialog({
 
   const close = () => {
     if (running) return;
-    onClose(state.phase === "confirm" ? null : { refined: state.refined, skipped: state.skipped, failed: state.failed });
+    onClose(state.phase === "confirm" ? null : { refined: state.refined, upToDate: state.upToDate, skipped: state.skipped, failed: state.failed });
   };
 
-  const { phase, processed, total, refined, skipped, failed } = state;
+  const { phase, processed, total, refined, upToDate, skipped, failed } = state;
   const title = phase === "confirm"
     ? "Refine existing images?"
     : phase === "done" ? "Images refined" : phase === "error" ? "Refining stopped" : "Refining images";
   const statusLine = total > 0
-    ? `${phase === "done" ? "Refined" : "Refining"} ${processed} of ${total} images`
-    : phase === "done" ? "There were no library images to refine." : "Starting…";
+    ? `${phase === "done" ? "Checked" : "Checking"} ${processed} of ${total} images`
+    : phase === "done" ? "No images needed refining." : "Starting…";
 
   return (
     <div className="admin-dialog-backdrop" role="presentation" onMouseDown={close}>
@@ -138,7 +148,8 @@ export function RefineImagesDialog({
         {phase === "confirm" ? (
           <>
             <p id="refine-images-status">
-              Recompress every library photo to a 1600px master and an 800px card. This can take a few minutes and cannot be undone.
+              {needed === 1 ? "1 library photo needs" : `${needed} library photos need`} a 1600px master and an 800px card.
+              Photos that are already the right size are left untouched. This can take a few minutes and cannot be undone.
             </p>
             <div className="admin-dialog-actions">
               <button className="admin-button primary" type="button" data-testid="refine-images-confirm" onClick={() => void run(null)}>
@@ -158,6 +169,7 @@ export function RefineImagesDialog({
               />
               <dl className="admin-refine-counts" data-testid="refine-images-counts">
                 <div><dt>Refined</dt><dd>{refined}</dd></div>
+                <div><dt>Already done</dt><dd>{upToDate}</dd></div>
                 <div><dt>Skipped</dt><dd>{skipped}</dd></div>
                 <div className={failed > 0 ? "has-failures" : undefined}><dt>Failed</dt><dd>{failed}</dd></div>
               </dl>
@@ -169,7 +181,7 @@ export function RefineImagesDialog({
               )}
               {phase === "error" && (
                 <p className="admin-refine-error" role="alert" data-testid="refine-images-error">
-                  {state.error} {processed > 0 ? `${processed} of ${total} images were processed before it stopped.` : ""} Try again to continue from where it stopped.
+                  {state.error} {processed > 0 ? `${processed} of ${total} images were checked before it stopped.` : ""} Try again to continue from where it stopped.
                 </p>
               )}
             </div>
