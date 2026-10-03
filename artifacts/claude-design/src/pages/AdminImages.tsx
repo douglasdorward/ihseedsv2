@@ -4,6 +4,7 @@ import { getListAdminArticlesQueryKey, getListAdminProductsQueryKey, useListAdmi
 import { adminErrorMessage } from "../admin-error";
 import { Icon } from "../components/ui";
 import { ConfirmDialog, PageHeader } from "./Admin";
+import { RefineImagesDialog } from "./RefineImagesDialog";
 import { downloadImageListCsv, productListingState } from "../image-list-csv";
 import { MEDIA_SORT_OPTIONS, sortMediaAssets, type MediaSort } from "../image-sort";
 import { matchUploadToArticle, matchUploadToProduct } from "../match-upload-product";
@@ -438,24 +439,6 @@ export default function AdminImages() {
     }
   };
 
-  const confirmRefine = async () => {
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      const response = await fetch("/api/admin/media/refine", { method: "POST" });
-      const body = await response.json().catch(() => null) as { refined?: number; skipped?: number; failed?: number; error?: string } | null;
-      if (!response.ok) throw new Error(body?.error ?? "Could not refine images.");
-      setPendingRefine(false);
-      setNotice(`Refined ${body?.refined ?? 0} images. Skipped ${body?.skipped ?? 0}. Failed ${body?.failed ?? 0}.`);
-      await refresh();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not refine images.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const confirmCancelUploads = async () => {
     if (!pendingCancel) return;
     setBusy(true);
@@ -507,7 +490,10 @@ export default function AdminImages() {
               className="admin-button outline"
               type="button"
               data-testid="refine-images-btn"
-              onClick={() => setPendingRefine(true)}
+              onClick={() => {
+                setNotice("");
+                setPendingRefine(true);
+              }}
               disabled={busy || loading || items.length === 0}
             >
               Refine existing images
@@ -1001,14 +987,12 @@ export default function AdminImages() {
         />
       )}
       {pendingRefine && (
-        <ConfirmDialog
-          title="Refine existing images?"
-          body="Recompress every library photo to a 1600px master and an 800px card. This can take a few minutes and cannot be undone."
-          confirmLabel="Refine images"
-          busyLabel="Refining…"
-          busy={busy}
-          onCancel={() => !busy && setPendingRefine(false)}
-          onConfirm={() => void confirmRefine()}
+        <RefineImagesDialog
+          onFinished={refresh}
+          onClose={(summary) => {
+            setPendingRefine(false);
+            if (summary) setNotice(`Refined ${summary.refined} images. Skipped ${summary.skipped}. Failed ${summary.failed}.`);
+          }}
         />
       )}
     </>

@@ -298,6 +298,56 @@ test("refine recompresses ready library assets", async (t) => {
   assert.equal(typeof refined.failed, "number");
 });
 
+test("refine walks the library in batches and reports progress", async (t) => {
+  if (!process.env.DATABASE_URL) {
+    t.skip("DATABASE_URL is not set");
+    return;
+  }
+  const ours = [];
+  for (const [index, bytes] of [PNG_1X1, PNG_RED_1X1].entries()) {
+    const { requested, completed } = await uploadPng(`refine-batch-${index}-${testRunId}.png`, bytes);
+    assertStatus(completed, 200);
+    ours.push(requested.assetId);
+  }
+
+  let after = null;
+  let lastProcessed = 0;
+  let handled = 0;
+  let batches = 0;
+  let final;
+  for (;;) {
+    const batch = assertStatus(await request("POST", "/admin/media/refine", after ? { after, limit: 1 } : { limit: 1 }), 200);
+    batches += 1;
+    const count = batch.refined + batch.skipped + batch.failed;
+    assert.ok(count <= 1, "a batch never exceeds its limit");
+    handled += count;
+    assert.ok(batch.processed >= lastProcessed, "progress never goes backwards");
+    assert.ok(batch.processed <= batch.total);
+    lastProcessed = batch.processed;
+    if (batch.done) {
+      assert.equal(batch.nextCursor, null);
+      final = batch;
+      break;
+    }
+    assert.equal(typeof batch.nextCursor, "string");
+    after = batch.nextCursor;
+    assert.ok(batches < 1000, "refine batches must finish");
+  }
+  assert.ok(final.total >= ours.length);
+  assert.equal(final.processed, final.total);
+  assert.equal(handled, final.total, "every Ready asset is handled exactly once");
+  assert.equal(batches, Math.max(1, final.total));
+
+  for (const id of ours) {
+    const asset = assertStatus(await request("GET", `/admin/media/${id}`), 200);
+    assert.equal(asset.contentType, "image/webp");
+  }
+
+  assert.equal((await request("POST", "/admin/media/refine", { limit: 0 })).response.status, 400);
+  assert.equal((await request("POST", "/admin/media/refine", { limit: 26 })).response.status, 400);
+  assert.equal((await request("POST", "/admin/media/refine", { after: 42 })).response.status, 400);
+});
+
 test("attach inserts the new image as hero and shifts existing photos", async (t) => {
   if (!process.env.DATABASE_URL) {
     t.skip("DATABASE_URL is not set");

@@ -22,7 +22,7 @@ import {
 import { queueGeneratedTechSheets } from "../lib/generated-tech-sheet";
 import { imageAltFromContext, resolveImageAlt, shouldReplaceGeneratedAlt } from "../lib/image-alt";
 import { convertMediaVariants, mediaVariantObjectPath, PUBLIC_MEDIA_CACHE_CONTROL, requestedMediaSize, storedMediaVariant } from "../lib/media-image";
-import { refineReadyMediaAssets } from "../lib/media-refine";
+import { REFINE_BATCH_DEFAULT, REFINE_BATCH_MAX, refineReadyMediaAssetBatch } from "../lib/media-refine";
 import { backfillMediaUsage, insertHeroPhoto, isProtectedMediaReference, SocialImageInUseError, syncArticleMediaReferences, syncProductMediaReferences, unlinkAndDeleteMediaRecords } from "../lib/media-usage";
 
 const router: IRouter = Router();
@@ -358,8 +358,22 @@ router.post("/admin/media/backfill", async (_req, res): Promise<void> => {
   res.json({ ok: true, message: `Reconciled media usage for ${result.products} products.` });
 });
 
-router.post("/admin/media/refine", async (_req, res): Promise<void> => {
-  const result = await refineReadyMediaAssets();
+// Refines one batch per request; the admin screen loops on nextCursor so it can
+// show progress and no single request runs long enough to time out.
+router.post("/admin/media/refine", async (req, res): Promise<void> => {
+  const body = (req.body ?? {}) as { after?: unknown; limit?: unknown };
+  if (body.after !== undefined && body.after !== null && (typeof body.after !== "string" || !body.after.trim())) {
+    res.status(400).json({ error: "after must be a media asset id." });
+    return;
+  }
+  if (body.limit !== undefined && (!Number.isInteger(body.limit) || (body.limit as number) < 1 || (body.limit as number) > REFINE_BATCH_MAX)) {
+    res.status(400).json({ error: `limit must be a whole number from 1 to ${REFINE_BATCH_MAX}.` });
+    return;
+  }
+  const result = await refineReadyMediaAssetBatch({
+    after: typeof body.after === "string" ? body.after : null,
+    limit: typeof body.limit === "number" ? body.limit : REFINE_BATCH_DEFAULT,
+  });
   res.json(result);
 });
 
