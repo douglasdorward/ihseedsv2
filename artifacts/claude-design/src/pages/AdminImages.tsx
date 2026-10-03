@@ -151,6 +151,8 @@ export default function AdminImages() {
   const [uploadFinished, setUploadFinished] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [pendingDelete, setPendingDelete] = useState<MediaAsset[] | null>(null);
+  const [pendingRefine, setPendingRefine] = useState(false);
+  const [notice, setNotice] = useState("");
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const sortedItems = useMemo(() => sortMediaAssets(items, sort), [items, sort]);
@@ -436,6 +438,24 @@ export default function AdminImages() {
     }
   };
 
+  const confirmRefine = async () => {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/admin/media/refine", { method: "POST" });
+      const body = await response.json().catch(() => null) as { refined?: number; skipped?: number; failed?: number; error?: string } | null;
+      if (!response.ok) throw new Error(body?.error ?? "Could not refine images.");
+      setPendingRefine(false);
+      setNotice(`Refined ${body?.refined ?? 0} images. Skipped ${body?.skipped ?? 0}. Failed ${body?.failed ?? 0}.`);
+      await refresh();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not refine images.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const confirmCancelUploads = async () => {
     if (!pendingCancel) return;
     setBusy(true);
@@ -481,8 +501,17 @@ export default function AdminImages() {
           <div className="admin-section-heading">
             <div>
               <h2>Shared photos</h2>
-              <p className="admin-field-hint">Photos are compressed on upload, then stored as WebP. Choose product, article, or general before upload. Product and article files can be matched to set the hero photo. External URL pastes stay outside this library.</p>
+              <p className="admin-field-hint">Photos are compressed on upload, then stored as a 1600px WebP plus an 800px card. Refine existing images to apply the same sizes to the current library. Choose product, article, or general before upload. Product and article files can be matched to set the hero photo. External URL pastes stay outside this library.</p>
             </div>
+            <button
+              className="admin-button outline"
+              type="button"
+              data-testid="refine-images-btn"
+              onClick={() => setPendingRefine(true)}
+              disabled={busy || loading || items.length === 0}
+            >
+              Refine existing images
+            </button>
           </div>
           <div
             className="admin-techsheet-drop"
@@ -519,6 +548,7 @@ export default function AdminImages() {
             <span>{busy ? "Uploads in progress…" : "Drop images or click to upload"}</span>
           </div>
           {error && <p className="admin-inline-field-error">{error}</p>}
+          {notice && <p className="admin-field-hint" data-testid="refine-images-notice">{notice}</p>}
         </section>
         {loading ? <p className="admin-empty">Loading images…</p> : (
           <>
@@ -968,6 +998,17 @@ export default function AdminImages() {
           busy={busy}
           onCancel={() => !busy && setPendingDelete(null)}
           onConfirm={() => void confirmDelete()}
+        />
+      )}
+      {pendingRefine && (
+        <ConfirmDialog
+          title="Refine existing images?"
+          body="Recompress every library photo to a 1600px master and an 800px card. This can take a few minutes and cannot be undone."
+          confirmLabel="Refine images"
+          busyLabel="Refining…"
+          busy={busy}
+          onCancel={() => !busy && setPendingRefine(false)}
+          onConfirm={() => void confirmRefine()}
         />
       )}
     </>

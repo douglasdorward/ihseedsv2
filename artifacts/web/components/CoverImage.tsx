@@ -27,3 +27,34 @@ export function CoverImage({
     />
   );
 }
+
+export function ContentImage({
+  src,
+  alt,
+  width,
+  height,
+  sizes,
+  className,
+  priority = false,
+}: {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  sizes: string;
+  className?: string;
+  priority?: boolean;
+}) {
+  if (!src) return null;
+  return (
+    <Image
+      className={className}
+      src={optimizableSrc(src)}
+      alt={alt}
+      width={width && width > 0 ? width : 800}
+      height={height && height > 0 ? height : 600}
+      sizes={sizes}
+      priority={priority}
+    />
+  );
+}

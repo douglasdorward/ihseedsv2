@@ -1,5 +1,6 @@
 import { getSiteSettings, type CatalogueProduct, type PublicSiteHeroImage, type PublicSiteHomepage, type PublicSiteSettings } from "./catalogue";
 import { DEFAULT_COMPANY } from "./company";
+import { mediaVariantSrc, type MediaVariantSize } from "./image-src";
 
 export const BEST_SELLER_LIMIT = 4;
 
@@ -87,10 +88,10 @@ export function resolveBestSellers(chosenSlugs: readonly string[] | undefined, p
   return chosen;
 }
 
-export function publicMediaSrc(image: { src?: string; assetId?: string | null }) {
+export function publicMediaSrc(image: { src?: string; assetId?: string | null }, size: MediaVariantSize = "full") {
   const assetId = image.assetId?.trim();
-  if (assetId) return `/api/media/${assetId}`;
-  return image.src?.trim() || "";
+  if (assetId) return mediaVariantSrc(`/api/media/${assetId}`, size);
+  return mediaVariantSrc(image.src?.trim() || "", size);
 }
 
 export type HeroSlide = {

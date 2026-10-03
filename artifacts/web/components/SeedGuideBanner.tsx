@@ -9,7 +9,7 @@ export function SeedGuideBanner({ seedGuide }: { seedGuide: PublicSiteSeedGuide 
     <section style={{ background: "var(--sage)" }}>
       <div className="page-wide" style={{ maxWidth: 1440, margin: "0 auto", padding: "96px 40px" }}>
         <div className="guide-banner">
-          <CoverImage src={publicMediaSrc({ src: seedGuide.cardImageSrc, assetId: seedGuide.cardImageAssetId }) || fallbackImage} alt="" sizes="(max-width: 900px) 100vw, 1360px" />
+          <CoverImage src={publicMediaSrc({ src: seedGuide.cardImageSrc, assetId: seedGuide.cardImageAssetId }, "card") || fallbackImage} alt="" sizes="(max-width: 900px) 100vw, 1360px" />
           <div className="guide-scrim" aria-hidden="true" />
           <div>
             <h2>{seedGuide.cardHeading}</h2>

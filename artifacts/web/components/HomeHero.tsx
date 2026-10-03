@@ -139,6 +139,7 @@ export function HomeHero({
       <div className="hero hero-slideshow" aria-live="off">
         {items.map((slide, slideIndex) => {
           const isActive = slideIndex === safeIndex;
+          const isNext = slideIndex === (safeIndex + 1) % items.length;
           const still = slide.kind === "video" ? slide.posterSrc : slide.src;
           return (
             <div
@@ -146,12 +147,12 @@ export function HomeHero({
               className={`hero-slide ${slide.kind === "video" ? "hero-slide-video" : ""} ${isActive ? "is-active" : ""}`}
               aria-hidden={!isActive}
             >
-              {still ? (
+              {(isActive || isNext) && still ? (
                 <CoverImage
                   src={still}
                   alt=""
                   sizes="100vw"
-                  priority={slideIndex === 0}
+                  priority={isActive && slideIndex === 0}
                   className="hero-photo"
                 />
               ) : null}

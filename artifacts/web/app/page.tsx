@@ -39,7 +39,7 @@ export default async function Home() {
   const about = settings.about ?? FALLBACK_SITE_SETTINGS.about;
   const aboutImage = publicMediaSrc({ src: about.heroImageSrc, assetId: about.heroImageAssetId })
     || FALLBACK_SITE_SETTINGS.about.heroImageSrc;
-  const guideImage = publicMediaSrc({ src: settings.seedGuide.cardImageSrc, assetId: settings.seedGuide.cardImageAssetId });
+  const guideImage = publicMediaSrc({ src: settings.seedGuide.cardImageSrc, assetId: settings.seedGuide.cardImageAssetId }, "card");
 
   return (
     <>

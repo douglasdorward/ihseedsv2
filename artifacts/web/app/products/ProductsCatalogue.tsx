@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { CoverImage } from "../../components/CoverImage";
 import { Icon } from "../../components/Icon";
 import type { CatalogueCategory, CatalogueProduct } from "../../lib/catalogue";
+import { mediaVariantSrc } from "../../lib/image-src";
 
 export function ProductsCatalogue({ categories, products }: { categories: CatalogueCategory[]; products: CatalogueProduct[] }) {
   const [filter, setFilter] = useState("All products");
@@ -40,8 +42,8 @@ export function ProductsCatalogue({ categories, products }: { categories: Catalo
         <div className="category-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 32 }}>
           {visibleCategories.map((c) => (
             <Link key={c.slug} href={`/products/${c.slug}`} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", position: "relative" }}>
-                <img src={c.image} alt={c.name} style={{ display: "block", width: "100%", height: 240, objectFit: "cover" }} />
+              <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", position: "relative", height: 240 }}>
+                <CoverImage src={mediaVariantSrc(c.image, "card")} alt={c.name} sizes="(max-width: 800px) 100vw, (max-width: 1100px) 46vw, 360px" />
                 <div style={{ position: "absolute", inset: "40% 0 0 0", background: "linear-gradient(to bottom, rgba(29,40,28,0) 0%, rgba(29,40,28,0.55) 100%)", pointerEvents: "none" }}></div>
                 <div style={{ position: "absolute", bottom: 12, left: 16, right: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                   <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FFFFFF" }}>{products.filter(p => p.category === c.name).length} {products.filter(p => p.category === c.name).length === 1 ? "line" : "lines"}</span>

@@ -75,7 +75,7 @@ export default async function About() {
       <section style={{ background: "#FFFFFF" }}>
         <div className="page-wide" style={{ maxWidth: 1440, margin: "0 auto", padding: "96px 40px" }}>
           <div className="guide-banner">
-            <CoverImage src={publicMediaSrc({ src: settings.seedGuide.cardImageSrc, assetId: settings.seedGuide.cardImageAssetId })} alt="" sizes="(max-width: 900px) 100vw, 1360px" />
+            <CoverImage src={publicMediaSrc({ src: settings.seedGuide.cardImageSrc, assetId: settings.seedGuide.cardImageAssetId }, "card")} alt="" sizes="(max-width: 900px) 100vw, 1360px" />
             <div className="guide-scrim" aria-hidden="true" />
             <div>
               <h2>{settings.seedGuide.cardHeading}</h2>

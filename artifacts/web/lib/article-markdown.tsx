@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { articleImageHtml } from "./image-src";
 
 function safeHref(href: string) {
   const value = href.trim();
@@ -128,7 +129,7 @@ function sanitizeArticleHtml(html: string) {
       const src = safeImageSrc(decode(srcMatch?.[2] ?? srcMatch?.[3] ?? srcMatch?.[4] ?? ""));
       if (!src) continue;
       const alt = decode(altMatch?.[2] ?? altMatch?.[3] ?? altMatch?.[4] ?? "");
-      output += `<img src="${escape(src)}" alt="${escape(alt)}">`;
+      output += articleImageHtml(src, alt);
       continue;
     }
     if (mapped === "a") {

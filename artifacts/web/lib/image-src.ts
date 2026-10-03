@@ -9,6 +9,23 @@
  */
 export const IMAGE_FETCH_ORIGIN = "http://127.0.0.1:8080";
 
+export type MediaVariantSize = "card" | "full";
+
+export function mediaVariantSrc(src: string, size: MediaVariantSize = "full") {
+  const value = src.trim();
+  if (!value.startsWith("/api/media/")) return value;
+  const [path] = value.split("?");
+  return size === "card" ? `${path}?size=card` : path;
+}
+
+function escapeHtml(text: string) {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+export function articleImageHtml(src: string, alt: string) {
+  return `<img src="${escapeHtml(mediaVariantSrc(src, "card"))}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async">`;
+}
+
 export function optimizableSrc(src: string) {
   if (src.startsWith("/api/media/") || src.startsWith("/api/site/")) {
     return `${IMAGE_FETCH_ORIGIN}${src}`;

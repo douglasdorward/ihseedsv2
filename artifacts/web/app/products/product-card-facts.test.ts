@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { CatalogueProduct } from "../../lib/catalogue";
-import { getFactChips, LISTING_FACT_CHIP_MAX_LENGTH, productImageAlt } from "./product-card-facts.ts";
+import { getFactChips, LISTING_FACT_CHIP_MAX_LENGTH, productCardImage, productImageAlt } from "./product-card-facts.ts";
 
 function product(name: string, photos: CatalogueProduct["details"]["photos"]): CatalogueProduct {
   return {
@@ -16,6 +16,14 @@ function product(name: string, photos: CatalogueProduct["details"]["photos"]): C
     details: { tagline: "", photos },
   };
 }
+
+test("productCardImage uses the card variant of a library photo", () => {
+  assert.equal(
+    productCardImage(product("Holdfast GT", [{ src: "/api/media/5273ac33-d102-42bd-8070-2df96aefb1d6" }])),
+    "/api/media/5273ac33-d102-42bd-8070-2df96aefb1d6?size=card",
+  );
+  assert.equal(productCardImage(product("Holdfast GT", [])), "/product-fallback.svg");
+});
 
 test("productImageAlt prefers stored photo alt then the product name", () => {
   assert.equal(productImageAlt(product("Holdfast GT", [{ src: "/api/media/1", alt: "Cattle grazing Holdfast GT" }])), "Cattle grazing Holdfast GT");
