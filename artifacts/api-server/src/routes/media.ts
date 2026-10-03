@@ -21,7 +21,8 @@ import {
 } from "../lib/app-storage";
 import { queueGeneratedTechSheets } from "../lib/generated-tech-sheet";
 import { imageAltFromContext, resolveImageAlt, shouldReplaceGeneratedAlt } from "../lib/image-alt";
-import { convertToWebp } from "../lib/media-image";
+import { convertMediaVariants, mediaVariantObjectPath, PUBLIC_MEDIA_CACHE_CONTROL, requestedMediaSize, storedMediaVariant } from "../lib/media-image";
+import { refineReadyMediaAssets } from "../lib/media-refine";
 import { backfillMediaUsage, insertHeroPhoto, isProtectedMediaReference, SocialImageInUseError, syncArticleMediaReferences, syncProductMediaReferences, unlinkAndDeleteMediaRecords } from "../lib/media-usage";
 
 const router: IRouter = Router();
@@ -299,8 +300,8 @@ router.post("/admin/media/:id/complete", async (req, res): Promise<void> => {
     return;
   }
   try {
-    const converted = await convertToWebp(stored.bytes);
-    const digest = sha256(converted.bytes);
+    const variants = await convertMediaVariants(stored.bytes);
+    const digest = sha256(variants.full.bytes);
     const [duplicate] = await db.select().from(mediaAssetsTable)
       .where(and(eq(mediaAssetsTable.status, "Ready"), eq(mediaAssetsTable.sha256, digest), ne(mediaAssetsTable.id, id)));
     if (duplicate) {
@@ -316,8 +317,9 @@ router.post("/admin/media/:id/complete", async (req, res): Promise<void> => {
       res.status(409).json({ error: "Exact duplicate; reuse existing asset", asset: toPublicAsset(filled, usage) });
       return;
     }
-    const objectPath = mediaObjectPath(id, "image.webp");
-    await putStoredFile(objectPath, converted.bytes, "image/webp");
+    const objectPath = mediaVariantObjectPath(id, "full");
+    await putStoredFile(objectPath, variants.full.bytes, "image/webp");
+    await putStoredFile(mediaVariantObjectPath(id, "card"), variants.card.bytes, "image/webp");
     if (stagingPath !== objectPath) await removeStoredFile(stagingPath);
     const context = ownerContextFromBody(req.body);
     const defaultAlt = resolveImageAlt({
@@ -329,9 +331,9 @@ router.post("/admin/media/:id/complete", async (req, res): Promise<void> => {
     const [ready] = await db.update(mediaAssetsTable).set({
       status: "Ready",
       contentType: "image/webp",
-      bytes: converted.bytes.length,
-      width: converted.width,
-      height: converted.height,
+      bytes: variants.full.bytes.length,
+      width: variants.full.width,
+      height: variants.full.height,
       sha256: digest,
       defaultAlt,
       objectPath,
@@ -356,6 +358,11 @@ router.post("/admin/media/backfill", async (_req, res): Promise<void> => {
   res.json({ ok: true, message: `Reconciled media usage for ${result.products} products.` });
 });
 
+router.post("/admin/media/refine", async (_req, res): Promise<void> => {
+  const result = await refineReadyMediaAssets();
+  res.json(result);
+});
+
 const BULK_DELETE_LIMIT = 100;
 
 async function deleteAssetsAndFiles(ids: string[]) {
@@ -363,6 +370,7 @@ async function deleteAssetsAndFiles(ids: string[]) {
   for (const asset of deleted) {
     if (asset.objectPath) await removeStoredFile(asset.objectPath);
     if (asset.stagingPath) await removeStoredFile(asset.stagingPath);
+    await removeStoredFile(mediaVariantObjectPath(asset.id, "card"));
   }
   return deleted;
 }
@@ -578,13 +586,15 @@ router.delete("/admin/media/:id", async (req, res): Promise<void> => {
 
 router.get("/media/:id", async (req, res): Promise<void> => {
   const id = String(req.params.id ?? "");
+  const size = requestedMediaSize(req.query.size);
   const [asset] = await db.select().from(mediaAssetsTable).where(eq(mediaAssetsTable.id, id));
   if (!asset || asset.status !== "Ready" || !asset.objectPath) {
-    const orphanKey = /^[a-zA-Z0-9-]{8,80}$/.test(id) ? mediaObjectPath(id, "image.webp") : "";
-    const orphan = orphanKey ? await getStoredFile(orphanKey) : null;
+    const orphan = /^[a-zA-Z0-9-]{8,80}$/.test(id)
+      ? await storedMediaVariant({ id, objectPath: mediaObjectPath(id, "image.webp") }, size)
+      : null;
     if (orphan) {
       res.setHeader("content-type", orphan.contentType || "image/webp");
-      res.setHeader("cache-control", "public, max-age=31536000, immutable");
+      res.setHeader("cache-control", PUBLIC_MEDIA_CACHE_CONTROL);
       res.send(orphan.bytes);
       return;
     }
@@ -598,13 +608,13 @@ router.get("/media/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Asset not published or not found." });
     return;
   }
-  const stored = await getStoredFile(asset.objectPath);
+  const stored = await storedMediaVariant(asset, size);
   if (!stored) {
     res.status(404).json({ error: "Asset not published or not found." });
     return;
   }
   res.setHeader("content-type", stored.contentType || "image/webp");
-  res.setHeader("cache-control", "public, max-age=31536000, immutable");
+  res.setHeader("cache-control", PUBLIC_MEDIA_CACHE_CONTROL);
   res.send(stored.bytes);
 });
 

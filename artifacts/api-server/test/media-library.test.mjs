@@ -268,6 +268,34 @@ test("public media is 404 until a product with that asset is published", async (
   const published = await request("GET", `/media/${asset.id}`);
   assert.equal(published.response.status, 200);
   assert.ok(isWebp(published.buffer));
+  assert.equal(published.response.headers.get("cache-control"), "public, max-age=604800");
+
+  const card = await request("GET", `/media/${asset.id}?size=card`);
+  assert.equal(card.response.status, 200);
+  assert.ok(isWebp(card.buffer));
+  assert.equal(card.response.headers.get("cache-control"), "public, max-age=604800");
+});
+
+test("unpublished media stays private even when a card size is requested", async (t) => {
+  if (!process.env.DATABASE_URL) {
+    t.skip("DATABASE_URL is not set");
+    return;
+  }
+  const asset = assertStatus((await uploadPng(`card-private-${testRunId}.png`)).completed, 200);
+  const unpublished = await request("GET", `/media/${asset.id}?size=card`);
+  assert.equal(unpublished.response.status, 404);
+});
+
+test("refine recompresses ready library assets", async (t) => {
+  if (!process.env.DATABASE_URL) {
+    t.skip("DATABASE_URL is not set");
+    return;
+  }
+  assertStatus((await uploadPng(`refine-${testRunId}.png`)).completed, 200);
+  const refined = assertStatus(await request("POST", "/admin/media/refine"), 200);
+  assert.ok(refined.refined >= 1);
+  assert.equal(typeof refined.skipped, "number");
+  assert.equal(typeof refined.failed, "number");
 });
 
 test("attach inserts the new image as hero and shifts existing photos", async (t) => {

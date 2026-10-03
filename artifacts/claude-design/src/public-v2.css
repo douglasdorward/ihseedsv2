@@ -245,8 +245,9 @@
 .mix-component-description {
   max-width: 60ch;
   margin-top: 5px;
-  color: var(--muted);
+  color: var(--black-green);
   font-size: 14px;
+  font-weight: 600;
   line-height: 1.45;
 }
 

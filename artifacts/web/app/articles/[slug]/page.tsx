@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CoverImage } from "../../../components/CoverImage";
+import { ContentImage, CoverImage } from "../../../components/CoverImage";
 import { ProductNewStamp } from "../../../components/NewStamp";
 import { StatusPill } from "../../../components/StatusPill";
 import { ArticleMarkdown } from "../../../lib/article-markdown";
@@ -10,6 +10,7 @@ import { productPublicPath } from "../../../lib/catalogue-paths";
 import { forSearchMetadata } from "../../../lib/search-metadata";
 import { absoluteSiteUrl } from "../../../lib/site-url";
 import { socialMetadata } from "../../../lib/social-metadata";
+import { mediaVariantSrc } from "../../../lib/image-src";
 import { loadSiteSettings } from "../../../lib/site-settings";
 import { hasProductPhoto, productCardImage, productImageAlt } from "../../products/product-card-facts";
 
@@ -149,7 +150,7 @@ export default async function ArticlePage({ params }: Props) {
             <section className="product-photos" aria-labelledby="article-photos-heading">
               <h2 id="article-photos-heading" className="sidebar-card-heading">Photos</h2>
               <div className="product-photos-list">
-                <img src={photoSrc} alt={article.title} loading="lazy" />
+                <ContentImage src={mediaVariantSrc(photoSrc, "card")} alt={article.title} sizes="(max-width: 800px) 100vw, 360px" />
               </div>
             </section>
           )}

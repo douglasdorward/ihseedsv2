@@ -8,7 +8,10 @@ export function hasProductPhoto(product: CatalogueProduct) {
 
 export function productCardImage(product: CatalogueProduct) {
   const attached = product.details.photos?.find((photo) => photo.src?.trim())?.src?.trim();
-  return attached || PRODUCT_FALLBACK_IMAGE;
+  if (!attached) return PRODUCT_FALLBACK_IMAGE;
+  if (!attached.startsWith("/api/media/")) return attached;
+  const [path] = attached.split("?");
+  return `${path}?size=card`;
 }
 
 export function productImageAlt(product: CatalogueProduct) {

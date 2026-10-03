@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CoverImage } from "../../components/CoverImage";
 import { loadSiteSettings, publicMediaSrc } from "../../lib/site-settings";
 import { siteSocialMetadata } from "../../lib/social-metadata";
 
@@ -34,8 +35,8 @@ export default async function Guide() {
               <a href={guide.pdfPublicUrl} className="button button-primary" style={{ display: "inline-block", textDecoration: "none" }} download>{guide.pageButtonLabel}</a>
             </div>
           </div>
-          <div style={{ borderRadius: 24, overflow: "hidden", boxShadow: "0 20px 40px rgba(29,40,28,0.15)", background: "var(--sage)" }}>
-            <img src={publicMediaSrc({ src: guide.cardImageSrc, assetId: guide.cardImageAssetId })} alt={`${guide.pageTitle} cover`} style={{ display: "block", width: "100%", height: 500, objectFit: "cover" }} />
+          <div style={{ borderRadius: 24, overflow: "hidden", boxShadow: "0 20px 40px rgba(29,40,28,0.15)", background: "var(--sage)", position: "relative", height: 500 }}>
+            <CoverImage src={publicMediaSrc({ src: guide.cardImageSrc, assetId: guide.cardImageAssetId }, "card")} alt={`${guide.pageTitle} cover`} sizes="(max-width: 900px) 100vw, 560px" />
           </div>
         </div>
       </section>
