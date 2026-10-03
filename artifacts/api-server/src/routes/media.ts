@@ -23,7 +23,7 @@ import { queueGeneratedTechSheets } from "../lib/generated-tech-sheet";
 import { imageAltFromContext, resolveImageAlt, shouldReplaceGeneratedAlt } from "../lib/image-alt";
 import { convertMediaVariants, MEDIA_VARIANTS_VERSION, mediaVariantObjectPath, PUBLIC_MEDIA_CACHE_CONTROL, requestedMediaSize, storedMediaVariant } from "../lib/media-image";
 import { countMediaNeedingRefine, REFINE_BATCH_DEFAULT, REFINE_BATCH_MAX, refineReadyMediaAssetBatch } from "../lib/media-refine";
-import { backfillMediaUsage, insertHeroPhoto, isProtectedMediaReference, SocialImageInUseError, syncArticleMediaReferences, syncProductMediaReferences, unlinkAndDeleteMediaRecords } from "../lib/media-usage";
+import { backfillMediaUsage, insertHeroPhoto, isProtectedMediaReference, MediaDeleteBlockedError, syncArticleMediaReferences, syncProductMediaReferences, unlinkAndDeleteMediaRecords } from "../lib/media-usage";
 
 const router: IRouter = Router();
 const MAX_BYTES = 12 * 1024 * 1024;
@@ -415,7 +415,7 @@ router.post("/admin/media/bulk-delete", async (req, res): Promise<void> => {
   try {
     await deleteAssetsAndFiles(parsed.ids);
   } catch (error) {
-    if (!(error instanceof SocialImageInUseError)) throw error;
+    if (!(error instanceof MediaDeleteBlockedError)) throw error;
     res.status(409).json({ error: error.message });
     return;
   }
@@ -592,7 +592,7 @@ router.delete("/admin/media/:id", async (req, res): Promise<void> => {
   try {
     deleted = await deleteAssetsAndFiles(parsed.ids);
   } catch (error) {
-    if (!(error instanceof SocialImageInUseError)) throw error;
+    if (!(error instanceof MediaDeleteBlockedError)) throw error;
     res.status(409).json({ error: error.message });
     return;
   }

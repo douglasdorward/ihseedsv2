@@ -388,6 +388,31 @@ test("refine walks images that need it in batches and reports progress", async (
   assert.equal((await request("POST", "/admin/media/refine", { after: 42 })).response.status, 400);
 });
 
+test("delete refuses with a clear message when an image is used somewhere it cannot unlink", async (t) => {
+  if (!process.env.DATABASE_URL) {
+    t.skip("DATABASE_URL is not set");
+    return;
+  }
+  const blocked = await uploadPng(`delete-blocked-${testRunId}.png`, PNG_1X1);
+  assertStatus(blocked.completed, 200);
+  const free = await uploadPng(`delete-free-${testRunId}.png`, PNG_RED_1X1);
+  assertStatus(free.completed, 200);
+  const blockedId = blocked.requested.assetId;
+  const freeId = free.requested.assetId;
+  sql(`INSERT INTO ih_media_references (asset_id, owner_type, owner_id, owner_name, field, usage_state)
+    VALUES (${quoted(blockedId)}, 'static', 'static:/resources:test', '/resources', 'Static source literal', 'Published')`);
+  try {
+    const refused = await request("POST", "/admin/media/bulk-delete", { ids: [blockedId, freeId], confirm: true });
+    assert.equal(refused.response.status, 409);
+    assert.match(refused.data.error, /Nothing was deleted/);
+    assert.match(refused.data.error, /\/resources/);
+    assertStatus(await request("GET", `/admin/media/${blockedId}`), 200);
+    assertStatus(await request("GET", `/admin/media/${freeId}`), 200);
+  } finally {
+    sql(`DELETE FROM ih_media_references WHERE asset_id = ${quoted(blockedId)} AND owner_id = 'static:/resources:test'`);
+  }
+});
+
 test("attach inserts the new image as hero and shifts existing photos", async (t) => {
   if (!process.env.DATABASE_URL) {
     t.skip("DATABASE_URL is not set");
