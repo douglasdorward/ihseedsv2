@@ -311,20 +311,10 @@ export async function unlinkAndDeleteMediaRecords(ids: string[]): Promise<MediaA
       }
     }
 
-    // Anything still pointing at these images is a use this screen cannot
-    // clear (for example a record from an older version of the site). Refuse
-    // with a clear message instead of letting the database reject the delete.
-    const remaining = await tx.select({
-      ownerName: mediaReferencesTable.ownerName,
-      assetId: mediaReferencesTable.assetId,
-    }).from(mediaReferencesTable).where(inArray(mediaReferencesTable.assetId, [...idSet]));
-    if (remaining.length) {
-      const filenames = new Map(assets.map((asset) => [asset.id, asset.originalFilename]));
-      throw new MediaStillReferencedError(
-        [...new Set(remaining.map((row) => filenames.get(row.assetId) ?? row.assetId))],
-        [...new Set(remaining.map((row) => row.ownerName || "another page"))],
-      );
-    }
+    // The administrator confirmed the in-use warning, so any reference left
+    // after unlinking the editable owners above (for example a record from an
+    // older version of the site) is removed too rather than blocking the delete.
+    await tx.delete(mediaReferencesTable).where(inArray(mediaReferencesTable.assetId, [...idSet]));
 
     await tx.delete(mediaAssetsTable).where(inArray(mediaAssetsTable.id, [...idSet]));
   });
@@ -332,20 +322,9 @@ export async function unlinkAndDeleteMediaRecords(ids: string[]): Promise<MediaA
   return assets;
 }
 
-/** A delete was refused because an image is still in use; nothing was deleted. Maps to 409. */
-export class MediaDeleteBlockedError extends Error {}
-
-export class SocialImageInUseError extends MediaDeleteBlockedError {
+export class SocialImageInUseError extends Error {
   constructor() {
     super("The homepage sharing image is in use. Clear it in site settings before deleting this asset.");
-  }
-}
-
-/** Thrown when an image is still used somewhere the delete cannot unlink. Nothing is deleted. */
-export class MediaStillReferencedError extends MediaDeleteBlockedError {
-  constructor(filenames: string[], owners: string[]) {
-    const list = (items: string[]) => items.length > 3 ? `${items.slice(0, 3).join(", ")} and ${items.length - 3} more` : items.join(", ");
-    super(`Nothing was deleted. ${list(filenames)} ${filenames.length === 1 ? "is" : "are"} still used on ${list(owners)}. Remove ${filenames.length === 1 ? "it" : "them"} there or leave ${filenames.length === 1 ? "it" : "them"} out of the selection.`);
   }
 }
 
