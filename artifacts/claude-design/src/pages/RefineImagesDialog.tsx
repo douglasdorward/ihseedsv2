@@ -61,8 +61,14 @@ export function RefineImagesDialog({
   const mounted = useRef(true);
   const running = state.phase === "running";
 
-  useEffect(() => () => {
-    mounted.current = false;
+  // Set true on every mount: React StrictMode mounts, unmounts and remounts in
+  // development, and a cleanup-only flag would stay false and silently drop
+  // every batch result.
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
   const run = async (startCursor: string | null) => {
