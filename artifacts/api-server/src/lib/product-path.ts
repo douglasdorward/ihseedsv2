@@ -16,6 +16,18 @@ export function productPublicPath(slug: string, categoryName: string, categories
   return `/products/${root?.slug ?? fallbackCategorySlug(categoryName)}/${slug}`;
 }
 
+/**
+ * Where a retired (Legacy) product page sends visitors: its category page, or
+ * the catalogue index when the category no longer has a live page.
+ */
+export function productCategoryPath(
+  categoryName: string,
+  categories: (CategoryRef & { active?: boolean })[],
+) {
+  const root = categories.find((category) => category.parentId === null && category.name === categoryName);
+  return root && root.active !== false ? `/products/${root.slug}` : CATALOGUE_INDEX_PATH;
+}
+
 export function normalizePublicPath(path: string) {
   const [pathname] = path.split("#");
   return pathname.replace(/\/+$/, "") || "/";

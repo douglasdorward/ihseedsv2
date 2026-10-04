@@ -183,6 +183,12 @@ export function prepareEditablePayload(body: unknown): unknown {
   const record = { ...(body as Record<string, unknown>) };
   record.listingState = resolveListingState(record);
   delete record.listingOverride;
+  // Several old addresses share one field, separated with " | ". Store them
+  // tidy: trimmed, blanks removed, one " | " between addresses.
+  if (typeof record.websiteUrlLegacy === "string") {
+    record.websiteUrlLegacy = record.websiteUrlLegacy
+      .split("|").map((part) => part.trim()).filter(Boolean).join(" | ");
+  }
   return record;
 }
 
@@ -565,7 +571,7 @@ export const insertProductSchema = z.object({
   techSheet: z.string().trim().max(240),
   guideYear: z.string().trim().max(12).default(""),
   descriptionSource: z.string().trim().max(240).default(""),
-  websiteUrlLegacy: z.string().trim().max(500).default(""),
+  websiteUrlLegacy: z.string().trim().max(2000).default(""),
   availabilityOverride: z.enum(["Good stock", "Low stock", "Very low", "Unavailable"]).nullable().default(null),
   listingState: z.enum(["Active", "New", "Legacy"]).default("Active"),
   publishStatus: z.enum(["Published", "Draft", "Archived"]),

@@ -25,9 +25,12 @@ import {
   resolveListingState,
 } from "@workspace/db";
 import { insertProductSchema } from "@workspace/db";
-import { publicRedirectTo } from "../lib/public-redirect";
-import { legacyWebsitePath, productPublicPath } from "../lib/product-path";
+import { publicRedirect } from "../lib/public-redirect";
+import { describeProductLegacyUrls, legacyWebsitePaths } from "../lib/product-legacy-urls";
+import { ProductLegacyUrlError, syncProductLegacyRedirects } from "../lib/product-legacy-redirects";
+import { productPublicPath } from "../lib/product-path";
 import { absolutePublicUrl, canonicalPublicPath } from "../lib/public-site-url";
+import { PRODUCT_SLUG_CLASH_MESSAGE, subcategoryUsesSlug } from "../lib/slug-clash";
 import { clearProductMediaReferences, syncProductMediaReferences } from "../lib/media-usage";
 import { discardGeneratedTechSheets, queueGeneratedTechSheets } from "../lib/generated-tech-sheet";
 
@@ -467,12 +470,13 @@ router.get("/redirects/lookup", async (req, res): Promise<void> => {
     res.status(400).json({ error: "A valid absolute fromPath is required." });
     return;
   }
-  const toPath = await publicRedirectTo(fromPath);
-  if (!toPath) {
+  const redirect = await publicRedirect(fromPath);
+  if (!redirect) {
     res.status(404).json({ error: "Redirect not found." });
     return;
   }
-  res.json({ toPath });
+  // `permanent` is only sent when false so existing permanent responses keep their shape.
+  res.json(redirect.permanent ? { toPath: redirect.toPath } : { toPath: redirect.toPath, permanent: false });
 });
 
 router.get("/sitemap-product-entries", async (_req, res): Promise<void> => {
@@ -506,9 +510,18 @@ router.post("/products", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Please complete all required product fields." });
     return;
   }
+  const createLegacyProblem = describeProductLegacyUrls(parsed.data.websiteUrlLegacy).problem;
+  if (createLegacyProblem) {
+    res.status(400).json({ error: createLegacyProblem });
+    return;
+  }
   const taxonomyPayload = await applyTaxonomyCategory(parsed.data);
   if (!taxonomyPayload) {
     res.status(400).json({ error: "Selected category does not exist or has an invalid parent." });
+    return;
+  }
+  if (await subcategoryUsesSlug(parsed.data.slug)) {
+    res.status(409).json({ error: PRODUCT_SLUG_CLASH_MESSAGE, issues: [{ field: "slug", label: "Slug" }] });
     return;
   }
   const referenceIssues = await findProductReferenceIssues(taxonomyPayload.details, parsed.data.slug);
@@ -593,6 +606,11 @@ router.post("/admin/products/:id/draft", async (req, res): Promise<void> => {
   const parsed = productDraftSchema.safeParse(prepareEditablePayload(req.body));
   if (!parsed.success) {
     res.status(400).json({ error: "Please complete all required product fields." });
+    return;
+  }
+  const draftLegacyProblem = describeProductLegacyUrls(parsed.data.websiteUrlLegacy).problem;
+  if (draftLegacyProblem) {
+    res.status(400).json({ error: draftLegacyProblem });
     return;
   }
   const [existingDraft] = await db.select().from(productDraftsTable)
@@ -683,6 +701,11 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
         ...(bodyPayload ?? draft?.snapshot ?? editableFromProduct(lockedProduct, liveLines)),
         saleLines: saleLinesFromSource(source, liveLines),
       };
+      // A publish body that does not mention the legacy URLs must not blank
+      // them (and so remove their redirects); only an explicit value changes them.
+      if (bodyPayload && !(req.body && typeof req.body === "object" && "websiteUrlLegacy" in req.body)) {
+        payload.websiteUrlLegacy = lockedProduct.websiteUrlLegacy;
+      }
       const resolvedPayload = await applyTaxonomyCategory(
         normalizeEditable(payload),
         lockedProduct.publishStatus === "Published" && lockedProduct.subcategoryId !== null
@@ -704,6 +727,8 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
       await replaceSaleLines(tx, id, normalizedPayload.saleLines);
       if (draft) await tx.delete(productDraftsTable).where(eq(productDraftsTable.id, draft.id));
       await syncProductMediaReferences(published, published.details.photos, tx);
+      // Each old address in the legacy URL field redirects to the published page.
+      await syncProductLegacyRedirects(tx, lockedProduct, published);
       return published;
     });
     if (product.slug !== updated.slug) discardGeneratedTechSheets(product.slug);
@@ -720,6 +745,10 @@ router.post("/admin/products/:id/publish", async (req, res): Promise<void> => {
     }
     if (error instanceof Error && error.message === "INVALID_CATEGORY") {
       res.status(400).json({ error: "Selected category does not exist or has an invalid parent." });
+      return;
+    }
+    if (error instanceof ProductLegacyUrlError) {
+      res.status(400).json({ error: error.message, issues: [{ field: "websiteUrlLegacy", label: "Legacy website URL" }] });
       return;
     }
     if (error instanceof Error && error.message.startsWith("PUBLISH_VALIDATION:")) {
@@ -893,6 +922,13 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
   for (const key of ["guideYear", "descriptionSource", "websiteUrlLegacy", "availabilityOverride", "listingState"] as const) {
     if (!(key in req.body)) delete changes[key];
   }
+  if (typeof changes.websiteUrlLegacy === "string") {
+    const patchLegacyProblem = describeProductLegacyUrls(changes.websiteUrlLegacy).problem;
+    if (patchLegacyProblem) {
+      res.status(400).json({ error: patchLegacyProblem });
+      return;
+    }
+  }
   if (resolveListingState({ ...currentProduct, ...changes }) === "Legacy") {
     changes.availabilityOverride = null;
     changes.status = "unavailable";
@@ -1017,10 +1053,7 @@ router.post("/admin/products/delete-all", async (req, res): Promise<void> => {
       name: catalogueCategoriesTable.name,
     }).from(catalogueCategoriesTable);
     const productPaths = [...new Set(products.map((product) => productPublicPath(product.slug, product.category, categories)))];
-    const legacyPaths = [...new Set(products.flatMap((product) => {
-      const path = legacyWebsitePath(product.websiteUrlLegacy);
-      return path ? [path] : [];
-    }))];
+    const legacyPaths = [...new Set(products.flatMap((product) => legacyWebsitePaths(product.websiteUrlLegacy)))];
     if (productPaths.length) {
       await tx.delete(redirectsTable).where(inArray(redirectsTable.toPath, productPaths));
     }

@@ -659,6 +659,44 @@ test("redirect lookup follows only the registered table entry", async () => {
   sql(`DELETE FROM ih_redirects WHERE from_path = '${fromPath.replaceAll("'", "''")}'`);
 });
 
+test("a Legacy product page redirects to its category page unless a redirect is registered", async () => {
+  const product = await createProduct("legacy-to-category");
+  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
+  const categories = assertStatus(await request("GET", "/categories"), 200);
+  const root = categories.find((category) => category.parentId === null && category.name === published.category);
+  assert.ok(root, "test product needs a root category");
+  const productPath = `/products/${root.slug}/${published.slug}`;
+  const oldSitePath = `/product/old-${published.slug}`;
+  const lookup = (path) => request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(path)}`);
+  sql(`INSERT INTO ih_redirects (from_path, to_path) VALUES ('${oldSitePath}', '${productPath}')
+    ON CONFLICT (from_path) DO UPDATE SET to_path = EXCLUDED.to_path, updated_at = now()`);
+  try {
+    assert.equal((await lookup(productPath)).response.status, 404);
+    assert.deepEqual(assertStatus(await lookup(oldSitePath), 200), { toPath: productPath });
+
+    assertStatus(await request("POST", `/admin/products/${published.id}/publish`, draftPayload(published, {
+      listingState: "Legacy",
+    })), 200);
+    // Temporary (302): the product may return to Active or New.
+    assert.deepEqual(assertStatus(await lookup(productPath), 200), { toPath: `/products/${root.slug}`, permanent: false });
+    assert.deepEqual(assertStatus(await lookup(oldSitePath), 200), { toPath: `/products/${root.slug}`, permanent: false });
+    const oldSiteHttp = await fetch(`${baseUrl}${oldSitePath}`, { redirect: "manual" });
+    assert.equal(oldSiteHttp.status, 302);
+    assert.equal(oldSiteHttp.headers.get("location"), `/products/${root.slug}`);
+
+    sql(`INSERT INTO ih_redirects (from_path, to_path) VALUES ('${productPath}', '/products')
+      ON CONFLICT (from_path) DO UPDATE SET to_path = EXCLUDED.to_path, updated_at = now()`);
+    assert.deepEqual(assertStatus(await lookup(productPath), 200), { toPath: "/products" });
+
+    assertStatus(await request("POST", `/admin/products/${published.id}/publish`, draftPayload(published, {
+      listingState: "Active",
+    })), 200);
+    assert.equal((await lookup(productPath)).response.status, 404);
+  } finally {
+    sql(`DELETE FROM ih_redirects WHERE from_path IN ('${oldSitePath}', '${productPath}')`);
+  }
+});
+
 test("redirect lookup does not steal a live product canonical path", async () => {
   const product = await createProduct("canonical-steal");
   const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
@@ -1616,6 +1654,8 @@ test("malformed product identities and legacy URLs cannot trigger catalogue repl
     "https://example.com/product/not-current-site",
     `https://www.irwinhunter.com.au/products/other/${complete.slug}`,
     "not a URL",
+    "https://www.irwinhunter.com.au/product/valid-old-one | https://example.com/product/not-current-site",
+    "https://www.irwinhunter.com.au/product/same-old-one | https://irwinhunter.com.au/product/same-old-one/",
   ]) {
     const workbook = makeIdentityWorkbook([{ ...complete, website_url: websiteUrl }]);
     const report = assertStatus(await request("POST", "/admin/import/dry-run", {
@@ -1685,6 +1725,7 @@ test("published workbook rows enforce content fields and keep products absent fr
   insertLeftoverDraft(imported, { name: `Stale pre-import draft ${testRunId}` });
   const sourceDescription = "First editorial paragraph.\n\nSecond editorial paragraph.";
   const legacyWebsiteUrl = `https://irwinhunter.com.au/product/${imported.slug}/`;
+  const secondLegacyWebsiteUrl = `https://www.irwinhunter.com.au/second-old-address-${testRunId}/`;
   const staleRedirectPath = `/product/stale-${testRunId}`;
   const absentRedirectPath = `/product/${absent.slug}`;
   sql(`
@@ -1702,7 +1743,7 @@ test("published workbook rows enforce content fields and keep products absent fr
     blurb: "Workbook published blurb",
     key_attributes: "First attribute| Second attribute ",
     description: sourceDescription,
-    website_url: legacyWebsiteUrl,
+    website_url: `${legacyWebsiteUrl}|  ${secondLegacyWebsiteUrl} `,
     status: "Published",
     distribution_note: "Workbook distribution note",
   };
@@ -1780,9 +1821,11 @@ test("published workbook rows enforce content fields and keep products absent fr
   assert.equal(importedAdmin.hasDraft, false);
   assert.equal(importedAdmin.draft, null);
   assert.equal(sql(`SELECT count(*) FROM ih_media_references WHERE owner_type = 'product' AND owner_id = '${imported.id}'`), "0");
-  assert.equal(importedAdmin.websiteUrlLegacy, legacyWebsiteUrl);
+  assert.equal(importedAdmin.websiteUrlLegacy, `${legacyWebsiteUrl} | ${secondLegacyWebsiteUrl}`);
   assert.equal(sql(`SELECT to_path FROM ih_redirects WHERE from_path = '/product/${imported.slug}'`),
     `/products/${other.slug}/${imported.slug}`);
+  assert.equal(sql(`SELECT to_path FROM ih_redirects WHERE from_path = '/second-old-address-${testRunId}'`),
+    `/products/${other.slug}/${imported.slug}`, "Every address in a multi-URL cell redirects to the product");
   assert.equal(sql(`SELECT count(*) FROM ih_redirects WHERE from_path = '${staleRedirectPath}'`), "0");
   assert.equal(sql(`SELECT to_path FROM ih_redirects WHERE from_path = '${absentRedirectPath}'`),
     `/products/${other.slug}/${absent.slug}`);
@@ -2682,4 +2725,60 @@ test("scheduled blog articles stay private until the publish time", async () => 
   assert.equal(live.scheduledPublishAt, null);
 });
 
+test("several legacy URLs on a product create, change and remove redirects when it is published", async () => {
+  const product = await createProduct("multi-legacy");
+  const urlA = `https://www.irwinhunter.com.au/old/multi-a-${testRunId}/`;
+  const urlB = `https://irwinhunter.com.au/old/multi-b-${testRunId}`;
+  const pathA = `/old/multi-a-${testRunId}`;
+  const pathB = `/old/multi-b-${testRunId}`;
+  const redirectTo = (path) => sql(`SELECT to_path FROM ih_redirects WHERE from_path = '${path}'`);
 
+  // A bad address is refused on save, with the offending address named.
+  const badDraft = await request("POST", `/admin/products/${product.id}/draft`, {
+    ...draftPayload(product),
+    websiteUrlLegacy: `${urlA} | https://example.com/not-ours`,
+  });
+  assert.equal(badDraft.response.status, 400);
+  assert.match(badDraft.data.error, /https:\/\/example\.com\/not-ours/);
+
+  // Both addresses are stored tidily and redirect once the product is published.
+  const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`, {
+    ...draftPayload(product),
+    websiteUrlLegacy: `  ${urlA}|${urlB} | `,
+  }), 200);
+  assert.equal((await adminProduct(product.id)).websiteUrlLegacy, `${urlA} | ${urlB}`);
+  const toPath = redirectTo(pathA);
+  assert.match(toPath, new RegExp(`/${published.slug}$`));
+  assert.equal(redirectTo(pathB), toPath);
+  assert.deepEqual(assertStatus(await request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(pathB)}`), 200), { toPath });
+
+  // A publish body that does not mention the field keeps the addresses and their redirects.
+  assertStatus(await request("POST", `/admin/products/${product.id}/publish`, draftPayload(published)), 200);
+  assert.equal((await adminProduct(product.id)).websiteUrlLegacy, `${urlA} | ${urlB}`);
+  assert.equal(redirectTo(pathA), toPath);
+
+  // Another product cannot claim an address that is already in use.
+  const other = await createProduct("multi-legacy-other");
+  const clash = await request("POST", `/admin/products/${other.id}/publish`, {
+    ...draftPayload(other),
+    websiteUrlLegacy: urlB,
+  });
+  assert.equal(clash.response.status, 400);
+  assert.match(clash.data.error, /already used by another product/);
+  assert.equal(redirectTo(pathB), toPath);
+
+  // Dropping an address stops that redirect and leaves the other one.
+  assertStatus(await request("POST", `/admin/products/${product.id}/publish`, {
+    ...draftPayload(published),
+    websiteUrlLegacy: urlB,
+  }), 200);
+  assert.equal(redirectTo(pathA), "");
+  assert.equal(redirectTo(pathB), toPath);
+
+  // Clearing the field removes the last one.
+  assertStatus(await request("POST", `/admin/products/${product.id}/publish`, {
+    ...draftPayload(published),
+    websiteUrlLegacy: "",
+  }), 200);
+  assert.equal(redirectTo(pathB), "");
+});

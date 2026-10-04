@@ -115,6 +115,12 @@ function RequiredStar() {
   return <span className="admin-required-star" aria-hidden="true">*</span>;
 }
 
+/** Old addresses in the legacy URL field are separated with " | ". */
+function legacyUrlSummary(value: string) {
+  const count = value.split("|").filter((part) => part.trim()).length;
+  return count ? `${count} ${count === 1 ? "address" : "addresses"} entered.` : "";
+}
+
 function AdminOnlyMark() {
   return <span className="admin-only-mark">(Admin-only)</span>;
 }
@@ -863,7 +869,21 @@ function BelowCards(props: ProductPageEditorProps) {
         <h2>Publishing leftovers</h2>
         <div className="admin-form-grid">
           <label className="wide">Tech sheet URL<input value={form.techSheet} onChange={(event) => props.setField("techSheet", event.target.value)} /></label>
-          <label>Legacy website URL <AdminOnlyMark /><input value={form.websiteUrlLegacy} onChange={(event) => props.setField("websiteUrlLegacy", event.target.value)} /></label>
+          <label className="wide">Legacy website URLs <AdminOnlyMark />
+            <textarea
+              rows={2}
+              maxLength={2000}
+              value={form.websiteUrlLegacy}
+              placeholder="https://www.irwinhunter.com.au/product/old-name/ | https://www.irwinhunter.com.au/another-old-page/"
+              onChange={(event) => props.setField("websiteUrlLegacy", event.target.value)}
+              aria-describedby="legacy-url-hint"
+              data-testid="product-legacy-urls"
+            />
+            <span className="admin-field-hint" id="legacy-url-hint">
+              Old www.irwinhunter.com.au addresses that should redirect to this product. Separate several with &quot; | &quot; (up to 12).
+              {" "}Redirects start when you publish. {legacyUrlSummary(form.websiteUrlLegacy)}
+            </span>
+          </label>
           {!isBio && (
             <>
               <label>Minimum sowing depth (cm) <AdminOnlyMark /><input type="number" min="0" step="0.1" value={details.sowingDepthMinCm ?? ""} onChange={(event) => props.setNumberDetail("sowingDepthMinCm", event.target.value)} /></label>

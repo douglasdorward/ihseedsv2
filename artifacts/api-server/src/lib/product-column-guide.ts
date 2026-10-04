@@ -328,15 +328,15 @@ const PRODUCTS: GuideRow[] = [
     "1 Products",
     "website_url",
     "No",
-    "Old public address on www.irwinhunter.com.au, including https://. No query string and no fragment. The apex host is also accepted. Blank means this product has no old-address redirect. Do not put the new /products/... address here. Import replaces redirects only for products in this file.",
-    "Not shown. Visitors to that old path are redirected to /products/{category-slug}/{slug}.",
+    "Old public address on www.irwinhunter.com.au, including https://. No query string and no fragment. The apex host is also accepted. To redirect several old addresses to this product, put them in the same cell separated with \" | \" (a space, a pipe, a space), up to 12, for example https://www.irwinhunter.com.au/product/maximix/ | https://www.irwinhunter.com.au/maximix-pasture-mix/. Each address may be used only once in the whole file. Blank means this product has no old-address redirect. Do not put the new /products/... address here. Import replaces redirects only for products in this file.",
+    "Not shown. Visitors to any of those old paths are redirected to /products/{category-slug}/{slug}, or to /products/{category-slug} while the product is Legacy.",
   ],
   [
     "1 Products",
     "listing_state",
     "Defaults to Active when blank.",
     "Active, New, or Legacy. This is not status. Active may be sold. New may be sold and is flagged as new. Legacy is catalogue history and cannot advertise stock. Leave listing_override blank and edit this cell.",
-    "Active and New, when also Published, appear in the selling catalogue. New adds a red NEW stamp on the product hero and on cards. Legacy is a name only, in Also in our catalogue, with no stock pill and no selling card.",
+    "Active and New, when also Published, appear in the selling catalogue. New adds a red NEW stamp on the product hero and on cards. Legacy is a name only, in Also in our catalogue, with no stock pill and no selling card. The Legacy product's own page automatically redirects to its category page. No extra column is needed.",
   ],
   [
     "1 Products",

@@ -57,10 +57,10 @@ Public copy, media, FAQs, Also popular, and display flags. Tagline, blurb, at le
 - **API path:** `websiteUrlLegacy`
 - **Workbook:** `1 Products.website_url`
 - **Required:** no
-- **Customer website:** not shown as a link. Its old path redirects to this product's calculated `/products/{category-slug}/{slug}` path after workbook import.
+- **Customer website:** not shown as a link. Each old path redirects to this product's calculated `/products/{category-slug}/{slug}` path (workbook import, or publishing in the back-office). If the product's listing state is Legacy, every old path goes straight to the category page `/products/{category-slug}` instead, with a temporary (302) redirect.
 - **Public API:** excluded (admin-only)
-- **Purpose:** Sole source of the product's redirect from the current Irwin Hunter website.
-- **Constraints:** max 500 characters; HTTP(S) URL on `www.irwinhunter.com.au` (or the apex host), without a query or fragment; unique old path.
+- **Purpose:** Sole source of the product's redirects from the current Irwin Hunter website. One field holds several old addresses separated with ` | ` (a space, a pipe, a space).
+- **Constraints:** max 2000 characters in total and at most 12 addresses; each an HTTP(S) URL on `www.irwinhunter.com.au` (or the apex host), without a query or fragment; each old path used once across the catalogue.
 
 ## Photos
 

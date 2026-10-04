@@ -11,7 +11,8 @@ import {
 import { mediaPublicPath } from "./app-storage.ts";
 import { syncProductMediaReferences } from "./media-usage.ts";
 import { appendProductColumnGuide, PRODUCT_SHEET_HEADERS } from "./product-column-guide.ts";
-import { legacyRedirectConflict, legacyWebsitePath, productPublicPath, requiredLegacyRedirects } from "./product-path.ts";
+import { describeProductLegacyUrls, joinLegacyUrls, legacyWebsitePaths } from "./product-legacy-urls.ts";
+import { legacyRedirectConflict, productPublicPath, requiredLegacyRedirects } from "./product-path.ts";
 
 export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "7 Website SEO", "10 Product FAQs"] as const;
 const PRODUCT_FAQ_SHEET = "10 Product FAQs";
@@ -337,31 +338,23 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
           if (slug) seenProductSlugs.add(slug);
           const rawLegacyUrl = cell(row.website_url);
           if (rawLegacyUrl) {
-            const fromPath = legacyWebsitePath(rawLegacyUrl);
-            if (!fromPath) {
-              issues.push({
-                sheet: name,
-                row: rowNo,
-                column: "website_url",
-                problem: "Legacy website URL must be an http(s) URL on www.irwinhunter.com.au without a query or fragment",
-              });
-            } else if (seenLegacyPaths.has(fromPath)) {
-              issues.push({
-                sheet: name,
-                row: rowNo,
-                column: "website_url",
-                problem: `Duplicate legacy website path "${fromPath}"`,
-              });
+            // One cell may hold several old addresses separated with " | ".
+            const approximateDestination = `/products/${taxonomySlug(cell(row.category))}/${slug}`;
+            const described = describeProductLegacyUrls(rawLegacyUrl, approximateDestination);
+            if (described.problem) {
+              issues.push({ sheet: name, row: rowNo, column: "website_url", problem: described.problem });
             } else {
-              seenLegacyPaths.add(fromPath);
-              const approximateDestination = `/products/${taxonomySlug(cell(row.category))}/${slug}`;
-              if (fromPath === approximateDestination) {
-                issues.push({
-                  sheet: name,
-                  row: rowNo,
-                  column: "website_url",
-                  problem: "Legacy website URL cannot already be the product's new canonical path",
-                });
+              for (const fromPath of described.paths) {
+                if (seenLegacyPaths.has(fromPath)) {
+                  issues.push({
+                    sheet: name,
+                    row: rowNo,
+                    column: "website_url",
+                    problem: `Duplicate legacy website path "${fromPath}"`,
+                  });
+                } else {
+                  seenLegacyPaths.add(fromPath);
+                }
               }
             }
           }
@@ -573,7 +566,7 @@ export async function commitWorkbook(content: Buffer, token: string) {
         techSheet: isNull(row.tech_sheet_pdf_path) ? "" : cell(row.tech_sheet_pdf_path),
         guideYear: "",
         descriptionSource: "",
-        websiteUrlLegacy: isNull(row.website_url) ? "" : cell(row.website_url),
+        websiteUrlLegacy: isNull(row.website_url) ? "" : joinLegacyUrls(cell(row.website_url)),
         listingState: importedListingState(row),
         availabilityOverride: isNull(row.availability_override) ? null
           : (cell(row.availability_override) as "Good stock" | "Low stock" | "Very low" | "Unavailable") || null,
@@ -690,18 +683,20 @@ export async function commitWorkbook(content: Buffer, token: string) {
       productPublicPath(product.slug, product.category, categories)));
     for (const row of rows["1 Products"]) {
       const product = productBySlug.get(cell(row.slug));
-      const fromPath = legacyWebsitePath(cell(row.website_url));
-      if (!product || !fromPath) continue;
+      if (!product) continue;
       const toPath = productPublicPath(product.slug, product.category, categories);
-      if (fromPath === toPath) throw new Error(`SELF_REDIRECT:${product.slug}`);
-      const [existingRedirect] = await tx.select({ toPath: redirectsTable.toPath }).from(redirectsTable).where(eq(redirectsTable.fromPath, fromPath));
-      const conflict = legacyRedirectConflict(existingRedirect?.toPath, toPath, liveProductPaths);
-      if (conflict === "article") throw new Error(`Legacy website path "${fromPath}" is already used by a blog article.`);
-      if (conflict === "other-product") throw new Error(`Legacy website path "${fromPath}" already points at another product.`);
-      await tx.insert(redirectsTable).values({ fromPath, toPath }).onConflictDoUpdate({
-        target: redirectsTable.fromPath,
-        set: { toPath, updatedAt: new Date() },
-      });
+      // One cell may list several old addresses separated with " | ".
+      for (const fromPath of legacyWebsitePaths(cell(row.website_url))) {
+        if (fromPath === toPath) throw new Error(`SELF_REDIRECT:${product.slug}`);
+        const [existingRedirect] = await tx.select({ toPath: redirectsTable.toPath }).from(redirectsTable).where(eq(redirectsTable.fromPath, fromPath));
+        const conflict = legacyRedirectConflict(existingRedirect?.toPath, toPath, liveProductPaths);
+        if (conflict === "article") throw new Error(`Legacy website path "${fromPath}" is already used by a blog article.`);
+        if (conflict === "other-product") throw new Error(`Legacy website path "${fromPath}" already points at another product.`);
+        await tx.insert(redirectsTable).values({ fromPath, toPath }).onConflictDoUpdate({
+          target: redirectsTable.fromPath,
+          set: { toPath, updatedAt: new Date() },
+        });
+      }
     }
     for (const alias of requiredLegacyRedirects([...productBySlug.values()], categories)) {
       const [articleRedirect] = await tx.select({ toPath: redirectsTable.toPath }).from(redirectsTable).where(eq(redirectsTable.fromPath, alias.fromPath));

@@ -6,7 +6,7 @@ import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { publicRedirectTo } from "./lib/public-redirect";
+import { publicRedirect } from "./lib/public-redirect";
 import { requireAdmin, requireSuperadmin } from "./middlewares/admin-auth";
 import {
   CLERK_PROXY_PATH,
@@ -87,9 +87,9 @@ app.use((req, res, next) => {
 // A real HTTP redirect for legacy public product URLs. When no redirect is
 // registered, control passes to the hosting platform's SPA fallback.
 app.get("/product/:slug", async (req, res, next): Promise<void> => {
-  const toPath = await publicRedirectTo(req.path);
-  if (!toPath) { next(); return; }
-  res.redirect(301, toPath);
+  const redirect = await publicRedirect(req.path);
+  if (!redirect) { next(); return; }
+  res.redirect(redirect.permanent ? 301 : 302, redirect.toPath);
 });
 
 app.use(

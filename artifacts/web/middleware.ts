@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 type RedirectLookup = {
   toPath?: unknown;
+  permanent?: unknown;
 };
 
 export async function middleware(request: NextRequest) {
@@ -43,7 +44,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    return NextResponse.redirect(new URL(redirect.toPath, request.url), 301);
+    // Legacy products send visitors to their category temporarily: the product can return.
+    return NextResponse.redirect(new URL(redirect.toPath, request.url), redirect.permanent === false ? 302 : 301);
   } catch (error) {
     console.error(`Catalogue redirect lookup could not be reached for ${fromPath}`, error);
     return NextResponse.next();

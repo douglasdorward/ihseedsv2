@@ -79,6 +79,7 @@ Draft save requires Product name, Slug, Category, and Record type from this tab.
 - **Customer website:** Active and New products can appear in the main catalogue, availability, and sitemap. New also shows a red jagged NEW stamp on product cards and the product hero. Legacy products appear only as names in the category page “Also in our catalogue” list. They are not saleable cards and cannot show stock.
 - **Public API:** public payloads include Active and New products. `listingState` is `Active` or `New` there.
 - **Purpose:** Manual current-selling vs catalogue-history choice. Independent of Published/Draft/Archived. Different from Archive, which removes the product from the public website.
+- **Legacy page behaviour:** A Legacy product's own page (`/products/{category-slug}/{slug}`) automatically redirects to its category page (`/products/{category-slug}`), or to `/products` if the category is inactive. The redirect is temporary (302) so search engines keep the product URL in case it returns. No workbook column is needed; a redirect registered for that exact path overrides this. Switching back to Active or New restores the product page.
 - **How to fill:** Active when the product may be sold or shown as current. New for the same selling catalogue plus a public NEW stamp. Legacy when it should remain as history only. Legacy forces sale-line availability and the availability override to Unavailable.
 - **Constraints:** `Active`, `New`, or `Legacy`.
 

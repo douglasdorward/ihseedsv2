@@ -106,7 +106,7 @@ fields:
     visibility: customer
     customerSurfaces: [main-catalogue-when-Active-or-New, new-stamp-when-New, also-in-catalogue-names-when-Legacy]
     workbook: 1 Products.listing_state
-    fillGuidance: Active may sell. New may sell and shows a NEW stamp on public cards and the product page. Legacy is history only and cannot have availability. Not the same as Archive.
+    fillGuidance: Active may sell. New may sell and shows a NEW stamp on public cards and the product page. Legacy is history only and cannot have availability. A Legacy product's own page automatically redirects to its category page, so no workbook column is needed. Not the same as Archive.
 
   - id: botanicalName
     tab: 1
@@ -1010,7 +1010,7 @@ fields:
     apiPath: websiteUrlLegacy
     label: Legacy website URL
     type: string
-    maxLength: 500
+    maxLength: 2000
     requiredForDraft: false
     requiredForPublish: false
     visibleWhen: always
@@ -1018,7 +1018,7 @@ fields:
     visibility: adminOnly
     customerSurfaces: []
     workbook: 1 Products.website_url
-    fillGuidance: Current www.irwinhunter.com.au product URL. Import redirects its path to the product's calculated category-and-slug URL.
+    fillGuidance: Current www.irwinhunter.com.au product URL, or up to 12 separated with " | ". Each path redirects to the product's calculated category-and-slug URL, or to the category page (temporary 302) while the product is Legacy.
 
   - id: photos
     tab: 5

@@ -5,6 +5,7 @@ import {
   productsTable,
   redirectsTable,
 } from "@workspace/db";
+import { legacyWebsitePaths } from "./product-legacy-urls";
 import { legacyWebsitePath } from "./product-path";
 
 type RedirectDb = Pick<typeof db, "delete" | "insert" | "select">;
@@ -90,10 +91,7 @@ export async function articleLegacyUrlProblem(
   const products = await executor.select({
     websiteUrlLegacy: productsTable.websiteUrlLegacy,
   }).from(productsTable);
-  const productPaths = new Set(products.flatMap((product) => {
-    const path = legacyWebsitePath(product.websiteUrlLegacy);
-    return path ? [path] : [];
-  }));
+  const productPaths = new Set(products.flatMap((product) => legacyWebsitePaths(product.websiteUrlLegacy)));
 
   const redirects = described.paths.length
     ? await executor.select({
