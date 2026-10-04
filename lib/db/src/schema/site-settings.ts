@@ -89,6 +89,8 @@ export type SiteCompanySettings = {
   address: string;
   officeHours: string;
   abn: string;
+  /** Public profile URLs (https) published as `sameAs` in the site's structured data. */
+  socialLinks: string[];
 };
 
 const DEFAULT_HERO_IMAGE: SiteHeroImage = {
@@ -156,6 +158,7 @@ export const DEFAULT_COMPANY_SETTINGS: SiteCompanySettings = {
   address: "Unit 5, 75 Robinson Avenue, Belmont, WA 6104",
   officeHours: "Monday to Friday, 8am–5pm AWST",
   abn: "",
+  socialLinks: [],
 };
 
 const emptyHomepage: SiteHomepageSettings = DEFAULT_HOMEPAGE_SETTINGS;
@@ -241,6 +244,53 @@ export const siteAboutSettingsSchema = z.object({
   values: z.array(siteAboutValueSchema).max(ABOUT_VALUE_LIMIT),
 });
 
+export const SOCIAL_LINK_LIMIT = 10;
+
+/**
+ * Accepts "facebook.com/ihseeds" or a full URL and returns a clean https URL,
+ * or null when the value is not a usable public profile address.
+ */
+export function normalizeSocialLink(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+    ? trimmed.replace(/^http:\/\//i, "https://")
+    : `https://${trimmed.replace(/^\/+/, "")}`;
+  try {
+    const url = new URL(withScheme);
+    if (url.protocol !== "https:" || !url.hostname.includes(".") || url.username || url.password) return null;
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+/** Valid, de-duplicated profile URLs in the order given. Blank rows are dropped. */
+export function cleanSocialLinks(values: unknown): string[] {
+  if (!Array.isArray(values)) return [];
+  const seen = new Set<string>();
+  const links: string[] = [];
+  for (const value of values) {
+    const link = typeof value === "string" ? normalizeSocialLink(value) : null;
+    if (!link || seen.has(link.toLowerCase())) continue;
+    seen.add(link.toLowerCase());
+    links.push(link);
+    if (links.length >= SOCIAL_LINK_LIMIT) break;
+  }
+  return links;
+}
+
+const socialLinksSchema = z.array(z.string().trim().max(300)).max(SOCIAL_LINK_LIMIT)
+  .superRefine((items, ctx) => {
+    items.forEach((item, index) => {
+      if (item && !normalizeSocialLink(item)) {
+        ctx.addIssue({ code: "custom", path: [index], message: "Enter a full web address such as https://www.facebook.com/yourpage" });
+      }
+    });
+  })
+  .transform((items) => cleanSocialLinks(items));
+
 export const siteCompanySettingsSchema = z.object({
   legalName: z.string().trim().max(160),
   tradingName: z.string().trim().max(160),
@@ -249,6 +299,7 @@ export const siteCompanySettingsSchema = z.object({
   address: z.string().trim().max(240),
   officeHours: z.string().trim().max(120),
   abn: z.string().trim().max(20),
+  socialLinks: socialLinksSchema.optional(),
 });
 
 export const updateSiteSettingsSchema = z.object({
@@ -335,6 +386,7 @@ export function withCompanyDefaults(value: Partial<SiteCompanySettings> | null |
     address: value?.address?.trim() || DEFAULT_COMPANY_SETTINGS.address,
     officeHours: value?.officeHours?.trim() || DEFAULT_COMPANY_SETTINGS.officeHours,
     abn: typeof value?.abn === "string" ? value.abn.trim() : DEFAULT_COMPANY_SETTINGS.abn,
+    socialLinks: cleanSocialLinks(value?.socialLinks),
   };
 }
 

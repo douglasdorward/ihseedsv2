@@ -4,7 +4,7 @@ import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { getCategories } from "../lib/catalogue";
 import { allNavCategories, featuredNavCategories } from "../lib/catalogue-paths";
-import { DEFAULT_COMPANY, organizationJsonLd } from "../lib/company";
+import { DEFAULT_COMPANY, siteJsonLd } from "../lib/company";
 import { FALLBACK_SITE_SETTINGS, loadSiteSettings } from "../lib/site-settings";
 import { absoluteSiteUrl, publicSiteUrl } from "../lib/site-url";
 import { socialMetadata } from "../lib/social-metadata";
@@ -52,7 +52,7 @@ export default async function RootLayout({ children }: { children: any }) {
       <body>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd(company, publicSiteUrl.origin)).replace(/</g, "\\u003c") }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd(company, publicSiteUrl.origin)).replace(/</g, "\\u003c") }}
         />
         <div className="site-shell">
           <Header productCategories={productCategories} seedGuideTitle={settings.seedGuide.navTitle} />

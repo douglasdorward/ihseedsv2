@@ -40,6 +40,59 @@ function seedGuideInput(seedGuide: SiteSettings["seedGuide"]) {
   };
 }
 
+const SOCIAL_LINK_LIMIT = 10;
+
+const SOCIAL_PLATFORMS: Array<[string, string]> = [
+  ["facebook.com", "Facebook"],
+  ["fb.com", "Facebook"],
+  ["instagram.com", "Instagram"],
+  ["linkedin.com", "LinkedIn"],
+  ["youtube.com", "YouTube"],
+  ["youtu.be", "YouTube"],
+  ["x.com", "X"],
+  ["twitter.com", "X"],
+  ["tiktok.com", "TikTok"],
+  ["pinterest.com", "Pinterest"],
+  ["google.com", "Google"],
+  ["goo.gl", "Google"],
+];
+
+/** Same rules as the server: a full or bare web address becomes a clean https URL, anything else is rejected. */
+function normalizeSocialLink(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+    ? trimmed.replace(/^http:\/\//i, "https://")
+    : `https://${trimmed.replace(/^\/+/, "")}`;
+  try {
+    const url = new URL(withScheme);
+    if (url.protocol !== "https:" || !url.hostname.includes(".") || url.username || url.password) return null;
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function platformName(link: string) {
+  const normalized = normalizeSocialLink(link);
+  if (!normalized) return "";
+  const host = new URL(normalized).hostname.replace(/^www\./, "").toLowerCase();
+  return SOCIAL_PLATFORMS.find(([domain]) => host === domain || host.endsWith(`.${domain}`))?.[1] ?? "Website";
+}
+
+function cleanLinks(links: string[]) {
+  const seen = new Set<string>();
+  const clean: string[] = [];
+  for (const link of links) {
+    const normalized = normalizeSocialLink(link);
+    if (!normalized || seen.has(normalized.toLowerCase())) continue;
+    seen.add(normalized.toLowerCase());
+    clean.push(normalized);
+  }
+  return clean.slice(0, SOCIAL_LINK_LIMIT);
+}
+
 function formFromSettings(company: SiteCompanySettings): SiteCompanySettings {
   return {
     legalName: company.legalName,
@@ -49,7 +102,12 @@ function formFromSettings(company: SiteCompanySettings): SiteCompanySettings {
     address: company.address,
     officeHours: company.officeHours,
     abn: company.abn,
+    socialLinks: company.socialLinks ?? [],
   };
+}
+
+function snapshot(form: SiteCompanySettings) {
+  return JSON.stringify({ ...form, socialLinks: cleanLinks(form.socialLinks ?? []) });
 }
 
 export default function AdminCompany() {
@@ -60,8 +118,8 @@ export default function AdminCompany() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const savedJson = useMemo(() => data ? JSON.stringify(formFromSettings(data.company)) : "", [data]);
-  const dirty = Boolean(form && JSON.stringify(form) !== savedJson);
+  const savedJson = useMemo(() => data ? snapshot(formFromSettings(data.company)) : "", [data]);
+  const dirty = Boolean(form && snapshot(form) !== savedJson);
 
   useEffect(() => {
     if (data && !form) setForm(formFromSettings(data.company));
@@ -73,6 +131,13 @@ export default function AdminCompany() {
 
   const save = async () => {
     if (!form || !data) return;
+    const links = form.socialLinks ?? [];
+    const badLink = links.find((link) => link.trim() && !normalizeSocialLink(link));
+    if (badLink) {
+      setMessage("");
+      setError(`“${badLink.trim()}” is not a valid web address. Use the full address of the profile, such as https://www.facebook.com/yourpage.`);
+      return;
+    }
     setSaving(true);
     setError("");
     setMessage("");
@@ -81,13 +146,13 @@ export default function AdminCompany() {
         data: {
           homepage: data.homepage,
           seedGuide: seedGuideInput(data.seedGuide),
-          company: form,
+          company: { ...form, socialLinks: cleanLinks(links) },
         },
       });
       await queryClient.invalidateQueries({ queryKey: getGetAdminSiteSettingsQueryKey(), refetchType: "all" });
       const next = await refetch();
       if (next.data) setForm(formFromSettings(next.data.company));
-      setMessage("Company details saved. They appear on Contact, the footer and Organization markup immediately.");
+      setMessage("Company details saved. They appear on Contact, the footer and the site markup (Organization, LocalBusiness and social profile links) immediately.");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not save company details.");
     } finally {
@@ -169,7 +234,49 @@ export default function AdminCompany() {
           <label>
             Office hours
             <input value={form.officeHours} onChange={(event) => setField("officeHours", event.target.value)} maxLength={120} />
+            <small>Written like “Monday to Friday, 8am–5pm AWST” so search engines can read the opening hours.</small>
           </label>
+        </section>
+
+        <section className="admin-panel admin-form-card">
+          <div className="admin-section-heading">
+            <div>
+              <h3>Social media profiles</h3>
+              <p>Add the official pages for Facebook, Instagram, LinkedIn, YouTube and so on. They are published in the site's search markup (sameAs) so Google can connect these profiles to IH Seeds. They are not shown as buttons on the site. Up to {SOCIAL_LINK_LIMIT}.</p>
+            </div>
+          </div>
+          {(form.socialLinks ?? []).length === 0 && <p className="admin-field-hint">No profiles added yet.</p>}
+          {(form.socialLinks ?? []).map((link, index) => {
+            const invalid = Boolean(link.trim()) && !normalizeSocialLink(link);
+            const platform = platformName(link);
+            return (
+              <label key={index}>
+                Profile {index + 1}{platform ? ` · ${platform}` : ""}
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input
+                    type="url"
+                    style={{ flex: 1 }}
+                    value={link}
+                    onChange={(event) => setField("socialLinks", (form.socialLinks ?? []).map((item, itemIndex) => itemIndex === index ? event.target.value : item))}
+                    placeholder="https://www.facebook.com/yourpage"
+                    maxLength={300}
+                    aria-invalid={invalid}
+                  />
+                  <button type="button" className="admin-text-button" onClick={() => setField("socialLinks", (form.socialLinks ?? []).filter((_, itemIndex) => itemIndex !== index))}>
+                    Remove
+                  </button>
+                </div>
+                {invalid && <small className="admin-inline-field-error">Enter the full address of the profile, such as https://www.facebook.com/yourpage</small>}
+              </label>
+            );
+          })}
+          {(form.socialLinks ?? []).length < SOCIAL_LINK_LIMIT && (
+            <div>
+              <button type="button" className="admin-button outline" onClick={() => setField("socialLinks", [...(form.socialLinks ?? []), ""])}>
+                Add a profile link
+              </button>
+            </div>
+          )}
         </section>
       </form>
     </>

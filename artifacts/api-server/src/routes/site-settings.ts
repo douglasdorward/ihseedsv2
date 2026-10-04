@@ -181,6 +181,7 @@ function toPublicCompany(company: SiteCompanySettings) {
     address: company.address,
     officeHours: company.officeHours,
     abn: company.abn,
+    socialLinks: company.socialLinks,
   };
 }
 
@@ -260,7 +261,10 @@ router.put("/admin/site-settings", async (req, res): Promise<void> => {
     pdfStorageKey: current.seedGuide?.pdfStorageKey || DEFAULT_SEED_GUIDE_SETTINGS.pdfStorageKey,
   });
   const about = withAboutDefaults(parsed.data.about ?? current.about);
-  const company = withCompanyDefaults(parsed.data.company ?? current.company);
+  // Older clients omit socialLinks; keep the saved profile links rather than clearing them.
+  const company = withCompanyDefaults(parsed.data.company
+    ? { ...parsed.data.company, socialLinks: parsed.data.company.socialLinks ?? current.company?.socialLinks }
+    : current.company);
   const updated = await db.transaction(async (tx) => {
     const [saved] = await tx.update(siteSettingsTable).set({
       homepage,

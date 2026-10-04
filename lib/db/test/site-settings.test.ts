@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { DEFAULT_ABOUT_HERO_IMAGE, DEFAULT_HOMEPAGE_HERO_IMAGE, siteHomepageSettingsSchema, withAboutDefaults, withCompanyDefaults, withHomepageDefaults } from "../src/schema/site-settings.ts";
+import { cleanSocialLinks, DEFAULT_ABOUT_HERO_IMAGE, DEFAULT_HOMEPAGE_HERO_IMAGE, normalizeSocialLink, siteCompanySettingsSchema, siteHomepageSettingsSchema, withAboutDefaults, withCompanyDefaults, withHomepageDefaults } from "../src/schema/site-settings.ts";
 
 test("withHomepageDefaults seeds heroImages from a legacy single hero photo", () => {
   const homepage = withHomepageDefaults({
@@ -119,4 +119,27 @@ test("withCompanyDefaults fills identity fields and keeps a blank phone", () => 
   assert.equal(company.phone, "");
   assert.equal(company.email, "info@irwinhunter.com.au");
   assert.equal(company.abn, "12 345 678 901");
+});
+
+test("social links accept bare or full addresses, upgrade http, and reject everything else", () => {
+  assert.equal(normalizeSocialLink("facebook.com/ihseeds"), "https://facebook.com/ihseeds");
+  assert.equal(normalizeSocialLink(" http://www.linkedin.com/company/ih-seeds#top "), "https://www.linkedin.com/company/ih-seeds");
+  assert.equal(normalizeSocialLink(""), null);
+  assert.equal(normalizeSocialLink("ftp://example.com/x"), null);
+  assert.equal(normalizeSocialLink("javascript:alert(1)"), null);
+  assert.equal(normalizeSocialLink("localhost"), null);
+  assert.equal(normalizeSocialLink("https://user:pass@example.com/"), null);
+  assert.deepEqual(cleanSocialLinks(["facebook.com/a", "", "https://facebook.com/a", "nope nope", 5]), ["https://facebook.com/a"]);
+  assert.deepEqual(cleanSocialLinks(undefined), []);
+});
+
+test("company settings validate and clean social links, and legacy records default to none", () => {
+  const base = { legalName: "A", tradingName: "B", phone: "", email: "", address: "", officeHours: "", abn: "" };
+  const ok = siteCompanySettingsSchema.safeParse({ ...base, socialLinks: ["facebook.com/ihseeds", "", "https://facebook.com/ihseeds"] });
+  assert.equal(ok.success, true);
+  assert.deepEqual(ok.success && ok.data.socialLinks, ["https://facebook.com/ihseeds"]);
+  assert.equal(siteCompanySettingsSchema.safeParse({ ...base, socialLinks: ["not a link"] }).success, false);
+  assert.equal(siteCompanySettingsSchema.safeParse({ ...base, socialLinks: Array.from({ length: 11 }, (_, i) => `https://example.com/${i}`) }).success, false);
+  assert.equal(siteCompanySettingsSchema.safeParse(base).success && siteCompanySettingsSchema.parse(base).socialLinks, undefined);
+  assert.deepEqual(withCompanyDefaults({ legalName: "A" }).socialLinks, []);
 });
