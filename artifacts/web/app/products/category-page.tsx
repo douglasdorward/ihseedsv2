@@ -13,6 +13,7 @@ import {
 import { CATALOGUE_INDEX_PATH, productPublicPath } from "../../lib/catalogue-paths";
 import { absoluteSiteUrl } from "../../lib/site-url";
 import { CategoryCatalogue } from "./CategoryCatalogue";
+import { toListingProduct } from "../../lib/product-listing";
 import { forSearchMetadata } from "../../lib/search-metadata";
 import { loadSiteSettings } from "../../lib/site-settings";
 import { siteSocialMetadata } from "../../lib/social-metadata";
@@ -183,7 +184,7 @@ export async function CategoryPage({ params }: { params: RouteParams }) {
       <CategoryCatalogue
         root={page.root}
         childCategories={page.children}
-        products={rootProducts}
+        products={rootProducts.map(toListingProduct)}
         categories={categories}
       />
 

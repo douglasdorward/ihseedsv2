@@ -1005,6 +1005,69 @@
   color: var(--green);
   font-size: 22px;
 }
+.product-listing-range {
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 500;
+}
+.product-listing-results {
+  scroll-margin-top: 120px;
+}
+.product-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 48px;
+}
+.product-pagination-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.product-pagination-step,
+.product-pagination-page {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 2px solid #C5CCC5;
+  border-radius: 999px;
+  color: var(--green);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.product-pagination-page {
+  padding: 0 12px;
+}
+.product-pagination-step:hover,
+.product-pagination-page:hover {
+  border-color: var(--green);
+}
+.product-pagination-page.is-current {
+  border-color: var(--green);
+  background: var(--green);
+  color: #FFFFFF;
+}
+.product-pagination-step.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.product-pagination-gap {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  color: var(--muted);
+}
 .catalogue-product-card {
   display: flex;
   flex-direction: column;

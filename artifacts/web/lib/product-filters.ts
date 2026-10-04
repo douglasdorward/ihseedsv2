@@ -1,4 +1,5 @@
-import type { CatalogueCategory, CatalogueProduct } from "./catalogue";
+import type { CatalogueCategory } from "./catalogue";
+import type { ListingProduct } from "./product-listing";
 
 export const END_USE_OPTIONS = [
   "Grazing", "Hay", "Silage", "Cover crop", "Green manure", "Grain", "Stockfeed",
@@ -106,7 +107,7 @@ function intersects(selected: string[], values: string[] | undefined) {
   return (values ?? []).some((value) => selected.includes(value));
 }
 
-export function soilMatches(product: CatalogueProduct, selected: string[]) {
+export function soilMatches(product: ListingProduct, selected: string[]) {
   if (!selected.length) return true;
   const light = SOIL_RANK[product.details.soilRangeLightest ?? ""];
   const heavy = SOIL_RANK[product.details.soilRangeHeaviest ?? ""];
@@ -118,7 +119,7 @@ export function soilMatches(product: CatalogueProduct, selected: string[]) {
 }
 
 export function productMatchesFilters(
-  product: CatalogueProduct,
+  product: ListingProduct,
   filters: ProductListingFilters,
   categories: CatalogueCategory[],
 ) {
@@ -163,7 +164,7 @@ function keepOrdered<T extends string | number>(
 
 /** Options that appear on at least one product in the full catalogue (static list). */
 export function catalogueFilterOptions(
-  products: CatalogueProduct[],
+  products: ListingProduct[],
   categories: CatalogueCategory[],
 ): CatalogueFilterOptions {
   const categoryPresent = new Set<string>();
@@ -242,7 +243,7 @@ function optionAlreadySelected(
  * or when it is already selected (so the user can uncheck it).
  */
 export function isFilterOptionEnabled(
-  products: CatalogueProduct[],
+  products: ListingProduct[],
   categories: CatalogueCategory[],
   filters: ProductListingFilters,
   dimension: FilterOptionDimension,

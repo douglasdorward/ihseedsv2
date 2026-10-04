@@ -6,7 +6,8 @@ import { CoverImage } from "../../components/CoverImage";
 import { Icon } from "../../components/Icon";
 import { ProductNewStamp } from "../../components/NewStamp";
 import { StatusPill } from "../../components/StatusPill";
-import type { CatalogueCategory, CatalogueProduct } from "../../lib/catalogue";
+import type { CatalogueCategory } from "../../lib/catalogue";
+import type { ListingProduct } from "../../lib/product-listing";
 import { productPublicPath } from "../../lib/catalogue-paths";
 import { CategoryFilterControls, CategoryViewToggle } from "./CategoryControls";
 import { getFactChips, hasProductPhoto, productCardImage, productImageAlt } from "./product-card-facts";
@@ -19,7 +20,7 @@ export function CategoryCatalogue({
 }: {
   root: CatalogueCategory;
   childCategories: CatalogueCategory[];
-  products: CatalogueProduct[];
+  products: ListingProduct[];
   categories: CatalogueCategory[];
 }) {
   const [activeGroup, setActiveGroup] = useState<number | "All">("All");

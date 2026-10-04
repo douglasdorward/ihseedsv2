@@ -5,6 +5,7 @@ import { CoverImage } from "../../components/CoverImage";
 import { getCategories, getProducts } from "../../lib/catalogue";
 import { CATALOGUE_INDEX_PATH } from "../../lib/catalogue-paths";
 import { ProductsListing } from "./ProductsListing";
+import { toListingProduct } from "../../lib/product-listing";
 import { siteSocialMetadata } from "../../lib/social-metadata";
 
 const metadata: Metadata = {
@@ -33,7 +34,7 @@ export default async function ProductsIndex() {
       <section style={{ background: "#FFFFFF" }}>
         <div className="page-content products-page-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "48px 40px 64px" }}>
           <Suspense fallback={<div className="empty-state">Loading products…</div>}>
-            <ProductsListing categories={categories} products={products} />
+            <ProductsListing categories={categories} products={products.map(toListingProduct)} />
           </Suspense>
         </div>
       </section>

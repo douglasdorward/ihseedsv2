@@ -1,12 +1,12 @@
-import type { CatalogueProduct } from "../../lib/catalogue";
+import type { ListingProduct } from "../../lib/product-listing";
 
 export const PRODUCT_FALLBACK_IMAGE = "/product-fallback.svg";
 
-export function hasProductPhoto(product: CatalogueProduct) {
+export function hasProductPhoto(product: ListingProduct) {
   return product.details.photos?.some((photo) => photo.src?.trim()) === true;
 }
 
-export function productCardImage(product: CatalogueProduct) {
+export function productCardImage(product: ListingProduct) {
   const attached = product.details.photos?.find((photo) => photo.src?.trim())?.src?.trim();
   if (!attached) return PRODUCT_FALLBACK_IMAGE;
   if (!attached.startsWith("/api/media/")) return attached;
@@ -14,7 +14,7 @@ export function productCardImage(product: CatalogueProduct) {
   return `${path}?size=card`;
 }
 
-export function productImageAlt(product: CatalogueProduct) {
+export function productImageAlt(product: ListingProduct) {
   const photo = product.details.photos?.find((item) => item.src?.trim());
   return photo?.alt?.trim() || product.name;
 }
@@ -22,7 +22,7 @@ export function productImageAlt(product: CatalogueProduct) {
 /** Listing pills stay one short label. Longer copy remains on the product page. */
 export const LISTING_FACT_CHIP_MAX_LENGTH = 40;
 
-export function getFactChips(product: CatalogueProduct, subcategoryName?: string) {
+export function getFactChips(product: ListingProduct, subcategoryName?: string) {
   const category = product.category;
   const details = product.details;
   const chips: string[] = [];

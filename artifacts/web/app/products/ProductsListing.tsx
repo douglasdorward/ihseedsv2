@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { CoverImage } from "../../components/CoverImage";
 import { Icon } from "../../components/Icon";
 import { ProductNewStamp } from "../../components/NewStamp";
 import { StatusPill } from "../../components/StatusPill";
-import type { CatalogueCategory, CatalogueProduct } from "../../lib/catalogue";
+import type { CatalogueCategory } from "../../lib/catalogue";
+import type { ListingProduct } from "../../lib/product-listing";
 import { productPublicPath } from "../../lib/catalogue-paths";
 import {
   catalogueFilterOptions,
@@ -21,6 +22,7 @@ import {
   type FilterOptionDimension,
   type ProductListingFilters,
 } from "../../lib/product-filters";
+import { pageFromSearchParams, pageHref, pageNumbers, paginate } from "../../lib/product-pagination";
 import { getFactChips, hasProductPhoto, productCardImage, productImageAlt } from "./product-card-facts";
 
 function toggleValue(values: string[], value: string) {
@@ -66,7 +68,7 @@ export function ProductsListing({
   products,
 }: {
   categories: CatalogueCategory[];
-  products: CatalogueProduct[];
+  products: ListingProduct[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -103,6 +105,16 @@ export function ProductsListing({
   const visibleProducts = products
     .filter((product) => productMatchesFilters(product, filters, categories))
     .sort((first, second) => first.name.localeCompare(second.name));
+
+  // Filters always run over the whole catalogue; paging only slices the matches.
+  const current = paginate(visibleProducts, pageFromSearchParams(searchParams));
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const shownPage = useRef(current.page);
+  useEffect(() => {
+    if (shownPage.current === current.page) return;
+    shownPage.current = current.page;
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [current.page]);
 
   function apply(next: ProductListingFilters) {
     const params = searchParamsFromFilters(next);
@@ -268,12 +280,15 @@ export function ProductsListing({
         </div>
       )}
       <aside className="product-filter-desktop">{sidebar}</aside>
-      <div className="product-listing-results">
+      <div className="product-listing-results" ref={resultsRef}>
         {visibleProducts.length > 0 ? (
           <>
-            <h2 className="product-listing-count">{visibleProducts.length} {visibleProducts.length === 1 ? "product" : "products"}</h2>
+            <h2 className="product-listing-count">
+              {visibleProducts.length} {visibleProducts.length === 1 ? "product" : "products"}
+              {current.pageCount > 1 && <span className="product-listing-range"> · showing {current.first}–{current.last}</span>}
+            </h2>
             <div className="category-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 32 }}>
-            {visibleProducts.map((product) => {
+            {current.items.map((product) => {
               const chips = getFactChips(product);
               const tagline = product.details.tagline?.trim();
               const hasPhoto = hasProductPhoto(product);
@@ -310,6 +325,37 @@ export function ProductsListing({
               );
             })}
             </div>
+            {current.pageCount > 1 && (
+              <nav className="product-pagination" aria-label="Product pages">
+                {current.page > 1 ? (
+                  <Link className="product-pagination-step" href={pageHref(pathname, searchParams, current.page - 1)} scroll={false} rel="prev">
+                    <Icon name="chevron-left" size={16} /> Previous
+                  </Link>
+                ) : (
+                  <span className="product-pagination-step is-disabled" aria-hidden="true"><Icon name="chevron-left" size={16} /> Previous</span>
+                )}
+                <ol className="product-pagination-pages">
+                  {pageNumbers(current.page, current.pageCount).map((value, index) => (
+                    <li key={value ?? `gap-${index}`}>
+                      {value === null ? (
+                        <span className="product-pagination-gap" aria-hidden="true">…</span>
+                      ) : value === current.page ? (
+                        <span className="product-pagination-page is-current" aria-current="page">{value}</span>
+                      ) : (
+                        <Link className="product-pagination-page" href={pageHref(pathname, searchParams, value)} scroll={false} aria-label={`Page ${value}`}>{value}</Link>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+                {current.page < current.pageCount ? (
+                  <Link className="product-pagination-step" href={pageHref(pathname, searchParams, current.page + 1)} scroll={false} rel="next">
+                    Next <Icon name="chevron-right" size={16} />
+                  </Link>
+                ) : (
+                  <span className="product-pagination-step is-disabled" aria-hidden="true">Next <Icon name="chevron-right" size={16} /></span>
+                )}
+              </nav>
+            )}
           </>
         ) : (
           <div className="product-listing-empty">
