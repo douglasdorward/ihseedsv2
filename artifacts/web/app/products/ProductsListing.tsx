@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { CoverImage } from "../../components/CoverImage";
 import { Icon } from "../../components/Icon";
 import { ProductNewStamp } from "../../components/NewStamp";
+import { SiteSearch } from "../../components/SiteSearch";
 import { StatusPill } from "../../components/StatusPill";
 import type { CatalogueCategory } from "../../lib/catalogue";
 import type { ListingProduct } from "../../lib/product-listing";
@@ -74,6 +75,8 @@ export function ProductsListing({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
   const filters = useMemo(() => filtersFromSearchParams(searchParams), [searchParams]);
 
   const rootCategories = useMemo(
@@ -115,6 +118,10 @@ export function ProductsListing({
     shownPage.current = current.page;
     resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [current.page]);
+
+  const activeFilterCount = filters.category.length + filters.endUse.length + filters.livestock.length
+    + filters.tolerance.length + filters.soil.length + filters.sowing.length
+    + (filters.rainfall != null ? 1 : 0) + (filters.persistence ? 1 : 0);
 
   function apply(next: ProductListingFilters) {
     const params = searchParamsFromFilters(next);
@@ -249,13 +256,6 @@ export function ProductsListing({
 
   return (
     <div className="product-listing-layout">
-      <button
-        type="button"
-        className="product-filter-toggle button button-outline"
-        onClick={() => setFiltersOpen(true)}
-      >
-        Filters
-      </button>
       {filtersOpen && (
         <div className="product-filter-drawer" onClick={() => setFiltersOpen(false)}>
           <div className="product-filter-drawer-panel" onClick={(event) => event.stopPropagation()}>
@@ -281,12 +281,34 @@ export function ProductsListing({
       )}
       <aside className="product-filter-desktop">{sidebar}</aside>
       <div className="product-listing-results" ref={resultsRef}>
+        <div className="product-listing-toolbar">
+          <div className="product-listing-actions">
+            <button
+              type="button"
+              className="product-filter-toggle product-listing-action"
+              onClick={() => setFiltersOpen(true)}
+            >
+              <Icon name="layers" size={18} /> Filters
+              {activeFilterCount > 0 && <span className="product-filter-count" aria-label={`${activeFilterCount} active`}>{activeFilterCount}</span>}
+            </button>
+            <button
+              type="button"
+              className="product-listing-action product-search-button"
+              aria-expanded={searchOpen}
+              aria-controls="site-search-dialog"
+              onClick={() => setSearchOpen(true)}
+            >
+              <Icon name="search" size={18} /> Search
+            </button>
+          </div>
+          <h2 className="product-listing-count">
+            {visibleProducts.length} {visibleProducts.length === 1 ? "product" : "products"}
+            {current.pageCount > 1 && <span className="product-listing-range">Showing {current.first}–{current.last}</span>}
+          </h2>
+        </div>
+        <SiteSearch open={searchOpen} onClose={closeSearch} onNavigate={closeSearch} />
         {visibleProducts.length > 0 ? (
           <>
-            <h2 className="product-listing-count">
-              {visibleProducts.length} {visibleProducts.length === 1 ? "product" : "products"}
-              {current.pageCount > 1 && <span className="product-listing-range"> · showing {current.first}–{current.last}</span>}
-            </h2>
             <div className="category-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 32 }}>
             {current.items.map((product) => {
               const chips = getFactChips(product);
