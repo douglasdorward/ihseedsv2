@@ -1115,7 +1115,7 @@ export const updateProductBodyGuideYearMax = 12;
 
 export const updateProductBodyDescriptionSourceMax = 240;
 
-export const updateProductBodyWebsiteUrlLegacyMax = 500;
+export const updateProductBodyWebsiteUrlLegacyMax = 2000;
 
 export const updateProductBodyDetailsStockCodeMax = 40;
 
@@ -2126,7 +2126,7 @@ export const listAdminProductsResponseTwoDraftOneOneGuideYearMax = 12;
 
 export const listAdminProductsResponseTwoDraftOneOneDescriptionSourceMax = 240;
 
-export const listAdminProductsResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
+export const listAdminProductsResponseTwoDraftOneOneWebsiteUrlLegacyMax = 2000;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -2734,7 +2734,7 @@ export const getAdminProductResponseTwoDraftOneOneGuideYearMax = 12;
 
 export const getAdminProductResponseTwoDraftOneOneDescriptionSourceMax = 240;
 
-export const getAdminProductResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
+export const getAdminProductResponseTwoDraftOneOneWebsiteUrlLegacyMax = 2000;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -3192,7 +3192,7 @@ export const saveProductDraftRevisionBodyGuideYearMax = 12;
 
 export const saveProductDraftRevisionBodyDescriptionSourceMax = 240;
 
-export const saveProductDraftRevisionBodyWebsiteUrlLegacyMax = 500;
+export const saveProductDraftRevisionBodyWebsiteUrlLegacyMax = 2000;
 
 export const saveProductDraftRevisionBodyDetailsStockCodeMax = 40;
 
@@ -3621,7 +3621,7 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneGuideYearMax = 12;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDescriptionSourceMax = 240;
 
-export const saveProductDraftRevisionResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
+export const saveProductDraftRevisionResponseTwoDraftOneOneWebsiteUrlLegacyMax = 2000;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -4079,7 +4079,7 @@ export const publishProductBodyGuideYearMax = 12;
 
 export const publishProductBodyDescriptionSourceMax = 240;
 
-export const publishProductBodyWebsiteUrlLegacyMax = 500;
+export const publishProductBodyWebsiteUrlLegacyMax = 2000;
 
 export const publishProductBodyDetailsStockCodeMax = 40;
 
@@ -4508,7 +4508,7 @@ export const publishProductResponseTwoDraftOneOneGuideYearMax = 12;
 
 export const publishProductResponseTwoDraftOneOneDescriptionSourceMax = 240;
 
-export const publishProductResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
+export const publishProductResponseTwoDraftOneOneWebsiteUrlLegacyMax = 2000;
 
 export const publishProductResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -5099,7 +5099,7 @@ export const archiveProductResponseTwoDraftOneOneGuideYearMax = 12;
 
 export const archiveProductResponseTwoDraftOneOneDescriptionSourceMax = 240;
 
-export const archiveProductResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
+export const archiveProductResponseTwoDraftOneOneWebsiteUrlLegacyMax = 2000;
 
 export const archiveProductResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -5690,7 +5690,7 @@ export const restoreProductResponseTwoDraftOneOneGuideYearMax = 12;
 
 export const restoreProductResponseTwoDraftOneOneDescriptionSourceMax = 240;
 
-export const restoreProductResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
+export const restoreProductResponseTwoDraftOneOneWebsiteUrlLegacyMax = 2000;
 
 export const restoreProductResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -6281,7 +6281,7 @@ export const discardProductDraftResponseTwoDraftOneOneGuideYearMax = 12;
 
 export const discardProductDraftResponseTwoDraftOneOneDescriptionSourceMax = 240;
 
-export const discardProductDraftResponseTwoDraftOneOneWebsiteUrlLegacyMax = 500;
+export const discardProductDraftResponseTwoDraftOneOneWebsiteUrlLegacyMax = 2000;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsStockCodeMax = 40;
 
@@ -7418,7 +7418,8 @@ export const LookupRedirectQueryParams = zod.object({
 })
 
 export const LookupRedirectResponse = zod.object({
-  "toPath": zod.string()
+  "toPath": zod.string(),
+  "permanent": zod.boolean().optional().describe('Present and false when the redirect is temporary (a Legacy product page sending visitors to its category). Absent means permanent.')
 })
 
 
@@ -8409,7 +8410,11 @@ export const ListCategoriesResponseItem = zod.object({
   "pageHeading": zod.string(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
+  "socialTitle": zod.string(),
+  "socialDescription": zod.string(),
+  "socialImage": zod.string(),
   "rainfall": zod.string(),
+  "buyingGuide": zod.string(),
   "image": zod.string(),
   "faqs": zod.array(zod.object({
   "question": zod.string().max(listCategoriesResponseOneFaqsItemQuestionMax),
@@ -8452,7 +8457,11 @@ export const ListAdminCategoriesResponseItem = zod.object({
   "pageHeading": zod.string(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
+  "socialTitle": zod.string(),
+  "socialDescription": zod.string(),
+  "socialImage": zod.string(),
   "rainfall": zod.string(),
+  "buyingGuide": zod.string(),
   "image": zod.string(),
   "faqs": zod.array(zod.object({
   "question": zod.string().max(listAdminCategoriesResponseFaqsItemQuestionMax),
@@ -8487,7 +8496,15 @@ export const createCategoryBodySeoTitleMax = 180;
 
 export const createCategoryBodySeoDescriptionMax = 2000;
 
+export const createCategoryBodySocialTitleMax = 180;
+
+export const createCategoryBodySocialDescriptionMax = 2000;
+
+export const createCategoryBodySocialImageMax = 500;
+
 export const createCategoryBodyRainfallMax = 120;
+
+export const createCategoryBodyBuyingGuideMax = 6000;
 
 export const createCategoryBodyImageMax = 500;
 
@@ -8511,7 +8528,11 @@ export const CreateCategoryBody = zod.object({
   "pageHeading": zod.string().max(createCategoryBodyPageHeadingMax),
   "seoTitle": zod.string().max(createCategoryBodySeoTitleMax),
   "seoDescription": zod.string().max(createCategoryBodySeoDescriptionMax),
+  "socialTitle": zod.string().max(createCategoryBodySocialTitleMax).optional(),
+  "socialDescription": zod.string().max(createCategoryBodySocialDescriptionMax).optional(),
+  "socialImage": zod.string().max(createCategoryBodySocialImageMax).optional(),
   "rainfall": zod.string().max(createCategoryBodyRainfallMax),
+  "buyingGuide": zod.string().max(createCategoryBodyBuyingGuideMax).optional(),
   "image": zod.string().max(createCategoryBodyImageMax),
   "faqs": zod.array(zod.object({
   "question": zod.string().max(createCategoryBodyFaqsItemQuestionMax),
@@ -8545,7 +8566,11 @@ export const CreateCategoryResponse = zod.object({
   "pageHeading": zod.string(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
+  "socialTitle": zod.string(),
+  "socialDescription": zod.string(),
+  "socialImage": zod.string(),
   "rainfall": zod.string(),
+  "buyingGuide": zod.string(),
   "image": zod.string(),
   "faqs": zod.array(zod.object({
   "question": zod.string().max(createCategoryResponseFaqsItemQuestionMax),
@@ -8600,7 +8625,11 @@ export const ReorderCategoriesResponseItem = zod.object({
   "pageHeading": zod.string(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
+  "socialTitle": zod.string(),
+  "socialDescription": zod.string(),
+  "socialImage": zod.string(),
   "rainfall": zod.string(),
+  "buyingGuide": zod.string(),
   "image": zod.string(),
   "faqs": zod.array(zod.object({
   "question": zod.string().max(reorderCategoriesResponseFaqsItemQuestionMax),
@@ -8615,10 +8644,10 @@ export const ReorderCategoriesResponse = zod.array(ReorderCategoriesResponseItem
 
 
 /**
- * The template lists every root category so FAQ copy can be written for those pages.
- * @summary Download the root category FAQ Excel import template
+ * The workbook opens with a Column guide sheet that explains how the file works. It holds every stored category FAQ, a blank starter row for each root category and sub-category without FAQs, and the list of root categories and sub-categories (identified by slug and parent_slug) with their page heading, intro, SEO title, meta description and social sharing title, description and image.
+ * @summary Export the categories as an Excel workbook
  */
-export const DownloadCategoryFaqImportTemplateResponse = zod.unknown()
+export const ExportCategoryFaqsResponse = zod.unknown()
 
 
 /**
@@ -8628,7 +8657,7 @@ export const DownloadCategoryFaqImportPromptResponse = zod.string()
 
 
 /**
- * @summary Validate a root category FAQ Excel import
+ * @summary Validate a root category Excel import
  */
 export const DryRunCategoryFaqImportBody = zod.object({
   "workbookBase64": zod.string()
@@ -8662,7 +8691,7 @@ export const DryRunCategoryFaqImportResponse = zod.object({
 
 
 /**
- * @summary Commit a validated root category FAQ Excel import
+ * @summary Commit a validated root category Excel import
  */
 export const CommitCategoryFaqImportBody = zod.object({
   "workbookBase64": zod.string()
@@ -8722,7 +8751,15 @@ export const updateCategoryBodySeoTitleMax = 180;
 
 export const updateCategoryBodySeoDescriptionMax = 2000;
 
+export const updateCategoryBodySocialTitleMax = 180;
+
+export const updateCategoryBodySocialDescriptionMax = 2000;
+
+export const updateCategoryBodySocialImageMax = 500;
+
 export const updateCategoryBodyRainfallMax = 120;
+
+export const updateCategoryBodyBuyingGuideMax = 6000;
 
 export const updateCategoryBodyImageMax = 500;
 
@@ -8746,7 +8783,11 @@ export const UpdateCategoryBody = zod.object({
   "pageHeading": zod.string().max(updateCategoryBodyPageHeadingMax).optional(),
   "seoTitle": zod.string().max(updateCategoryBodySeoTitleMax).optional(),
   "seoDescription": zod.string().max(updateCategoryBodySeoDescriptionMax).optional(),
+  "socialTitle": zod.string().max(updateCategoryBodySocialTitleMax).optional(),
+  "socialDescription": zod.string().max(updateCategoryBodySocialDescriptionMax).optional(),
+  "socialImage": zod.string().max(updateCategoryBodySocialImageMax).optional(),
   "rainfall": zod.string().max(updateCategoryBodyRainfallMax).optional(),
+  "buyingGuide": zod.string().max(updateCategoryBodyBuyingGuideMax).optional(),
   "image": zod.string().max(updateCategoryBodyImageMax).optional(),
   "faqs": zod.array(zod.object({
   "question": zod.string().max(updateCategoryBodyFaqsItemQuestionMax),
@@ -8780,7 +8821,11 @@ export const UpdateCategoryResponse = zod.object({
   "pageHeading": zod.string(),
   "seoTitle": zod.string(),
   "seoDescription": zod.string(),
+  "socialTitle": zod.string(),
+  "socialDescription": zod.string(),
+  "socialImage": zod.string(),
   "rainfall": zod.string(),
+  "buyingGuide": zod.string(),
   "image": zod.string(),
   "faqs": zod.array(zod.object({
   "question": zod.string().max(updateCategoryResponseFaqsItemQuestionMax),
@@ -9765,6 +9810,10 @@ export const getPublicSiteSettingsResponseCompanyOfficeHoursMax = 120;
 
 export const getPublicSiteSettingsResponseCompanyAbnMax = 20;
 
+export const getPublicSiteSettingsResponseCompanySocialLinksItemMax = 300;
+
+export const getPublicSiteSettingsResponseCompanySocialLinksMax = 10;
+
 
 
 export const GetPublicSiteSettingsResponse = zod.object({
@@ -9822,7 +9871,8 @@ export const GetPublicSiteSettingsResponse = zod.object({
   "email": zod.string().max(getPublicSiteSettingsResponseCompanyEmailMax),
   "address": zod.string().max(getPublicSiteSettingsResponseCompanyAddressMax),
   "officeHours": zod.string().max(getPublicSiteSettingsResponseCompanyOfficeHoursMax),
-  "abn": zod.string().max(getPublicSiteSettingsResponseCompanyAbnMax)
+  "abn": zod.string().max(getPublicSiteSettingsResponseCompanyAbnMax),
+  "socialLinks": zod.array(zod.string().max(getPublicSiteSettingsResponseCompanySocialLinksItemMax)).max(getPublicSiteSettingsResponseCompanySocialLinksMax).optional().describe('Public social media profile URLs (https). Published as sameAs in the site\'s structured data.')
 }),
   "updatedAt": zod.coerce.date()
 })
@@ -9930,6 +9980,10 @@ export const getAdminSiteSettingsResponseCompanyOfficeHoursMax = 120;
 
 export const getAdminSiteSettingsResponseCompanyAbnMax = 20;
 
+export const getAdminSiteSettingsResponseCompanySocialLinksItemMax = 300;
+
+export const getAdminSiteSettingsResponseCompanySocialLinksMax = 10;
+
 
 
 export const GetAdminSiteSettingsResponse = zod.object({
@@ -9987,7 +10041,8 @@ export const GetAdminSiteSettingsResponse = zod.object({
   "email": zod.string().max(getAdminSiteSettingsResponseCompanyEmailMax),
   "address": zod.string().max(getAdminSiteSettingsResponseCompanyAddressMax),
   "officeHours": zod.string().max(getAdminSiteSettingsResponseCompanyOfficeHoursMax),
-  "abn": zod.string().max(getAdminSiteSettingsResponseCompanyAbnMax)
+  "abn": zod.string().max(getAdminSiteSettingsResponseCompanyAbnMax),
+  "socialLinks": zod.array(zod.string().max(getAdminSiteSettingsResponseCompanySocialLinksItemMax)).max(getAdminSiteSettingsResponseCompanySocialLinksMax).optional().describe('Public social media profile URLs (https). Published as sameAs in the site\'s structured data.')
 }),
   "updatedAt": zod.coerce.date()
 })
@@ -10085,6 +10140,10 @@ export const updateSiteSettingsBodyCompanyOfficeHoursMax = 120;
 
 export const updateSiteSettingsBodyCompanyAbnMax = 20;
 
+export const updateSiteSettingsBodyCompanySocialLinksItemMax = 300;
+
+export const updateSiteSettingsBodyCompanySocialLinksMax = 10;
+
 
 
 export const UpdateSiteSettingsBody = zod.object({
@@ -10140,7 +10199,8 @@ export const UpdateSiteSettingsBody = zod.object({
   "email": zod.string().max(updateSiteSettingsBodyCompanyEmailMax),
   "address": zod.string().max(updateSiteSettingsBodyCompanyAddressMax),
   "officeHours": zod.string().max(updateSiteSettingsBodyCompanyOfficeHoursMax),
-  "abn": zod.string().max(updateSiteSettingsBodyCompanyAbnMax)
+  "abn": zod.string().max(updateSiteSettingsBodyCompanyAbnMax),
+  "socialLinks": zod.array(zod.string().max(updateSiteSettingsBodyCompanySocialLinksItemMax)).max(updateSiteSettingsBodyCompanySocialLinksMax).optional().describe('Public social media profile URLs (https). Published as sameAs in the site\'s structured data.')
 }).optional()
 })
 
@@ -10237,6 +10297,10 @@ export const updateSiteSettingsResponseCompanyOfficeHoursMax = 120;
 
 export const updateSiteSettingsResponseCompanyAbnMax = 20;
 
+export const updateSiteSettingsResponseCompanySocialLinksItemMax = 300;
+
+export const updateSiteSettingsResponseCompanySocialLinksMax = 10;
+
 
 
 export const UpdateSiteSettingsResponse = zod.object({
@@ -10294,7 +10358,8 @@ export const UpdateSiteSettingsResponse = zod.object({
   "email": zod.string().max(updateSiteSettingsResponseCompanyEmailMax),
   "address": zod.string().max(updateSiteSettingsResponseCompanyAddressMax),
   "officeHours": zod.string().max(updateSiteSettingsResponseCompanyOfficeHoursMax),
-  "abn": zod.string().max(updateSiteSettingsResponseCompanyAbnMax)
+  "abn": zod.string().max(updateSiteSettingsResponseCompanyAbnMax),
+  "socialLinks": zod.array(zod.string().max(updateSiteSettingsResponseCompanySocialLinksItemMax)).max(updateSiteSettingsResponseCompanySocialLinksMax).optional().describe('Public social media profile URLs (https). Published as sameAs in the site\'s structured data.')
 }),
   "updatedAt": zod.coerce.date()
 })
@@ -10406,6 +10471,10 @@ export const uploadSeedGuidePdfResponseCompanyOfficeHoursMax = 120;
 
 export const uploadSeedGuidePdfResponseCompanyAbnMax = 20;
 
+export const uploadSeedGuidePdfResponseCompanySocialLinksItemMax = 300;
+
+export const uploadSeedGuidePdfResponseCompanySocialLinksMax = 10;
+
 
 
 export const UploadSeedGuidePdfResponse = zod.object({
@@ -10463,7 +10532,8 @@ export const UploadSeedGuidePdfResponse = zod.object({
   "email": zod.string().max(uploadSeedGuidePdfResponseCompanyEmailMax),
   "address": zod.string().max(uploadSeedGuidePdfResponseCompanyAddressMax),
   "officeHours": zod.string().max(uploadSeedGuidePdfResponseCompanyOfficeHoursMax),
-  "abn": zod.string().max(uploadSeedGuidePdfResponseCompanyAbnMax)
+  "abn": zod.string().max(uploadSeedGuidePdfResponseCompanyAbnMax),
+  "socialLinks": zod.array(zod.string().max(uploadSeedGuidePdfResponseCompanySocialLinksItemMax)).max(uploadSeedGuidePdfResponseCompanySocialLinksMax).optional().describe('Public social media profile URLs (https). Published as sameAs in the site\'s structured data.')
 }),
   "updatedAt": zod.coerce.date()
 })

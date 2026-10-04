@@ -1204,16 +1204,16 @@ paths:
                 items: { $ref: "#/components/schemas/CatalogueCategory" }
         "400": { description: Invalid reorder request }
         "404": { description: Category not found }
-  /admin/categories/faqs/import/template:
+  /admin/categories/faqs/export:
     get:
-      operationId: downloadCategoryFaqImportTemplate
+      operationId: exportCategoryFaqs
       tags: [admin]
-      summary: Download the root category FAQ Excel import template
-      description: The template lists every root category so FAQ copy can be written for those pages.
+      summary: Export the categories as an Excel workbook
+      description: The workbook opens with a Column guide sheet that explains how the file works. It holds every stored category FAQ, a blank starter row for each root category and sub-category without FAQs, and the list of root categories and sub-categories (identified by slug and parent_slug) with their page heading, intro, SEO title, meta description and social sharing title, description and image.
       security: [{ clerkSession: [] }]
       responses:
         "200":
-          description: XLSX template
+          description: XLSX export
           content:
             application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
               schema: { type: string, format: binary }
@@ -1233,7 +1233,7 @@ paths:
     post:
       operationId: dryRunCategoryFaqImport
       tags: [admin]
-      summary: Validate a root category FAQ Excel import
+      summary: Validate a root category Excel import
       security: [{ clerkSession: [] }]
       requestBody:
         required: true
@@ -1251,7 +1251,7 @@ paths:
     post:
       operationId: commitCategoryFaqImport
       tags: [admin]
-      summary: Commit a validated root category FAQ Excel import
+      summary: Commit a validated root category Excel import
       security: [{ clerkSession: [] }]
       requestBody:
         required: true
@@ -1978,7 +1978,7 @@ components:
         techSheet: { type: string, maxLength: 240 }
         guideYear: { type: string, maxLength: 12 }
         descriptionSource: { type: string, maxLength: 240 }
-        websiteUrlLegacy: { type: string, maxLength: 500 }
+        websiteUrlLegacy: { type: string, maxLength: 2000, description: "Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with \" | \". Each redirects to this product once it is published." }
         availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
         listingState: { type: string, enum: [Active, New, Legacy], description: "Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability." }
         details:
@@ -2021,7 +2021,7 @@ components:
         techSheet: { type: string, maxLength: 240 }
         guideYear: { type: string, maxLength: 12 }
         descriptionSource: { type: string, maxLength: 240 }
-        websiteUrlLegacy: { type: string, maxLength: 500 }
+        websiteUrlLegacy: { type: string, maxLength: 2000, description: "Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with \" | \". Each redirects to this product once it is published." }
         availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
         listingState: { type: string, enum: [Active, New, Legacy], description: "Manual Active/New/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability." }
         publishStatus: { type: string, enum: [Published, Draft, Archived] }
@@ -2060,7 +2060,7 @@ components:
         techSheet: { type: string, maxLength: 240 }
         guideYear: { type: string, maxLength: 12 }
         descriptionSource: { type: string, maxLength: 240 }
-        websiteUrlLegacy: { type: string, maxLength: 500 }
+        websiteUrlLegacy: { type: string, maxLength: 2000, description: "Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with \" | \". Each redirects to this product once it is published." }
         availabilityOverride: { type: [string, "null"], enum: ["Good stock", "Low stock", "Very low", Unavailable, null] }
         listingState: { type: string, enum: [Active, New, Legacy], description: "Manual Active/New/Legacy listing. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability." }
         details:
@@ -2452,7 +2452,11 @@ components:
         pageHeading: { type: string }
         seoTitle: { type: string }
         seoDescription: { type: string }
+        socialTitle: { type: string }
+        socialDescription: { type: string }
+        socialImage: { type: string }
         rainfall: { type: string }
+        buyingGuide: { type: string }
         image: { type: string }
         faqs:
           type: array
@@ -2462,7 +2466,7 @@ components:
         active: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-      required: [id, parentId, slug, name, groupLabel, lead, pageHeading, seoTitle, seoDescription, rainfall, image, faqs, sortOrder, active, createdAt, updatedAt]
+      required: [id, parentId, slug, name, groupLabel, lead, pageHeading, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, rainfall, buyingGuide, image, faqs, sortOrder, active, createdAt, updatedAt]
     PublicCatalogueCategory:
       allOf:
         - $ref: "#/components/schemas/CatalogueCategory"
@@ -2481,7 +2485,11 @@ components:
         pageHeading: { type: string, maxLength: 180 }
         seoTitle: { type: string, maxLength: 180 }
         seoDescription: { type: string, maxLength: 2000 }
+        socialTitle: { type: string, maxLength: 180 }
+        socialDescription: { type: string, maxLength: 2000 }
+        socialImage: { type: string, maxLength: 500 }
         rainfall: { type: string, maxLength: 120 }
+        buyingGuide: { type: string, maxLength: 6000 }
         image: { type: string, maxLength: 500 }
         faqs:
           type: array
@@ -2501,7 +2509,11 @@ components:
         pageHeading: { type: string, maxLength: 180 }
         seoTitle: { type: string, maxLength: 180 }
         seoDescription: { type: string, maxLength: 2000 }
+        socialTitle: { type: string, maxLength: 180 }
+        socialDescription: { type: string, maxLength: 2000 }
+        socialImage: { type: string, maxLength: 500 }
         rainfall: { type: string, maxLength: 120 }
+        buyingGuide: { type: string, maxLength: 6000 }
         image: { type: string, maxLength: 500 }
         faqs:
           type: array
@@ -2571,6 +2583,9 @@ components:
       type: object
       properties:
         toPath: { type: string }
+        permanent:
+          type: boolean
+          description: Present and false when the redirect is temporary (a Legacy product page sending visitors to its category). Absent means permanent.
       required: [toPath]
     SitemapProductEntry:
       type: object
@@ -2678,6 +2693,11 @@ components:
         address: { type: string, maxLength: 240 }
         officeHours: { type: string, maxLength: 120 }
         abn: { type: string, maxLength: 20 }
+        socialLinks:
+          type: array
+          maxItems: 10
+          description: Public social media profile URLs (https). Published as sameAs in the site's structured data.
+          items: { type: string, maxLength: 300 }
     SiteSettings:
       type: object
       required: [homepage, seedGuide, about, company, updatedAt]

@@ -1344,7 +1344,11 @@ export interface CatalogueCategory {
   pageHeading: string;
   seoTitle: string;
   seoDescription: string;
+  socialTitle: string;
+  socialDescription: string;
+  socialImage: string;
   rainfall: string;
+  buyingGuide: string;
   image: string;
   /** @maxItems 20 */
   faqs: CatalogueCategoryFaq[];
@@ -1385,8 +1389,16 @@ export interface CatalogueCategoryInput {
   seoTitle: string;
   /** @maxLength 2000 */
   seoDescription: string;
+  /** @maxLength 180 */
+  socialTitle?: string;
+  /** @maxLength 2000 */
+  socialDescription?: string;
+  /** @maxLength 500 */
+  socialImage?: string;
   /** @maxLength 120 */
   rainfall: string;
+  /** @maxLength 6000 */
+  buyingGuide?: string;
   /** @maxLength 500 */
   image: string;
   /** @maxItems 20 */
@@ -1422,8 +1434,16 @@ export interface CatalogueCategoryUpdate {
   seoTitle?: string;
   /** @maxLength 2000 */
   seoDescription?: string;
+  /** @maxLength 180 */
+  socialTitle?: string;
+  /** @maxLength 2000 */
+  socialDescription?: string;
+  /** @maxLength 500 */
+  socialImage?: string;
   /** @maxLength 120 */
   rainfall?: string;
+  /** @maxLength 6000 */
+  buyingGuide?: string;
   /** @maxLength 500 */
   image?: string;
   /** @maxItems 20 */
@@ -1483,6 +1503,8 @@ export interface LegacyProductName {
 
 export interface RedirectLookup {
   toPath: string;
+  /** Present and false when the redirect is temporary (a Legacy product page sending visitors to its category). Absent means permanent. */
+  permanent?: boolean;
 }
 
 export interface SitemapProductEntry {
@@ -1652,6 +1674,12 @@ export interface SiteCompanySettings {
   officeHours: string;
   /** @maxLength 20 */
   abn: string;
+  /**
+     * Public social media profile URLs (https). Published as sameAs in the site's structured data.
+     * @maxItems 10
+     * @items.maxLength 300
+     */
+  socialLinks?: string[];
 }
 
 export interface SiteSettings {

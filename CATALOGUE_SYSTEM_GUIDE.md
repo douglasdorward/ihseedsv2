@@ -113,7 +113,7 @@ Published writes, publication, archive, restore, and leftover discard operations
 - Listing state is chosen by the administrator. It is not derived from sale-line availability.
 - Archiving is different: Archive removes the product from the public website entirely while keeping the record. Restoring an Archived product returns it to Draft.
 
-Only **Published + Active or New** products appear in the main public catalogue, the sitemap, `/llms.txt`, and `/llms-full.txt`. Those two files list the same product and article set as the sitemap and refresh within about 5 minutes of an admin change. The Pasture Selector questions are the one part stored in code (`artifacts/web/lib/pasture-selector-faqs.ts`). Published Legacy products can appear only as names in the category page’s “Also in our catalogue” section. Draft and Archived products never appear there.
+Only **Published + Active or New** products appear in the main public catalogue, the sitemap, `/llms.txt`, and `/llms-full.txt`. Those two files list the same product and article set as the sitemap and refresh within about 5 minutes of an admin change. The Pasture Selector questions are the one part stored in code (`artifacts/web/lib/pasture-selector-faqs.ts`). Published Legacy products can appear only as names in the category page’s “Also in our catalogue” section, and their own product page redirects (302) to the category page. Draft and Archived products never appear there.
 
 ## 3. PostgreSQL data model
 
@@ -156,9 +156,9 @@ Categories form a two-level hierarchy:
 - Root category
 - Optional child category/subcategory
 
-Each category stores a stable unique slug, display name, group label, public lead copy, rainfall note, image, sort order, active flag, and optional FAQs on root categories.
+Each category stores a stable unique slug, display name, group label, public lead copy, rainfall note, image, sort order, active flag, and optional FAQs and an optional buying guide on root categories.
 
-Public browsing starts at `/products`. `/products/categories` permanently redirects there. Category landings remain `/products/{category}`. Product pages are `/products/{category}/{product}`. Subcategory is an on-page filter only and is not a URL path. The root slug `categories` is reserved so it cannot collide with the old index path.
+Public browsing starts at `/products`. `/products/categories` permanently redirects there. Category landings remain `/products/{category}`. Product pages are `/products/{category}/{product}`. Each active subcategory also has its own page at `/products/{category}/{subcategory}`, which uses the category page layout with that subcategory's pill selected; product URLs never contain the subcategory. A subcategory slug is unique only inside its root, and because it shares the `/products/{category}/…` address space with products, the admin API rejects a subcategory slug that equals any product slug and a new product slug that equals any subcategory slug. The router resolves a subcategory of the root first, then a product. The root slug `categories` is reserved so it cannot collide with the old index path.
 
 Workbook imports may create missing root or child categories. Existing display names can be aligned to workbook names while preserving category IDs and slugs. Category slugs should therefore be treated as immutable public URLs, just like product slugs.
 
@@ -166,7 +166,7 @@ Workbook imports may create missing root or child categories. Existing display n
 
 Redirect records map the path from each product's current `www.irwinhunter.com.au` URL to its new canonical product path.
 
-`1 Products.website_url` is the only redirect input. Import validates that it is an HTTP(S) URL on `www.irwinhunter.com.au` (the apex host is also accepted), extracts its path, and derives the destination from the resolved category slug and product slug. Each catalogue import replaces redirects only for products in the file, including a product whose previous public path changed. Redirects for products left out of the file stay. No built-in, historical, category-change, or product-change redirects are added automatically.
+`1 Products.website_url` is the redirect input for the workbook. It may hold several old addresses separated with ` | ` (a space, a pipe, a space), up to 12 per product; each address may appear only once in the file. The back-office product editor uses the same field and the same ` | ` format, and publishing a product in the back-office also creates or removes its redirects. Import validates that each is an HTTP(S) URL on `www.irwinhunter.com.au` (the apex host is also accepted), extracts its path, and derives the destination from the resolved category slug and product slug. Each catalogue import replaces redirects only for products in the file, including a product whose previous public path changed. Redirects for products left out of the file stay. No built-in, historical, category-change, or product-change redirects are added automatically.
 
 ### Product options
 
@@ -296,7 +296,9 @@ For imports:
 
 ### Legacy URL redirect import
 
-Each nonblank `1 Products.website_url` is the old source URL. The importer extracts its path and sends it to the product's new `/products/{category-slug}/{product-slug}` path. Blank means that product has no redirect. Because the workbook replaces the complete catalogue, it also replaces the complete redirect set.
+Each nonblank `1 Products.website_url` holds one or more old source URLs (separate several with ` | `). The importer extracts each path and sends it to the product's new `/products/{category-slug}/{product-slug}` path. Blank means that product has no redirect. Because the workbook replaces the complete catalogue, it also replaces the complete redirect set.
+
+**Legacy products.** No extra column is needed. While a product's `listing_state` is Legacy, its own page `/products/{category-slug}/{product-slug}` and every old address in `website_url` redirect to the category page `/products/{category-slug}` (or `/products` if the category is inactive). These are temporary (302) redirects, so switching the product back to Active or New restores its page and the old addresses go back to a permanent (301) redirect to it. A redirect registered in the database for the product's own path overrides the category fallback.
 
 ### Export behavior
 
@@ -482,14 +484,15 @@ The following matrix groups related fields. “Publish required” means require
 | Photos | `photo_1`, `photo_2`, `photo_3` | Content & publishing | No | No | The first nonblank photo is the hero background. Every photo with a src is shown in a Photos card under the sidebar on desktop and after the description section on mobile, using its alt text or the product name. The card is omitted when none have a src. A library path reconnects that image and its alt text; any other address is stored without a library link |
 | FAQs | `10 Product FAQs` | Content & publishing (Form and Product page) | No | No | Accordion band above Also popular, max ten. Incomplete question/answer cards are hidden. Imported products receive exactly the FAQ rows supplied |
 | Also popular | `relatedProducts` slugs | Content & publishing (Form and Product page) | No | No | Chosen Active or New published products on the Also popular band, max three. A Legacy or missing pick is replaced in that slot with another current product from the same category. An empty list uses three other same-category Active or New products |
-| Legacy URL | `website_url` | Content & publishing | No | No | Old current-site URL; its path redirects to the imported category-and-slug product path |
+| Legacy URL | `website_url` | Content & publishing | No | No | Old current-site URL, or several separated with ` \| `; each path redirects to the imported category-and-slug product path |
 | SEO title | `7 Website SEO.seo_title` | SEO | No | **Yes** | Document title and metadata; `™`/`®` are stripped |
 | SEO description | `7 Website SEO.meta_description`; `1 Products` cells are currently ignored | SEO | No | **Yes** | Meta description and structured-data fallback; `™`/`®` are stripped |
 | Social sharing | `social_title`, `social_description`, `social_image` | SEO | No | No | Optional. A blank social image is saved as the first photo src on editor save and workbook import. `NULL` stores empty. Public previews still use the hero when the stored value is empty |
 | Canonical URL | `canonical_url` | SEO | No | No | Optional override of the product URL |
 | Search indexing | `robots_index` | SEO | No | No | `N` publishes with noindex |
 | Category metadata | back office | Categories admin | No | No | Managed outside the workbook |
-| Category FAQs | root category FAQ workbook, or the root category editor | Site settings → Root categories | No | No | Accordion band above “Also in our catalogue”. Import replaces FAQs only for root slugs that have at least one complete question and answer. The downloadable template lists every root category |
+| Category buying guide | category pages editor only, for a root category or a subcategory (not in the Export/Import Categories workbook) | Site settings → Category pages | No | No | Optional plain text, up to 6000 characters, blank line = new paragraph. Shown under “Choosing {category}” above the category FAQs and included in `/llms-full.txt`. Blank hides it; the automatic facts and table still show |
+| Category FAQs | category FAQ workbook, or the category pages editor (root categories and subcategories) | Site settings → Category pages | No | No | Accordion band above “Also in our catalogue” on a root page, or above the footer CTA on a subcategory page. Import Categories replaces FAQs only for categories (slug plus `parent_slug` for a subcategory) that have at least one complete question and answer, and sets the page heading, intro, SEO title, meta description and social sharing title, description and image for every category listed on the Categories sheet. Export Categories lists every root category and subcategory with its current values |
 | Lifecycle status | `status` | Product list/import | New defaults Draft | Explicit publication validated | Controls public eligibility |
 | Listing state | listing fields | Basics | Active | No | Manual Active/New/Legacy listing; public output shows Active and New products. New renders a NEW stamp |
 
@@ -558,14 +561,29 @@ Trademark marks belong on the product name. The Basics tab includes a TM button 
 The Category page:
 
 - Resolves an active root and its active children
-- Supports child-category filtering
+- Shows the children as pills. Each pill is a link to that subcategory's own page (`/products/{category}/{subcategory}`); “All” links to the root page. Pill counts always cover the whole root
 - Provides grid and comparison-table views
 - Shows cards with stock state, name, subcategory, tagline and selected fact chips. A chip is omitted when its text is longer than 40 characters, so paragraph-length values such as a full application rate stay on the product page
 - Compares rainfall, soil, pH, first sowing rate and tolerance values
-- Separates Published Legacy names into “Also in our catalogue”
-- Shows a conditional “FAQs” accordion above that band when the root category has complete question/answer pairs
+- Shows an automatic “Choosing {category}” section between the product grid and the FAQs. Its facts (type and persistency, rainfall range, soil range, pH, sowing rate, tolerances, end use, livestock and category-specific extras) and its visible comparison table are computed from the products shown on the page, so they follow the catalogue. Fields with no data are omitted and the table drops empty columns. If no product has a rainfall value, the root category’s stored rainfall note is used. The same overview is in `/llms-full.txt`
+- Shows the optional “Buying guide” text (plain paragraphs separated by a blank line) under that summary
+- Separates Published Legacy names into “Also in our catalogue”. Subcategory pages do not show this block
+- Shows a conditional “FAQs” accordion above that band when the category has complete question/answer pairs
 
-“FAQs” is omitted when the category has no complete items. Incomplete editor rows are dropped on save, not stored. Administrators can also download a root-category FAQ template, which lists every root category, and import a completed workbook. A category’s stored FAQs are replaced only when that import contains at least one complete question and answer for its slug. Blank template rows do not clear existing FAQs. Legacy entries are deliberately name-only and are not presented as currently saleable product cards.
+#### Subcategory pages
+
+`/products/{category}/{subcategory}` is a full page for an active subcategory of an active root. It is the category page with these differences, all driven by the subcategory record:
+
+- H1 is the subcategory `pageHeading`, else “{name} {root name}” (or just the name when it already contains the root name)
+- The intro under the H1 is the subcategory `lead`, else an automatic summary of its range
+- Title is the subcategory SEO title, else “{heading} Seed | IH Seeds”. Meta description is the SEO description, else the intro. Social title, description and image follow the same rules as a root category, falling back to the root's social image
+- The product grid, `ItemList` structured data, “Choosing {heading}” facts and comparison table are computed from the subcategory's products only. Category-specific facts and columns (for example clover hard seed) still follow the root category
+- The “Choosing” buying guide and the FAQs (and FAQ structured data) are the subcategory's own. They are never borrowed from the root, so a subcategory without them simply omits those sections
+- The canonical URL is the subcategory page itself, and breadcrumbs are Products / {root} / {subcategory}. Product pages show the same extra breadcrumb step for products filed under a subcategory; the product URL itself does not change
+- An active subcategory with at least one product is indexable: it is in `sitemap.xml` and `/llms.txt`/`/llms-full.txt`. An active subcategory with no products still renders but is `noindex` and left out of those lists. The rule lives in `isSubcategoryIndexable` in `lib/catalogue-paths.ts`
+- An inactive subcategory, or an unknown slug, is not a page (the redirect table, then a 404)
+
+“FAQs” is omitted when the category has no complete items. Incomplete editor rows are dropped on save, not stored. Administrators edit page heading, intro (subcategories), SEO and social copy, buying guide and FAQs for both root categories and subcategories on Site settings → Category pages. They can also use Export Categories and Import Categories on that page. The workbook opens with a Column guide sheet (not imported) that explains each column and the replace rules, then holds the FAQs sheet with every stored FAQ (a blank starter row for each category without any), a Categories sheet with each root category and subcategory's current page heading, intro, SEO title, meta description and social sharing title, description and image, and an Agent prompt. A subcategory is identified by `slug` plus `parent_slug` (its root's slug; blank for a root), because subcategory slugs repeat across roots. The edited workbook can be imported back; workbooks exported before subcategories existed (a `Root categories` sheet, no `parent_slug`) still import. On the Categories sheet, every listed category is set to what its `page_heading`, `intro`, `seo_title`, `seo_description`, `social_title`, `social_description` and `social_image` cells say (a blank cell clears the field so the page uses its default); the other columns are labels. A category’s stored FAQs are replaced only when the import contains at least one complete question and answer for it, and blank starter rows do not clear existing FAQs. Legacy entries are deliberately name-only and are not presented as currently saleable product cards.
 
 ### Product detail page
 
@@ -598,6 +616,8 @@ The current public hierarchy is:
 - Product JSON-LD contains the public name, IH Seeds brand, public description, image URLs for every attached photo (or the single hero/fallback image when there are none), and selected Quick facts.
 - When a product has complete FAQs, the page also emits FAQPage JSON-LD for those question/answer pairs.
 - When a category page has complete FAQs, it also emits FAQPage JSON-LD for those question/answer pairs.
+- Every page emits one site-wide JSON-LD graph with Organization, LocalBusiness and WebSite nodes, built from Site settings → Company details. The same page holds up to ten social media profile URLs (https only, duplicates and blank rows dropped; bare addresses such as `facebook.com/page` are completed). They are published as `sameAs` on Organization and LocalBusiness, and are not shown as links on the site. Opening hours are published only when Office hours reads like “Monday to Friday, 8am–5pm AWST”.
+- A category page’s ItemList JSON-LD lists each product with its URL, first photo (when there is one) and tagline (when there is one).
 - The sitemap contains the same Published + Active or New product set as the main catalogue, excluding products with search indexing turned off.
 - `/llms.txt` and `/llms-full.txt` list that same product set and the same indexable articles. They are rebuilt from the public API on each request and cached for about 5 minutes. Pasture Selector FAQs are the exception: they live in `artifacts/web/lib/pasture-selector-faqs.ts`.
 - Redirect lookup supports valid legacy paths; the application issues permanent redirects for mapped routes.
@@ -656,6 +676,7 @@ After that upload, the running implementation was refined further:
 - Public copy hierarchy of Tagline, Blurb, Key attributes, Description and conditional Distribution note
 - Optional product FAQs above Also popular
 - Optional category FAQs above “Also in our catalogue”
+- Automatic category “Choosing …” facts and comparison table, plus an optional admin-written buying guide, above the category FAQs
 - Quick facts combined with approved sale/pricing context
 - Workbook-specific Mix component descriptions
 - “Also popular” recommendations

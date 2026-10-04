@@ -17,7 +17,11 @@ export interface CatalogueCategory {
   pageHeading: string;
   seoTitle: string;
   seoDescription: string;
+  socialTitle: string;
+  socialDescription: string;
+  socialImage: string;
   rainfall: string;
+  buyingGuide: string;
   image: string;
   /** @maxItems 20 */
   faqs: CatalogueCategoryFaq[];

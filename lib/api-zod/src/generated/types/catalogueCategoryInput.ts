@@ -33,8 +33,16 @@ export interface CatalogueCategoryInput {
   seoTitle: string;
   /** @maxLength 2000 */
   seoDescription: string;
+  /** @maxLength 180 */
+  socialTitle?: string;
+  /** @maxLength 2000 */
+  socialDescription?: string;
+  /** @maxLength 500 */
+  socialImage?: string;
   /** @maxLength 120 */
   rainfall: string;
+  /** @maxLength 6000 */
+  buyingGuide?: string;
   /** @maxLength 500 */
   image: string;
   /** @maxItems 20 */

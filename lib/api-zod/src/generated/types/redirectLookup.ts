@@ -8,4 +8,6 @@
 
 export interface RedirectLookup {
   toPath: string;
+  /** Present and false when the redirect is temporary (a Legacy product page sending visitors to its category). Absent means permanent. */
+  permanent?: boolean;
 }

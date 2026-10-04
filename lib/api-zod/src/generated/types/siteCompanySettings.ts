@@ -21,4 +21,10 @@ export interface SiteCompanySettings {
   officeHours: string;
   /** @maxLength 20 */
   abn: string;
+  /**
+     * Public social media profile URLs (https). Published as sameAs in the site's structured data.
+     * @maxItems 10
+     * @items.maxLength 300
+     */
+  socialLinks?: string[];
 }

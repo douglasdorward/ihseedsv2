@@ -5098,21 +5098,21 @@ export const useReorderCategories = <TError = ErrorType<void>,
       return useMutation(getReorderCategoriesMutationOptions(options));
     }
 
-export const getDownloadCategoryFaqImportTemplateUrl = () => {
+export const getExportCategoryFaqsUrl = () => {
 
 
 
 
-  return `/api/admin/categories/faqs/import/template`
+  return `/api/admin/categories/faqs/export`
 }
 
 /**
- * The template lists every root category so FAQ copy can be written for those pages.
- * @summary Download the root category FAQ Excel import template
+ * The workbook opens with a Column guide sheet that explains how the file works. It holds every stored category FAQ, a blank starter row for each root category and sub-category without FAQs, and the list of root categories and sub-categories (identified by slug and parent_slug) with their page heading, intro, SEO title, meta description and social sharing title, description and image.
+ * @summary Export the categories as an Excel workbook
  */
-export const downloadCategoryFaqImportTemplate = async ( options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+export const exportCategoryFaqs = async ( options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
 
-  return customFetch<Blob>(getDownloadCategoryFaqImportTemplateUrl(),
+  return customFetch<Blob>(getExportCategoryFaqsUrl(),
   {
     ...options,
     method: 'GET'
@@ -5125,45 +5125,45 @@ export const downloadCategoryFaqImportTemplate = async ( options?: Parameters<ty
 
 
 
-export const getDownloadCategoryFaqImportTemplateQueryKey = () => {
+export const getExportCategoryFaqsQueryKey = () => {
     return [
-    `/api/admin/categories/faqs/import/template`
+    `/api/admin/categories/faqs/export`
     ] as const;
     }
 
 
-export const getDownloadCategoryFaqImportTemplateQueryOptions = <TData = Awaited<ReturnType<typeof downloadCategoryFaqImportTemplate>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadCategoryFaqImportTemplate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getExportCategoryFaqsQueryOptions = <TData = Awaited<ReturnType<typeof exportCategoryFaqs>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportCategoryFaqs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getDownloadCategoryFaqImportTemplateQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getExportCategoryFaqsQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadCategoryFaqImportTemplate>>> = ({ signal }) => downloadCategoryFaqImportTemplate({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportCategoryFaqs>>> = ({ signal }) => exportCategoryFaqs({ signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadCategoryFaqImportTemplate>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportCategoryFaqs>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type DownloadCategoryFaqImportTemplateQueryResult = NonNullable<Awaited<ReturnType<typeof downloadCategoryFaqImportTemplate>>>
-export type DownloadCategoryFaqImportTemplateQueryError = ErrorType<unknown>
+export type ExportCategoryFaqsQueryResult = NonNullable<Awaited<ReturnType<typeof exportCategoryFaqs>>>
+export type ExportCategoryFaqsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Download the root category FAQ Excel import template
+ * @summary Export the categories as an Excel workbook
  */
 
-export function useDownloadCategoryFaqImportTemplate<TData = Awaited<ReturnType<typeof downloadCategoryFaqImportTemplate>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadCategoryFaqImportTemplate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useExportCategoryFaqs<TData = Awaited<ReturnType<typeof exportCategoryFaqs>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportCategoryFaqs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getDownloadCategoryFaqImportTemplateQueryOptions(options)
+  const queryOptions = getExportCategoryFaqsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -5262,7 +5262,7 @@ export const getDryRunCategoryFaqImportUrl = () => {
 }
 
 /**
- * @summary Validate a root category FAQ Excel import
+ * @summary Validate a root category Excel import
  */
 export const dryRunCategoryFaqImport = async (workbookUpload: WorkbookUpload, options?: Parameters<typeof customFetch>[1]): Promise<CategoryFaqImportReport> => {
 
@@ -5311,7 +5311,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DryRunCategoryFaqImportMutationError = ErrorType<ApiError>
 
     /**
- * @summary Validate a root category FAQ Excel import
+ * @summary Validate a root category Excel import
  */
 export const useDryRunCategoryFaqImport = <TError = ErrorType<ApiError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dryRunCategoryFaqImport>>, TError,{data: BodyType<WorkbookUpload>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -5333,7 +5333,7 @@ export const getCommitCategoryFaqImportUrl = () => {
 }
 
 /**
- * @summary Commit a validated root category FAQ Excel import
+ * @summary Commit a validated root category Excel import
  */
 export const commitCategoryFaqImport = async (workbookCommit: WorkbookCommit, options?: Parameters<typeof customFetch>[1]): Promise<CategoryFaqImportReport> => {
 
@@ -5382,7 +5382,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CommitCategoryFaqImportMutationError = ErrorType<ApiError>
 
     /**
- * @summary Commit a validated root category FAQ Excel import
+ * @summary Commit a validated root category Excel import
  */
 export const useCommitCategoryFaqImport = <TError = ErrorType<ApiError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof commitCategoryFaqImport>>, TError,{data: BodyType<WorkbookCommit>}, TContext>, request?: SecondParameter<typeof customFetch>}
