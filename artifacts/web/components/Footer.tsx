@@ -75,6 +75,7 @@ export function Footer({
           <div>
             <p className="footer-column-title">Company</p>
             <Link href="/about" className="footer-link" data-testid="footer-story">Our Story</Link>
+            <Link href="/australian-seed-federation" className="footer-link" data-testid="footer-seed-federation">Seed Federation</Link>
             <Link href="/contact" className="footer-link" data-testid="footer-contact">Contact</Link>
             <Link href="/contact#locations" className="footer-link" data-testid="footer-reseller">Find a reseller</Link>
             <Link href="/privacy" className="footer-link" data-testid="footer-privacy">Privacy</Link>

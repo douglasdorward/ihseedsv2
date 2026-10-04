@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CoverImage } from "../../components/CoverImage";
+import { FederationSection } from "../../components/FederationSection";
 import { Icon } from "../../components/Icon";
 import { getProducts } from "../../lib/catalogue";
 import { expandProductCount, FALLBACK_SITE_SETTINGS, loadSiteSettings, publicMediaSrc } from "../../lib/site-settings";
@@ -71,6 +72,8 @@ export default async function About() {
           </div>
         </div>
       </section>
+
+      <FederationSection />
 
       <section style={{ background: "#FFFFFF" }}>
         <div className="page-wide" style={{ maxWidth: 1440, margin: "0 auto", padding: "96px 40px" }}>

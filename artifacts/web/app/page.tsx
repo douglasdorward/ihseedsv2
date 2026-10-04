@@ -7,6 +7,7 @@ import { StatusPill } from "../components/StatusPill";
 import { getArticles, getCategories, getProducts, type CatalogueArticle } from "../lib/catalogue";
 import { CATALOGUE_INDEX_PATH, productPublicPath } from "../lib/catalogue-paths";
 import { HomeHero } from "../components/HomeHero";
+import { FederationSection } from "../components/FederationSection";
 import { expandProductCount, FALLBACK_SITE_SETTINGS, loadSiteSettings, publicMediaSrc, resolveBestSellers, resolveHomepageHeroSlides } from "../lib/site-settings";
 import { hasProductPhoto, productCardImage, productImageAlt } from "./products/product-card-facts";
 import { siteSocialMetadata } from "../lib/social-metadata";
@@ -123,6 +124,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <FederationSection />
 
       <section id="about" className="section about-section">
         <div className="feature-panel">

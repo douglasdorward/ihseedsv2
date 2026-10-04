@@ -85,6 +85,9 @@ const nextConfig = {
     return [
       { source: "/asf-accredited-224.webp", headers: immutable },
       { source: "/celebrating-60-years-580.webp", headers: immutable },
+      { source: "/asf-member.webp", headers: immutable },
+      { source: "/asf-code-of-practice-440.webp", headers: immutable },
+      { source: "/ih-seeds-60-years-640.webp", headers: immutable },
       { source: "/:path*", headers: security },
     ];
   },

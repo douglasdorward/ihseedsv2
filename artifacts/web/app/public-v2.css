@@ -1,4 +1,120 @@
 /* V2 Public specific additions while preserving existing visual language */
+
+/* Australian Seed Federation membership and heritage */
+.federation-section { background: var(--cream); }
+.federation-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 96px 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 64px;
+  align-items: center;
+}
+.federation-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 20px; }
+.federation-eyebrow {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+.federation-copy h1,
+.federation-copy h2 {
+  margin: 0;
+  color: var(--green);
+  font-size: 44px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.federation-copy h1 span,
+.federation-copy h2 span { font-weight: 300; }
+.federation-copy p { margin: 0; max-width: 54ch; font-size: 18px; line-height: 1.7; color: var(--black-green); }
+.federation-logos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.federation-logo-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(29, 40, 28, 0.06);
+}
+.federation-logo-card.is-member { grid-column: 1 / -1; padding: 32px 40px; }
+.federation-logo-card img { display: block; max-width: 100%; height: auto; }
+.federation-logo-card.is-member img { width: 100%; max-width: 360px; }
+.federation-logo-card.is-seal img { width: 100%; max-width: 190px; }
+.federation-logo-card.is-anniversary img { width: 100%; max-width: 230px; }
+
+.federation-inner { padding-bottom: 64px; }
+.federation-explainer {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 40px 96px;
+}
+.federation-explainer-heading {
+  margin: 0 0 28px;
+  padding-top: 48px;
+  border-top: 1px solid rgba(12, 88, 60, 0.18);
+  color: var(--green);
+  font-size: 28px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+.federation-explainer-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+}
+.federation-explainer-item { display: flex; flex-direction: column; gap: 10px; }
+.federation-explainer-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  background: var(--yellow);
+  color: var(--green);
+}
+.federation-explainer-item h3 { margin: 0; color: var(--green); font-size: 19px; line-height: 1.3; font-weight: 700; }
+.federation-explainer-item p { margin: 0; font-size: 16px; line-height: 1.65; color: var(--black-green); }
+.federation-why {
+  max-width: 760px;
+  margin-top: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.federation-why h2 { margin: 0; color: var(--green); font-size: 28px; line-height: 1.25; font-weight: 700; }
+.federation-why p { margin: 0; font-size: 17px; line-height: 1.75; color: var(--black-green); }
+.federation-why-actions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; }
+.federation-why-actions .button { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+
+@media (max-width: 1000px) {
+  .federation-explainer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+}
+@media (max-width: 900px) {
+  .federation-inner { grid-template-columns: 1fr; gap: 40px; padding: 64px 24px 48px; }
+  .federation-copy h1,
+  .federation-copy h2 { font-size: 34px; }
+  .federation-explainer { padding: 0 24px 64px; }
+}
+@media (max-width: 560px) {
+  .federation-explainer-grid { grid-template-columns: 1fr; }
+  .federation-explainer-heading { font-size: 24px; }
+}
+@media (max-width: 480px) {
+  .federation-logos { gap: 12px; }
+  .federation-logo-card { padding: 18px; }
+  .federation-logo-card.is-member { padding: 24px; }
+}
 .feature-panel {
   display: flex;
   background: var(--green);
