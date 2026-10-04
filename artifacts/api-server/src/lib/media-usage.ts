@@ -209,13 +209,9 @@ export function isProtectedMediaReference(ref: MediaRefLike) {
   return isProductHeroReference(ref);
 }
 
-function photosLookEqual(left: ProductPhoto[] | undefined, right: ProductPhoto[]) {
-  const current = left ?? [];
-  if (current.length !== right.length) return false;
-  return current.every((photo, index) => (
-    (photo.assetId?.trim() || "") === (right[index]?.assetId?.trim() || "")
-    && (photo.src?.trim() || "") === (right[index]?.src?.trim() || "")
-  ));
+function productUsesAssets(details: Product["details"], ids: Set<string>, srcs: Set<string>) {
+  if (matchesAsset(null, details.socialImage, ids, srcs)) return true;
+  return (details.photos ?? []).some((photo) => matchesAsset(photo.assetId, photo.src, ids, srcs));
 }
 
 export async function unlinkAndDeleteMediaRecords(ids: string[]): Promise<MediaAsset[]> {
@@ -237,9 +233,12 @@ export async function unlinkAndDeleteMediaRecords(ids: string[]): Promise<MediaA
       publishStatus: productsTable.publishStatus,
       details: productsTable.details,
     }).from(productsTable);
+    const deletedSrcs = publicSrcs(idSet);
     for (const product of products) {
+      // Only products that actually use a deleted image are rewritten; others
+      // keep their photo list (including blank slots) and change time as-is.
+      if (!productUsesAssets(product.details, idSet, deletedSrcs)) continue;
       const details = detailsWithoutAssets(product.details, idSet);
-      if (photosLookEqual(product.details.photos, details.photos) && details.socialImage === product.details.socialImage) continue;
       const [saved] = await tx.update(productsTable).set({
         details,
         updatedAt: new Date(),

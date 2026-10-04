@@ -408,6 +408,52 @@ test("confirmed delete also clears references from older site versions", async (
   assert.equal(sql(`SELECT count(*) FROM ih_media_references WHERE asset_id IN (${quoted(staleId)}, ${quoted(otherId)})`), "0");
 });
 
+test("deleting an image only re-saves products that used it", async (t) => {
+  if (!process.env.DATABASE_URL) {
+    t.skip("DATABASE_URL is not set");
+    return;
+  }
+  const newProduct = async (label) => {
+    const created = assertStatus(await request("POST", "/products", {
+      name: `Media delete scope ${label} ${testRunId}`,
+      slug: `media-delete-scope-${label}-${testRunId}`,
+      price: "",
+      packSize: "",
+      status: "in-stock",
+      note: "",
+      category: "Automated tests",
+      subcategoryId: null,
+      techSheet: "",
+      details: { recordType: "Variety" },
+    }), 201);
+    createdProductIds.push(created.id);
+    return created;
+  };
+  const using = await newProduct("using");
+  const unrelated = await newProduct("unrelated");
+  const doomed = assertStatus((await uploadPng(`delete-scope-doomed-${testRunId}.png`)).completed, 200);
+  const kept = assertStatus((await uploadPng(`delete-scope-kept-${testRunId}.png`, PNG_RED_1X1)).completed, 200);
+  assertStatus(await request("POST", `/admin/media/${doomed.id}/attach`, { productId: using.id }), 200);
+
+  // The unrelated product keeps a raw photo list with a blank slot that the
+  // delete's slot tidying would otherwise rewrite.
+  const rawPhotos = JSON.stringify([
+    { slot: "Photo 1 · Hero", file: kept.originalFilename, rating: "", src: `/api/media/${kept.id}`, assetId: kept.id, role: "hero" },
+    { slot: "Photo 2", file: "", rating: "", src: "" },
+  ]);
+  sql(`UPDATE ih_products SET details = jsonb_set(details, '{photos}', ${quoted(rawPhotos)}::jsonb), updated_at = '2020-01-01T00:00:00Z' WHERE id = ${unrelated.id}`);
+  const unrelatedBefore = sql(`SELECT details->'photos' FROM ih_products WHERE id = ${unrelated.id}`);
+
+  assertStatus(await request("DELETE", `/admin/media/${doomed.id}`, { confirm: true }), 204);
+
+  assert.equal(sql(`SELECT updated_at = '2020-01-01T00:00:00Z' FROM ih_products WHERE id = ${unrelated.id}`), "t");
+  assert.equal(sql(`SELECT details->'photos' FROM ih_products WHERE id = ${unrelated.id}`), unrelatedBefore);
+  const usingAfter = assertStatus(await request("GET", `/admin/products/${using.id}`), 200);
+  assert.equal(usingAfter.details.photos[0]?.assetId ?? "", "");
+  assert.equal(usingAfter.details.photos[0]?.src ?? "", "");
+  assert.notEqual(sql(`SELECT updated_at = '2020-01-01T00:00:00Z' FROM ih_products WHERE id = ${using.id}`), "t");
+});
+
 test("attach inserts the new image as hero and shifts existing photos", async (t) => {
   if (!process.env.DATABASE_URL) {
     t.skip("DATABASE_URL is not set");
