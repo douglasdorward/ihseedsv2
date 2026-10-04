@@ -1301,6 +1301,32 @@
     padding: max(24px, env(safe-area-inset-top)) 24px 16px;
     background: #fff;
   }
+  .product-filter-drawer-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .product-filter-drawer-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-right: -10px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--green);
+    cursor: pointer;
+  }
+  .product-filter-drawer-close:hover {
+    background: var(--sage);
+  }
+  .product-filter-drawer-close:focus-visible {
+    outline: 3px solid var(--yellow);
+    outline-offset: 2px;
+  }
   .product-filter-drawer-actions {
     display: flex;
     align-items: center;

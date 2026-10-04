@@ -119,6 +119,15 @@ export function ProductsListing({
     resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [current.page]);
 
+  useEffect(() => {
+    if (!filtersOpen) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setFiltersOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [filtersOpen]);
+
   const activeFilterCount = filters.category.length + filters.endUse.length + filters.livestock.length
     + filters.tolerance.length + filters.soil.length + filters.sowing.length
     + (filters.rainfall != null ? 1 : 0) + (filters.persistence ? 1 : 0);
@@ -260,7 +269,17 @@ export function ProductsListing({
         <div className="product-filter-drawer" onClick={() => setFiltersOpen(false)}>
           <div className="product-filter-drawer-panel" onClick={(event) => event.stopPropagation()}>
             <div className="product-filter-sidebar-header">
-              <h2>Filters</h2>
+              <div className="product-filter-drawer-title">
+                <h2>Filters</h2>
+                <button
+                  type="button"
+                  className="product-filter-drawer-close"
+                  aria-label="Close filters"
+                  onClick={() => setFiltersOpen(false)}
+                >
+                  <Icon name="close" size={22} />
+                </button>
+              </div>
               <div className="product-filter-drawer-actions">
                 <button type="button" className="button button-primary" onClick={() => setFiltersOpen(false)}>
                   Show {visibleProducts.length} {visibleProducts.length === 1 ? "product" : "products"}
