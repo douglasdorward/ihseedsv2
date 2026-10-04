@@ -1,6 +1,13 @@
 import type { MetadataRoute } from "next";
 import type { CatalogueArticle, CatalogueCategory, CatalogueProduct, SitemapProductEntry } from "./catalogue";
-import { CATALOGUE_INDEX_PATH, productPublicPath } from "./catalogue-paths";
+import {
+  CATALOGUE_INDEX_PATH,
+  activeSubcategories,
+  categoryPublicPath,
+  isSubcategoryIndexable,
+  productPublicPath,
+  subcategoryPublicPath,
+} from "./catalogue-paths";
 import { productCanonicalUrl } from "./product-url";
 import { absoluteSiteUrl } from "./site-url";
 
@@ -13,6 +20,7 @@ export const SITEMAP_STATIC_PATHS = [
   "/guide",
   "/pasture-selector",
   "/about",
+  "/australian-seed-federation",
   "/contact",
   "/privacy",
   "/terms-and-conditions",
@@ -41,7 +49,10 @@ export function buildPublicSitemap(input: {
 
   for (const category of input.categories) {
     if (category.parentId !== null || !category.active || (category.productCount ?? 0) <= 0) continue;
-    entries.push(entry(absoluteSiteUrl(`/products/${category.slug}`)));
+    entries.push(entry(absoluteSiteUrl(categoryPublicPath(category))));
+    for (const sub of activeSubcategories(input.categories, category.id)) {
+      if (isSubcategoryIndexable(sub)) entries.push(entry(absoluteSiteUrl(subcategoryPublicPath(category, sub))));
+    }
   }
 
   for (const product of input.products) {

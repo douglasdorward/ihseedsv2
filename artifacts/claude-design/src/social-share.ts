@@ -5,7 +5,7 @@ export const SOCIAL_IMAGE_HEIGHT = 630;
 export const APPLE_TOUCH_ICON = "/apple-touch-icon.png";
 export const PUBLIC_DEFAULT_SOCIAL_IMAGE = "/social-share-default.jpg";
 
-export function socialSourceLabel(source: SocialImageSource, kind: "product" | "article" = "product"): string {
+export function socialSourceLabel(source: SocialImageSource, kind: "product" | "article" | "category" = "product"): string {
   switch (source) {
     case "override": return "Custom sharing image";
     case "hero": return kind === "article" ? "Article hero image" : "First product photo";

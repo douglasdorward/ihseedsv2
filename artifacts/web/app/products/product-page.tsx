@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { ContentImage, CoverImage } from "../../components/CoverImage";
 import { Icon } from "../../components/Icon";
 import { ProductNewStamp } from "../../components/NewStamp";
@@ -10,14 +10,20 @@ import {
   getCategories,
   getProductBySlug,
   getProducts,
-  getRedirect,
+  getRedirectTarget,
   getResellers,
   productPageHeading,
   saleLinePackLabels,
-  type CatalogueCategory,
   type CatalogueProduct,
 } from "../../lib/catalogue";
-import { CATALOGUE_INDEX_PATH, categoryPublicPath, productPublicPath, rootCategoryForProduct } from "../../lib/catalogue-paths";
+import {
+  CATALOGUE_INDEX_PATH,
+  categoryPublicPath,
+  productPublicPath,
+  rootCategoryForProduct,
+  subcategoryForProduct,
+  subcategoryPublicPath,
+} from "../../lib/catalogue-paths";
 import { resolveAlsoPopular } from "../../lib/also-popular";
 import { getProductQuickFacts } from "../../lib/product-quick-facts";
 import { productCanonicalUrl } from "../../lib/product-url";
@@ -78,12 +84,8 @@ function completeProductFaqs(faqs: CatalogueProduct["details"]["faqs"]) {
     .slice(0, 10);
 }
 
-function childCategoryPath(categories: CatalogueCategory[], categorySlug: string, childSlug: string) {
-  const root = categories.find((category) => category.parentId === null && category.slug === categorySlug);
-  if (!root) return null;
-  return categories.some((category) => category.parentId === root.id && category.slug === childSlug)
-    ? categoryPublicPath(root)
-    : null;
+function followRedirect({ toPath, permanent }: { toPath: string; permanent: boolean }): never {
+  return permanent ? permanentRedirect(toPath) : redirect(toPath);
 }
 
 async function productForNestedRoute(params: RouteParams) {
@@ -96,13 +98,10 @@ async function productForNestedRoute(params: RouteParams) {
     return { product, categories, canonical };
   }
 
-  const childPath = childCategoryPath(categories, params.category, params.product);
-  if (childPath) permanentRedirect(childPath);
-
-  const nestedRedirect = await getRedirect(`/products/${params.category}/${params.product}`);
-  if (nestedRedirect) permanentRedirect(nestedRedirect);
-  const legacyRedirect = await getRedirect(`/product/${params.product}`);
-  if (legacyRedirect) permanentRedirect(legacyRedirect);
+  const nestedRedirect = await getRedirectTarget(`/products/${params.category}/${params.product}`);
+  if (nestedRedirect) followRedirect(nestedRedirect);
+  const legacyRedirect = await getRedirectTarget(`/product/${params.product}`);
+  if (legacyRedirect) followRedirect(legacyRedirect);
   notFound();
 }
 
@@ -149,6 +148,9 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
   const canonicalHref = productCanonicalUrl(details.canonicalUrl, canonical);
   const root = rootCategoryForProduct(product, categories);
   const categoryUrl = root ? categoryPublicPath(root) : CATALOGUE_INDEX_PATH;
+  const filed = subcategoryForProduct(product, categories);
+  const subcategory = root && filed && filed.root.id === root.id ? filed.sub : null;
+  const subcategoryUrl = root && subcategory ? subcategoryPublicPath(root, subcategory) : null;
   const defaultLine = defaultSaleLine(product);
   const listedPrice = defaultLine?.priceDisplay?.trim() || "";
   const packLabels = saleLinePackLabels(product);
@@ -180,7 +182,10 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Products", item: absoluteSiteUrl(CATALOGUE_INDEX_PATH) },
       { "@type": "ListItem", position: 2, name: product.category, item: absoluteSiteUrl(categoryUrl) },
-      { "@type": "ListItem", position: 3, name: product.name, item: absoluteSiteUrl(canonicalHref) },
+      ...(subcategory && subcategoryUrl
+        ? [{ "@type": "ListItem", position: 3, name: subcategory.name, item: absoluteSiteUrl(subcategoryUrl) }]
+        : []),
+      { "@type": "ListItem", position: subcategory ? 4 : 3, name: product.name, item: absoluteSiteUrl(canonicalHref) },
     ],
   };
   const faqJsonLd = faqs.length > 0 ? {
@@ -204,6 +209,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
         <div className="product-hero-content" style={{ maxWidth: 1180, margin: "0 auto", padding: "150px 40px 64px", display: "flex", flexDirection: "column", gap: 20 }}>
           <nav aria-label="Breadcrumb" style={{ color: "var(--yellow)", fontSize: 14, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase" }}>
             <Link href={CATALOGUE_INDEX_PATH}>Products</Link> › <Link href={categoryUrl}>{product.category}</Link>
+            {subcategory && subcategoryUrl && <> › <Link href={subcategoryUrl}>{subcategory.name}</Link></>}
           </nav>
           <h1 style={{ color: "#fff", fontSize: "clamp(44px,6vw,64px)", lineHeight: 1.05, fontWeight: 700, maxWidth: "20ch" }}>{productPageHeading(product)}</h1>
           {details.tagline && <p className="product-hero-tagline">{details.tagline}</p>}

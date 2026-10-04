@@ -37,8 +37,8 @@ const sections = [
   {
     href: "/admin/site-settings/categories",
     icon: "sprout",
-    title: "Root categories",
-    body: "Edit search titles, meta descriptions and ten general FAQs for every root category page, or import FAQs from a template that lists those categories.",
+    title: "Category pages",
+    body: "Edit search titles, meta descriptions, buying guides and ten general FAQs for every root category and sub-category page, or use Export Categories and Import Categories to edit that copy and the FAQs in an Excel workbook.",
     action: "Open root editor",
   },
   {

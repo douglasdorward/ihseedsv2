@@ -27,6 +27,7 @@ const clovers: CatalogueCategory = {
   name: "Clovers",
   lead: "Annual clovers for WA.",
   sortOrder: 1,
+  buyingGuide: "Sow early.\n\nGraze after\nflowering.",
   faqs: [
     { question: "What is hard seed?", answer: "Seed that stays dormant." },
     { question: "Blank", answer: "   " },
@@ -237,6 +238,8 @@ test("the full file includes FAQ answers and quick facts, and omits prices and s
     ],
     articles: [article({ body: "<p>Do not print the HTML body</p>" })],
   }));
+  assert.match(full, /\*\*At a glance\*\*\n\n- Type & persistency: Annual\n- Rainfall: 500 mm\+ annual rainfall/);
+  assert.match(full, /\*\*Choosing Clovers\*\*\n\nSow early\.\n\nGraze after flowering\./);
   assert.match(full, /#### When\?\n\nOn the break\./);
   assert.match(full, /#### What is hard seed\?\n\nSeed that stays dormant\./);
   assert.match(full, /- Type & persistency: Annual/);
@@ -252,4 +255,37 @@ test("the full file includes FAQ answers and quick facts, and omits prices and s
   assert.equal(full.includes("$18.00"), false);
   assert.equal(full.includes("Do not print the HTML body"), false);
   assert.equal(full.includes("stockCode"), false);
+});
+
+test("sub-category pages are listed with their own FAQs and overview", () => {
+  const aerial: CatalogueCategory = {
+    ...clovers,
+    id: 10,
+    parentId: 1,
+    slug: "aerial-seeded-annual",
+    name: "Aerial-seeded annual",
+    lead: "Annual clovers for aerial sowing.",
+    buyingGuide: "Broadcast after the break.",
+    faqs: [{ question: "Can I broadcast it?", answer: "Yes, onto a rough seedbed." }],
+    productCount: 1,
+  };
+  const empty: CatalogueCategory = { ...aerial, id: 11, slug: "empty", name: "Empty", productCount: 0, faqs: [{ question: "Q", answer: "A" }] };
+  const data = input({
+    categories: [clovers, ryegrass, aerial, empty],
+    products: [
+      product({ name: "Balansa", slug: "balansa", category: "Clovers", subcategoryId: 10 }),
+      product({ id: 2, name: "Crimson", slug: "crimson", category: "Clovers" }),
+    ],
+  });
+
+  const text = buildLlmsTxt(data);
+  assert.match(text, /\[Clovers: Aerial-seeded annual\]\(https:\/\/irwinhunter\.com\.au\/products\/clovers\/aerial-seeded-annual\): 1 line/);
+  assert.match(text, /\[Clovers: Aerial-seeded annual\]\(https:\/\/irwinhunter\.com\.au\/products\/clovers\/aerial-seeded-annual#faqs\): 1 question/);
+  assert.equal(text.includes("products/clovers/empty"), false);
+
+  const full = buildLlmsFullTxt(data);
+  assert.match(full, /#### Aerial-seeded annual Clovers\n\nhttps:\/\/irwinhunter\.com\.au\/products\/clovers\/aerial-seeded-annual\n/);
+  assert.match(full, /\*\*Choosing Aerial-seeded annual Clovers\*\*\n\nBroadcast after the break\./);
+  assert.match(full, /##### Can I broadcast it\?\n\nYes, onto a rough seedbed\./);
+  assert.equal(full.includes("products/clovers/empty"), false);
 });

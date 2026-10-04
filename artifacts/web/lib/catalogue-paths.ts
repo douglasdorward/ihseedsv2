@@ -13,6 +13,61 @@ export function categoryPublicPath(category: Pick<CatalogueCategory, "slug">) {
   return `/products/${category.slug}`;
 }
 
+export function subcategoryPublicPath(
+  root: Pick<CatalogueCategory, "slug">,
+  sub: Pick<CatalogueCategory, "slug">,
+) {
+  return `/products/${root.slug}/${sub.slug}`;
+}
+
+/** The active root category with this slug, or null. */
+export function findRootCategory(categories: CatalogueCategory[], rootSlug: string) {
+  return categories.find(
+    (category) => category.parentId === null && category.active && category.slug === rootSlug,
+  ) ?? null;
+}
+
+/** Active sub-categories of a root, in admin order. */
+export function activeSubcategories(categories: CatalogueCategory[], rootId: number) {
+  return categories
+    .filter((category) => category.parentId === rootId && category.active)
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+}
+
+/**
+ * Resolves /products/{rootSlug}/{subSlug} to a sub-category page target.
+ * Sub-category slugs are only unique within their root, so both are required.
+ */
+export function findSubcategory(categories: CatalogueCategory[], rootSlug: string, subSlug: string) {
+  const root = findRootCategory(categories, rootSlug);
+  if (!root) return null;
+  const sub = categories.find(
+    (category) => category.parentId === root.id && category.active && category.slug === subSlug,
+  );
+  return sub ? { root, sub } : null;
+}
+
+/** The active sub-category a product is filed under, with its root. */
+export function subcategoryForProduct(
+  product: Pick<CatalogueProduct, "subcategoryId" | "category">,
+  categories: CatalogueCategory[],
+) {
+  if (product.subcategoryId == null) return null;
+  const sub = categories.find((category) => category.id === product.subcategoryId && category.active);
+  if (!sub || sub.parentId === null) return null;
+  const root = categories.find((category) => category.id === sub.parentId && category.active);
+  return root ? { root, sub } : null;
+}
+
+/**
+ * The single place that decides whether a sub-category page is offered to
+ * search engines (sitemap, llms.txt, robots meta). An empty page is never
+ * indexed; tighten this one function to add further guards.
+ */
+export function isSubcategoryIndexable(sub: Pick<CatalogueCategory, "active" | "productCount">) {
+  return sub.active && (sub.productCount ?? 0) > 0;
+}
+
 export type NavCategory = Pick<CatalogueCategory, "name" | "slug">;
 
 const FEATURED_NAV_LIMIT = 6;

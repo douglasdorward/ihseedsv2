@@ -1,11 +1,14 @@
-import { notFound, permanentRedirect } from "next/navigation";
-import { getRedirect } from "../../../lib/catalogue";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
+import { getRedirectTarget } from "../../../lib/catalogue";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export default async function LegacyProductRedirect({ params }: Props) {
   const { slug } = await params;
-  const redirect = await getRedirect(`/product/${slug}`);
-  if (redirect) permanentRedirect(redirect);
+  const target = await getRedirectTarget(`/product/${slug}`);
+  if (target) {
+    if (target.permanent) permanentRedirect(target.toPath);
+    redirect(target.toPath);
+  }
   notFound();
 }

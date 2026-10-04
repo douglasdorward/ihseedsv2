@@ -1036,6 +1036,118 @@
   background: rgba(0,0,0,0.02);
 }
 
+.category-glance {
+  background: var(--sage);
+  padding: 72px 40px;
+}
+.category-glance-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.category-glance h2 {
+  margin: 0;
+  color: var(--green);
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.1;
+}
+.category-glance h3 {
+  margin: 16px 0 0;
+  color: var(--green);
+  font-size: 24px;
+  line-height: 1.2;
+}
+.category-glance-summary,
+.category-glance-guide p,
+.category-glance-links {
+  margin: 0;
+  max-width: 72ch;
+  color: var(--black-green);
+  font-size: 17px;
+  line-height: 1.65;
+}
+.category-glance-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.category-glance a {
+  color: var(--green);
+  font-weight: 600;
+}
+.category-glance-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin: 0;
+}
+.category-glance-fact {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 10px rgba(29, 40, 28, 0.08);
+}
+.category-glance-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--yellow);
+  color: var(--green);
+}
+.category-glance-fact dt {
+  color: #75766E;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.category-glance-fact dd {
+  margin: 4px 0 0;
+  color: var(--black-green);
+  font-size: 16px;
+  line-height: 1.45;
+}
+.category-glance-table {
+  min-width: 560px;
+  background: #fff;
+}
+.category-glance-table th[scope="row"] {
+  position: static;
+  background: transparent;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 15px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.category-glance-table th[scope="row"] a {
+  text-decoration: none;
+}
+.category-glance-caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+@media (max-width: 800px) {
+  .category-glance {
+    padding: 56px 20px;
+  }
+  .category-glance-facts {
+    grid-template-columns: 1fr;
+  }
+}
+
 .product-listing-layout {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);

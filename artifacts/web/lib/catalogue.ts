@@ -105,6 +105,11 @@ export type CatalogueCategory = {
   pageHeading: string;
   seoTitle: string;
   seoDescription: string;
+  socialTitle?: string;
+  socialDescription?: string;
+  socialImage?: string;
+  rainfall?: string;
+  buyingGuide?: string;
   faqs?: CatalogueCategoryFaq[];
   productCount?: number;
 };
@@ -204,6 +209,7 @@ export type PublicSiteCompany = {
   address: string;
   officeHours: string;
   abn: string;
+  socialLinks?: string[];
 };
 
 export type PublicSiteSettings = {
@@ -314,6 +320,11 @@ export async function getProductBySlug(slug: string) {
 }
 
 export async function getRedirect(fromPath: string) {
+  return (await getRedirectTarget(fromPath))?.toPath ?? null;
+}
+
+/** `permanent` is false for temporary redirects, such as a Legacy product sending visitors to its category. */
+export async function getRedirectTarget(fromPath: string): Promise<{ toPath: string; permanent: boolean } | null> {
   const response = await catalogueRequest(apiUrl(`/api/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), {
     next: { revalidate: 300 },
   });
@@ -324,7 +335,10 @@ export async function getRedirect(fromPath: string) {
     typeof redirect.toPath !== "string" || !redirect.toPath.startsWith("/")) {
     throw new Error("Redirect response is invalid.");
   }
-  return redirect.toPath;
+  return {
+    toPath: redirect.toPath,
+    permanent: !("permanent" in redirect) || redirect.permanent !== false,
+  };
 }
 
 export function getCategories() {

@@ -14,10 +14,11 @@ import {
 } from "@workspace/db";
 import {
   CATEGORY_FAQ_AGENT_PROMPT,
-  categoryFaqTemplateFile,
+  categoryFaqExportFile,
   commitCategoryFaqImport,
   dryRunCategoryFaqImport,
 } from "../lib/category-faq-import";
+import { productUsesSlug, subcategorySlugClashMessage } from "../lib/slug-clash";
 
 const router: IRouter = Router();
 const RESERVED_ROOT_SLUGS = new Set(["categories"]);
@@ -50,11 +51,13 @@ function reservedRootSlugError(parentId: number | null, slug: string) {
   return null;
 }
 
-function withPlainSearchMetadata<T extends { seoTitle?: string; seoDescription?: string }>(data: T): T {
+function withPlainSearchMetadata<T extends { seoTitle?: string; seoDescription?: string; socialTitle?: string; socialDescription?: string }>(data: T): T {
   return {
     ...data,
     ...(typeof data.seoTitle === "string" ? { seoTitle: forSearchMetadata(data.seoTitle) } : {}),
     ...(typeof data.seoDescription === "string" ? { seoDescription: forSearchMetadata(data.seoDescription) } : {}),
+    ...(typeof data.socialTitle === "string" ? { socialTitle: forSearchMetadata(data.socialTitle) } : {}),
+    ...(typeof data.socialDescription === "string" ? { socialDescription: forSearchMetadata(data.socialDescription) } : {}),
   };
 }
 
@@ -115,8 +118,8 @@ function sendWorkbook(res: Response, filename: string, file: Buffer) {
   res.type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet").attachment(filename).send(file);
 }
 
-router.get("/admin/categories/faqs/import/template", async (_req, res): Promise<void> => {
-  sendWorkbook(res, "root-category-faqs-template.xlsx", await categoryFaqTemplateFile());
+router.get("/admin/categories/faqs/export", async (_req, res): Promise<void> => {
+  sendWorkbook(res, "categories-export.xlsx", await categoryFaqExportFile());
 });
 
 router.get("/admin/categories/faqs/import/prompt", (_req, res): void => {
@@ -176,6 +179,10 @@ router.post("/admin/categories", async (req, res): Promise<void> => {
         res.status(400).json({ error: "A subcategory slug must include text after its parent prefix." });
         return;
       }
+      if (await productUsesSlug(slug)) {
+        res.status(409).json({ error: subcategorySlugClashMessage(slug) });
+        return;
+      }
       values = { ...values, slug };
     }
     const [category] = await db.insert(catalogueCategoriesTable).values(withPlainSearchMetadata(values)).returning();
@@ -222,6 +229,9 @@ router.patch("/admin/categories/:id", async (req, res): Promise<void> => {
       if (parentId !== null && !parent) throw new Error("PARENT_CATEGORY_NOT_FOUND");
       const slug = parent ? normalizedChildSlug(parent.slug, requestedSlug) : requestedSlug;
       if (!slug) throw new Error("EMPTY_CHILD_SLUG");
+      if (parent && (slug !== existing.slug || parentId !== existing.parentId) && await productUsesSlug(slug)) {
+        throw new Error(`PRODUCT_SLUG_CLASH:${slug}`);
+      }
       const [updated] = await tx.update(catalogueCategoriesTable)
         .set({ ...withPlainSearchMetadata(parsed.data), slug, updatedAt: new Date() })
         .where(eq(catalogueCategoriesTable.id, id)).returning();
@@ -272,6 +282,10 @@ router.patch("/admin/categories/:id", async (req, res): Promise<void> => {
     queueAllPublishedTechSheets("category updated");
     res.json(category);
   } catch (error) {
+    if (error instanceof Error && error.message.startsWith("PRODUCT_SLUG_CLASH:")) {
+      res.status(409).json({ error: subcategorySlugClashMessage(error.message.slice("PRODUCT_SLUG_CLASH:".length)) });
+      return;
+    }
     if (error instanceof Error && (error.message === "EMPTY_CHILD_SLUG" || error.message === "PARENT_CATEGORY_NOT_FOUND")) {
       res.status(400).json({ error: error.message === "EMPTY_CHILD_SLUG"
         ? "A subcategory slug must include text after its parent prefix."

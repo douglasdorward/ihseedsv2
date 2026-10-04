@@ -236,17 +236,19 @@ const CategoryForm = ({
           )}
           {isSubcategory && (
             <label className="wide">
-              Description
+              Intro text
               <textarea
                 value={form.lead}
                 onChange={e => setForm(prev => ({ ...prev, lead: e.target.value }))}
-                placeholder="Optional notes about this subcategory..."
+                placeholder="A short introduction for this subcategory's page..."
                 rows={3}
               />
-              <small>Internal notes only. Not shown on the public site yet.</small>
+              <small>
+                Shown under the heading on this subcategory's own public page. Page heading, search metadata, buying guide and FAQs are edited in Site settings → Category pages.
+              </small>
             </label>
           )}
-          {!isSubcategory && isEditing && initialData && (
+          {isEditing && initialData && (
             <div className="wide admin-notice" style={{ margin: 0 }}>
               <Icon name="info" size={18} />
               <p>
@@ -385,7 +387,7 @@ export default function AdminCategories() {
       <div className="admin-content">
         <div className="admin-notice">
           <Icon name="info" size={20}/>
-          <p>Root categories use /products/category-slug as their public page, edited here. Subcategories group products on that landing page and are not their own URLs. Individual products use /products/category-slug/product-slug, managed on each product record.</p>
+          <p>Root categories use /products/category-slug as their public page, edited here. Each subcategory also has its own page at /products/category-slug/subcategory-slug, with its own heading, search copy, buying guide and FAQs; its address comes from its name, and cannot match a product slug. Individual products use /products/category-slug/product-slug, managed on each product record.</p>
         </div>
         
         {error && <div className="admin-notice" style={{ background: "#fef3f2", color: "#b42318" }}>

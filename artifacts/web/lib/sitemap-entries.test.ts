@@ -76,7 +76,7 @@ test("public sitemap uses the product page canonical and article lastmod", () =>
   assert.equal(urls.includes("https://irwinhunter.com.au/privacy"), true);
   assert.equal(urls.includes("https://irwinhunter.com.au/terms-and-conditions"), true);
   assert.equal(urls.includes("https://irwinhunter.com.au/products/ryegrass"), true);
-  assert.equal(urls.includes("https://irwinhunter.com.au/products/ryegrass/annual"), false);
+  assert.equal(urls.includes("https://irwinhunter.com.au/products/ryegrass/annual"), true);
   assert.equal(urls.includes("https://irwinhunter.com.au/products/ryegrass/hidden-ryegrass"), false);
   assert.equal(urls.includes("https://irwinhunter.com.au/articles"), true);
   assert.equal(urls.includes("https://irwinhunter.com.au/tech-sheets"), true);
@@ -89,4 +89,34 @@ test("public sitemap uses the product page canonical and article lastmod", () =>
   const articleEntry = entries.find((entry) => entry.url.endsWith("/articles/autumn-sowing"));
   assert.ok(articleEntry);
   assert.equal(lastmod(articleEntry), "2026-09-18T04:00:00.000Z");
+});
+
+test("sitemap lists active sub-category pages that have products, and skips empty or inactive ones", () => {
+  const sub = { ...root, parentId: 1, productCount: 2 };
+  const entries = buildPublicSitemap({
+    products: [],
+    categories: [
+      root,
+      { ...sub, id: 2, slug: "annual", name: "Annual" },
+      { ...sub, id: 3, slug: "empty", name: "Empty", productCount: 0 },
+      { ...sub, id: 4, slug: "retired", name: "Retired", active: false },
+    ],
+    articles: [],
+  });
+  const urls = entries.map((entry) => entry.url);
+  assert.equal(urls.includes("https://irwinhunter.com.au/products/ryegrass/annual"), true);
+  assert.equal(urls.includes("https://irwinhunter.com.au/products/ryegrass/empty"), false);
+  assert.equal(urls.includes("https://irwinhunter.com.au/products/ryegrass/retired"), false);
+});
+
+test("sitemap skips sub-categories of an inactive or empty root", () => {
+  const entries = buildPublicSitemap({
+    products: [],
+    categories: [
+      { ...root, productCount: 0 },
+      { ...root, id: 2, parentId: 1, slug: "annual", name: "Annual", productCount: 2 },
+    ],
+    articles: [],
+  });
+  assert.equal(entries.some((entry) => entry.url.includes("/products/ryegrass")), false);
 });

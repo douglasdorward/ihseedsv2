@@ -3,8 +3,8 @@ import { socialSourceLabel } from "../social-share";
 
 type SiteSocial = { socialImageSrc?: string | null; socialImageAssetId?: string | null };
 
-/** Effective share image for a product or article, using the shared resolver. */
-export function SocialImagePreview({ override, hero, kind }: { override?: string; hero?: string; kind: "product" | "article" }) {
+/** Effective share image for a product, article or category, using the shared resolver. */
+export function SocialImagePreview({ override, hero, kind }: { override?: string; hero?: string; kind: "product" | "article" | "category" }) {
   const { data } = useGetAdminSiteSettings();
   const homepage = (data?.homepage ?? {}) as SiteSocial;
   const resolved = resolveSocialImage({
@@ -22,7 +22,7 @@ export function SocialImagePreview({ override, hero, kind }: { override?: string
         <span className="admin-field-hint">
           {resolved.source === "override"
             ? "Clear the custom image to fall back automatically."
-            : "Order: custom image, then " + (kind === "article" ? "hero image" : "first product photo") + ", then the Site settings image, then the IH Seeds default."}
+            : "Order: custom image, then " + (kind === "article" ? "hero image, then " : kind === "product" ? "first product photo, then " : "") + "the Site settings image, then the IH Seeds default."}
         </span>
       </div>
     </div>

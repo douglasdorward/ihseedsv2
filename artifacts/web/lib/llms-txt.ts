@@ -5,8 +5,18 @@ import type {
   CatalogueResellerBrand,
   PublicSiteCompany,
 } from "./catalogue";
-import { CATALOGUE_INDEX_PATH, productPublicPath } from "./catalogue-paths";
+import {
+  CATALOGUE_INDEX_PATH,
+  activeSubcategories,
+  categoryPublicPath,
+  isSubcategoryIndexable,
+  productPublicPath,
+  subcategoryPublicPath,
+} from "./catalogue-paths";
+import { summariseCategoryProducts } from "./category-summary";
+import { subcategoryHeading } from "./subcategory-copy";
 import { PASTURE_SELECTOR_FAQS } from "./pasture-selector-faqs";
+import { toListingProduct } from "./product-listing";
 import { formatSoilPh, formatSoilRange, formatSowingRates, getProductQuickFacts } from "./product-quick-facts";
 import { productCanonicalUrl } from "./product-url";
 import { expandProductCount } from "./site-settings";
@@ -102,6 +112,11 @@ function productGroups(products: CatalogueProduct[], categories: CatalogueCatego
   return { groups, other };
 }
 
+/** Sub-category pages offered to search engines, in admin order. */
+function publicSubcategories(root: CatalogueCategory, categories: CatalogueCategory[]) {
+  return activeSubcategories(categories, root.id).filter(isSubcategoryIndexable);
+}
+
 function joinAnd(parts: string[]) {
   if (parts.length <= 1) return parts[0] ?? "";
   return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
@@ -181,6 +196,7 @@ function startHere(settings: LlmsSettings) {
     link("Articles", absoluteSiteUrl("/articles"), "Sowing, feed planning and seasonal advice."),
     link("Tech sheets", absoluteSiteUrl("/tech-sheets"), "Downloadable technical information for varieties and mixes."),
     link("About", absoluteSiteUrl("/about"), "Irwin Hunter & Co."),
+    link("Australian Seed Federation", absoluteSiteUrl("/australian-seed-federation"), "Membership of the Australian Seed Federation and its Code of Practice for seed labelling and marketing."),
     link("Contact", absoluteSiteUrl("/contact"), "Orders and paddock enquiries."),
   ];
   const pdf = settings.seedGuide.pdfPublicUrl.trim();
@@ -215,6 +231,15 @@ export function buildLlmsTxt(input: LlmsInput) {
     const lead = group.category.lead.trim();
     if (lead) lines.push("", lead);
     lines.push("");
+    for (const sub of publicSubcategories(group.category, input.categories)) {
+      const count = group.products.filter((product) => product.subcategoryId === sub.id).length;
+      if (!count) continue;
+      lines.push(link(
+        `${group.category.name}: ${sub.name}`,
+        absoluteSiteUrl(subcategoryPublicPath(group.category, sub)),
+        `${count} ${count === 1 ? "line" : "lines"}`,
+      ));
+    }
     for (const product of group.products) {
       lines.push(link(product.name, productUrl(product, input.categories), productNote(product)));
     }
@@ -246,12 +271,22 @@ export function buildLlmsTxt(input: LlmsInput) {
   ));
   for (const category of publicCategories(input.categories)) {
     const count = completeFaqs(category.faqs).length;
-    if (!count) continue;
-    lines.push(link(
-      category.name,
-      `${absoluteSiteUrl(`/products/${category.slug}`)}#faqs`,
-      questionCount(count),
-    ));
+    if (count) {
+      lines.push(link(
+        category.name,
+        `${absoluteSiteUrl(categoryPublicPath(category))}#faqs`,
+        questionCount(count),
+      ));
+    }
+    for (const sub of publicSubcategories(category, input.categories)) {
+      const subCount = completeFaqs(sub.faqs).length;
+      if (!subCount) continue;
+      lines.push(link(
+        `${category.name}: ${sub.name}`,
+        `${absoluteSiteUrl(subcategoryPublicPath(category, sub))}#faqs`,
+        questionCount(subCount),
+      ));
+    }
   }
   lines.push(`- Every product page also has FAQs at #faqs. Full questions and answers are in ${absoluteSiteUrl("/llms-full.txt")}.`);
   lines.push("", "## Optional", "");
@@ -277,6 +312,41 @@ function mixComponentLine(component: NonNullable<CatalogueProduct["details"]["co
   return description ? `- ${name}${rate}: ${description}` : `- ${name}${rate}`;
 }
 
+/** One category (root or sub-category) block of llms-full.txt. */
+function pushCategoryFull(
+  lines: string[],
+  block: {
+    heading: string;
+    faqHeading: string;
+    url: string;
+    category: CatalogueCategory;
+    subject: string;
+    rootName: string;
+    products: CatalogueProduct[];
+  },
+) {
+  const { category } = block;
+  lines.push(block.heading, "", block.url, "");
+  const lead = category.lead.trim();
+  if (lead) lines.push(lead, "");
+  const overview = summariseCategoryProducts(block.products.map(toListingProduct), block.subject, {
+    storedRainfall: category.rainfall,
+    rootName: block.rootName,
+  });
+  if (overview.sentence) lines.push(overview.sentence, "");
+  if (overview.facts.length) {
+    lines.push("**At a glance**", "", ...overview.facts.map((fact) => `- ${fact.label}: ${fact.value}`), "");
+  }
+  const guide = (category.buyingGuide ?? "")
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  if (guide.length) lines.push(`**Choosing ${block.subject}**`, "", ...guide.flatMap((paragraph) => [paragraph, ""]));
+  for (const faq of completeFaqs(category.faqs)) {
+    lines.push(`${block.faqHeading} ${faq.question}`, "", faq.answer, "");
+  }
+}
+
 export function buildLlmsFullTxt(input: LlmsInput) {
   const { groups, other } = productGroups(input.products, input.categories);
   const listedCount = groups.reduce((count, group) => count + group.products.length, 0) + other.length;
@@ -287,11 +357,29 @@ export function buildLlmsFullTxt(input: LlmsInput) {
 
   lines.push("## Categories", "");
   for (const category of publicCategories(input.categories)) {
-    lines.push(`### ${category.name}`, "", absoluteSiteUrl(`/products/${category.slug}`), "");
-    const lead = category.lead.trim();
-    if (lead) lines.push(lead, "");
-    for (const faq of completeFaqs(category.faqs)) {
-      lines.push(`#### ${faq.question}`, "", faq.answer, "");
+    const categoryProducts = groups.find((group) => group.category.id === category.id)?.products ?? [];
+    pushCategoryFull(lines, {
+      heading: `### ${category.name}`,
+      faqHeading: "####",
+      url: absoluteSiteUrl(categoryPublicPath(category)),
+      category,
+      subject: category.name,
+      rootName: category.name,
+      products: categoryProducts,
+    });
+    for (const sub of publicSubcategories(category, input.categories)) {
+      const subProducts = categoryProducts.filter((product) => product.subcategoryId === sub.id);
+      if (!subProducts.length) continue;
+      const subject = subcategoryHeading(category, sub);
+      pushCategoryFull(lines, {
+        heading: `#### ${subject}`,
+        faqHeading: "#####",
+        url: absoluteSiteUrl(subcategoryPublicPath(category, sub)),
+        category: sub,
+        subject,
+        rootName: category.name,
+        products: subProducts,
+      });
     }
   }
 

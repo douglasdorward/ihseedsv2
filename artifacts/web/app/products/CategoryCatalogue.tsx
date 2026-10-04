@@ -8,36 +8,40 @@ import { ProductNewStamp } from "../../components/NewStamp";
 import { StatusPill } from "../../components/StatusPill";
 import type { CatalogueCategory } from "../../lib/catalogue";
 import type { ListingProduct } from "../../lib/product-listing";
-import { productPublicPath } from "../../lib/catalogue-paths";
+import { categoryPublicPath, productPublicPath, subcategoryPublicPath } from "../../lib/catalogue-paths";
 import { CategoryFilterControls, CategoryViewToggle } from "./CategoryControls";
 import { getFactChips, hasProductPhoto, productCardImage, productImageAlt } from "./product-card-facts";
 
 export function CategoryCatalogue({
   root,
   childCategories,
+  activeSubId = null,
   products,
   categories,
 }: {
   root: CatalogueCategory;
   childCategories: CatalogueCategory[];
+  /** The sub-category whose page this is, or null on the root category page. */
+  activeSubId?: number | null;
+  /** Every product in the root category; the active sub-category narrows it. */
   products: ListingProduct[];
   categories: CatalogueCategory[];
 }) {
-  const [activeGroup, setActiveGroup] = useState<number | "All">("All");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const activeGroup: number | "All" = activeSubId ?? "All";
 
   const groups = [
     {
       label: "All",
       id: "All" as const,
       count: products.length,
-      href: `/products/${root.slug}`,
+      href: categoryPublicPath(root),
     },
     ...childCategories.map((category) => ({
       label: category.name,
       id: category.id,
       count: products.filter((product) => product.subcategoryId === category.id).length,
-      href: `/products/${root.slug}`,
+      href: subcategoryPublicPath(root, category),
     })),
   ];
   const visibleProducts = products
@@ -59,7 +63,6 @@ export function CategoryCatalogue({
             <CategoryFilterControls
               groups={groups}
               activeGroup={activeGroup}
-              onSelect={(group) => setActiveGroup(group.id)}
             />
           )}
         </div>
