@@ -55,6 +55,13 @@ const sections = [
     body: "Upload the pasture seed guide PDF, change the card copy and background, and set the menu title.",
     action: "Open seed guide editor",
   },
+  {
+    href: "/admin/site-settings/redirects",
+    icon: "arrow-right",
+    title: "Legacy URL redirects",
+    body: "Send visitors and search engines from old website addresses to the right new page. Upload many redirects at once from a CSV and see every redirect currently in place.",
+    action: "Manage redirects",
+  },
 ] as const;
 
 export default function AdminSiteSettings() {

@@ -794,7 +794,10 @@ export interface ProductDraftInput {
   guideYear: string;
   /** @maxLength 240 */
   descriptionSource: string;
-  /** @maxLength 500 */
+  /**
+     * Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with " | ". Each redirects to this product once it is published.
+     * @maxLength 2000
+     */
   websiteUrlLegacy: string;
   /** @nullable */
   availabilityOverride: ProductDraftInputAvailabilityOverride;
@@ -896,7 +899,10 @@ export interface ProductInput {
   guideYear: string;
   /** @maxLength 240 */
   descriptionSource: string;
-  /** @maxLength 500 */
+  /**
+     * Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with " | ". Each redirects to this product once it is published.
+     * @maxLength 2000
+     */
   websiteUrlLegacy: string;
   /** @nullable */
   availabilityOverride: ProductInputAvailabilityOverride;
@@ -1027,7 +1033,10 @@ export interface ProductUpdate {
   guideYear?: string;
   /** @maxLength 240 */
   descriptionSource?: string;
-  /** @maxLength 500 */
+  /**
+     * Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with " | ". Each redirects to this product once it is published.
+     * @maxLength 2000
+     */
   websiteUrlLegacy?: string;
   /** @nullable */
   availabilityOverride?: ProductUpdateAvailabilityOverride;
@@ -2200,6 +2209,48 @@ export interface ResellerImportIssue {
   row: number;
   column: string;
   problem: string;
+}
+
+/**
+ * uploaded redirects are added from a CSV in Site settings and survive catalogue imports. product and article redirects come from that editor's Legacy website URL field and are changed there. catalogue redirects were created by an earlier catalogue import.
+ */
+export type AdminRedirectSource = typeof AdminRedirectSource[keyof typeof AdminRedirectSource];
+
+
+export const AdminRedirectSource = {
+  uploaded: 'uploaded',
+  catalogue: 'catalogue',
+  product: 'product',
+  article: 'article',
+} as const;
+
+export interface AdminRedirect {
+  id: number;
+  fromPath: string;
+  toPath: string;
+  /** uploaded redirects are added from a CSV in Site settings and survive catalogue imports. product and article redirects come from that editor's Legacy website URL field and are changed there. catalogue redirects were created by an earlier catalogue import. */
+  source: AdminRedirectSource;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RedirectImportUpload {
+  csvText: string;
+}
+
+export type RedirectImportCommit = RedirectImportUpload & {
+  token: string;
+};
+
+export interface RedirectImportReport {
+  token: string;
+  rows: number;
+  created: number;
+  updated: number;
+  unchanged: number;
+  skipped: number;
+  issues: ResellerImportIssue[];
+  plannedChanges: string[];
 }
 
 export interface ResellerImportReport {

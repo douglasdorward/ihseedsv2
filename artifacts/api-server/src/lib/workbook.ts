@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import * as XLSX from "xlsx";
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import {
   applyListingAvailability,
   catalogueCategoriesTable, db, forSearchMetadata, isActiveListing, mediaAssetsTable, normalizeProductDetails, productOptionsTable,
@@ -677,7 +677,11 @@ export async function commitWorkbook(content: Buffer, token: string) {
       importedRedirectPaths.add(productPublicPath(product.slug, product.category, categories));
     }
     if (importedRedirectPaths.size) {
-      await tx.delete(redirectsTable).where(inArray(redirectsTable.toPath, [...importedRedirectPaths]));
+      // Redirects an administrator uploaded in Site settings are not the catalogue's to rebuild.
+      await tx.delete(redirectsTable).where(and(
+        inArray(redirectsTable.toPath, [...importedRedirectPaths]),
+        ne(redirectsTable.source, "uploaded"),
+      ));
     }
     const liveProductPaths = new Set([...productBySlug.values()].map((product) =>
       productPublicPath(product.slug, product.category, categories)));

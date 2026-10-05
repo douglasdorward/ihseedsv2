@@ -21,6 +21,7 @@ import type {
 
 import type {
   AdminProduct,
+  AdminRedirect,
   AdminSession,
   AdminSummary,
   AdministratorAccessList,
@@ -75,6 +76,9 @@ import type {
   PublicProduct,
   PublicResellerBrand,
   PublishValidationError,
+  RedirectImportCommit,
+  RedirectImportReport,
+  RedirectImportUpload,
   RedirectLookup,
   ResellerBrand,
   ResellerBrandInput,
@@ -4142,6 +4146,373 @@ export const useCommitResellerImport = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getCommitResellerImportMutationOptions(options));
+    }
+
+export const getListAdminRedirectsUrl = () => {
+
+
+
+
+  return `/api/admin/redirects`
+}
+
+/**
+ * @summary List every redirect currently in force
+ */
+export const listAdminRedirects = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminRedirect[]> => {
+
+  return customFetch<AdminRedirect[]>(getListAdminRedirectsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminRedirectsQueryKey = () => {
+    return [
+    `/api/admin/redirects`
+    ] as const;
+    }
+
+
+export const getListAdminRedirectsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminRedirects>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminRedirects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminRedirectsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminRedirects>>> = ({ signal }) => listAdminRedirects({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminRedirects>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminRedirectsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminRedirects>>>
+export type ListAdminRedirectsQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary List every redirect currently in force
+ */
+
+export function useListAdminRedirects<TData = Awaited<ReturnType<typeof listAdminRedirects>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminRedirects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminRedirectsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadRedirectImportTemplateUrl = () => {
+
+
+
+
+  return `/api/admin/redirects/import/template`
+}
+
+/**
+ * @summary Download the redirect CSV import template
+ */
+export const downloadRedirectImportTemplate = async ( options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getDownloadRedirectImportTemplateUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadRedirectImportTemplateQueryKey = () => {
+    return [
+    `/api/admin/redirects/import/template`
+    ] as const;
+    }
+
+
+export const getDownloadRedirectImportTemplateQueryOptions = <TData = Awaited<ReturnType<typeof downloadRedirectImportTemplate>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadRedirectImportTemplate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadRedirectImportTemplateQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadRedirectImportTemplate>>> = ({ signal }) => downloadRedirectImportTemplate({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadRedirectImportTemplate>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadRedirectImportTemplateQueryResult = NonNullable<Awaited<ReturnType<typeof downloadRedirectImportTemplate>>>
+export type DownloadRedirectImportTemplateQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Download the redirect CSV import template
+ */
+
+export function useDownloadRedirectImportTemplate<TData = Awaited<ReturnType<typeof downloadRedirectImportTemplate>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadRedirectImportTemplate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadRedirectImportTemplateQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDryRunRedirectImportUrl = () => {
+
+
+
+
+  return `/api/admin/redirects/import/dry-run`
+}
+
+/**
+ * @summary Validate a redirect CSV import
+ */
+export const dryRunRedirectImport = async (redirectImportUpload: RedirectImportUpload, options?: Parameters<typeof customFetch>[1]): Promise<RedirectImportReport> => {
+
+  return customFetch<RedirectImportReport>(getDryRunRedirectImportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(redirectImportUpload)
+  }
+);}
+
+
+
+
+
+export const getDryRunRedirectImportMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dryRunRedirectImport>>, TError,{data: BodyType<RedirectImportUpload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof dryRunRedirectImport>>, TError,{data: BodyType<RedirectImportUpload>}, TContext> => {
+
+const mutationKey = ['dryRunRedirectImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof dryRunRedirectImport>>, {data: BodyType<RedirectImportUpload>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  dryRunRedirectImport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DryRunRedirectImportMutationResult = NonNullable<Awaited<ReturnType<typeof dryRunRedirectImport>>>
+    export type DryRunRedirectImportMutationBody = BodyType<RedirectImportUpload>
+    export type DryRunRedirectImportMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Validate a redirect CSV import
+ */
+export const useDryRunRedirectImport = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dryRunRedirectImport>>, TError,{data: BodyType<RedirectImportUpload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof dryRunRedirectImport>>,
+        TError,
+        {data: BodyType<RedirectImportUpload>},
+        TContext
+      > => {
+      return useMutation(getDryRunRedirectImportMutationOptions(options));
+    }
+
+export const getCommitRedirectImportUrl = () => {
+
+
+
+
+  return `/api/admin/redirects/import/commit`
+}
+
+/**
+ * @summary Commit a validated redirect CSV import
+ */
+export const commitRedirectImport = async (redirectImportCommit: RedirectImportCommit, options?: Parameters<typeof customFetch>[1]): Promise<RedirectImportReport> => {
+
+  return customFetch<RedirectImportReport>(getCommitRedirectImportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(redirectImportCommit)
+  }
+);}
+
+
+
+
+
+export const getCommitRedirectImportMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof commitRedirectImport>>, TError,{data: BodyType<RedirectImportCommit>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof commitRedirectImport>>, TError,{data: BodyType<RedirectImportCommit>}, TContext> => {
+
+const mutationKey = ['commitRedirectImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof commitRedirectImport>>, {data: BodyType<RedirectImportCommit>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  commitRedirectImport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CommitRedirectImportMutationResult = NonNullable<Awaited<ReturnType<typeof commitRedirectImport>>>
+    export type CommitRedirectImportMutationBody = BodyType<RedirectImportCommit>
+    export type CommitRedirectImportMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Commit a validated redirect CSV import
+ */
+export const useCommitRedirectImport = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof commitRedirectImport>>, TError,{data: BodyType<RedirectImportCommit>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof commitRedirectImport>>,
+        TError,
+        {data: BodyType<RedirectImportCommit>},
+        TContext
+      > => {
+      return useMutation(getCommitRedirectImportMutationOptions(options));
+    }
+
+export const getDeleteAdminRedirectUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/redirects/${id}`
+}
+
+/**
+ * @summary Delete an uploaded or catalogue redirect
+ */
+export const deleteAdminRedirect = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteAdminRedirectUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteAdminRedirectMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminRedirect>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdminRedirect>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteAdminRedirect'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdminRedirect>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAdminRedirect(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdminRedirectMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdminRedirect>>>
+
+    export type DeleteAdminRedirectMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Delete an uploaded or catalogue redirect
+ */
+export const useDeleteAdminRedirect = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminRedirect>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdminRedirect>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAdminRedirectMutationOptions(options));
     }
 
 export const getGetAdminResellerBrandUrl = (id: number,) => {

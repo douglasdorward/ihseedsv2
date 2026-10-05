@@ -319,15 +319,19 @@ export async function getProductBySlug(slug: string) {
   return response.json() as Promise<CatalogueProduct>;
 }
 
-export async function getRedirect(fromPath: string) {
-  return (await getRedirectTarget(fromPath))?.toPath ?? null;
+export async function getRedirect(fromPath: string, options?: { fresh?: boolean }) {
+  return (await getRedirectTarget(fromPath, options))?.toPath ?? null;
 }
 
 /** `permanent` is false for temporary redirects, such as a Legacy product sending visitors to its category. */
-export async function getRedirectTarget(fromPath: string): Promise<{ toPath: string; permanent: boolean } | null> {
-  const response = await catalogueRequest(apiUrl(`/api/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`), {
-    next: { revalidate: 300 },
-  });
+export async function getRedirectTarget(
+  fromPath: string,
+  options?: { fresh?: boolean },
+): Promise<{ toPath: string; permanent: boolean } | null> {
+  // `fresh` skips the five minute cache so a redirect an administrator has just
+  // uploaded works at once, and a miss cached earlier does not linger.
+  const response = await catalogueRequest(apiUrl(`/api/redirects/lookup?fromPath=${encodeURIComponent(fromPath)}`),
+    options?.fresh ? { cache: "no-store" } : { next: { revalidate: 300 } });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Redirect request failed (${response.status}) for ${fromPath}`);
   const redirect: unknown = await response.json();
