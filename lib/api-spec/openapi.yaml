@@ -974,6 +974,85 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ResellerImportReport" }
         "400": { description: Invalid or stale token, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/redirects:
+    get:
+      operationId: listAdminRedirects
+      tags: [admin]
+      summary: List every redirect currently in force
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Redirects ordered by old path
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminRedirect" }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/redirects/import/template:
+    get:
+      operationId: downloadRedirectImportTemplate
+      tags: [admin]
+      summary: Download the redirect CSV import template
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: CSV template
+          content:
+            text/csv:
+              schema: { type: string }
+  /admin/redirects/import/dry-run:
+    post:
+      operationId: dryRunRedirectImport
+      tags: [admin]
+      summary: Validate a redirect CSV import
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RedirectImportUpload" }
+      responses:
+        "200":
+          description: Dry-run report
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RedirectImportReport" }
+        "400": { description: Invalid CSV, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/redirects/import/commit:
+    post:
+      operationId: commitRedirectImport
+      tags: [admin]
+      summary: Commit a validated redirect CSV import
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RedirectImportCommit" }
+      responses:
+        "200":
+          description: Import committed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RedirectImportReport" }
+        "400": { description: Invalid or stale token, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /admin/redirects/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: number, multipleOf: 1, minimum: 1 }
+    delete:
+      operationId: deleteAdminRedirect
+      tags: [admin]
+      summary: Delete an uploaded or catalogue redirect
+      security: [{ clerkSession: [] }]
+      responses:
+        "204": { description: Redirect deleted }
+        "401": { description: Sign in is required, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { description: Redirect not found, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409": { description: Redirect is managed by a product or article, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
   /admin/resellers/{id}:
     parameters:
       - name: id
@@ -3055,6 +3134,47 @@ components:
         row: { type: number, multipleOf: 1 }
         column: { type: string }
         problem: { type: string }
+    AdminRedirect:
+      type: object
+      required: [id, fromPath, toPath, source, createdAt, updatedAt]
+      properties:
+        id: { type: number, multipleOf: 1 }
+        fromPath: { type: string }
+        toPath: { type: string }
+        source:
+          type: string
+          enum: [uploaded, catalogue, product, article]
+          description: uploaded redirects are added from a CSV in Site settings and survive catalogue imports. product and article redirects come from that editor's Legacy website URL field and are changed there. catalogue redirects were created by an earlier catalogue import.
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    RedirectImportUpload:
+      type: object
+      required: [csvText]
+      properties:
+        csvText: { type: string }
+    RedirectImportCommit:
+      allOf:
+        - $ref: "#/components/schemas/RedirectImportUpload"
+        - type: object
+          required: [token]
+          properties:
+            token: { type: string }
+    RedirectImportReport:
+      type: object
+      required: [token, rows, created, updated, unchanged, skipped, issues, plannedChanges]
+      properties:
+        token: { type: string }
+        rows: { type: number, multipleOf: 1 }
+        created: { type: number, multipleOf: 1 }
+        updated: { type: number, multipleOf: 1 }
+        unchanged: { type: number, multipleOf: 1 }
+        skipped: { type: number, multipleOf: 1 }
+        issues:
+          type: array
+          items: { $ref: "#/components/schemas/ResellerImportIssue" }
+        plannedChanges:
+          type: array
+          items: { type: string }
     ResellerImportReport:
       type: object
       required: [token, rows, brandsCreated, outletsCreated, outletsUpdated, skipped, issues, plannedChanges]

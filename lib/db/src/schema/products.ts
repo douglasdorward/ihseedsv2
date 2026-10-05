@@ -444,6 +444,8 @@ export const redirectsTable = pgTable("ih_redirects", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   fromPath: text("from_path").notNull().unique(),
   toPath: text("to_path").notNull(),
+  // "uploaded" redirects are managed in Site settings and survive catalogue imports.
+  source: text("source").notNull().default("catalogue"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

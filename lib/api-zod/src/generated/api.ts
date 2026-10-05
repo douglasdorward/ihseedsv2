@@ -1259,7 +1259,7 @@ export const UpdateProductBody = zod.object({
   "techSheet": zod.string().max(updateProductBodyTechSheetMax).optional(),
   "guideYear": zod.string().max(updateProductBodyGuideYearMax).optional(),
   "descriptionSource": zod.string().max(updateProductBodyDescriptionSourceMax).optional(),
-  "websiteUrlLegacy": zod.string().max(updateProductBodyWebsiteUrlLegacyMax).optional(),
+  "websiteUrlLegacy": zod.string().max(updateProductBodyWebsiteUrlLegacyMax).optional().describe('Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with \" | \". Each redirects to this product once it is published.'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullish(),
   "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
@@ -2423,7 +2423,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "techSheet": zod.string().max(listAdminProductsResponseTwoDraftOneOneTechSheetMax),
   "guideYear": zod.string().max(listAdminProductsResponseTwoDraftOneOneGuideYearMax),
   "descriptionSource": zod.string().max(listAdminProductsResponseTwoDraftOneOneDescriptionSourceMax),
-  "websiteUrlLegacy": zod.string().max(listAdminProductsResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "websiteUrlLegacy": zod.string().max(listAdminProductsResponseTwoDraftOneOneWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with \" | \". Each redirects to this product once it is published.'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
@@ -3031,7 +3031,7 @@ export const GetAdminProductResponse = zod.object({
   "techSheet": zod.string().max(getAdminProductResponseTwoDraftOneOneTechSheetMax),
   "guideYear": zod.string().max(getAdminProductResponseTwoDraftOneOneGuideYearMax),
   "descriptionSource": zod.string().max(getAdminProductResponseTwoDraftOneOneDescriptionSourceMax),
-  "websiteUrlLegacy": zod.string().max(getAdminProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "websiteUrlLegacy": zod.string().max(getAdminProductResponseTwoDraftOneOneWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with \" | \". Each redirects to this product once it is published.'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
@@ -3338,7 +3338,7 @@ export const SaveProductDraftRevisionBody = zod.object({
   "techSheet": zod.string().max(saveProductDraftRevisionBodyTechSheetMax),
   "guideYear": zod.string().max(saveProductDraftRevisionBodyGuideYearMax),
   "descriptionSource": zod.string().max(saveProductDraftRevisionBodyDescriptionSourceMax),
-  "websiteUrlLegacy": zod.string().max(saveProductDraftRevisionBodyWebsiteUrlLegacyMax),
+  "websiteUrlLegacy": zod.string().max(saveProductDraftRevisionBodyWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with \" | \". Each redirects to this product once it is published.'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
@@ -3918,7 +3918,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "techSheet": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneTechSheetMax),
   "guideYear": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneGuideYearMax),
   "descriptionSource": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDescriptionSourceMax),
-  "websiteUrlLegacy": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "websiteUrlLegacy": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with \" | \". Each redirects to this product once it is published.'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
@@ -4225,7 +4225,7 @@ export const PublishProductBody = zod.object({
   "techSheet": zod.string().max(publishProductBodyTechSheetMax),
   "guideYear": zod.string().max(publishProductBodyGuideYearMax),
   "descriptionSource": zod.string().max(publishProductBodyDescriptionSourceMax),
-  "websiteUrlLegacy": zod.string().max(publishProductBodyWebsiteUrlLegacyMax),
+  "websiteUrlLegacy": zod.string().max(publishProductBodyWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with \" | \". Each redirects to this product once it is published.'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
@@ -4805,7 +4805,7 @@ export const PublishProductResponse = zod.object({
   "techSheet": zod.string().max(publishProductResponseTwoDraftOneOneTechSheetMax),
   "guideYear": zod.string().max(publishProductResponseTwoDraftOneOneGuideYearMax),
   "descriptionSource": zod.string().max(publishProductResponseTwoDraftOneOneDescriptionSourceMax),
-  "websiteUrlLegacy": zod.string().max(publishProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "websiteUrlLegacy": zod.string().max(publishProductResponseTwoDraftOneOneWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with \" | \". Each redirects to this product once it is published.'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
@@ -5396,7 +5396,7 @@ export const ArchiveProductResponse = zod.object({
   "techSheet": zod.string().max(archiveProductResponseTwoDraftOneOneTechSheetMax),
   "guideYear": zod.string().max(archiveProductResponseTwoDraftOneOneGuideYearMax),
   "descriptionSource": zod.string().max(archiveProductResponseTwoDraftOneOneDescriptionSourceMax),
-  "websiteUrlLegacy": zod.string().max(archiveProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "websiteUrlLegacy": zod.string().max(archiveProductResponseTwoDraftOneOneWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with \" | \". Each redirects to this product once it is published.'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
@@ -5987,7 +5987,7 @@ export const RestoreProductResponse = zod.object({
   "techSheet": zod.string().max(restoreProductResponseTwoDraftOneOneTechSheetMax),
   "guideYear": zod.string().max(restoreProductResponseTwoDraftOneOneGuideYearMax),
   "descriptionSource": zod.string().max(restoreProductResponseTwoDraftOneOneDescriptionSourceMax),
-  "websiteUrlLegacy": zod.string().max(restoreProductResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "websiteUrlLegacy": zod.string().max(restoreProductResponseTwoDraftOneOneWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with \" | \". Each redirects to this product once it is published.'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
@@ -6578,7 +6578,7 @@ export const DiscardProductDraftResponse = zod.object({
   "techSheet": zod.string().max(discardProductDraftResponseTwoDraftOneOneTechSheetMax),
   "guideYear": zod.string().max(discardProductDraftResponseTwoDraftOneOneGuideYearMax),
   "descriptionSource": zod.string().max(discardProductDraftResponseTwoDraftOneOneDescriptionSourceMax),
-  "websiteUrlLegacy": zod.string().max(discardProductDraftResponseTwoDraftOneOneWebsiteUrlLegacyMax),
+  "websiteUrlLegacy": zod.string().max(discardProductDraftResponseTwoDraftOneOneWebsiteUrlLegacyMax).describe('Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with \" | \". Each redirects to this product once it is published.'),
   "availabilityOverride": zod.union([zod.literal('Good stock'),zod.literal('Low stock'),zod.literal('Very low'),zod.literal('Unavailable'),zod.literal(null)]).nullable(),
   "listingState": zod.enum(['Active', 'New', 'Legacy']).optional().describe('Manual Active\/New\/Legacy listing. Defaults to Active. New products appear in the current selling catalogue with a NEW stamp. Legacy products cannot have availability.'),
   "details": zod.object({
@@ -7943,6 +7943,120 @@ export const CommitResellerImportResponse = zod.object({
 })),
   "plannedChanges": zod.array(zod.string())
 })
+
+
+/**
+ * @summary List every redirect currently in force
+ */
+export const listAdminRedirectsResponseIdMultipleOf = 1;
+
+
+
+export const ListAdminRedirectsResponseItem = zod.object({
+  "id": zod.number().multipleOf(listAdminRedirectsResponseIdMultipleOf),
+  "fromPath": zod.string(),
+  "toPath": zod.string(),
+  "source": zod.enum(['uploaded', 'catalogue', 'product', 'article']).describe('uploaded redirects are added from a CSV in Site settings and survive catalogue imports. product and article redirects come from that editor\'s Legacy website URL field and are changed there. catalogue redirects were created by an earlier catalogue import.'),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListAdminRedirectsResponse = zod.array(ListAdminRedirectsResponseItem)
+
+
+/**
+ * @summary Download the redirect CSV import template
+ */
+export const DownloadRedirectImportTemplateResponse = zod.unknown()
+
+
+/**
+ * @summary Validate a redirect CSV import
+ */
+export const DryRunRedirectImportBody = zod.object({
+  "csvText": zod.string()
+})
+
+export const dryRunRedirectImportResponseRowsMultipleOf = 1;
+
+export const dryRunRedirectImportResponseCreatedMultipleOf = 1;
+
+export const dryRunRedirectImportResponseUpdatedMultipleOf = 1;
+
+export const dryRunRedirectImportResponseUnchangedMultipleOf = 1;
+
+export const dryRunRedirectImportResponseSkippedMultipleOf = 1;
+
+export const dryRunRedirectImportResponseIssuesItemRowMultipleOf = 1;
+
+
+
+export const DryRunRedirectImportResponse = zod.object({
+  "token": zod.string(),
+  "rows": zod.number().multipleOf(dryRunRedirectImportResponseRowsMultipleOf),
+  "created": zod.number().multipleOf(dryRunRedirectImportResponseCreatedMultipleOf),
+  "updated": zod.number().multipleOf(dryRunRedirectImportResponseUpdatedMultipleOf),
+  "unchanged": zod.number().multipleOf(dryRunRedirectImportResponseUnchangedMultipleOf),
+  "skipped": zod.number().multipleOf(dryRunRedirectImportResponseSkippedMultipleOf),
+  "issues": zod.array(zod.object({
+  "row": zod.number().multipleOf(dryRunRedirectImportResponseIssuesItemRowMultipleOf),
+  "column": zod.string(),
+  "problem": zod.string()
+})),
+  "plannedChanges": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Commit a validated redirect CSV import
+ */
+export const CommitRedirectImportBody = zod.object({
+  "csvText": zod.string()
+}).and(zod.object({
+  "token": zod.string()
+}))
+
+export const commitRedirectImportResponseRowsMultipleOf = 1;
+
+export const commitRedirectImportResponseCreatedMultipleOf = 1;
+
+export const commitRedirectImportResponseUpdatedMultipleOf = 1;
+
+export const commitRedirectImportResponseUnchangedMultipleOf = 1;
+
+export const commitRedirectImportResponseSkippedMultipleOf = 1;
+
+export const commitRedirectImportResponseIssuesItemRowMultipleOf = 1;
+
+
+
+export const CommitRedirectImportResponse = zod.object({
+  "token": zod.string(),
+  "rows": zod.number().multipleOf(commitRedirectImportResponseRowsMultipleOf),
+  "created": zod.number().multipleOf(commitRedirectImportResponseCreatedMultipleOf),
+  "updated": zod.number().multipleOf(commitRedirectImportResponseUpdatedMultipleOf),
+  "unchanged": zod.number().multipleOf(commitRedirectImportResponseUnchangedMultipleOf),
+  "skipped": zod.number().multipleOf(commitRedirectImportResponseSkippedMultipleOf),
+  "issues": zod.array(zod.object({
+  "row": zod.number().multipleOf(commitRedirectImportResponseIssuesItemRowMultipleOf),
+  "column": zod.string(),
+  "problem": zod.string()
+})),
+  "plannedChanges": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Delete an uploaded or catalogue redirect
+ */
+export const deleteAdminRedirectPathIdMultipleOf = 1;
+
+
+
+export const DeleteAdminRedirectParams = zod.object({
+  "id": zod.coerce.number().min(1).multipleOf(deleteAdminRedirectPathIdMultipleOf)
+})
+
+export const DeleteAdminRedirectResponse = zod.void()
 
 
 /**

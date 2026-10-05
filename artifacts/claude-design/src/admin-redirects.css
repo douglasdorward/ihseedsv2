@@ -1,0 +1,13 @@
+.admin-redirect-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.admin-redirect-toolbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.admin-redirect-count { color: #5f6f66; font-size: 13px; }
+.admin-redirect-error { background: #fef3f2; color: #b42318; }
+.admin-redirect-issue { color: #b42318; }
+.admin-redirect-issue-heading { color: #b42318; font-weight: 700; }
+.admin-table-card.admin-redirect-table table { min-width: 760px; table-layout: auto; }
+.admin-table-card.admin-redirect-table th,
+.admin-table-card.admin-redirect-table td { padding: 14px 16px; vertical-align: middle; }
+.admin-redirect-table td code { word-break: break-all; font-size: 13px; color: #174e37; }
+.admin-table-card.admin-redirect-table th:last-child,
+.admin-table-card.admin-redirect-table td:last-child { width: 80px; text-align: right; }
+.admin-redirect-pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 16px; color: #5f6f66; font-size: 13px; }

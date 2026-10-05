@@ -19,6 +19,7 @@ import AdminSocialSharing from "./AdminSocialSharing";
 import AdminCompany from "./AdminCompany";
 import AdminBlog from "./AdminBlog";
 import AdminResellers from "./AdminResellers";
+import AdminRedirects from "./AdminRedirects";
 import { persistLatestProductAndPublish } from "../persist-latest-product";
 import { ProductPhotoOrderButtons } from "../product-photo-order";
 import { photoDisplaySrc, uploadMediaAsset } from "../upload-image";
@@ -2683,6 +2684,7 @@ export default function Admin({ role, accountName, onSignOut }: AdminAccountProp
   const isSiteGuide = route === "/admin/site-settings/seed-guide";
   const isSiteSocial = route === "/admin/site-settings/social";
   const isSiteCompany = route === "/admin/site-settings/company";
+  const isSiteRedirects = route === "/admin/site-settings/redirects";
   const isSiteCategories = route === "/admin/site-settings/categories" || route.startsWith("/admin/site-settings/categories/");
   const isEditor = route.startsWith("/admin/products/") && route !== "/admin/products/categories";
 
@@ -2707,6 +2709,7 @@ export default function Admin({ role, accountName, onSignOut }: AdminAccountProp
       {isSiteCategories && <AdminRootCategories />}
       {isSiteGuide && <AdminSeedGuide />}
       {isSiteCompany && <AdminCompany />}
+      {isSiteRedirects && <AdminRedirects />}
       {isEditor && (
         <ProductEditor
           isNew={route === "/admin/products/new"}

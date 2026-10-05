@@ -39,7 +39,10 @@ export interface ProductInput {
   guideYear: string;
   /** @maxLength 240 */
   descriptionSource: string;
-  /** @maxLength 500 */
+  /**
+     * Admin-only legacy URLs. Separate several old www.irwinhunter.com.au addresses with " | ". Each redirects to this product once it is published.
+     * @maxLength 2000
+     */
   websiteUrlLegacy: string;
   /** @nullable */
   availabilityOverride: ProductInputAvailabilityOverride;

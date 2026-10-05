@@ -12,6 +12,7 @@ import siteSettingsRouter from "./site-settings";
 import articlesRouter from "./articles";
 import resellersRouter from "./resellers";
 import generatedTechSheetsRouter from "./generated-tech-sheets";
+import redirectsRouter from "./redirects";
 
 const router: IRouter = Router();
 
@@ -27,6 +28,7 @@ router.use(siteSettingsRouter);
 router.use(articlesRouter);
 router.use(resellersRouter);
 router.use(generatedTechSheetsRouter);
+router.use(redirectsRouter);
 router.use(administratorsRouter);
 
 export default router;

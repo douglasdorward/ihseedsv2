@@ -8,7 +8,7 @@ import {
 } from "@workspace/db";
 import { normalizePublicPath, productCategoryPath, productPublicPath } from "./product-path";
 
-async function productPathSets() {
+export async function productPathSets() {
   const [products, categories] = await Promise.all([
     db.select().from(productsTable).where(eq(productsTable.publishStatus, "Published")),
     db.select({
