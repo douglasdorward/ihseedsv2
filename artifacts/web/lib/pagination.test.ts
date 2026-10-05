@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { pageFromSearchParams, pageHref, pageNumbers, paginate, PRODUCTS_PER_PAGE } from "./product-pagination.ts";
+import { pageFromSearchParams, pageHref, pageNumbers, paginate, PRODUCTS_PER_PAGE } from "./pagination.ts";
 import { searchParamsFromFilters, EMPTY_FILTERS } from "./product-filters.ts";
 
 const items = Array.from({ length: 111 }, (_, index) => index + 1);

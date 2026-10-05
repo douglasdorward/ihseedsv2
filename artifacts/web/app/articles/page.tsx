@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { toListingArticle } from "../../lib/article-listing";
 import { getArticles } from "../../lib/catalogue";
 import { loadSiteSettings } from "../../lib/site-settings";
 import { siteSocialMetadata } from "../../lib/social-metadata";
@@ -21,8 +23,9 @@ export default async function ArticlesPage() {
   ]);
 
   return (
+    <Suspense fallback={<div className="empty-state">Loading articles…</div>}>
     <ArticlesContent
-      articles={articles}
+      articles={articles.map(toListingArticle)}
       seedGuide={settings.seedGuide}
       intro={
         <div className="page-content resource-intro" style={{ maxWidth: 1180, margin: "0 auto", padding: "64px 40px 64px", display: "flex", flexDirection: "column", gap: 16 }}>
@@ -32,5 +35,6 @@ export default async function ArticlesPage() {
         </div>
       }
     />
+    </Suspense>
   );
 }

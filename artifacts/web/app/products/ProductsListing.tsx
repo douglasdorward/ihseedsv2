@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { CoverImage } from "../../components/CoverImage";
 import { Icon } from "../../components/Icon";
+import { Pagination } from "../../components/Pagination";
 import { ProductNewStamp } from "../../components/NewStamp";
 import { SiteSearch } from "../../components/SiteSearch";
 import { StatusPill } from "../../components/StatusPill";
@@ -23,7 +24,7 @@ import {
   type FilterOptionDimension,
   type ProductListingFilters,
 } from "../../lib/product-filters";
-import { pageFromSearchParams, pageHref, pageNumbers, paginate } from "../../lib/product-pagination";
+import { pageFromSearchParams, paginate } from "../../lib/pagination";
 import { getFactChips, hasProductPhoto, productCardImage, productImageAlt } from "./product-card-facts";
 
 function toggleValue(values: string[], value: string) {
@@ -366,37 +367,7 @@ export function ProductsListing({
               );
             })}
             </div>
-            {current.pageCount > 1 && (
-              <nav className="product-pagination" aria-label="Product pages">
-                {current.page > 1 ? (
-                  <Link className="product-pagination-step" href={pageHref(pathname, searchParams, current.page - 1)} scroll={false} rel="prev">
-                    <Icon name="chevron-left" size={16} /> Previous
-                  </Link>
-                ) : (
-                  <span className="product-pagination-step is-disabled" aria-hidden="true"><Icon name="chevron-left" size={16} /> Previous</span>
-                )}
-                <ol className="product-pagination-pages">
-                  {pageNumbers(current.page, current.pageCount).map((value, index) => (
-                    <li key={value ?? `gap-${index}`}>
-                      {value === null ? (
-                        <span className="product-pagination-gap" aria-hidden="true">…</span>
-                      ) : value === current.page ? (
-                        <span className="product-pagination-page is-current" aria-current="page">{value}</span>
-                      ) : (
-                        <Link className="product-pagination-page" href={pageHref(pathname, searchParams, value)} scroll={false} aria-label={`Page ${value}`}>{value}</Link>
-                      )}
-                    </li>
-                  ))}
-                </ol>
-                {current.page < current.pageCount ? (
-                  <Link className="product-pagination-step" href={pageHref(pathname, searchParams, current.page + 1)} scroll={false} rel="next">
-                    Next <Icon name="chevron-right" size={16} />
-                  </Link>
-                ) : (
-                  <span className="product-pagination-step is-disabled" aria-hidden="true">Next <Icon name="chevron-right" size={16} /></span>
-                )}
-              </nav>
-            )}
+            <Pagination current={current} pathname={pathname} searchParams={searchParams} label="Product pages" />
           </>
         ) : (
           <div className="product-listing-empty">
