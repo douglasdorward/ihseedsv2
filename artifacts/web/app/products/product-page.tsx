@@ -203,7 +203,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([productJsonLd, breadcrumbJsonLd, ...(faqJsonLd ? [faqJsonLd] : [])]).replace(/</g, "\\u003c") }} />
       <section className="product-hero" style={hasProductPhoto(product) ? { minHeight: 520 } : { minHeight: 520, backgroundImage: `url(${image})`, backgroundSize: "cover", backgroundPosition: "center" }}>
-        {hasProductPhoto(product) && <CoverImage src={image} alt="" sizes="100vw" />}
+        {hasProductPhoto(product) && <CoverImage src={image} alt="" sizes="100vw" priority />}
         <div className={`product-hero-scrim ${hasProductPhoto(product) ? "has-photo" : "no-photo"}`} aria-hidden="true" />
         {!hasProductPhoto(product) && <img className="product-hero-fallback-logo" src="/ih-seeds-logo.png" alt="" width={178} height={117} />}
         <ProductNewStamp listingState={product.listingState} size="hero" />

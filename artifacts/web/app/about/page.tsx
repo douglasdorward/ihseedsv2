@@ -38,7 +38,7 @@ export default async function About() {
             <p style={{ margin: 0, fontSize: 18, lineHeight: 1.6, color: "var(--black-green)", maxWidth: "52ch" }}>{about.heroIntro}</p>
           </div>
           <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", aspectRatio: "4/3" }}>
-            <CoverImage src={heroSrc} alt="" sizes="(max-width: 900px) 100vw, 560px" />
+            <CoverImage src={heroSrc} alt="" sizes="(max-width: 900px) 100vw, 560px" priority />
           </div>
         </div>
       </section>

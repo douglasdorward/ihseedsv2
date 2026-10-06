@@ -32,3 +32,25 @@ Before: live site. After: local production build against the development catalog
 - Card photos were previously offered at widths up to 3840; every width above 800 returned the same 800px picture under a new cache entry. Phones and desktops now share the 828 copy.
 - First visit after a restart, per photo: before, an unprepared photo took 0.6–1.1s on the live site (12 of 25 `/products` phone photos were unprepared). After a restart without warm-up, the local median was 0.9–1.3s. After the warm-up finished (305 photos from 18 pages in about 4.5 minutes), every photo on both pages was ready: median 3–13ms, worst 42ms locally.
 - Card photos on 1x desktops are now 256px for cards shown at about 245px (previously 384px). High-density screens get the 828 copy (previously 750), so no photo is softer.
+
+## Hero photos (6 October 2026)
+
+The large photo at the top of product pages, article pages and the About page is marked `priority`, like the homepage hero. It is preloaded in the page head with high fetch priority instead of lazy loading. Photos further down those pages still load on scroll. New full-width or above-the-fold heroes should do the same; cards and lists should not.
+
+```
+node artifacts/web/scripts/measure-hero.mjs <base> <path> [runs]
+```
+
+Phone is 390x844 at 3x on a slow 4G connection with 4x CPU slowdown; desktop is 1440x900 unthrottled. Browser cache off, optimiser copies already prepared. Medians of 5 runs on a local production build, in ms from navigation start.
+
+| Page / viewport | Before: hero requested, hero loaded | After: hero requested, hero loaded |
+| --- | --- | --- |
+| Product (Dalkeith sub clover) phone | 3123, 3628 | 801, 1441 |
+| Product desktop | 959, 991 | 222, 285 |
+| Article (SouWest mix) phone | 2562, 2903 | 857, 1346 |
+| Article desktop | 581, 628 | 191, 267 |
+| About phone | 3151, 3654 | 856, 1508 |
+| About desktop | 840, 868 | 205, 266 |
+
+- Photo widths are unchanged (1200 on phones, 1600 on desktop, 640 for the About photo on desktop).
+- On phones, the hero photo now finishes loading about 2 seconds sooner. The browser's Largest Contentful Paint figure improved less and varied by up to 0.7s between runs (product phone 4212 before, 3048–3752 after). After this change, the page's text and scripts take longer than the photo on the slow phone profile.

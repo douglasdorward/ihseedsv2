@@ -99,7 +99,7 @@ export default async function ArticlePage({ params }: Props) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([articleJsonLd, breadcrumbJsonLd]).replace(/</g, "\\u003c") }} />
       <section className="article-hero">
-        {article.heroImageSrc ? <CoverImage src={article.heroImageSrc} alt="" sizes="100vw" /> : null}
+        {article.heroImageSrc ? <CoverImage src={article.heroImageSrc} alt="" sizes="100vw" priority /> : null}
         {article.heroImageSrc ? <div className="article-hero-scrim" aria-hidden="true" /> : null}
         <div className="page-content article-hero-copy">
           <nav aria-label="Breadcrumb" className="article-breadcrumb">
