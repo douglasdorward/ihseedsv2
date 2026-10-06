@@ -86,7 +86,8 @@ function featuredNavRank(category: Pick<CatalogueCategory, "slug" | "name">) {
   return index === -1 ? FEATURED_NAV_ORDER.length : index;
 }
 
-function compareNavCategories(a: CatalogueCategory, b: CatalogueCategory) {
+/** Order of product types in the footer, header menu and products page filters. */
+export function compareNavCategories(a: CatalogueCategory, b: CatalogueCategory) {
   const rankDiff = featuredNavRank(a) - featuredNavRank(b);
   if (rankDiff !== 0) return rankDiff;
   const orderDiff = a.sortOrder - b.sortOrder;

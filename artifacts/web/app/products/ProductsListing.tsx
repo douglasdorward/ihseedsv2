@@ -11,7 +11,7 @@ import { SiteSearch } from "../../components/SiteSearch";
 import { StatusPill } from "../../components/StatusPill";
 import type { CatalogueCategory } from "../../lib/catalogue";
 import type { ListingProduct } from "../../lib/product-listing";
-import { productPublicPath } from "../../lib/catalogue-paths";
+import { compareNavCategories, productPublicPath } from "../../lib/catalogue-paths";
 import {
   catalogueFilterOptions,
   EMPTY_FILTERS,
@@ -84,7 +84,8 @@ export function ProductsListing({
   const rootCategories = useMemo(
     () => categories
       .filter((category) => category.parentId === null && category.active)
-      .sort((first, second) => first.name.localeCompare(second.name)),
+      // Same order as the product types in the footer.
+      .sort(compareNavCategories),
     [categories],
   );
 
@@ -96,6 +97,11 @@ export function ProductsListing({
   const categoryBySlug = useMemo(
     () => new Map(rootCategories.map((category) => [category.slug, category])),
     [rootCategories],
+  );
+
+  const categoryOptions = useMemo(
+    () => rootCategories.map((category) => category.slug).filter((slug) => options.category.includes(slug)),
+    [rootCategories, options.category],
   );
 
   const soilLabelByValue = useMemo(
@@ -151,9 +157,9 @@ export function ProductsListing({
         )}
       </div>
 
-      {options.category.length > 0 && (
+      {categoryOptions.length > 0 && (
         <FilterGroup title="Category">
-          {options.category.map((slug) => {
+          {categoryOptions.map((slug) => {
             const category = categoryBySlug.get(slug);
             if (!category) return null;
             return (
