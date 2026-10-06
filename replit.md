@@ -52,7 +52,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Site images in `artifacts/web/public/` listed in `IMMUTABLE_PUBLIC_FILES` (next.config.mjs) are cached by browsers for a year. Never change one in place: save the new version under a new file name and update its references.
+- Photo widths are capped by the shared loader in `artifacts/web/lib/image-loader.ts`; size hints live in `lib/image-sizes.ts`. Change grid breakpoints and those hints together. See `docs/image-loading.md`.
 
 ## Pointers
 

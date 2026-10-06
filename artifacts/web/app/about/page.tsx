@@ -5,6 +5,7 @@ import { Icon } from "../../components/Icon";
 import { getProducts } from "../../lib/catalogue";
 import { expandProductCount, FALLBACK_SITE_SETTINGS, loadSiteSettings, publicMediaSrc } from "../../lib/site-settings";
 import { siteSocialMetadata } from "../../lib/social-metadata";
+import { IMAGE_SIZES } from "../../lib/image-sizes";
 
 const metadata: Metadata = {
   title: "About IH Seeds | Western Australian Pasture Seed Specialists",
@@ -78,7 +79,7 @@ export default async function About() {
       <section style={{ background: "#FFFFFF" }}>
         <div className="page-wide" style={{ maxWidth: 1440, margin: "0 auto", padding: "96px 40px" }}>
           <div className="guide-banner">
-            <CoverImage src={publicMediaSrc({ src: settings.seedGuide.cardImageSrc, assetId: settings.seedGuide.cardImageAssetId }, "card")} alt="" sizes="(max-width: 900px) 100vw, 1360px" />
+            <CoverImage src={publicMediaSrc({ src: settings.seedGuide.cardImageSrc, assetId: settings.seedGuide.cardImageAssetId }, "card")} alt="" sizes={IMAGE_SIZES.guideBanner} />
             <div className="guide-scrim" aria-hidden="true" />
             <div>
               <h2>{settings.seedGuide.cardHeading}</h2>

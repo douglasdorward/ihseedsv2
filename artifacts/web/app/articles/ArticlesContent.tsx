@@ -9,6 +9,7 @@ import { SeedGuideBanner } from "../../components/SeedGuideBanner";
 import type { PublicSiteSeedGuide } from "../../lib/catalogue";
 import { articleTopics, articlesForTopic, topicFromSearchParams, topicHref, type ListingArticle } from "../../lib/article-listing";
 import { ARTICLES_PER_PAGE, pageFromSearchParams, paginate } from "../../lib/pagination";
+import { IMAGE_SIZES } from "../../lib/image-sizes";
 
 function formatArticleDate(value: string) {
   return new Date(value).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
@@ -65,7 +66,7 @@ export function ArticlesContent({
               {current.items.map((article, index) => (
                 <article className="article-card" key={article.id} data-testid={`card-article-${index}`}>
                   <div className="article-image">
-                    {article.heroImageSrc ? <CoverImage src={article.heroImageSrc} alt="" sizes="(max-width: 900px) 100vw, 380px" /> : null}
+                    {article.heroImageSrc ? <CoverImage src={article.heroImageSrc} alt="" sizes={IMAGE_SIZES.threeColumnCard} /> : null}
                   </div>
                   <div className="article-copy">
                     <small>{[article.tags[0], formatArticleDate(article.publishedAt)].filter(Boolean).join(" · ")}</small>

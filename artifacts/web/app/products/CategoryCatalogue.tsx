@@ -11,6 +11,7 @@ import type { ListingProduct } from "../../lib/product-listing";
 import { categoryPublicPath, productPublicPath, subcategoryPublicPath } from "../../lib/catalogue-paths";
 import { CategoryFilterControls, CategoryViewToggle } from "./CategoryControls";
 import { getFactChips, hasProductPhoto, productCardImage, productImageAlt } from "./product-card-facts";
+import { IMAGE_SIZES } from "../../lib/image-sizes";
 
 export function CategoryCatalogue({
   root,
@@ -78,7 +79,7 @@ export function CategoryCatalogue({
                     <Link key={product.id} href={productPublicPath(product, categories)} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 16 }}>
                       <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(29,40,28,0.10)", minHeight: 220, background: hasProductPhoto(product) ? "#C5CCC5" : `#C5CCC5 url(${productCardImage(product)}) center/cover`, position: "relative" }}>
                         {hasProductPhoto(product) ? (
-                          <CoverImage src={productCardImage(product)} alt={productImageAlt(product)} sizes="(max-width: 700px) 100vw, (max-width: 1100px) 46vw, 360px" />
+                          <CoverImage src={productCardImage(product)} alt={productImageAlt(product)} sizes={IMAGE_SIZES.threeColumnCard} />
                         ) : (
                           <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" width={178} height={117} />
                         )}

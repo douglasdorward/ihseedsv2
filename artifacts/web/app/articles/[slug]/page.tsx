@@ -13,6 +13,7 @@ import { socialMetadata } from "../../../lib/social-metadata";
 import { mediaVariantSrc } from "../../../lib/image-src";
 import { loadSiteSettings } from "../../../lib/site-settings";
 import { hasProductPhoto, productCardImage, productImageAlt } from "../../products/product-card-facts";
+import { IMAGE_SIZES } from "../../../lib/image-sizes";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -131,7 +132,7 @@ export default async function ArticlePage({ params }: Props) {
                 {linkedProducts.map((product) => (
                   <Link key={product.id} href={productPublicPath(product, categories)} className="also-popular-card">
                     <div className="also-popular-image" style={hasProductPhoto(product) ? undefined : { backgroundImage: `url(${productCardImage(product)})` }}>
-                      {hasProductPhoto(product) ? <CoverImage src={productCardImage(product)} alt={productImageAlt(product)} sizes="(max-width: 800px) 100vw, 360px" /> : <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" width={178} height={117} />}
+                      {hasProductPhoto(product) ? <CoverImage src={productCardImage(product)} alt={productImageAlt(product)} sizes={IMAGE_SIZES.articleRelatedCard} /> : <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" width={178} height={117} />}
                       <StatusPill status={product.status} />
                       <ProductNewStamp listingState={product.listingState} />
                     </div>
@@ -150,7 +151,7 @@ export default async function ArticlePage({ params }: Props) {
             <section className="product-photos" aria-labelledby="article-photos-heading">
               <h2 id="article-photos-heading" className="sidebar-card-heading">Photos</h2>
               <div className="product-photos-list">
-                <ContentImage src={mediaVariantSrc(photoSrc, "card")} alt={article.title} sizes="(max-width: 800px) 100vw, 360px" />
+                <ContentImage src={mediaVariantSrc(photoSrc, "card")} alt={article.title} sizes={IMAGE_SIZES.articleBodyPhoto} />
               </div>
             </section>
           )}

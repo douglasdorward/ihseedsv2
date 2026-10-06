@@ -1,4 +1,9 @@
+"use client";
+
+// A client component so the width-capping loader (a function) can reach
+// next/image; server components cannot pass functions to it.
 import Image from "next/image";
+import { cappedImageLoader } from "../lib/image-loader";
 import { optimizableSrc } from "../lib/image-src";
 
 export function CoverImage({
@@ -18,6 +23,7 @@ export function CoverImage({
   return (
     <Image
       className={className}
+      loader={cappedImageLoader}
       src={optimizableSrc(src)}
       alt={alt}
       fill
@@ -49,6 +55,7 @@ export function ContentImage({
   return (
     <Image
       className={className}
+      loader={cappedImageLoader}
       src={optimizableSrc(src)}
       alt={alt}
       width={width && width > 0 ? width : 800}

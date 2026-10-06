@@ -43,6 +43,39 @@ const wordpressRedirects = [
   { source: `${source}/`, destination, permanent: true },
 ]);
 
+/**
+ * Fixed site images in public/ that browsers may keep for a year without
+ * checking back. Never change one of these files in place: save the new
+ * version under a new name (e.g. add a size or version suffix) and update the
+ * references, or returning visitors keep seeing the old one.
+ */
+export const IMMUTABLE_PUBLIC_FILES = [
+  "ih-seeds-logo.png",
+  "elders-logo.webp",
+  "nutrien-logo.webp",
+  "product-fallback.svg",
+  "asf-accredited.png",
+  "asf-accredited-224.webp",
+  "asf-member.webp",
+  "asf-code-of-practice-440.webp",
+  "celebrating-60-years.jpg",
+  "celebrating-60-years-580.webp",
+  "ih-seeds-60-years-640.webp",
+];
+
+/**
+ * Files fetched by fixed, well-known names (browsers, home screens, social
+ * previews) that cannot be renamed, so they are kept for a day only.
+ */
+export const DAILY_PUBLIC_FILES = [
+  "favicon.ico",
+  "favicon-16x16.png",
+  "favicon-32x32.png",
+  "favicon-48x48.png",
+  "apple-touch-icon.png",
+  "social-share-default.jpg",
+];
+
 const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   serverExternalPackages: ["@puppeteer/browsers", "puppeteer-core"],
@@ -51,6 +84,10 @@ const nextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
+    // Keep in step with IMAGE_DEVICE_SIZES / IMAGE_SMALL_SIZES in lib/image-loader.ts.
+    // A short list means fewer versions of each photo to make and cache.
+    deviceSizes: [640, 828, 1200, 1600, 2048],
+    imageSizes: [96, 128, 256, 384],
     minimumCacheTTL: 2678400,
     // A relative /api/media src is not a file in public/, and the optimiser's
     // internal request does not receive image bytes through the rewrite.
@@ -82,12 +119,10 @@ const nextConfig = {
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=(), usb=()" },
     ];
+    const oneDay = [{ key: "Cache-Control", value: "public, max-age=86400" }];
     return [
-      { source: "/asf-accredited-224.webp", headers: immutable },
-      { source: "/celebrating-60-years-580.webp", headers: immutable },
-      { source: "/asf-member.webp", headers: immutable },
-      { source: "/asf-code-of-practice-440.webp", headers: immutable },
-      { source: "/ih-seeds-60-years-640.webp", headers: immutable },
+      ...IMMUTABLE_PUBLIC_FILES.map((file) => ({ source: `/${file}`, headers: immutable })),
+      ...DAILY_PUBLIC_FILES.map((file) => ({ source: `/${file}`, headers: oneDay })),
       { source: "/:path*", headers: security },
     ];
   },

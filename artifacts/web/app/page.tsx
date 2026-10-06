@@ -11,6 +11,7 @@ import { FederationSection } from "../components/FederationSection";
 import { expandProductCount, FALLBACK_SITE_SETTINGS, loadSiteSettings, publicMediaSrc, resolveBestSellers, resolveHomepageHeroSlides } from "../lib/site-settings";
 import { hasProductPhoto, productCardImage, productImageAlt } from "./products/product-card-facts";
 import { siteSocialMetadata } from "../lib/social-metadata";
+import { IMAGE_SIZES } from "../lib/image-sizes";
 
 const metadata: Metadata = {
   title: "IH Seeds | Western Australia's Pasture Seed Specialists",
@@ -75,7 +76,7 @@ export default async function Home() {
                   <div className="product-image" style={hasProductPhoto(product) ? undefined : { backgroundImage: `linear-gradient(180deg, transparent, rgba(29,40,28,.72)), url(${productCardImage(product)})` }}>
                     {hasProductPhoto(product) ? (
                       <>
-                        <CoverImage src={productCardImage(product)} alt={productImageAlt(product)} sizes="(max-width: 520px) 92vw, (max-width: 900px) 46vw, 280px" />
+                        <CoverImage src={productCardImage(product)} alt={productImageAlt(product)} sizes={IMAGE_SIZES.homeProductCard} />
                         <div className="product-image-scrim" aria-hidden="true" />
                       </>
                     ) : <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" width={178} height={117} />}
@@ -130,7 +131,7 @@ export default async function Home() {
       <section id="about" className="section about-section">
         <div className="feature-panel">
           <div className="feature-image">
-            <CoverImage src={aboutImage} alt="" sizes="(max-width: 900px) 100vw, 680px" />
+            <CoverImage src={aboutImage} alt="" sizes={IMAGE_SIZES.featurePanel} />
             <div className="feature-image-scrim" aria-hidden="true" />
           </div>
           <div className="feature-copy">
@@ -152,7 +153,7 @@ export default async function Home() {
               {seedShedArticles.map((article) => (
                 <article className="article-card" key={article.id} data-testid={`card-home-article-${article.slug}`}>
                   <div className="article-image">
-                    {article.heroImageSrc ? <CoverImage src={article.heroImageSrc} alt="" sizes="(max-width: 900px) 100vw, 380px" /> : null}
+                    {article.heroImageSrc ? <CoverImage src={article.heroImageSrc} alt="" sizes={IMAGE_SIZES.threeColumnCard} /> : null}
                   </div>
                   <div className="article-copy">
                     <small>{[article.tags[0], formatArticleDate(article.publishedAt)].filter(Boolean).join(" · ")}</small>
@@ -169,7 +170,7 @@ export default async function Home() {
 
       <section id="guide" className="section guide-section">
         <div className="guide-banner">
-          {guideImage ? <CoverImage src={guideImage} alt="" sizes="(max-width: 900px) 100vw, 1360px" /> : null}
+          {guideImage ? <CoverImage src={guideImage} alt="" sizes={IMAGE_SIZES.guideBanner} /> : null}
           <div className="guide-scrim" aria-hidden="true" />
           <div>
             <h2>{settings.seedGuide.cardHeading}</h2>

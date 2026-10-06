@@ -26,6 +26,7 @@ import {
 } from "../../lib/product-filters";
 import { pageFromSearchParams, paginate } from "../../lib/pagination";
 import { getFactChips, hasProductPhoto, productCardImage, productImageAlt } from "./product-card-facts";
+import { IMAGE_SIZES } from "../../lib/image-sizes";
 
 function toggleValue(values: string[], value: string) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
@@ -342,7 +343,7 @@ export function ProductsListing({
                 >
                   <div className="catalogue-product-media">
                     <div className="catalogue-product-image">
-                      {hasPhoto ? <CoverImage src={productCardImage(product)} alt={productImageAlt(product)} sizes="(max-width: 700px) 100vw, (max-width: 1100px) 46vw, 360px" /> : null}
+                      {hasPhoto ? <CoverImage src={productCardImage(product)} alt={productImageAlt(product)} sizes={IMAGE_SIZES.listingProductCard} /> : null}
                     </div>
                     {!hasPhoto && <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt={`${product.name} — product image unavailable`} width={178} height={117} />}
                     <div style={{ position: "absolute", top: 12, left: 12 }}>

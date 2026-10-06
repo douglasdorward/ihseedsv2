@@ -34,6 +34,7 @@ import { absoluteSiteUrl } from "../../lib/site-url";
 import { socialMetadata } from "../../lib/social-metadata";
 import { mediaVariantSrc } from "../../lib/image-src";
 import { hasProductPhoto, PRODUCT_FALLBACK_IMAGE, productCardImage, productImageAlt } from "./product-card-facts";
+import { IMAGE_SIZES } from "../../lib/image-sizes";
 
 const PUBLISHED_OFFICE_PHONE = "(08) 9383 4708";
 
@@ -244,7 +245,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
                 </div>
               </aside>
             </div>
-            {photos.length > 0 && <section className="product-photos mobile-order-5" aria-labelledby="product-photos-heading"><h2 id="product-photos-heading" className="sidebar-card-heading">Photos</h2><div className="product-photos-list">{photos.map((photo, index) => <ContentImage key={`${photo.src}-${index}`} src={mediaVariantSrc(photo.src, "card")} alt={photoAltText(product.name, photo)} width={photoDimension(photo.width)} height={photoDimension(photo.height)} sizes="(max-width: 800px) 100vw, 360px" />)}</div></section>}
+            {photos.length > 0 && <section className="product-photos mobile-order-5" aria-labelledby="product-photos-heading"><h2 id="product-photos-heading" className="sidebar-card-heading">Photos</h2><div className="product-photos-list">{photos.map((photo, index) => <ContentImage key={`${photo.src}-${index}`} src={mediaVariantSrc(photo.src, "card")} alt={photoAltText(product.name, photo)} width={photoDimension(photo.width)} height={photoDimension(photo.height)} sizes={IMAGE_SIZES.productSidePhoto} />)}</div></section>}
           </div>
         </div>
       </section>
@@ -263,7 +264,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
           </div>
         </section>
       )}
-      {alsoPopular.length > 0 && <section className="also-popular-section" aria-labelledby="also-popular-heading"><div className="also-popular-inner"><div className="also-popular-header"><h2 id="also-popular-heading">Also popular:</h2><Link href={categoryUrl} className="also-popular-category-link">View all {product.category}<Icon name="arrow-right" size={18} /></Link></div><div className="also-popular-grid">{alsoPopular.map((item) => <Link key={item.id} href={productPublicPath(item, categories)} className="also-popular-card"><div className="also-popular-image" style={hasProductPhoto(item) ? undefined : { backgroundImage: `url(${productCardImage(item)})` }}>{hasProductPhoto(item) ? <CoverImage src={productCardImage(item)} alt={productImageAlt(item)} sizes="(max-width: 800px) 100vw, 360px" /> : <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" width={178} height={117} />}<StatusPill status={item.status} /><ProductNewStamp listingState={item.listingState} /></div><div className="also-popular-card-body"><div><h3>{item.name}</h3>{item.details.tagline?.trim() && <p>{item.details.tagline}</p>}</div><span className="also-popular-arrow" aria-hidden="true"><Icon name="arrow-right" size={18} /></span></div></Link>)}</div></div></section>}
+      {alsoPopular.length > 0 && <section className="also-popular-section" aria-labelledby="also-popular-heading"><div className="also-popular-inner"><div className="also-popular-header"><h2 id="also-popular-heading">Also popular:</h2><Link href={categoryUrl} className="also-popular-category-link">View all {product.category}<Icon name="arrow-right" size={18} /></Link></div><div className="also-popular-grid">{alsoPopular.map((item) => <Link key={item.id} href={productPublicPath(item, categories)} className="also-popular-card"><div className="also-popular-image" style={hasProductPhoto(item) ? undefined : { backgroundImage: `url(${productCardImage(item)})` }}>{hasProductPhoto(item) ? <CoverImage src={productCardImage(item)} alt={productImageAlt(item)} sizes={IMAGE_SIZES.alsoPopularCard} /> : <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt="" width={178} height={117} />}<StatusPill status={item.status} /><ProductNewStamp listingState={item.listingState} /></div><div className="also-popular-card-body"><div><h3>{item.name}</h3>{item.details.tagline?.trim() && <p>{item.details.tagline}</p>}</div><span className="also-popular-arrow" aria-hidden="true"><Icon name="arrow-right" size={18} /></span></div></Link>)}</div></div></section>}
     </>
   );
 }
