@@ -24,3 +24,4 @@
 - [Uploaded redirects](uploaded-redirects.md) — admin-uploaded legacy redirects are marked `source = uploaded`; catalogue imports must never delete or rebuild them.
 - [Image optimiser caching](image-optimiser-caching.md) — capped widths, warm-up crawls rendered pages, vw-only sizes hints, local prod build gotchas.
 - [Product growing-note sections](product-growing-notes.md) — 4 fixed default sections + custom ones; every customer surface uses the one shared helper for order/hiding.
+- [Web font loading mode](web-font-loading.md) — keep Raleway on display swap; optional left visitors stuck on the fallback font.

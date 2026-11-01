@@ -16,9 +16,11 @@ const raleway = localFont({
   src: "./fonts/raleway-latin-variable.woff2",
   weight: "300 900",
   style: "normal",
-  // "optional" never swaps the font in after first paint, so the hero copy
-  // cannot re-wrap and cause a layout shift (CLS) on slow mobile connections.
-  display: "optional",
+  // "swap" guarantees Raleway always appears once loaded ("optional" left slow
+  // first visits stuck on the fallback font). next/font's metric-matched
+  // "raleway Fallback" keeps the swap's layout shift minimal.
+  display: "swap",
+  adjustFontFallback: "Arial",
   variable: "--font-raleway",
 });
 
