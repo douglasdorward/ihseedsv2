@@ -50,6 +50,7 @@ import type {
   ProductDetails,
   ProductComponent,
   ProductFaq,
+  ProductCustomSection,
   ProductPhoto,
   ProductPackSize,
   ProductSowingRate,
@@ -67,6 +68,18 @@ import type {
   ProductListingState
 } from "@workspace/api-client-react";
 import { sanitizeSlugInput, slugify } from "../product-slug";
+import {
+  addCustomSection,
+  CARBON_FARMING_TITLE,
+  customSectionHint,
+  moveCustomSection,
+  normalizeCustomSections,
+  PRODUCT_CUSTOM_SECTION_LIMIT,
+  PRODUCT_CUSTOM_SECTION_TITLE_MAX,
+  PRODUCT_NOTE_MAX,
+  removeCustomSection,
+  updateCustomSection,
+} from "../product-custom-sections";
 import "../admin-v2.css";
 
 function forSearchMetadataInput(value: string) {
@@ -192,6 +205,8 @@ const blankProduct = {
     diseasePestResistance: "",
     standLifeNotes: "",
     grazingManagementNotes: "",
+    carbonFarmingNotes: "",
+    customSections: [],
     pbrProtected: false,
     pbrDetails: "",
     licenceRestriction: "",
@@ -1464,6 +1479,8 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
         relatedProducts: raw.relatedProducts ?? [],
         alsoKnownAs: raw.alsoKnownAs ?? [],
         components,
+        carbonFarmingNotes: typeof raw.carbonFarmingNotes === "string" ? raw.carbonFarmingNotes : "",
+        customSections: normalizeCustomSections(raw.customSections),
         faqs: Array.isArray(raw.faqs)
           ? raw.faqs.slice(0, PRODUCT_FAQ_LIMIT).map((item: any) => ({
             question: typeof item?.question === "string" ? item.question : "",
@@ -1688,6 +1705,10 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
       details: { ...current.details, faqs: [...faqs, { ...emptyProductFaq }] },
     };
   });
+  const editCustomSections = (change: (sections: ProductCustomSection[]) => ProductCustomSection[]) => updateForm((current: any) => ({
+    ...current,
+    details: { ...current.details, customSections: change(normalizeCustomSections(current.details.customSections)) },
+  }));
   const linkComponentProduct = (index: number, slug: string) => {
     const component = form.details.components[index];
     const linked = productsBySlug.get(slug);
@@ -2215,6 +2236,70 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                     <label className={aiClass("details.diseasePestResistance")}>Disease &amp; pest resistance<textarea value={currentForm.details.diseasePestResistance} onChange={(e) => setDetail("diseasePestResistance", e.target.value)} rows={3}/></label>
                     <label className={aiClass("details.standLifeNotes")}>Stand life notes<textarea value={currentForm.details.standLifeNotes} onChange={(e) => setDetail("standLifeNotes", e.target.value)} rows={3}/></label>
                     <label className={aiClass("details.grazingManagementNotes")}>Grazing management notes<textarea value={currentForm.details.grazingManagementNotes} onChange={(e) => setDetail("grazingManagementNotes", e.target.value)} rows={3}/></label>
+                    <label className={aiClass("details.carbonFarmingNotes")}>{CARBON_FARMING_TITLE}<textarea value={currentForm.details.carbonFarmingNotes ?? ""} onChange={(e) => setDetail("carbonFarmingNotes", e.target.value)} rows={3} maxLength={PRODUCT_NOTE_MAX} data-testid="input-carbon-farming-notes"/></label>
+                    <div className="admin-repeat-group wide" data-testid="custom-sections-editor">
+                      <div className="admin-section-heading">
+                        <div>
+                          <h3>Custom sections</h3>
+                          <p className="admin-field-hint">Extra expandable sections shown on the product page after {CARBON_FARMING_TITLE}, in this order. Add up to {PRODUCT_CUSTOM_SECTION_LIMIT}. A section without both a title and text is hidden from customers.</p>
+                        </div>
+                        {viewMode !== "live" && !isArchived && (
+                          <button
+                            className="admin-button outline small"
+                            type="button"
+                            disabled={(currentForm.details.customSections ?? []).length >= PRODUCT_CUSTOM_SECTION_LIMIT}
+                            onClick={() => editCustomSections(addCustomSection)}
+                            data-testid="button-add-custom-section"
+                          >
+                            <Icon name="plus" size={16}/>Add section
+                          </button>
+                        )}
+                      </div>
+                      <div className="admin-component-list">
+                        {(currentForm.details.customSections ?? []).map((section: ProductCustomSection, index: number, all: ProductCustomSection[]) => {
+                          const hint = customSectionHint(section);
+                          const editable = viewMode !== "live" && !isArchived;
+                          return (
+                            <div className="admin-component-block" key={index} data-testid={`custom-section-${index}`}>
+                              <div className="admin-component-block-head">
+                                <h4>{section.title.trim() || `Section ${index + 1}`}</h4>
+                                {editable && (
+                                  <div style={{ display: "flex", gap: 6 }}>
+                                    <button type="button" className="admin-button ghost" disabled={index === 0} onClick={() => editCustomSections((sections) => moveCustomSection(sections, index, -1))} aria-label={`Move section ${index + 1} up`} data-testid={`button-custom-section-up-${index}`}>↑</button>
+                                    <button type="button" className="admin-button ghost" disabled={index === all.length - 1} onClick={() => editCustomSections((sections) => moveCustomSection(sections, index, 1))} aria-label={`Move section ${index + 1} down`} data-testid={`button-custom-section-down-${index}`}>↓</button>
+                                    <button type="button" className="admin-button ghost" onClick={() => editCustomSections((sections) => removeCustomSection(sections, index))} data-testid={`button-custom-section-remove-${index}`}>Remove</button>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="admin-component-fields">
+                                <label className="admin-component-description">Title
+                                  <input
+                                    maxLength={PRODUCT_CUSTOM_SECTION_TITLE_MAX}
+                                    value={section.title}
+                                    onChange={(event) => editCustomSections((sections) => updateCustomSection(sections, index, { title: event.target.value }))}
+                                    placeholder="e.g. Establishment tips"
+                                    data-testid={`input-custom-section-title-${index}`}
+                                  />
+                                  <span className="admin-character-count">{section.title.length}/{PRODUCT_CUSTOM_SECTION_TITLE_MAX}</span>
+                                </label>
+                                <label className="admin-component-description">Text
+                                  <textarea
+                                    rows={4}
+                                    maxLength={PRODUCT_NOTE_MAX}
+                                    value={section.body}
+                                    onChange={(event) => editCustomSections((sections) => updateCustomSection(sections, index, { body: event.target.value }))}
+                                    data-testid={`input-custom-section-body-${index}`}
+                                  />
+                                  {hint && <span className="admin-field-hint">{hint}</span>}
+                                  <span className="admin-character-count">{section.body.length}/{PRODUCT_NOTE_MAX}</span>
+                                </label>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {(currentForm.details.customSections ?? []).length === 0 && <p className="admin-empty-inline">No custom sections yet.</p>}
+                      </div>
+                    </div>
                   </>
                 )}
               </section>

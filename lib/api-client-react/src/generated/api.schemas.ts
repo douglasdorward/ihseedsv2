@@ -402,6 +402,13 @@ export const ProductDetailsLivestockItem = {
   Lamb_finishing: 'Lamb finishing',
 } as const;
 
+export interface ProductCustomSection {
+  /** @maxLength 80 */
+  title: string;
+  /** @maxLength 3000 */
+  body: string;
+}
+
 export type ProductDetailsCertificationItem = typeof ProductDetailsCertificationItem[keyof typeof ProductDetailsCertificationItem];
 
 
@@ -537,6 +544,10 @@ export interface ProductDetails {
   standLifeNotes: string;
   /** @maxLength 3000 */
   grazingManagementNotes: string;
+  /** @maxLength 3000 */
+  carbonFarmingNotes?: string;
+  /** @maxItems 10 */
+  customSections?: ProductCustomSection[];
   pbrProtected: boolean;
   /** @maxLength 300 */
   pbrDetails: string;
@@ -698,6 +709,9 @@ export interface PublicProductDetails {
   diseasePestResistance: string;
   standLifeNotes: string;
   grazingManagementNotes: string;
+  carbonFarmingNotes: string;
+  /** @maxItems 10 */
+  customSections: ProductCustomSection[];
   pbrProtected: boolean;
   pbrDetails: string;
   certification: string[];

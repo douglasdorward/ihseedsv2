@@ -1504,17 +1504,18 @@ test("export workbook matches the authoritative contract and round-trips cleanly
   const exported = Buffer.from(await exportResponse.arrayBuffer());
   const book = xlsx.read(exported, { type: "buffer" });
   assert.deepEqual(book.SheetNames, ["Column guide", "1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines",
-    "5 Mix components", "7 Website SEO", "10 Product FAQs", "Lists"]);
+    "5 Mix components", "7 Website SEO", "10 Product FAQs", "11 Product sections", "Lists"]);
   const listsIndex = book.SheetNames.indexOf("Lists");
   assert.equal(book.Workbook?.Sheets?.[listsIndex]?.Hidden ?? 0, 0);
   const headers = (name) => xlsx.utils.sheet_to_json(book.Sheets[name], { header: 1, defval: "", raw: false })[0];
-  assert.deepEqual(headers("1 Products"), ["slug", "product_name", "category", "sub_category", "record_type", "botanical_name", "persistency_type", "australian_bred", "carbon_credit_eligible", "tagline", "blurb", "key_attributes", "description", "distribution_note", "rainfall_min_mm", "soil_ph_min", "soil_ph_scale", "soil_range_lightest", "soil_range_heaviest", "sowing_depth_min_cm", "sowing_depth_max_cm", "tolerance", "end_use", "livestock", "disease_pest_resistance", "stand_life_notes", "grazing_management_notes", "pbr_protected", "pbr_details", "certification", "formulation_year", "related_products", "photo_1", "photo_2", "photo_3", "tech_sheet_pdf_path", "website_url", "listing_state", "listing_override", "availability", "status"]);
+  assert.deepEqual(headers("1 Products"), ["slug", "product_name", "category", "sub_category", "record_type", "botanical_name", "persistency_type", "australian_bred", "carbon_credit_eligible", "tagline", "blurb", "key_attributes", "description", "distribution_note", "rainfall_min_mm", "soil_ph_min", "soil_ph_scale", "soil_range_lightest", "soil_range_heaviest", "sowing_depth_min_cm", "sowing_depth_max_cm", "tolerance", "end_use", "livestock", "disease_pest_resistance", "stand_life_notes", "grazing_management_notes", "carbon_farming_notes", "pbr_protected", "pbr_details", "certification", "formulation_year", "related_products", "photo_1", "photo_2", "photo_3", "tech_sheet_pdf_path", "website_url", "listing_state", "listing_override", "availability", "status"]);
   assert.deepEqual(headers("2 Sowing rates"), ["slug", "context", "min", "max", "unit"]);
   assert.deepEqual(headers("3 Category specifics"), ["slug", "category", "ploidy", "heading_date", "heading_offset_days", "argt_resistant", "endophyte", "growth_season", "maturity_days", "hard_seed_level", "oestrogen_level", "bloat_risk", "flower_colour", "winter_activity", "growing_season", "weeks_to_first_grazing", "prussic_acid_risk", "regrowth", "flowering_window", "product_form", "application_rate"]);
   assert.deepEqual(headers("4 Sale lines"), ["slug", "stock_code", "seed_form", "pack_kg", "pack_unit", "availability", "price_display", "is_default"]);
   assert.deepEqual(headers("5 Mix components"), ["mix_slug", "component_slug", "component_name", "inclusion_rate", "rate_unit", "component_description"]);
   assert.deepEqual(headers("7 Website SEO"), ["product_slug", "h1", "seo_title", "meta_description", "social_title", "social_description", "social_image", "canonical_url", "robots_index"]);
   assert.deepEqual(headers("10 Product FAQs"), ["slug", "product_name", "question", "answer"]);
+  assert.deepEqual(headers("11 Product sections"), ["slug", "product_name", "title", "body"]);
   assert.equal(headers("Lists").includes("seed_grade"), false);
   assert.equal(headers("Lists").includes("guide_section"), false);
   assert.equal(headers("1 Products").includes("photo_2"), true);
@@ -1609,6 +1610,101 @@ test("product FAQs export, replace, clear, and validate through the workbook", a
     }).toString("base64"),
   }), 200);
   assert.equal(tooLong.issues.some((issue) => issue.sheet === "10 Product FAQs" && issue.column === "question"), true);
+});
+
+test("carbon farming notes and custom sections export, replace, clear, and validate through the workbook", async () => {
+  const categories = assertStatus(await request("GET", "/categories"), 200);
+  const other = categories.find((category) => category.slug === "other");
+  assert.ok(other, "Expected the seeded Other category");
+  const product = await createProduct("workbook-sections", { category: other.name, subcategoryId: other.id });
+  const storedSections = [
+    { title: "Establishment tips", body: "Roll after sowing.\n\nControl weeds early." },
+    { title: "", body: "Untitled text stays hidden but is kept." },
+  ];
+  assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(product, {
+    details: { ...product.details, carbonFarmingNotes: "Deep roots build soil carbon.", customSections: storedSections },
+  })), 200);
+
+  const exported = Buffer.from(await (await fetch(`${baseUrl}/api/admin/import/export`)).arrayBuffer());
+  const exportedBook = xlsx.read(exported);
+  const exportedProductRow = xlsx.utils.sheet_to_json(exportedBook.Sheets["1 Products"], { defval: "", raw: false })
+    .find((row) => row.slug === product.slug);
+  assert.equal(exportedProductRow.carbon_farming_notes, "Deep roots build soil carbon.");
+  const exportedSectionRows = xlsx.utils.sheet_to_json(exportedBook.Sheets["11 Product sections"], { defval: "", raw: false })
+    .filter((row) => row.slug === product.slug);
+  assert.deepEqual(exportedSectionRows.map((row) => ({ title: row.title, body: row.body })), storedSections);
+
+  const productRow = (extra = {}) => ({
+    slug: product.slug,
+    product_name: product.name,
+    category: other.name,
+    record_type: "Variety",
+    ...extra,
+  });
+  const makeWorkbook = ({ sectionRows, includeSectionSheet = true, products = [productRow()] }) => {
+    const book = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet(products), "1 Products");
+    if (includeSectionSheet) {
+      xlsx.utils.book_append_sheet(
+        book,
+        xlsx.utils.json_to_sheet(sectionRows.length ? sectionRows : [{ slug: "", product_name: "", title: "", body: "" }]),
+        "11 Product sections",
+      );
+    }
+    xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([{ category: other.name, record_type: "Variety" }]), "Lists");
+    return xlsx.write(book, { type: "buffer", bookType: "xlsx" });
+  };
+  const commitWorkbookFile = async (buffer) => {
+    const report = assertStatus(await request("POST", "/admin/import/dry-run", {
+      workbookBase64: buffer.toString("base64"),
+    }), 200);
+    assert.deepEqual(report.issues, []);
+    assertStatus(await request("POST", "/admin/import/commit", {
+      workbookBase64: buffer.toString("base64"),
+      token: report.token,
+    }), 200);
+  };
+
+  await commitWorkbookFile(makeWorkbook({
+    products: [productRow({ carbon_farming_notes: "Diverse swards store more carbon." })],
+    sectionRows: [
+      { slug: product.slug, product_name: product.name, title: "Second", body: "Shown second." },
+      { slug: product.slug, product_name: product.name, title: "Third", body: "Shown third." },
+    ],
+  }));
+  const imported = await adminProduct(product.id);
+  assert.equal(imported.details.carbonFarmingNotes, "Diverse swards store more carbon.");
+  assert.deepEqual(imported.details.customSections, [
+    { title: "Second", body: "Shown second." },
+    { title: "Third", body: "Shown third." },
+  ]);
+  // Every imported record must still pass the editor's save schema unchanged.
+  assertStatus(await request("POST", `/admin/products/${product.id}/draft`, draftPayload(imported, { details: imported.details })), 200);
+
+  await commitWorkbookFile(makeWorkbook({ sectionRows: [], includeSectionSheet: false }));
+  const cleared = await adminProduct(product.id);
+  assert.deepEqual(cleared.details.customSections, []);
+  assert.equal(cleared.details.carbonFarmingNotes, "");
+
+  const tooMany = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: makeWorkbook({
+      sectionRows: Array.from({ length: 11 }, (_, index) => ({
+        slug: product.slug, product_name: product.name, title: `Section ${index + 1}`, body: `Text ${index + 1}`,
+      })),
+    }).toString("base64"),
+  }), 200);
+  assert.equal(tooMany.issues.some((issue) => issue.sheet === "11 Product sections" && /maximum is 10/.test(issue.problem)), true);
+
+  const tooLong = assertStatus(await request("POST", "/admin/import/dry-run", {
+    workbookBase64: makeWorkbook({
+      sectionRows: [
+        { slug: product.slug, product_name: product.name, title: "T".repeat(81), body: "Body" },
+        { slug: "", product_name: "", title: "Orphan", body: "No slug" },
+      ],
+    }).toString("base64"),
+  }), 200);
+  assert.equal(tooLong.issues.some((issue) => issue.sheet === "11 Product sections" && issue.column === "title"), true);
+  assert.equal(tooLong.issues.some((issue) => issue.sheet === "11 Product sections" && issue.column === "slug"), true);
 });
 
 test("malformed product identities and legacy URLs cannot trigger catalogue replacement", async () => {

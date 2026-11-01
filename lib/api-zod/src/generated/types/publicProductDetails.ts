@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ProductComponent } from './productComponent';
+import type { ProductCustomSection } from './productCustomSection';
 import type { ProductFaq } from './productFaq';
 import type { ProductPhoto } from './productPhoto';
 import type { ProductSowingRate } from './productSowingRate';
@@ -61,6 +62,9 @@ export interface PublicProductDetails {
   diseasePestResistance: string;
   standLifeNotes: string;
   grazingManagementNotes: string;
+  carbonFarmingNotes: string;
+  /** @maxItems 10 */
+  customSections: ProductCustomSection[];
   pbrProtected: boolean;
   pbrDetails: string;
   certification: string[];

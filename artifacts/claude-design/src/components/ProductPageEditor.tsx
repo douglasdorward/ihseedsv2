@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
-import type { CatalogueCategory, ProductComponent, ProductFaq, ProductListingState, ProductPhoto, ProductSowingRate, SaleLine } from "@workspace/api-client-react";
+import type { CatalogueCategory, ProductComponent, ProductCustomSection, ProductFaq, ProductListingState, ProductPhoto, ProductSowingRate, SaleLine } from "@workspace/api-client-react";
 import { SeedFormField } from "./SeedFormField";
 import { Icon } from "./ui";
 import { AlsoPopularPicker } from "./AlsoPopularPicker";
@@ -8,6 +8,18 @@ import { intendedAlsoPopularSlugs, isAlsoPopularEligible, resolveAlsoPopular } f
 import { getEditorQuickFactSlots, type QuickFactSlotId } from "../product-quick-facts";
 import { ProductPhotoOrderButtons } from "../product-photo-order";
 import { slugify } from "../product-slug";
+import {
+  addCustomSection,
+  CARBON_FARMING_TITLE,
+  customSectionHint,
+  moveCustomSection,
+  normalizeCustomSections,
+  PRODUCT_CUSTOM_SECTION_LIMIT,
+  PRODUCT_CUSTOM_SECTION_TITLE_MAX,
+  PRODUCT_NOTE_MAX,
+  removeCustomSection,
+  updateCustomSection,
+} from "../product-custom-sections";
 import { photoDisplaySrc, uploadMediaAsset } from "../upload-image";
 import { SocialImagePreview } from "./SocialImagePreview";
 
@@ -199,6 +211,8 @@ export function ProductPageEditor(props: ProductPageEditorProps) {
   const alsoPopularIntended = intendedAlsoPopularSlugs(details.relatedProducts);
   const alsoPopularIsAutomatic = alsoPopularIntended.length === 0;
   const faqs = (details.faqs ?? []) as ProductFaq[];
+  const customSections = normalizeCustomSections(details.customSections);
+  const setCustomSections = (next: ProductCustomSection[]) => props.setDetail("customSections", next);
 
   return (
     <div className="ppe">
@@ -386,6 +400,43 @@ export function ProductPageEditor(props: ProductPageEditorProps) {
                   <GrowingNote summary="Planting & grazing notes" value={details.grazingManagementNotes} onChange={(value) => props.setDetail("grazingManagementNotes", value)} />
                   <GrowingNote summary="Disease & pest resistance" value={details.diseasePestResistance} onChange={(value) => props.setDetail("diseasePestResistance", value)} />
                   <GrowingNote summary="Stand life" value={details.standLifeNotes} onChange={(value) => props.setDetail("standLifeNotes", value)} />
+                  <GrowingNote summary={CARBON_FARMING_TITLE} value={details.carbonFarmingNotes ?? ""} onChange={(value) => props.setDetail("carbonFarmingNotes", value)} />
+                  {customSections.map((section, index) => (
+                    <div key={index} className="ppe-custom-section" style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }} data-testid={`ppe-custom-section-${index}`}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <input
+                          className={`ppe-ghost ${section.title.trim() ? "" : "is-empty"}`}
+                          maxLength={PRODUCT_CUSTOM_SECTION_TITLE_MAX}
+                          value={section.title}
+                          placeholder="Section title"
+                          aria-label={`Custom section ${index + 1} title`}
+                          onChange={(event) => setCustomSections(updateCustomSection(customSections, index, { title: event.target.value }))}
+                          style={{ flex: 1, color: "var(--green)", fontSize: 20, fontWeight: 700 }}
+                        />
+                        {!readOnly && (
+                          <>
+                            <button type="button" className="ppe-inline-remove" disabled={index === 0} onClick={() => setCustomSections(moveCustomSection(customSections, index, -1))} aria-label={`Move custom section ${index + 1} up`}>↑</button>
+                            <button type="button" className="ppe-inline-remove" disabled={index === customSections.length - 1} onClick={() => setCustomSections(moveCustomSection(customSections, index, 1))} aria-label={`Move custom section ${index + 1} down`}>↓</button>
+                            <button type="button" className="ppe-inline-remove" onClick={() => setCustomSections(removeCustomSection(customSections, index))} aria-label={`Remove custom section ${index + 1}`}>×</button>
+                          </>
+                        )}
+                      </div>
+                      <textarea
+                        className={`ppe-ghost ppe-growing-note ${section.body.trim() ? "" : "is-empty"}`}
+                        rows={3}
+                        maxLength={PRODUCT_NOTE_MAX}
+                        value={section.body}
+                        placeholder="Add section text"
+                        aria-label={`Custom section ${index + 1} text`}
+                        onChange={(event) => setCustomSections(updateCustomSection(customSections, index, { body: event.target.value }))}
+                        style={{ margin: "16px 0 0", lineHeight: 1.6, width: "100%" }}
+                      />
+                      {customSectionHint(section) && <p className="admin-field-hint" style={{ margin: "6px 0 0" }}>{customSectionHint(section)}</p>}
+                    </div>
+                  ))}
+                  {!readOnly && customSections.length < PRODUCT_CUSTOM_SECTION_LIMIT && (
+                    <button type="button" className="ppe-quiet-add" onClick={() => setCustomSections(addCustomSection(customSections))} data-testid="ppe-add-custom-section">Add section</button>
+                  )}
                 </section>
                 <section style={{ display: "grid", gap: 16 }}>
                   <h2 style={{ color: "var(--green)", fontSize: 28 }}>How it&apos;s sold</h2>

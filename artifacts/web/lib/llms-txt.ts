@@ -17,6 +17,7 @@ import { summariseCategoryProducts } from "./category-summary";
 import { subcategoryHeading } from "./subcategory-copy";
 import { PASTURE_SELECTOR_FAQS } from "./pasture-selector-faqs";
 import { toListingProduct } from "./product-listing";
+import { productGrowingNotes } from "./product-growing-notes";
 import { formatSoilPh, formatSoilRange, formatSowingRates, getProductQuickFacts } from "./product-quick-facts";
 import { productCanonicalUrl } from "./product-url";
 import { expandProductCount } from "./site-settings";
@@ -402,9 +403,7 @@ export function buildLlmsFullTxt(input: LlmsInput) {
     const components = (details.components ?? []).map(mixComponentLine).filter(Boolean);
     if (components.length) lines.push("**Mix components**", "", ...components, "");
     pushBlock(lines, "About this variety", details.description ?? "");
-    pushBlock(lines, "Planting & grazing notes", details.grazingManagementNotes ?? "");
-    pushBlock(lines, "Disease & pest resistance", details.diseasePestResistance ?? "");
-    pushBlock(lines, "Stand life", details.standLifeNotes ?? "");
+    for (const note of productGrowingNotes(details)) pushBlock(lines, note.title, note.body);
     const faqs = completeFaqs(details.faqs);
     if (faqs.length) {
       lines.push("**FAQs**", "");

@@ -2,6 +2,7 @@ import type { CatalogueArticle, CatalogueCategory, CatalogueProduct } from "./ca
 import { categoryPageHeading, productPageHeading } from "./catalogue";
 import { categoryPublicPath, productPublicPath } from "./catalogue-paths";
 import { getProductQuickFacts } from "./product-quick-facts";
+import { productGrowingNotes } from "./product-growing-notes";
 
 export type SearchKind = "product" | "category" | "article";
 
@@ -108,9 +109,9 @@ function productDocument(product: CatalogueProduct, categories: CatalogueCategor
   for (const fact of getProductQuickFacts(product)) {
     addField(fields, "body", `${fact.label}: ${fact.value}`);
   }
-  addField(fields, "body", details.grazingManagementNotes);
-  addField(fields, "body", details.diseasePestResistance);
-  addField(fields, "body", details.standLifeNotes);
+  for (const note of productGrowingNotes(details)) {
+    addField(fields, "body", `${note.title}: ${note.body}`);
+  }
   for (const faq of completeFaqs(details.faqs, 10)) {
     addField(fields, "title", faq.question);
     addField(fields, "body", faq.answer);

@@ -107,6 +107,7 @@ function toPublicDetails(value: unknown, packSize: string, name = "") {
     floweringWindow: d.floweringWindow,
     applicationRate: d.applicationRate, diseasePestResistance: d.diseasePestResistance,
     standLifeNotes: d.standLifeNotes, grazingManagementNotes: d.grazingManagementNotes,
+    carbonFarmingNotes: d.carbonFarmingNotes, customSections: d.customSections,
     pbrProtected: d.pbrProtected, pbrDetails: d.pbrDetails, certification: d.certification,
     description: d.description, components: d.components, faqs: d.faqs,
     relatedProducts: d.relatedProducts, formulationYear: d.formulationYear, photos: d.photos,

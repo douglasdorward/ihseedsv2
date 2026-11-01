@@ -26,6 +26,7 @@ import {
 } from "../../lib/catalogue-paths";
 import { resolveAlsoPopular } from "../../lib/also-popular";
 import { getProductQuickFacts } from "../../lib/product-quick-facts";
+import { productGrowingNotes } from "../../lib/product-growing-notes";
 import { productCanonicalUrl } from "../../lib/product-url";
 import { forSearchMetadata } from "../../lib/search-metadata";
 import { companyTelHref } from "../../lib/company";
@@ -145,6 +146,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
   const officePhone = configuredPhone && companyTelHref(configuredPhone) ? configuredPhone : PUBLISHED_OFFICE_PHONE;
   const officeTel = companyTelHref(officePhone);
   const details = product.details;
+  const growingNotes = productGrowingNotes(details);
   const image = productImage(product);
   const canonicalHref = productCanonicalUrl(details.canonicalUrl, canonical);
   const root = rootCategoryForProduct(product, categories);
@@ -229,7 +231,7 @@ export async function NestedProductPage({ params }: { params: RouteParams }) {
             {details.description && <section style={{ display: "grid", gap: 16 }}><h2 style={{ color: "var(--green)", fontSize: 30 }}>{aboutHeading(product)}</h2>{details.description.split(/\n\s*\n/).filter((paragraph) => paragraph.trim()).map((paragraph, index) => <p key={index} style={{ fontSize: 17, lineHeight: 1.7, maxWidth: "64ch" }}>{paragraph.trim()}</p>)}</section>}
             </div>}
             <div className="product-main-rest mobile-order-6">
-            {(details.grazingManagementNotes || details.diseasePestResistance || details.standLifeNotes) && <section style={{ display: "grid", gap: 16 }} aria-label="Product growing notes">{details.grazingManagementNotes && <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}><summary style={{ color: "var(--green)", cursor: "pointer", fontSize: 20, fontWeight: 700 }}>Planting &amp; grazing notes</summary><p style={{ margin: "16px 0 0", lineHeight: 1.6 }}>{details.grazingManagementNotes}</p></details>}{details.diseasePestResistance && <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}><summary style={{ color: "var(--green)", cursor: "pointer", fontSize: 20, fontWeight: 700 }}>Disease &amp; pest resistance</summary><p style={{ margin: "16px 0 0", lineHeight: 1.6 }}>{details.diseasePestResistance}</p></details>}{details.standLifeNotes && <details style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}><summary style={{ color: "var(--green)", cursor: "pointer", fontSize: 20, fontWeight: 700 }}>Stand life</summary><p style={{ margin: "16px 0 0", lineHeight: 1.6 }}>{details.standLifeNotes}</p></details>}</section>}
+            {growingNotes.length > 0 && <section style={{ display: "grid", gap: 16 }} aria-label="Product growing notes">{growingNotes.map((note, index) => <details key={`${note.title}-${index}`} style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }} data-testid={`product-note-${index}`}><summary style={{ color: "var(--green)", cursor: "pointer", fontSize: 20, fontWeight: 700 }}>{note.title}</summary><p style={{ margin: "16px 0 0", lineHeight: 1.6 }}>{note.body}</p></details>)}</section>}
             <section style={{ display: "grid", gap: 16 }}><h2 style={{ color: "var(--green)", fontSize: 28 }}>How it&apos;s sold</h2><div className="product-table-wrap sold-table"><table><thead><tr><th>Form</th><th>Pack</th><th>Status</th></tr></thead><tbody>{product.saleLines?.map((line) => <tr key={line.stockCode}><td>{line.seedForm || "Bare"}</td><td>{line.packKg ? `${line.packKg} ${line.packUnit}` : product.packSize}</td><td className="sold-status"><StatusPill status={({ "Good stock": "in-stock", "Low stock": "low", "Very low": "very-low", Unavailable: "unavailable" }[line.availability ?? "Unavailable"] ?? product.status)} /></td></tr>)}</tbody></table></div></section>
             </div>
           </article>

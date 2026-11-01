@@ -159,6 +159,26 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **Public API:** yes
 - **Purpose:** How to plant and graze. Do not repeat Quick facts.
 - **Constraints:** max 3000 characters.
+## Carbon Farming & Pasture Diversity
+
+- **API path:** `details.carbonFarmingNotes`
+- **Workbook:** `1 Products.carbon_farming_notes`
+- **Required:** no
+- **Shown when:** category is not Biologicals
+- **Customer website:** Accordion “Carbon Farming & Pasture Diversity” after Stand life when non-blank. Also printed on the tech sheet and included in site search and `/llms-full.txt`.
+- **Public API:** yes
+- **Purpose:** Carbon farming and pasture diversity value of the product.
+- **Constraints:** max 3000 characters.
+## Custom sections
+
+- **API path:** `details.customSections[]` (`title`, `body`)
+- **Workbook:** `11 Product sections` (one row per section, in order)
+- **Required:** no
+- **Shown when:** category is not Biologicals
+- **Customer website:** Extra accordions after Carbon Farming & Pasture Diversity, in the saved order. A section shows only when it has both a title and text. Also printed on the tech sheet and included in site search and `/llms-full.txt`.
+- **Public API:** yes
+- **Purpose:** Product-specific topics that do not fit the four standard sections. Add, rename, reorder, or remove them in Form view or the Product page view.
+- **Constraints:** max 10 sections. Title max 80 characters. Text max 3000 characters. AI fill does not create custom sections.
 
 Workbook imports replace this tab's supported values for every imported product; export and back up the current catalogue before importing.
 

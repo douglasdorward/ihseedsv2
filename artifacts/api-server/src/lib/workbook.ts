@@ -4,7 +4,7 @@ import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import {
   applyListingAvailability,
   catalogueCategoriesTable, db, forSearchMetadata, isActiveListing, mediaAssetsTable, normalizeProductDetails, productOptionsTable,
-  withDefaultSocialImage,
+  withDefaultSocialImage, PRODUCT_CUSTOM_SECTION_LIMIT, PRODUCT_CUSTOM_SECTION_TITLE_MAX, PRODUCT_NOTE_MAX,
   productDraftsTable, productsTable, redirectsTable, resolveListingState, saleLinesTable,
   type ProductPhoto,
 } from "@workspace/db";
@@ -14,11 +14,12 @@ import { appendProductColumnGuide, PRODUCT_SHEET_HEADERS } from "./product-colum
 import { describeProductLegacyUrls, joinLegacyUrls, legacyWebsitePaths } from "./product-legacy-urls.ts";
 import { legacyRedirectConflict, productPublicPath, requiredLegacyRedirects } from "./product-path.ts";
 
-export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "7 Website SEO", "10 Product FAQs"] as const;
+export const importSheetNames = ["1 Products", "2 Sowing rates", "3 Category specifics", "4 Sale lines", "5 Mix components", "7 Website SEO", "10 Product FAQs", "11 Product sections"] as const;
 const PRODUCT_FAQ_SHEET = "10 Product FAQs";
 const PRODUCT_FAQ_LIMIT = 10;
 const PRODUCT_FAQ_QUESTION_MAX = 180;
 const PRODUCT_FAQ_ANSWER_MAX = 4000;
+const PRODUCT_SECTION_SHEET = "11 Product sections";
 const MIX_COMPONENT_DESCRIPTION_MAX = 2000;
 type Row = Record<string, unknown>;
 type SheetReport = { rows: number; accepted: number; skipped: number; reasons: string[] };
@@ -38,6 +39,7 @@ const PRODUCT_DETAILS: Record<string, string> = {
   sowing_depth_max_cm: "sowingDepthMaxCm",
   disease_pest_resistance: "diseasePestResistance", stand_life_notes: "standLifeNotes",
   grazing_management_notes: "grazingManagementNotes",
+  carbon_farming_notes: "carbonFarmingNotes",
   pbr_details: "pbrDetails",
 };
 const SPECIFICS: Record<string, string> = {
@@ -103,6 +105,12 @@ function importedFaqs(rows: Row[], slug: string) {
     .filter((row) => cell(row.slug) === slug)
     .map((row) => ({ question: cell(row.question), answer: faqAnswer(row.answer) }))
     .filter((faq) => faq.question || faq.answer);
+}
+function importedSections(rows: Row[], slug: string) {
+  return rows
+    .filter((row) => cell(row.slug) === slug)
+    .map((row) => ({ title: cell(row.title), body: faqAnswer(row.body) }))
+    .filter((section) => section.title || section.body.trim());
 }
 function isNull(value: unknown) { return cell(value).toUpperCase() === "NULL"; }
 function importedListingState(row: Row) {
@@ -313,7 +321,21 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
   for (const name of importSheetNames) {
     let skipped = 0; const reasons: string[] = [];
     rows[name].forEach((row, i) => {
-      const rowNo = i + 2, slugKey = name === "5 Mix components" ? "mix_slug" : ["2 Sowing rates", "3 Category specifics", PRODUCT_FAQ_SHEET].includes(name) ? "slug" : "";
+      const rowNo = i + 2, slugKey = name === "5 Mix components" ? "mix_slug" : ["2 Sowing rates", "3 Category specifics", PRODUCT_FAQ_SHEET, PRODUCT_SECTION_SHEET].includes(name) ? "slug" : "";
+      if (name === PRODUCT_SECTION_SHEET) {
+        const title = cell(row.title);
+        const body = faqAnswer(row.body);
+        if (!cell(row.slug) && !title && !body.trim()) { skipped++; reasons.push(`row ${rowNo}: blank section`); }
+        else {
+          if (!cell(row.slug)) issues.push({ sheet: name, row: rowNo, column: "slug", problem: "Product slug is required" });
+          if (title.length > PRODUCT_CUSTOM_SECTION_TITLE_MAX) {
+            issues.push({ sheet: name, row: rowNo, column: "title", problem: `Title must be ${PRODUCT_CUSTOM_SECTION_TITLE_MAX} characters or fewer` });
+          }
+          if (body.length > PRODUCT_NOTE_MAX) {
+            issues.push({ sheet: name, row: rowNo, column: "body", problem: `Text must be ${PRODUCT_NOTE_MAX} characters or fewer` });
+          }
+        }
+      }
       if (name === PRODUCT_FAQ_SHEET) {
         const question = cell(row.question);
         const answer = faqAnswer(row.answer);
@@ -422,6 +444,17 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
       }
     });
     sheets[name] = { rows: rows[name].length, accepted: rows[name].length - skipped, skipped, reasons };
+    if (name === PRODUCT_SECTION_SHEET) {
+      for (const slug of new Set(rows[name].map((row) => cell(row.slug)).filter(Boolean))) {
+        const count = importedSections(rows[name], slug).length;
+        if (count > PRODUCT_CUSTOM_SECTION_LIMIT) {
+          issues.push({
+            sheet: name, row: 0, column: "title",
+            problem: `"${slug}" has ${count} custom sections; maximum is ${PRODUCT_CUSTOM_SECTION_LIMIT}`,
+          });
+        }
+      }
+    }
     if (name === PRODUCT_FAQ_SHEET) {
       for (const slug of new Set(rows[name].map((row) => cell(row.slug)).filter(Boolean))) {
         const count = importedFaqs(rows[name], slug).length;
@@ -626,6 +659,7 @@ export async function commitWorkbook(content: Buffer, token: string) {
       details.sowingRates = [];
       details.components = [];
       details.faqs = [];
+      details.customSections = [];
       for (const key of Object.values(SPECIFICS)) {
         details[key] = NUMBER_KEYS.has(key) ? null : BOOLEAN_KEYS.has(key) ? false : "";
       }
@@ -670,6 +704,9 @@ export async function commitWorkbook(content: Buffer, token: string) {
     });
     for (const slug of new Set(rows[PRODUCT_FAQ_SHEET].map((r) => cell(r.slug)).filter(Boolean))) {
       await updateDetails(slug, (d) => { d.faqs = importedFaqs(rows[PRODUCT_FAQ_SHEET], slug).slice(0, PRODUCT_FAQ_LIMIT); });
+    }
+    for (const slug of new Set(rows[PRODUCT_SECTION_SHEET].map((r) => cell(r.slug)).filter(Boolean))) {
+      await updateDetails(slug, (d) => { d.customSections = importedSections(rows[PRODUCT_SECTION_SHEET], slug).slice(0, PRODUCT_CUSTOM_SECTION_LIMIT); });
     }
     for (const row of rows["7 Website SEO"]) {
       const slug = cell(row.product_slug);
@@ -794,6 +831,7 @@ export async function exportWorkbook() {
        end_use: listedPipe("end_use", details.endUse),
       livestock: listedPipe("livestock", details.livestock), disease_pest_resistance: details.diseasePestResistance,
       stand_life_notes: details.standLifeNotes, grazing_management_notes: details.grazingManagementNotes,
+      carbon_farming_notes: details.carbonFarmingNotes,
       pbr_protected: details.pbrProtected ? "Y" : "N", pbr_details: details.pbrDetails,
        certification: listedPipe("certification", details.certification), formulation_year: details.formulationYear,
        related_products: details.relatedProducts.join("|"),
@@ -829,6 +867,10 @@ export async function exportWorkbook() {
     slug: p.slug, product_name: p.name, question: faq.question, answer: faq.answer,
   })));
   append(PRODUCT_FAQ_SHEET, faqRows.length ? faqRows : [{ slug: "", product_name: "", question: "", answer: "" }], PRODUCT_SHEET_HEADERS["10 Product FAQs"]);
+  const sectionRows = products.flatMap((p) => d(p).customSections.map((section) => ({
+    slug: p.slug, product_name: p.name, title: section.title, body: section.body,
+  })));
+  append(PRODUCT_SECTION_SHEET, sectionRows.length ? sectionRows : [{ slug: "", product_name: "", title: "", body: "" }], PRODUCT_SHEET_HEADERS["11 Product sections"]);
   const listNames = [...optionLists.keys()];
   const listRows = Array.from({ length: Math.max(0, ...[...optionLists.values()].map((values) => values.size)) }, (_, index) =>
     Object.fromEntries(listNames.map((name) => [name, [...(optionLists.get(name) ?? [])][index] ?? ""])));

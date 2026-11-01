@@ -2021,6 +2021,11 @@ components:
         diseasePestResistance: { type: string }
         standLifeNotes: { type: string }
         grazingManagementNotes: { type: string }
+        carbonFarmingNotes: { type: string }
+        customSections:
+          type: array
+          maxItems: 10
+          items: { $ref: "#/components/schemas/ProductCustomSection" }
         pbrProtected: { type: boolean }
         pbrDetails: { type: string }
         certification: { type: array, items: { type: string } }
@@ -2044,7 +2049,7 @@ components:
         socialImage: { type: string }
         canonicalUrl: { type: string }
         robotsIndex: { type: boolean }
-      required: [recordType, botanicalName, tagline, blurb, keyAttributes, distributionNote, persistencyType, carbonCreditEligible, ploidy, flowerColour, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, tolerance, endUse, livestock, maturityMeasure, maturityDays, headingDate, headingOffsetDays, floweringWindow, winterActivity, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate, diseasePestResistance, standLifeNotes, grazingManagementNotes, pbrProtected, pbrDetails, certification, description, components, faqs, relatedProducts, formulationYear, photos, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex]
+      required: [recordType, botanicalName, tagline, blurb, keyAttributes, distributionNote, persistencyType, carbonCreditEligible, ploidy, flowerColour, sowingRates, rainfallMinMm, soilPhMin, soilPhScale, soilRangeLightest, soilRangeHeaviest, tolerance, endUse, livestock, maturityMeasure, maturityDays, headingDate, headingOffsetDays, floweringWindow, winterActivity, argtResistant, endophyte, growthSeason, hardSeedLevel, oestrogenLevel, bloatRisk, growingSeason, weeksToFirstGrazing, prussicAcidRisk, regrowth, productForm, applicationRate, diseasePestResistance, standLifeNotes, grazingManagementNotes, carbonFarmingNotes, customSections, pbrProtected, pbrDetails, certification, description, components, faqs, relatedProducts, formulationYear, photos, seoTitle, seoDescription, socialTitle, socialDescription, socialImage, canonicalUrl, robotsIndex]
     ProductDraftInput:
       type: object
       properties:
@@ -2204,6 +2209,11 @@ components:
         diseasePestResistance: { type: string, maxLength: 3000 }
         standLifeNotes: { type: string, maxLength: 3000 }
         grazingManagementNotes: { type: string, maxLength: 3000 }
+        carbonFarmingNotes: { type: string, maxLength: 3000 }
+        customSections:
+          type: array
+          maxItems: 10
+          items: { $ref: "#/components/schemas/ProductCustomSection" }
         pbrProtected: { type: boolean }
         pbrDetails: { type: string, maxLength: 300 }
         licenceRestriction: { type: string, maxLength: 1000 }
@@ -2305,6 +2315,12 @@ components:
         description: { type: string, maxLength: 2000 }
         note: { type: string, maxLength: 4000 }
       required: [productLink, speciesName, inclusionRate, unit, description, note]
+    ProductCustomSection:
+      type: object
+      required: [title, body]
+      properties:
+        title: { type: string, maxLength: 80 }
+        body: { type: string, maxLength: 3000 }
     ProductFaq:
       type: object
       required: [question, answer]

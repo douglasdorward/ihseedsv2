@@ -79,6 +79,7 @@ export * from './productComponent';
 export * from './productCreateInput';
 export * from './productCreateInputListingState';
 export * from './productCreateInputStatus';
+export * from './productCustomSection';
 export * from './productDetails';
 export * from './productDetailsCertificationItem';
 export * from './productDetailsEndUseItem';

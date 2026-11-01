@@ -173,6 +173,12 @@ export const listProductsResponseDetailsSowingRatesItemMaxMin = 0;
 
 export const listProductsResponseDetailsSowingRatesItemUnitMax = 20;
 
+export const listProductsResponseDetailsCustomSectionsItemTitleMax = 80;
+
+export const listProductsResponseDetailsCustomSectionsItemBodyMax = 3000;
+
+export const listProductsResponseDetailsCustomSectionsMax = 10;
+
 export const listProductsResponseDetailsComponentsItemProductLinkMax = 180;
 
 export const listProductsResponseDetailsComponentsItemSpeciesNameMax = 120;
@@ -288,6 +294,11 @@ export const ListProductsResponseItem = zod.object({
   "diseasePestResistance": zod.string(),
   "standLifeNotes": zod.string(),
   "grazingManagementNotes": zod.string(),
+  "carbonFarmingNotes": zod.string(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(listProductsResponseDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(listProductsResponseDetailsCustomSectionsItemBodyMax)
+})).max(listProductsResponseDetailsCustomSectionsMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string(),
   "certification": zod.array(zod.string()),
@@ -406,6 +417,14 @@ export const createProductBodyDetailsDiseasePestResistanceMax = 3000;
 export const createProductBodyDetailsStandLifeNotesMax = 3000;
 
 export const createProductBodyDetailsGrazingManagementNotesMax = 3000;
+
+export const createProductBodyDetailsCarbonFarmingNotesMax = 3000;
+
+export const createProductBodyDetailsCustomSectionsItemTitleMax = 80;
+
+export const createProductBodyDetailsCustomSectionsItemBodyMax = 3000;
+
+export const createProductBodyDetailsCustomSectionsMax = 10;
 
 export const createProductBodyDetailsPbrDetailsMax = 300;
 
@@ -549,6 +568,11 @@ export const CreateProductBody = zod.object({
   "diseasePestResistance": zod.string().max(createProductBodyDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(createProductBodyDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(createProductBodyDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(createProductBodyDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(createProductBodyDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(createProductBodyDetailsCustomSectionsItemBodyMax)
+})).max(createProductBodyDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(createProductBodyDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(createProductBodyDetailsLicenceRestrictionMax),
@@ -684,6 +708,14 @@ export const createProductResponseDetailsDiseasePestResistanceMax = 3000;
 export const createProductResponseDetailsStandLifeNotesMax = 3000;
 
 export const createProductResponseDetailsGrazingManagementNotesMax = 3000;
+
+export const createProductResponseDetailsCarbonFarmingNotesMax = 3000;
+
+export const createProductResponseDetailsCustomSectionsItemTitleMax = 80;
+
+export const createProductResponseDetailsCustomSectionsItemBodyMax = 3000;
+
+export const createProductResponseDetailsCustomSectionsMax = 10;
 
 export const createProductResponseDetailsPbrDetailsMax = 300;
 
@@ -843,6 +875,11 @@ export const CreateProductResponse = zod.object({
   "diseasePestResistance": zod.string().max(createProductResponseDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(createProductResponseDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(createProductResponseDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(createProductResponseDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(createProductResponseDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(createProductResponseDetailsCustomSectionsItemBodyMax)
+})).max(createProductResponseDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(createProductResponseDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(createProductResponseDetailsLicenceRestrictionMax),
@@ -933,6 +970,12 @@ export const getProductBySlugResponseDetailsSowingRatesItemMinMin = 0;
 export const getProductBySlugResponseDetailsSowingRatesItemMaxMin = 0;
 
 export const getProductBySlugResponseDetailsSowingRatesItemUnitMax = 20;
+
+export const getProductBySlugResponseDetailsCustomSectionsItemTitleMax = 80;
+
+export const getProductBySlugResponseDetailsCustomSectionsItemBodyMax = 3000;
+
+export const getProductBySlugResponseDetailsCustomSectionsMax = 10;
 
 export const getProductBySlugResponseDetailsComponentsItemProductLinkMax = 180;
 
@@ -1049,6 +1092,11 @@ export const GetProductBySlugResponse = zod.object({
   "diseasePestResistance": zod.string(),
   "standLifeNotes": zod.string(),
   "grazingManagementNotes": zod.string(),
+  "carbonFarmingNotes": zod.string(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(getProductBySlugResponseDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(getProductBySlugResponseDetailsCustomSectionsItemBodyMax)
+})).max(getProductBySlugResponseDetailsCustomSectionsMax),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string(),
   "certification": zod.array(zod.string()),
@@ -1172,6 +1220,14 @@ export const updateProductBodyDetailsDiseasePestResistanceMax = 3000;
 export const updateProductBodyDetailsStandLifeNotesMax = 3000;
 
 export const updateProductBodyDetailsGrazingManagementNotesMax = 3000;
+
+export const updateProductBodyDetailsCarbonFarmingNotesMax = 3000;
+
+export const updateProductBodyDetailsCustomSectionsItemTitleMax = 80;
+
+export const updateProductBodyDetailsCustomSectionsItemBodyMax = 3000;
+
+export const updateProductBodyDetailsCustomSectionsMax = 10;
 
 export const updateProductBodyDetailsPbrDetailsMax = 300;
 
@@ -1316,6 +1372,11 @@ export const UpdateProductBody = zod.object({
   "diseasePestResistance": zod.string().max(updateProductBodyDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(updateProductBodyDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(updateProductBodyDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(updateProductBodyDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(updateProductBodyDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(updateProductBodyDetailsCustomSectionsItemBodyMax)
+})).max(updateProductBodyDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(updateProductBodyDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(updateProductBodyDetailsLicenceRestrictionMax),
@@ -1440,6 +1501,14 @@ export const updateProductResponseDetailsDiseasePestResistanceMax = 3000;
 export const updateProductResponseDetailsStandLifeNotesMax = 3000;
 
 export const updateProductResponseDetailsGrazingManagementNotesMax = 3000;
+
+export const updateProductResponseDetailsCarbonFarmingNotesMax = 3000;
+
+export const updateProductResponseDetailsCustomSectionsItemTitleMax = 80;
+
+export const updateProductResponseDetailsCustomSectionsItemBodyMax = 3000;
+
+export const updateProductResponseDetailsCustomSectionsMax = 10;
 
 export const updateProductResponseDetailsPbrDetailsMax = 300;
 
@@ -1599,6 +1668,11 @@ export const UpdateProductResponse = zod.object({
   "diseasePestResistance": zod.string().max(updateProductResponseDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(updateProductResponseDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(updateProductResponseDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(updateProductResponseDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(updateProductResponseDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(updateProductResponseDetailsCustomSectionsItemBodyMax)
+})).max(updateProductResponseDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(updateProductResponseDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(updateProductResponseDetailsLicenceRestrictionMax),
@@ -1739,6 +1813,14 @@ export const getAdminSummaryResponseRecentProductsItemDetailsDiseasePestResistan
 export const getAdminSummaryResponseRecentProductsItemDetailsStandLifeNotesMax = 3000;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsGrazingManagementNotesMax = 3000;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsCarbonFarmingNotesMax = 3000;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsCustomSectionsItemTitleMax = 80;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsCustomSectionsItemBodyMax = 3000;
+
+export const getAdminSummaryResponseRecentProductsItemDetailsCustomSectionsMax = 10;
 
 export const getAdminSummaryResponseRecentProductsItemDetailsPbrDetailsMax = 300;
 
@@ -1906,6 +1988,11 @@ export const GetAdminSummaryResponse = zod.object({
   "diseasePestResistance": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsCustomSectionsItemBodyMax)
+})).max(getAdminSummaryResponseRecentProductsItemDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsLicenceRestrictionMax),
@@ -2037,6 +2124,14 @@ export const listAdminProductsResponseOneDetailsDiseasePestResistanceMax = 3000;
 export const listAdminProductsResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const listAdminProductsResponseOneDetailsGrazingManagementNotesMax = 3000;
+
+export const listAdminProductsResponseOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const listAdminProductsResponseOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const listAdminProductsResponseOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const listAdminProductsResponseOneDetailsCustomSectionsMax = 10;
 
 export const listAdminProductsResponseOneDetailsPbrDetailsMax = 300;
 
@@ -2186,6 +2281,14 @@ export const listAdminProductsResponseTwoDraftOneOneDetailsDiseasePestResistance
 export const listAdminProductsResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
+
+export const listAdminProductsResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const listAdminProductsResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const listAdminProductsResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const listAdminProductsResponseTwoDraftOneOneDetailsCustomSectionsMax = 10;
 
 export const listAdminProductsResponseTwoDraftOneOneDetailsPbrDetailsMax = 300;
 
@@ -2347,6 +2450,11 @@ export const ListAdminProductsResponseItem = zod.object({
   "diseasePestResistance": zod.string().max(listAdminProductsResponseOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(listAdminProductsResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(listAdminProductsResponseOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(listAdminProductsResponseOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(listAdminProductsResponseOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(listAdminProductsResponseOneDetailsCustomSectionsItemBodyMax)
+})).max(listAdminProductsResponseOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(listAdminProductsResponseOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(listAdminProductsResponseOneDetailsLicenceRestrictionMax),
@@ -2484,6 +2592,11 @@ export const ListAdminProductsResponseItem = zod.object({
   "diseasePestResistance": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax)
+})).max(listAdminProductsResponseTwoDraftOneOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsLicenceRestrictionMax),
@@ -2648,6 +2761,14 @@ export const getAdminProductResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const getAdminProductResponseOneDetailsGrazingManagementNotesMax = 3000;
 
+export const getAdminProductResponseOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const getAdminProductResponseOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const getAdminProductResponseOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const getAdminProductResponseOneDetailsCustomSectionsMax = 10;
+
 export const getAdminProductResponseOneDetailsPbrDetailsMax = 300;
 
 export const getAdminProductResponseOneDetailsLicenceRestrictionMax = 1000;
@@ -2796,6 +2917,14 @@ export const getAdminProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMa
 export const getAdminProductResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
+
+export const getAdminProductResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const getAdminProductResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const getAdminProductResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const getAdminProductResponseTwoDraftOneOneDetailsCustomSectionsMax = 10;
 
 export const getAdminProductResponseTwoDraftOneOneDetailsPbrDetailsMax = 300;
 
@@ -2957,6 +3086,11 @@ export const GetAdminProductResponse = zod.object({
   "diseasePestResistance": zod.string().max(getAdminProductResponseOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(getAdminProductResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(getAdminProductResponseOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(getAdminProductResponseOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(getAdminProductResponseOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(getAdminProductResponseOneDetailsCustomSectionsItemBodyMax)
+})).max(getAdminProductResponseOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(getAdminProductResponseOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(getAdminProductResponseOneDetailsLicenceRestrictionMax),
@@ -3094,6 +3228,11 @@ export const GetAdminProductResponse = zod.object({
   "diseasePestResistance": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax)
+})).max(getAdminProductResponseTwoDraftOneOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsLicenceRestrictionMax),
@@ -3257,6 +3396,14 @@ export const saveProductDraftRevisionBodyDetailsStandLifeNotesMax = 3000;
 
 export const saveProductDraftRevisionBodyDetailsGrazingManagementNotesMax = 3000;
 
+export const saveProductDraftRevisionBodyDetailsCarbonFarmingNotesMax = 3000;
+
+export const saveProductDraftRevisionBodyDetailsCustomSectionsItemTitleMax = 80;
+
+export const saveProductDraftRevisionBodyDetailsCustomSectionsItemBodyMax = 3000;
+
+export const saveProductDraftRevisionBodyDetailsCustomSectionsMax = 10;
+
 export const saveProductDraftRevisionBodyDetailsPbrDetailsMax = 300;
 
 export const saveProductDraftRevisionBodyDetailsLicenceRestrictionMax = 1000;
@@ -3402,6 +3549,11 @@ export const SaveProductDraftRevisionBody = zod.object({
   "diseasePestResistance": zod.string().max(saveProductDraftRevisionBodyDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(saveProductDraftRevisionBodyDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(saveProductDraftRevisionBodyDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(saveProductDraftRevisionBodyDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(saveProductDraftRevisionBodyDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(saveProductDraftRevisionBodyDetailsCustomSectionsItemBodyMax)
+})).max(saveProductDraftRevisionBodyDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(saveProductDraftRevisionBodyDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(saveProductDraftRevisionBodyDetailsLicenceRestrictionMax),
@@ -3537,6 +3689,14 @@ export const saveProductDraftRevisionResponseOneDetailsDiseasePestResistanceMax 
 export const saveProductDraftRevisionResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const saveProductDraftRevisionResponseOneDetailsGrazingManagementNotesMax = 3000;
+
+export const saveProductDraftRevisionResponseOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const saveProductDraftRevisionResponseOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const saveProductDraftRevisionResponseOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const saveProductDraftRevisionResponseOneDetailsCustomSectionsMax = 10;
 
 export const saveProductDraftRevisionResponseOneDetailsPbrDetailsMax = 300;
 
@@ -3686,6 +3846,14 @@ export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsDiseasePestRes
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsCustomSectionsMax = 10;
 
 export const saveProductDraftRevisionResponseTwoDraftOneOneDetailsPbrDetailsMax = 300;
 
@@ -3847,6 +4015,11 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "diseasePestResistance": zod.string().max(saveProductDraftRevisionResponseOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(saveProductDraftRevisionResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(saveProductDraftRevisionResponseOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(saveProductDraftRevisionResponseOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(saveProductDraftRevisionResponseOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(saveProductDraftRevisionResponseOneDetailsCustomSectionsItemBodyMax)
+})).max(saveProductDraftRevisionResponseOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(saveProductDraftRevisionResponseOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(saveProductDraftRevisionResponseOneDetailsLicenceRestrictionMax),
@@ -3984,6 +4157,11 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "diseasePestResistance": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax)
+})).max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsLicenceRestrictionMax),
@@ -4147,6 +4325,14 @@ export const publishProductBodyDetailsStandLifeNotesMax = 3000;
 
 export const publishProductBodyDetailsGrazingManagementNotesMax = 3000;
 
+export const publishProductBodyDetailsCarbonFarmingNotesMax = 3000;
+
+export const publishProductBodyDetailsCustomSectionsItemTitleMax = 80;
+
+export const publishProductBodyDetailsCustomSectionsItemBodyMax = 3000;
+
+export const publishProductBodyDetailsCustomSectionsMax = 10;
+
 export const publishProductBodyDetailsPbrDetailsMax = 300;
 
 export const publishProductBodyDetailsLicenceRestrictionMax = 1000;
@@ -4292,6 +4478,11 @@ export const PublishProductBody = zod.object({
   "diseasePestResistance": zod.string().max(publishProductBodyDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(publishProductBodyDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(publishProductBodyDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(publishProductBodyDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(publishProductBodyDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(publishProductBodyDetailsCustomSectionsItemBodyMax)
+})).max(publishProductBodyDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(publishProductBodyDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(publishProductBodyDetailsLicenceRestrictionMax),
@@ -4427,6 +4618,14 @@ export const publishProductResponseOneDetailsDiseasePestResistanceMax = 3000;
 export const publishProductResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const publishProductResponseOneDetailsGrazingManagementNotesMax = 3000;
+
+export const publishProductResponseOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const publishProductResponseOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const publishProductResponseOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const publishProductResponseOneDetailsCustomSectionsMax = 10;
 
 export const publishProductResponseOneDetailsPbrDetailsMax = 300;
 
@@ -4576,6 +4775,14 @@ export const publishProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax
 export const publishProductResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const publishProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
+
+export const publishProductResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const publishProductResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const publishProductResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const publishProductResponseTwoDraftOneOneDetailsCustomSectionsMax = 10;
 
 export const publishProductResponseTwoDraftOneOneDetailsPbrDetailsMax = 300;
 
@@ -4737,6 +4944,11 @@ export const PublishProductResponse = zod.object({
   "diseasePestResistance": zod.string().max(publishProductResponseOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(publishProductResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(publishProductResponseOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(publishProductResponseOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(publishProductResponseOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(publishProductResponseOneDetailsCustomSectionsItemBodyMax)
+})).max(publishProductResponseOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(publishProductResponseOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(publishProductResponseOneDetailsLicenceRestrictionMax),
@@ -4874,6 +5086,11 @@ export const PublishProductResponse = zod.object({
   "diseasePestResistance": zod.string().max(publishProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(publishProductResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(publishProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(publishProductResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(publishProductResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(publishProductResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax)
+})).max(publishProductResponseTwoDraftOneOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(publishProductResponseTwoDraftOneOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(publishProductResponseTwoDraftOneOneDetailsLicenceRestrictionMax),
@@ -5020,6 +5237,14 @@ export const archiveProductResponseOneDetailsDiseasePestResistanceMax = 3000;
 export const archiveProductResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const archiveProductResponseOneDetailsGrazingManagementNotesMax = 3000;
+
+export const archiveProductResponseOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const archiveProductResponseOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const archiveProductResponseOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const archiveProductResponseOneDetailsCustomSectionsMax = 10;
 
 export const archiveProductResponseOneDetailsPbrDetailsMax = 300;
 
@@ -5169,6 +5394,14 @@ export const archiveProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax
 export const archiveProductResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const archiveProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
+
+export const archiveProductResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const archiveProductResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const archiveProductResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const archiveProductResponseTwoDraftOneOneDetailsCustomSectionsMax = 10;
 
 export const archiveProductResponseTwoDraftOneOneDetailsPbrDetailsMax = 300;
 
@@ -5330,6 +5563,11 @@ export const ArchiveProductResponse = zod.object({
   "diseasePestResistance": zod.string().max(archiveProductResponseOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(archiveProductResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(archiveProductResponseOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(archiveProductResponseOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(archiveProductResponseOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(archiveProductResponseOneDetailsCustomSectionsItemBodyMax)
+})).max(archiveProductResponseOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(archiveProductResponseOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(archiveProductResponseOneDetailsLicenceRestrictionMax),
@@ -5467,6 +5705,11 @@ export const ArchiveProductResponse = zod.object({
   "diseasePestResistance": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax)
+})).max(archiveProductResponseTwoDraftOneOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsLicenceRestrictionMax),
@@ -5613,6 +5856,14 @@ export const restoreProductResponseOneDetailsDiseasePestResistanceMax = 3000;
 export const restoreProductResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const restoreProductResponseOneDetailsGrazingManagementNotesMax = 3000;
+
+export const restoreProductResponseOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const restoreProductResponseOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const restoreProductResponseOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const restoreProductResponseOneDetailsCustomSectionsMax = 10;
 
 export const restoreProductResponseOneDetailsPbrDetailsMax = 300;
 
@@ -5762,6 +6013,14 @@ export const restoreProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax
 export const restoreProductResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const restoreProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
+
+export const restoreProductResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const restoreProductResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const restoreProductResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const restoreProductResponseTwoDraftOneOneDetailsCustomSectionsMax = 10;
 
 export const restoreProductResponseTwoDraftOneOneDetailsPbrDetailsMax = 300;
 
@@ -5923,6 +6182,11 @@ export const RestoreProductResponse = zod.object({
   "diseasePestResistance": zod.string().max(restoreProductResponseOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(restoreProductResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(restoreProductResponseOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(restoreProductResponseOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(restoreProductResponseOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(restoreProductResponseOneDetailsCustomSectionsItemBodyMax)
+})).max(restoreProductResponseOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(restoreProductResponseOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(restoreProductResponseOneDetailsLicenceRestrictionMax),
@@ -6060,6 +6324,11 @@ export const RestoreProductResponse = zod.object({
   "diseasePestResistance": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax)
+})).max(restoreProductResponseTwoDraftOneOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsLicenceRestrictionMax),
@@ -6206,6 +6475,14 @@ export const discardProductDraftResponseOneDetailsDiseasePestResistanceMax = 300
 export const discardProductDraftResponseOneDetailsStandLifeNotesMax = 3000;
 
 export const discardProductDraftResponseOneDetailsGrazingManagementNotesMax = 3000;
+
+export const discardProductDraftResponseOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const discardProductDraftResponseOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const discardProductDraftResponseOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const discardProductDraftResponseOneDetailsCustomSectionsMax = 10;
 
 export const discardProductDraftResponseOneDetailsPbrDetailsMax = 300;
 
@@ -6355,6 +6632,14 @@ export const discardProductDraftResponseTwoDraftOneOneDetailsDiseasePestResistan
 export const discardProductDraftResponseTwoDraftOneOneDetailsStandLifeNotesMax = 3000;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsGrazingManagementNotesMax = 3000;
+
+export const discardProductDraftResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax = 3000;
+
+export const discardProductDraftResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax = 80;
+
+export const discardProductDraftResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax = 3000;
+
+export const discardProductDraftResponseTwoDraftOneOneDetailsCustomSectionsMax = 10;
 
 export const discardProductDraftResponseTwoDraftOneOneDetailsPbrDetailsMax = 300;
 
@@ -6516,6 +6801,11 @@ export const DiscardProductDraftResponse = zod.object({
   "diseasePestResistance": zod.string().max(discardProductDraftResponseOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(discardProductDraftResponseOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(discardProductDraftResponseOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(discardProductDraftResponseOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(discardProductDraftResponseOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(discardProductDraftResponseOneDetailsCustomSectionsItemBodyMax)
+})).max(discardProductDraftResponseOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(discardProductDraftResponseOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(discardProductDraftResponseOneDetailsLicenceRestrictionMax),
@@ -6653,6 +6943,11 @@ export const DiscardProductDraftResponse = zod.object({
   "diseasePestResistance": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsDiseasePestResistanceMax),
   "standLifeNotes": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsStandLifeNotesMax),
   "grazingManagementNotes": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsGrazingManagementNotesMax),
+  "carbonFarmingNotes": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsCarbonFarmingNotesMax).optional(),
+  "customSections": zod.array(zod.object({
+  "title": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsCustomSectionsItemTitleMax),
+  "body": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsCustomSectionsItemBodyMax)
+})).max(discardProductDraftResponseTwoDraftOneOneDetailsCustomSectionsMax).optional(),
   "pbrProtected": zod.boolean(),
   "pbrDetails": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsPbrDetailsMax),
   "licenceRestriction": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsLicenceRestrictionMax),

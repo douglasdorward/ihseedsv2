@@ -181,17 +181,18 @@ The approved file contains:
 | Sheet | Data rows | Columns | Import role |
 |---|---:|---:|---|
 | `Column guide` | one row per column | 5 | Not imported. Explains every column and where it appears on the website |
-| `1 Products` | one row per product | 40 | Core product, copy, lifecycle and broad agronomy data |
+| `1 Products` | one row per product | 41 | Core product, copy, lifecycle and broad agronomy data |
 | `2 Sowing rates` | repeatable | 5 | Repeatable sowing-rate rows |
 | `3 Category specifics` | one row per product | 21 | Category-dependent facts |
 | `4 Sale lines` | repeatable | 8 | Saleable pack/stock records |
 | `5 Mix components` | repeatable | 6 | Components of Mix products |
 | `7 Website SEO` | one row per product | 9 | SEO and social metadata |
 | `10 Product FAQs` | generated | 4 | Optional product question/answer rows |
+| `11 Product sections` | generated | 4 | Optional custom expandable product sections |
 | `Lists` | generated | validation columns | Visible validation and option values |
 | `Review` | optional | variable | Optional warnings/work list; not catalogue content |
 
-The importer recognizes sheets `1`–`5`, `7`, and `10`; `Lists` is required and visible. `Column guide` is the first sheet of an export and is never imported. Sheets `6 Companions`, `8 Categories`, and `9 Redirects` are no longer imported or exported; if present in an upload they are ignored with warnings. `Review` is optional and its rows become warnings.
+The importer recognizes sheets `1`–`5`, `7`, `10`, and `11`; `Lists` is required and visible. `Column guide` is the first sheet of an export and is never imported. Sheets `6 Companions`, `8 Categories`, and `9 Redirects` are no longer imported or exported; if present in an upload they are ignored with warnings. `Review` is optional and its rows become warnings.
 
 ### Joins and stable keys
 
@@ -206,6 +207,7 @@ The importer recognizes sheets `1`–`5`, `7`, and `10`; `Lists` is required and
 | SEO row to product | `7 Website SEO.product_slug` |
 | Redirect source | `1 Products.website_url` |
 | Product FAQ | `10 Product FAQs.slug` |
+| Custom product section | `11 Product sections.slug` |
 | Category | `1 Products.category` + optional `sub_category` |
 
 Product slug is the import identity. Renaming it does not rename a product; it risks creating another product and leaving the original untouched. Never change an existing slug to improve wording or SEO. Use redirects when a historic address must point somewhere else. Deleting a product clears `component_slug` on every mix that linked it, and removes it from Also popular. The ingredient row stays, with its name and rate, and the delete confirmation names those mixes and Also popular picks.
@@ -260,7 +262,7 @@ Sale lines are authoritative for every product represented in `1 Products`.
 - Stock codes must be globally unique.
 - Blank or unresolved sale-line ownership cannot produce a valid line.
 
-A workbook may omit products that should stay as they are. For every product it includes, supply the complete child sheets, because an omitted sowing rate, sale line, mix component, category specific, or FAQ is cleared for that product. Start from a current admin export.
+A workbook may omit products that should stay as they are. For every product it includes, supply the complete child sheets, because an omitted sowing rate, sale line, mix component, category specific, FAQ, or custom section is cleared for that product. Start from a current admin export.
 
 ### Taxonomy behavior
 
@@ -312,6 +314,7 @@ The admin export writes `Column guide` first, then the numbered import sheets an
 - `photo_1`, `photo_2`, and `photo_3` are exported. A `/api/media/{id}` value reconnects that library image, including its alt text. Any other address is stored as the photo and is not linked in the library. A blank cell leaves that slot unset. `NULL` clears it.
 - Categories are managed in the back office and are not workbook sheets.
 - Product FAQs are exported on `10 Product FAQs`. Omitting FAQ rows clears the imported product's FAQs.
+- Custom product sections are exported on `11 Product sections`. Omitting section rows clears the imported product's custom sections. Workbooks from before this sheet existed still import; they clear custom sections for the products they include.
 - Each product's redirect source is exported in `1 Products.website_url`; the destination is calculated during import.
 
 The export is designed to dry-run and re-import cleanly. Keep the sheet names and headers stable. Older `6 Companions`, `8 Categories`, and `9 Redirects` sheets are ignored with warnings.
@@ -334,13 +337,14 @@ The authoritative export headers, in order, are:
 
 ```text
 Column guide: Sheet, Column, When it is required, What to enter, How it appears on the website
-1 Products: slug, product_name, category, sub_category, record_type, botanical_name, persistency_type, australian_bred, carbon_credit_eligible, tagline, blurb, key_attributes, description, distribution_note, rainfall_min_mm, soil_ph_min, soil_ph_scale, soil_range_lightest, soil_range_heaviest, sowing_depth_min_cm, sowing_depth_max_cm, tolerance, end_use, livestock, disease_pest_resistance, stand_life_notes, grazing_management_notes, pbr_protected, pbr_details, certification, formulation_year, related_products, photo_1, photo_2, photo_3, tech_sheet_pdf_path, website_url, listing_state, listing_override, availability, status
+1 Products: slug, product_name, category, sub_category, record_type, botanical_name, persistency_type, australian_bred, carbon_credit_eligible, tagline, blurb, key_attributes, description, distribution_note, rainfall_min_mm, soil_ph_min, soil_ph_scale, soil_range_lightest, soil_range_heaviest, sowing_depth_min_cm, sowing_depth_max_cm, tolerance, end_use, livestock, disease_pest_resistance, stand_life_notes, grazing_management_notes, carbon_farming_notes, pbr_protected, pbr_details, certification, formulation_year, related_products, photo_1, photo_2, photo_3, tech_sheet_pdf_path, website_url, listing_state, listing_override, availability, status
 2 Sowing rates: slug, context, min, max, unit
 3 Category specifics: slug, category, ploidy, heading_date, heading_offset_days, argt_resistant, endophyte, growth_season, maturity_days, hard_seed_level, oestrogen_level, bloat_risk, flower_colour, winter_activity, growing_season, weeks_to_first_grazing, prussic_acid_risk, regrowth, flowering_window, product_form, application_rate
 4 Sale lines: slug, stock_code, seed_form, pack_kg, pack_unit, availability, price_display, is_default
 5 Mix components: mix_slug, component_slug, component_name, inclusion_rate, rate_unit, component_description
 7 Website SEO: product_slug, h1, seo_title, meta_description, social_title, social_description, social_image, canonical_url, robots_index
 10 Product FAQs: slug, product_name, question, answer
+11 Product sections: slug, product_name, title, body
 Lists: visible validation columns
 ```
 
@@ -414,6 +418,21 @@ There may be several rows per product. `slug` owns the relationship. `product_na
 - A product's FAQ set is replaced by its rows (max ten). A row with only blank question/answer cells also results in an empty set.
 - Incomplete question/answer pairs are stored, matching the editor. Customers only see items that have both a question and an answer.
 - Question max 180 characters. Answer max 4,000 characters. Preserve answer paragraph breaks.
+
+### `11 Product sections`
+
+Headers:
+
+```text
+slug, product_name, title, body
+```
+
+Administrator-titled expandable sections shown on the product page after the four standard sections (Planting & grazing notes, Disease & pest resistance, Stand life, Carbon Farming & Pasture Diversity). There may be several rows per product. Row order is the order customers see.
+
+- The sheet is authoritative for every product in `1 Products`; no rows for an imported product, or no sheet at all, means its custom sections are cleared.
+- Max ten sections per product. Title max 80 characters. Body max 3,000 characters.
+- Sections with only a title or only a body are stored, matching the editor. Customers only see sections that have both.
+- The four standard sections are not entered here. Carbon Farming & Pasture Diversity is `1 Products.carbon_farming_notes`.
 
 ### `Lists`
 

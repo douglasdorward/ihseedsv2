@@ -2,6 +2,7 @@ import { TechSheetPages } from "./TechSheetPages";
 import type { CatalogueProduct } from "../../lib/catalogue";
 import { productPageHeading, saleLinePackLabels } from "../../lib/catalogue";
 import { getProductQuickFacts } from "../../lib/product-quick-facts";
+import { productGrowingNotes } from "../../lib/product-growing-notes";
 
 function productPhotoSrc(product: CatalogueProduct) {
   return product.details.photos?.find((photo) => photo.src?.trim())?.src?.trim() || "";
@@ -117,11 +118,7 @@ export function TechSheetDocument({
             formulationYear: details.formulationYear?.trim() || "",
             components: details.recordType === "Mix" ? details.components ?? [] : [],
             hasComponentRates: (details.components ?? []).some((component) => component.inclusionRate != null),
-            notes: [
-              details.grazingManagementNotes && { title: "Planting & grazing notes", body: details.grazingManagementNotes },
-              details.diseasePestResistance && { title: "Disease & pest resistance", body: details.diseasePestResistance },
-              details.standLifeNotes && { title: "Stand life", body: details.standLifeNotes },
-            ].filter((item): item is { title: string; body: string } => Boolean(item && item.body.trim())),
+            notes: productGrowingNotes(details),
             saleLines: product.saleLines ?? [],
             packSize: packLabels[0] || product.packSize || "",
             certification: (details.certification ?? []).filter(Boolean),

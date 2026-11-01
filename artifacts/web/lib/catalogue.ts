@@ -68,6 +68,8 @@ export type CatalogueProduct = {
     diseasePestResistance?: string;
     standLifeNotes?: string;
     grazingManagementNotes?: string;
+    carbonFarmingNotes?: string;
+    customSections?: Array<{ title: string; body: string }>;
     pbrProtected?: boolean;
     pbrDetails?: string;
     certification?: string[];

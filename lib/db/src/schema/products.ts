@@ -19,6 +19,12 @@ export type ProductPhoto = {
   social?: boolean;
 };
 
+/** Administrator-titled expandable section shown after the default growing notes. */
+export type ProductCustomSection = { title: string; body: string };
+export const PRODUCT_NOTE_MAX = 3000;
+export const PRODUCT_CUSTOM_SECTION_LIMIT = 10;
+export const PRODUCT_CUSTOM_SECTION_TITLE_MAX = 80;
+
 export type ProductDetails = {
   stockCode: string;
   guideSection: string;
@@ -59,6 +65,8 @@ export type ProductDetails = {
   persistenceLongevity?: string;
   standLifeNotes: string;
   grazingManagementNotes: string;
+  carbonFarmingNotes: string;
+  customSections: ProductCustomSection[];
   pbrProtected: boolean;
   pbrDetails: string;
   licenceRestriction: string;
@@ -231,6 +239,8 @@ const emptyProductDetails: ProductDetails = {
   diseasePestResistance: "",
   standLifeNotes: "",
   grazingManagementNotes: "",
+  carbonFarmingNotes: "",
+  customSections: [],
   pbrProtected: false,
   pbrDetails: "",
   licenceRestriction: "",
@@ -358,6 +368,13 @@ export function normalizeProductDetails(value: unknown, packSize = ""): ProductD
     keyAttributes: Array.isArray(current.keyAttributes) ? current.keyAttributes : [],
     certification: Array.isArray(current.certification) ? current.certification : [],
     components,
+    carbonFarmingNotes: typeof current.carbonFarmingNotes === "string" ? current.carbonFarmingNotes : "",
+    customSections: Array.isArray(current.customSections)
+      ? current.customSections.slice(0, PRODUCT_CUSTOM_SECTION_LIMIT).map((item) => ({
+        title: typeof item?.title === "string" ? item.title : "",
+        body: typeof item?.body === "string" ? item.body : "",
+      }))
+      : [],
     faqs: Array.isArray(current.faqs)
       ? current.faqs.slice(0, 10).map((item) => ({
         question: typeof item?.question === "string" ? item.question : "",
@@ -506,6 +523,11 @@ const productDetailsObjectSchema = z.object({
   diseasePestResistance: z.string().max(3000),
   standLifeNotes: z.string().max(3000),
   grazingManagementNotes: z.string().max(3000),
+  carbonFarmingNotes: z.string().max(PRODUCT_NOTE_MAX).default(""),
+  customSections: z.array(z.object({
+    title: z.string().max(PRODUCT_CUSTOM_SECTION_TITLE_MAX),
+    body: z.string().max(PRODUCT_NOTE_MAX),
+  })).max(PRODUCT_CUSTOM_SECTION_LIMIT).default([]),
   pbrProtected: z.boolean(),
   pbrDetails: z.string().max(300),
   licenceRestriction: z.string().max(1000),

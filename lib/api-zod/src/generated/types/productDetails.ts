@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ProductComponent } from './productComponent';
+import type { ProductCustomSection } from './productCustomSection';
 import type { ProductDetailsCertificationItem } from './productDetailsCertificationItem';
 import type { ProductDetailsEndUseItem } from './productDetailsEndUseItem';
 import type { ProductDetailsFlowerColour } from './productDetailsFlowerColour';
@@ -88,6 +89,10 @@ export interface ProductDetails {
   standLifeNotes: string;
   /** @maxLength 3000 */
   grazingManagementNotes: string;
+  /** @maxLength 3000 */
+  carbonFarmingNotes?: string;
+  /** @maxItems 10 */
+  customSections?: ProductCustomSection[];
   pbrProtected: boolean;
   /** @maxLength 300 */
   pbrDetails: string;

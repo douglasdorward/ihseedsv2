@@ -112,6 +112,7 @@ export function fieldVisibleForCategory(field: FieldCatalogEntry, category: stri
 
 export const BLOCKED_AI_PATHS = new Set([
   "slug",
+  "details.customSections",
   "saleLines",
   "listingState",
   "publishStatus",

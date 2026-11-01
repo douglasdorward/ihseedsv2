@@ -23,3 +23,4 @@
 - [Generated tech sheet storage](tech-sheet-storage.md) — PDFs keyed by content fingerprint, env-namespaced bucket, token-gated store; only nix chromium launches.
 - [Uploaded redirects](uploaded-redirects.md) — admin-uploaded legacy redirects are marked `source = uploaded`; catalogue imports must never delete or rebuild them.
 - [Image optimiser caching](image-optimiser-caching.md) — capped widths, warm-up crawls rendered pages, vw-only sizes hints, local prod build gotchas.
+- [Product growing-note sections](product-growing-notes.md) — 4 fixed default sections + custom ones; every customer surface uses the one shared helper for order/hiding.

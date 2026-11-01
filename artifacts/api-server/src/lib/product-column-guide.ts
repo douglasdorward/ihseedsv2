@@ -18,7 +18,7 @@ export const PRODUCT_SHEET_HEADERS = {
     "australian_bred", "carbon_credit_eligible", "tagline", "blurb", "key_attributes", "description", "distribution_note", "rainfall_min_mm",
     "soil_ph_min", "soil_ph_scale", "soil_range_lightest", "soil_range_heaviest", "sowing_depth_min_cm",
     "sowing_depth_max_cm", "tolerance", "end_use", "livestock", "disease_pest_resistance", "stand_life_notes",
-    "grazing_management_notes", "pbr_protected", "pbr_details", "certification", "formulation_year",
+    "grazing_management_notes", "carbon_farming_notes", "pbr_protected", "pbr_details", "certification", "formulation_year",
     "related_products", "photo_1", "photo_2", "photo_3", "tech_sheet_pdf_path", "website_url", "listing_state",
     "listing_override", "availability", "status",
   ],
@@ -36,6 +36,7 @@ export const PRODUCT_SHEET_HEADERS = {
     "canonical_url", "robots_index",
   ],
   "10 Product FAQs": ["slug", "product_name", "question", "answer"],
+  "11 Product sections": ["slug", "product_name", "title", "body"],
 } as const;
 
 type GuideRow = readonly [string, string, string, string, string];
@@ -52,7 +53,7 @@ const RULES: GuideRow[] = [
     "Workbook rules",
     "Identity and replacement",
     "Always",
-    "Start from a current admin export. slug is the permanent identity. Never change an existing slug and never invent a replacement slug for a product that already exists. A slug already in the catalogue is updated. A new slug is added. A product missing from 1 Products is left unchanged. Sheets 2, 3, 4, 5, and 10 replace the stored set for every product in 1 Products. No rows on one of those sheets clears that set for those products only. Do not change lifecycle, category, sale lines, redirects, or FAQs unless the assignment asks for that change.",
+    "Start from a current admin export. slug is the permanent identity. Never change an existing slug and never invent a replacement slug for a product that already exists. A slug already in the catalogue is updated. A new slug is added. A product missing from 1 Products is left unchanged. Sheets 2, 3, 4, 5, 10, and 11 replace the stored set for every product in 1 Products. No rows on one of those sheets clears that set for those products only. Do not change lifecycle, category, sale lines, redirects, FAQs, or custom sections unless the assignment asks for that change.",
     "A Draft product disappears from the public site. A product left out of the file stays as it is. A cleared set disappears from the product page.",
   ],
   [
@@ -66,7 +67,7 @@ const RULES: GuideRow[] = [
     "Workbook rules",
     "What customers can see",
     "Always",
-    "status is the lifecycle: Published, Draft, or Archived. It is not the stock pill. Only Published products can be public. listing_state is separate: Active or New can be sold; Legacy is history only. Publish also needs a tagline of 60 characters or fewer, a blurb, at least one key attribute, a description, an SEO title, and an SEO description. Keep rainfall, soils, sowing rates, tolerances, end use, and livestock in their own columns. Keep grazing, disease, and stand-life notes in their own columns. Do not repeat them inside the description, and do not put private breeder or supplier notes in any public column.",
+    "status is the lifecycle: Published, Draft, or Archived. It is not the stock pill. Only Published products can be public. listing_state is separate: Active or New can be sold; Legacy is history only. Publish also needs a tagline of 60 characters or fewer, a blurb, at least one key attribute, a description, an SEO title, and an SEO description. Keep rainfall, soils, sowing rates, tolerances, end use, and livestock in their own columns. Keep grazing, disease, stand-life, and carbon farming notes in their own columns. Do not repeat them inside the description, and do not put private breeder or supplier notes in any public column.",
     "Draft and Archived pages are hidden. Published + Active or New can appear in the selling catalogue. Published + Legacy is only a name under Also in our catalogue. New adds a red NEW stamp on cards and the product hero.",
   ],
   [
@@ -267,6 +268,13 @@ const PRODUCTS: GuideRow[] = [
     "No. Max 3,000 characters.",
     "Planting and grazing advice. One plain-text block. Do not repeat quick facts or the sowing-rate numbers.",
     "Expandable section headed Planting & grazing notes.",
+  ],
+  [
+    "1 Products",
+    "carbon_farming_notes",
+    "No. Max 3,000 characters.",
+    "Carbon farming and pasture diversity notes. One plain-text block. Do not repeat it in the description.",
+    "Expandable section headed Carbon Farming & Pasture Diversity, after Stand life. Hidden when blank.",
   ],
   [
     "1 Products",
@@ -757,7 +765,38 @@ const FAQS: GuideRow[] = [
   ],
 ];
 
-const GUIDE_ROWS: GuideRow[] = [...RULES, ...PRODUCTS, ...SOWING, ...SPECIFICS, ...SALES, ...MIXES, ...SEO, ...FAQS];
+const SECTIONS: GuideRow[] = [
+  [
+    "11 Product sections",
+    "slug",
+    "Every section row",
+    "Product slug from 1 Products. Up to ten custom sections per product, in the order they appear on the page. This sheet replaces that product's custom sections. No rows clears them. A row needs a slug.",
+    "Not shown from this cell. Sections appear after the four standard expandable sections.",
+  ],
+  [
+    "11 Product sections",
+    "product_name",
+    "Label only. Not imported.",
+    "Copy of the product name so a row is recognisable. Changing it does not rename the product. Rename products in 1 Products.product_name.",
+    "Not shown from this cell.",
+  ],
+  [
+    "11 Product sections",
+    "title",
+    "Required for the section to be visible. Max 80 characters.",
+    "The heading of the expandable section, in plain text. Do not reuse a standard heading such as Stand life; use the matching 1 Products column instead. A section without a title is stored and hidden.",
+    "The clickable section heading, after Carbon Farming & Pasture Diversity.",
+  ],
+  [
+    "11 Product sections",
+    "body",
+    "Required for the section to be visible. Max 3,000 characters.",
+    "One plain-text block. Do not use HTML. Line breaks inside the cell collapse into the same paragraph on the page. A section without text is stored and hidden.",
+    "Paragraph revealed when the section is opened.",
+  ],
+];
+
+const GUIDE_ROWS: GuideRow[] = [...RULES, ...PRODUCTS, ...SOWING, ...SPECIFICS, ...SALES, ...MIXES, ...SEO, ...FAQS, ...SECTIONS];
 
 export function columnGuideGaps(): string[] {
   const documented = new Map<string, number>();

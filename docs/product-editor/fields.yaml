@@ -380,6 +380,36 @@ fields:
     workbook: 1 Products.grazing_management_notes
     fillGuidance: Planting and grazing advice. Do not repeat Quick facts.
 
+  - id: carbonFarmingNotes
+    tab: 2
+    apiPath: details.carbonFarmingNotes
+    label: Carbon Farming & Pasture Diversity
+    type: string
+    maxLength: 3000
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [accordion, llms-full-txt]
+    workbook: 1 Products.carbon_farming_notes
+    fillGuidance: Carbon farming and pasture diversity value. Shown after Stand life.
+
+  - id: customSections
+    tab: 2
+    apiPath: details.customSections
+    label: Custom sections
+    type: object[]
+    maxItems: 10
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: category-not-Biologicals
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [accordion, llms-full-txt]
+    workbook: 11 Product sections
+    fillGuidance: Administrator-titled sections after the four standard sections, in order. Title max 80, text max 3000. Hidden from customers unless both are filled. AI fill never writes this field.
+
   - id: ploidy
     tab: 3
     apiPath: details.ploidy
