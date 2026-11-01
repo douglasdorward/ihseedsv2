@@ -52,6 +52,7 @@ const nextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 2678400,
+    qualities: [60, 75],
     // A relative /api/media src is not a file in public/, and the optimiser's
     // internal request does not receive image bytes through the rewrite.
     // CoverImage points src at this origin so the optimiser fetches Express directly.

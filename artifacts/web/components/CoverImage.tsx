@@ -7,12 +7,14 @@ export function CoverImage({
   sizes,
   priority = false,
   className = "cover-image",
+  quality,
 }: {
   src: string;
   alt: string;
   sizes: string;
   priority?: boolean;
   className?: string;
+  quality?: number;
 }) {
   if (!src) return null;
   return (
@@ -22,6 +24,7 @@ export function CoverImage({
       alt={alt}
       fill
       sizes={sizes}
+      quality={quality}
       priority={priority}
       fetchPriority={priority ? "high" : "auto"}
     />

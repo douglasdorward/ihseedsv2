@@ -16,7 +16,9 @@ const raleway = localFont({
   src: "./fonts/raleway-latin-variable.woff2",
   weight: "300 900",
   style: "normal",
-  display: "swap",
+  // "optional" never swaps the font in after first paint, so the hero copy
+  // cannot re-wrap and cause a layout shift (CLS) on slow mobile connections.
+  display: "optional",
   variable: "--font-raleway",
 });
 

@@ -125,7 +125,7 @@ export function HomeHero({
     return (
       <section className="hero-wrap">
         <div className={`hero ${playVideo ? "hero-has-video" : ""}`}>
-          {still ? <CoverImage src={still} alt="" sizes="100vw" priority className="hero-photo" /> : null}
+          {still ? <CoverImage src={still} alt="" sizes="100vw" priority quality={60} className="hero-photo" /> : null}
           {playVideo && <HeroVideo slide={current} active loop onEnded={() => undefined} />}
           <div className="hero-scrim" aria-hidden="true" />
           {copy}
@@ -153,6 +153,7 @@ export function HomeHero({
                   alt=""
                   sizes="100vw"
                   priority={isActive && slideIndex === 0}
+                  quality={60}
                   className="hero-photo"
                 />
               ) : null}
