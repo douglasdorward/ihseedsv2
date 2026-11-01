@@ -120,6 +120,7 @@ h1 strong { display:block; font-weight:800; }
 .section-heading { display:flex; justify-content:space-between; align-items:center; margin-bottom:36px; }
 .section-heading h2,.feature-copy h2,.contact-intro h2 { color:var(--green); font-size:54px; line-height:1.15; font-weight:800; letter-spacing:-.035em; }
 .section-heading h2 span,.feature-copy h2 span,.contact-intro h2 span { font-weight:300; }
+@media (min-width:901px) { .heading-one-line-desktop span { display:inline; } }
 .carousel-actions { display:flex; gap:12px; }
 .icon-button { width:46px; height:46px; background:transparent; border:1px solid var(--green); }
 .product-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:32px; }

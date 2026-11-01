@@ -64,7 +64,7 @@ export default async function Home() {
       <section id="products" className="section section-subtle">
         <div className="content-width">
           <div className="section-heading">
-            <h2><span>Best</span> Sellers</h2>
+            <h2 className="heading-one-line-desktop"><span>Best</span> Sellers</h2>
             <Link href={CATALOGUE_INDEX_PATH} className="button button-outline" data-testid="button-view-all">View all products</Link>
           </div>
           {visibleProducts.length === 0 ? (
