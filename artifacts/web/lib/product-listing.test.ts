@@ -7,7 +7,7 @@ import { getFactChips, hasProductPhoto, productCardImage, productImageAlt } from
 
 const CATEGORY_NAMES = [
   "Ryegrasses", "Clovers", "Serradellas & Medics", "Lucerne", "Fescues & Other Grasses",
-  "Sub-Tropical Grasses", "Herbs", "Forage & Grain Crops", "Mixes", "Biologicals",
+  "Sub-Tropical Grasses", "Herbs", "Alternative Forage and Grain Crops", "Mixes", "Biologicals",
 ];
 
 const categories = CATEGORY_NAMES.map((name, index) => ({

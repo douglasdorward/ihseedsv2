@@ -39,6 +39,7 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
   if (name === "newspaper") return <svg {...common}><path d="M4 5h12a2 2 0 0 1 2 2v12H6a2 2 0 0 1-2-2V5Z"/><path d="M18 8h2a2 2 0 0 1 2 2v7a3 3 0 0 1-3 3h-1"/><path d="M8 9h6M8 13h6M8 17h3"/></svg>;
   if (name === "plus") return <svg {...common}><path d="M12 5v14M5 12h14"/></svg>;
   if (name === "image") return <svg {...common}><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-4.5-4.5L9 19"/></svg>;
+  if (name === "carbon") return <svg {...common}><path d="M21 2.6c-5.4 0-9.3 2.4-10.2 6.7-.4 2.1 1.1 3.4 3.1 3C18 11.6 20.2 7.5 21 2.6Z"/><path d="M11.7 11.6c1.8-2.4 4.1-4.2 6.7-5.6"/><path d="M7.95 16.5a2.9 2.9 0 1 0 0 3.4"/><circle cx="12.8" cy="18.2" r="2.9"/><path d="M17.9 19.6c.1-.6.6-1 1.2-1 .7 0 1.2.5 1.2 1.1 0 .5-.3.9-.8 1.3l-1.6 1.1h2.4"/></svg>;
   return <svg {...common}><path d="M12 20V11m0 0c-3.4 0-5.5-1.8-5.5-5.5C10.3 5.5 12 7.4 12 11Zm0 0c3.4 0 5.5-1.8 5.5-5.5C13.7 5.5 12 7.4 12 11Z" /></svg>;
 }
 

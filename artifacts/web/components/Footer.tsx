@@ -2,7 +2,6 @@ import Link from "next/link";
 import { categoryPublicPath, type NavCategory } from "../lib/catalogue-paths";
 import { companyMapsUrl, companyTelHref, DEFAULT_COMPANY, type CompanyContact } from "../lib/company";
 import { Icon } from "./Icon";
-import { Logo } from "./Logo";
 
 export function Footer({
   company = DEFAULT_COMPANY,
@@ -19,8 +18,7 @@ export function Footer({
     <footer className="site-footer">
       <div className="footer-top">
         <div className="footer-brand">
-          <Logo inverse />
-          <p>The pasture seed and mixes specialists of Western Australia.</p>
+          <p>Western Australian Pasture Seed Specialists. Since 1966.</p>
           {phoneHref || email || company.address ? (
             <div className="footer-contact">
               {phoneHref ? (
@@ -50,6 +48,17 @@ export function Footer({
               ) : null}
             </div>
           ) : null}
+          <div className="footer-marks">
+            <div className="footer-logo-card is-member">
+              <img src="/asf-member.webp" alt="Australian Seed Federation member" width={552} height={190} loading="lazy" decoding="async" />
+            </div>
+            <div className="footer-logo-card is-seal">
+              <img src="/asf-code-of-practice-578.webp" alt="Australian Seed Federation Code of Practice accredited" width={578} height={578} loading="lazy" decoding="async" />
+            </div>
+            <div className="footer-logo-card is-brand">
+              <img src="/ih-seeds-logo-716.webp" alt="IH Seeds — Irwin Hunter & Co" width={716} height={462} loading="lazy" decoding="async" />
+            </div>
+          </div>
         </div>
         <div className="footer-columns">
           <div>
@@ -81,10 +90,6 @@ export function Footer({
             <Link href="/privacy" className="footer-link" data-testid="footer-privacy">Privacy</Link>
             <Link href="/terms-and-conditions" className="footer-link" data-testid="footer-terms">Terms</Link>
           </div>
-        </div>
-        <div className="footer-marks">
-          <img className="footer-accreditation" src="/asf-accredited-224.webp" alt="Australian Seed Federation Code of Practice accredited" width={224} height={224} loading="lazy" decoding="async" />
-          <img className="footer-anniversary" src="/celebrating-60-years-580.webp" alt="Celebrating 60 years" width={580} height={253} loading="lazy" decoding="async" />
         </div>
       </div>
       <div className="footer-bottom">

@@ -45,6 +45,7 @@ export interface ProductDetails {
   /** @maxLength 2000 */
   bredByOrigin: string;
   australianBred: boolean;
+  carbonCreditEligible: boolean;
   /** @maxLength 120 */
   distributedBy: string;
   sowingRates: ProductSowingRate[];

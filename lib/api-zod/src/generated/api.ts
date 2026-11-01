@@ -247,6 +247,7 @@ export const ListProductsResponseItem = zod.object({
   "keyAttributes": zod.array(zod.string()),
   "distributionNote": zod.string(),
   "persistencyType": zod.string(),
+  "carbonCreditEligible": zod.boolean(),
   "ploidy": zod.string(),
   "flowerColour": zod.string(),
   "sowingRates": zod.array(zod.object({
@@ -515,6 +516,7 @@ export const CreateProductBody = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(createProductBodyDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(createProductBodyDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -808,6 +810,7 @@ export const CreateProductResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(createProductResponseDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(createProductResponseDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -1005,6 +1008,7 @@ export const GetProductBySlugResponse = zod.object({
   "keyAttributes": zod.array(zod.string()),
   "distributionNote": zod.string(),
   "persistencyType": zod.string(),
+  "carbonCreditEligible": zod.boolean(),
   "ploidy": zod.string(),
   "flowerColour": zod.string(),
   "sowingRates": zod.array(zod.object({
@@ -1279,6 +1283,7 @@ export const UpdateProductBody = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(updateProductBodyDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(updateProductBodyDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -1561,6 +1566,7 @@ export const UpdateProductResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(updateProductResponseDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(updateProductResponseDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -1867,6 +1873,7 @@ export const GetAdminSummaryResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(getAdminSummaryResponseRecentProductsItemDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -2307,6 +2314,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(listAdminProductsResponseOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(listAdminProductsResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -2443,6 +2451,7 @@ export const ListAdminProductsResponseItem = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(listAdminProductsResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -2915,6 +2924,7 @@ export const GetAdminProductResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(getAdminProductResponseOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(getAdminProductResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -3051,6 +3061,7 @@ export const GetAdminProductResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(getAdminProductResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -3358,6 +3369,7 @@ export const SaveProductDraftRevisionBody = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(saveProductDraftRevisionBodyDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(saveProductDraftRevisionBodyDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -3802,6 +3814,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(saveProductDraftRevisionResponseOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(saveProductDraftRevisionResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -3938,6 +3951,7 @@ export const SaveProductDraftRevisionResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(saveProductDraftRevisionResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -4245,6 +4259,7 @@ export const PublishProductBody = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(publishProductBodyDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(publishProductBodyDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -4689,6 +4704,7 @@ export const PublishProductResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(publishProductResponseOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(publishProductResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -4825,6 +4841,7 @@ export const PublishProductResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(publishProductResponseTwoDraftOneOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(publishProductResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -5280,6 +5297,7 @@ export const ArchiveProductResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(archiveProductResponseOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(archiveProductResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -5416,6 +5434,7 @@ export const ArchiveProductResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(archiveProductResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -5871,6 +5890,7 @@ export const RestoreProductResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(restoreProductResponseOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(restoreProductResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -6007,6 +6027,7 @@ export const RestoreProductResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(restoreProductResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -6462,6 +6483,7 @@ export const DiscardProductDraftResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(discardProductDraftResponseOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(discardProductDraftResponseOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),
@@ -6598,6 +6620,7 @@ export const DiscardProductDraftResponse = zod.object({
   "flowerColour": zod.enum(['', 'Pink', 'Yellow', 'White', 'Crimson', 'Red', 'Purple']),
   "bredByOrigin": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsBredByOriginMax),
   "australianBred": zod.boolean(),
+  "carbonCreditEligible": zod.boolean(),
   "distributedBy": zod.string().max(discardProductDraftResponseTwoDraftOneOneDetailsDistributedByMax),
   "sowingRates": zod.array(zod.object({
   "context": zod.enum(['', 'General', 'Monoculture', 'In a mix', 'Dryland', 'Irrigation', 'Pasture', 'Turf', 'Podded', 'De-hulled', 'Coated']),

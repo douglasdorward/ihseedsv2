@@ -51,6 +51,7 @@ const wordpressRedirects = [
  */
 export const IMMUTABLE_PUBLIC_FILES = [
   "ih-seeds-logo.png",
+  "ih-seeds-logo-716.webp",
   "elders-logo.webp",
   "nutrien-logo.webp",
   "product-fallback.svg",
@@ -58,6 +59,8 @@ export const IMMUTABLE_PUBLIC_FILES = [
   "asf-accredited-224.webp",
   "asf-member.webp",
   "asf-code-of-practice-440.webp",
+  "asf-code-of-practice-578.webp",
+  "ih-seeds-logo-white-716.webp",
   "celebrating-60-years.jpg",
   "celebrating-60-years-580.webp",
   "ih-seeds-60-years-640.webp",

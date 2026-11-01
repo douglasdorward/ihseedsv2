@@ -27,5 +27,6 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
   if (name === "activity") return <svg {...common}><path d="M3 12h4l2.5-7 5 14 2.5-7h4"/></svg>;
   if (name === "sun") return <svg {...common}><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>;
   if (name === "package") return <svg {...common}><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.5 7.8 7.5 4.3 7.5-4.3M12 12v9M8 5.3l8 4.5"/></svg>;
+  if (name === "carbon") return <svg {...common}><path d="M21 2.6c-5.4 0-9.3 2.4-10.2 6.7-.4 2.1 1.1 3.4 3.1 3C18 11.6 20.2 7.5 21 2.6Z"/><path d="M11.7 11.6c1.8-2.4 4.1-4.2 6.7-5.6"/><path d="M7.95 16.5a2.9 2.9 0 1 0 0 3.4"/><circle cx="12.8" cy="18.2" r="2.9"/><path d="M17.9 19.6c.1-.6.6-1 1.2-1 .7 0 1.2.5 1.2 1.1 0 .5-.3.9-.8 1.3l-1.6 1.1h2.4"/></svg>;
   return <svg {...common}><path d="M12 20V11m0 0c-3.4 0-5.5-1.8-5.5-5.5C10.3 5.5 12 7.4 12 11Zm0 0c3.4 0 5.5-1.8 5.5-5.5C13.7 5.5 12 7.4 12 11Z" /></svg>;
 }

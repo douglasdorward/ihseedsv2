@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import type { CatalogueCategory, ProductComponent, ProductFaq, ProductListingState, ProductPhoto, ProductSowingRate, SaleLine } from "@workspace/api-client-react";
+import { SeedFormField } from "./SeedFormField";
 import { Icon } from "./ui";
 import { AlsoPopularPicker } from "./AlsoPopularPicker";
 import { ProductNewStamp } from "./NewStamp";
@@ -37,7 +38,6 @@ const OPTS = {
   growingSeasonForage: ["", "Summer", "Winter", "Either"],
   prussicAcidRisk: ["", "None", "Low", "Standard – manage"],
   regrowth: ["", "Single cut", "Multi-cut / regrazes"],
-  seedForm: ["", "Bare / de-hulled", "Podded", "Coated", "Coated + Gaucho", "BioNPK-S coated", "Goldstrike coated", "Scarified", "Lime coated"],
   availability: ["Good stock", "Low stock", "Very low", "Unavailable"] as const,
   availabilityOverride: ["", "Good stock", "Low stock", "Very low", "Unavailable"],
 };
@@ -417,7 +417,7 @@ export function ProductPageEditor(props: ProductPageEditorProps) {
                       <div className="quick-fact-item" key={slot.id}>
                         <span className="quick-fact-icon"><Icon name={slot.icon} size={22} /></span>
                         <div className="quick-fact-content">
-                          <span className="quick-fact-label">{slot.label}</span>
+                          {slot.label ? <span className="quick-fact-label">{slot.label}</span> : null}
                           <span className={`quick-fact-value ${slot.formatted ? "" : "is-empty"}`}>
                             <QuickFactValue slotId={slot.id} formatted={slot.formatted} {...props} />
                           </span>
@@ -644,6 +644,9 @@ function QuickFactValue({
   toggleList,
 }: ProductPageEditorProps & { slotId: QuickFactSlotId; formatted: string }) {
   const details = form.details;
+  if (slotId === "carbonCreditEligible") {
+    return <label className="ppe-chip-mild"><input type="checkbox" checked={Boolean(details.carbonCreditEligible)} onChange={(event) => setDetail("carbonCreditEligible", event.target.checked)} />Eligible</label>;
+  }
   if (slotId === "persistencyType") {
     return <select className={`ppe-ghost ${formatted ? "" : "is-empty"}`} value={details.persistencyType} onChange={(event) => setDetail("persistencyType", event.target.value)} aria-label="Type and persistency">{PERSISTENCY.map((value) => <option key={value} value={value}>{value || "Not set"}</option>)}</select>;
   }
@@ -829,7 +832,7 @@ function BelowCards(props: ProductPageEditorProps) {
                 </div>
                 <div className="admin-sale-line-fields">
                   <label>Stock code<input value={line.stockCode} onChange={(event) => props.updateSaleLine(index, { stockCode: event.target.value })} /></label>
-                  <label>Seed form<select value={line.seedForm} onChange={(event) => props.updateSaleLine(index, { seedForm: event.target.value })}>{OPTS.seedForm.map((option) => <option key={option} value={option}>{option || "Not set"}</option>)}</select></label>
+                  <SeedFormField value={line.seedForm} onChange={(seedForm) => props.updateSaleLine(index, { seedForm })} />
                   <div className="admin-sale-line-pack">
                     <span>Pack</span>
                     <div className="admin-sale-line-pack-inputs">

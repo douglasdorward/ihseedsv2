@@ -23,6 +23,7 @@ export interface PublicProductDetails {
   keyAttributes: string[];
   distributionNote: string;
   persistencyType: string;
+  carbonCreditEligible: boolean;
   ploidy: string;
   flowerColour: string;
   sowingRates: ProductSowingRate[];

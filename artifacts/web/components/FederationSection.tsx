@@ -28,7 +28,7 @@ export function FederationSection({ standalone = false }: { standalone?: boolean
             <img src="/asf-member.webp" alt="Australian Seed Federation member" width={552} height={190} loading="lazy" decoding="async" />
           </div>
           <div className="federation-logo-card is-seal">
-            <img src="/asf-code-of-practice-440.webp" alt="Australian Seed Federation Code of Practice accredited" width={440} height={441} loading="lazy" decoding="async" />
+            <img src="/asf-code-of-practice-578.webp" alt="Australian Seed Federation Code of Practice accredited" width={578} height={578} loading="lazy" decoding="async" />
           </div>
           <div className="federation-logo-card is-anniversary">
             <img src="/ih-seeds-60-years-640.webp" alt="IH Seeds celebrating 60 years, 1966 to 2026" width={640} height={463} loading="lazy" decoding="async" />

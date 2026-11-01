@@ -94,7 +94,7 @@ function toPublicDetails(value: unknown, packSize: string, name = "") {
   return {
     recordType: d.recordType, botanicalName: d.botanicalName,
     tagline: d.tagline, blurb: d.blurb, keyAttributes: d.keyAttributes, distributionNote: d.distributionNote,
-    persistencyType: d.persistencyType, ploidy: d.ploidy,
+    persistencyType: d.persistencyType, carbonCreditEligible: d.carbonCreditEligible, ploidy: d.ploidy,
     flowerColour: d.flowerColour, sowingRates: d.sowingRates, rainfallMinMm: d.rainfallMinMm,
     soilPhMin: d.soilPhMin, soilPhScale: d.soilPhScale, soilRangeLightest: d.soilRangeLightest,
     soilRangeHeaviest: d.soilRangeHeaviest, tolerance: d.tolerance, endUse: d.endUse,

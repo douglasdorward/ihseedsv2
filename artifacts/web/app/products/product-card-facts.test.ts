@@ -47,7 +47,7 @@ test("listing fact chips keep short labels and omit paragraph-length values", ()
 
 test("forage listing chips fall back to rainfall, persistency and sowing rate", () => {
   const mustard = product("Black Mustard", []);
-  mustard.category = "Forage & Grain Crops";
+  mustard.category = "Alternative Forage and Grain Crops";
   mustard.details.rainfallMinMm = 400;
   mustard.details.persistencyType = "Annual";
   mustard.details.sowingRates = [{ min: 6, max: 10, unit: "kg/ha", context: "General" }];
@@ -55,7 +55,7 @@ test("forage listing chips fall back to rainfall, persistency and sowing rate", 
   assert.deepEqual(getFactChips(mustard), ["400 mm+", "Annual", "6–10 kg/ha"]);
 
   const sorghum = product("Bounty Forage Sorghum", []);
-  sorghum.category = "Forage & Grain Crops";
+  sorghum.category = "Alternative Forage and Grain Crops";
   sorghum.details.growingSeason = "Summer";
   sorghum.details.weeksToFirstGrazing = 5;
   sorghum.details.rainfallMinMm = 350;

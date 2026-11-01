@@ -321,6 +321,20 @@ fields:
     workbook: 1 Products.australian_bred
     fillGuidance: Internal flag. Not a public claim.
 
+  - id: carbonCreditEligible
+    tab: 2
+    apiPath: details.carbonCreditEligible
+    label: Carbon-credit eligible
+    type: boolean
+    requiredForDraft: false
+    requiredForPublish: false
+    visibleWhen: always
+    publicApi: true
+    visibility: customer
+    customerSurfaces: [quick-facts, tech-sheet, llms-txt, llms-full-txt]
+    workbook: 1 Products.carbon_credit_eligible
+    fillGuidance: Tick only when the source explicitly says the product is eligible for carbon credits or ACCUs. Do not infer it from cover crop, sequestration, or soil-carbon wording. When ticked, Product Overview shows the label Carbon credit and the value Eligible as the last row. Unticked products hide the overview row.
+
   - id: diseasePestResistance
     tab: 2
     apiPath: details.diseasePestResistance
@@ -556,7 +570,7 @@ fields:
     enumValues: ["", Summer, Winter, Either]
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: Forage & Grain Crops
+    visibleWhen: Alternative Forage and Grain Crops
     publicApi: true
     visibility: customer
     customerSurfaces: [quick-facts, forage-chips, llms-full-txt]
@@ -570,7 +584,7 @@ fields:
     type: string
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: Forage & Grain Crops
+    visibleWhen: Alternative Forage and Grain Crops
     publicApi: true
     visibility: customer
     customerSurfaces: [quick-facts, forage-chips, llms-full-txt]
@@ -585,7 +599,7 @@ fields:
     enumValues: ["", None, Low, "Standard – manage"]
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: Forage & Grain Crops
+    visibleWhen: Alternative Forage and Grain Crops
     publicApi: true
     visibility: customer
     customerSurfaces: [quick-facts, llms-full-txt]
@@ -600,7 +614,7 @@ fields:
     enumValues: ["", "Single cut", "Multi-cut / regrazes"]
     requiredForDraft: false
     requiredForPublish: false
-    visibleWhen: Forage & Grain Crops
+    visibleWhen: Alternative Forage and Grain Crops
     publicApi: true
     visibility: customer
     customerSurfaces: [quick-facts, llms-full-txt]
@@ -802,8 +816,9 @@ fields:
     tab: 4
     apiPath: saleLines[].seedForm
     label: Seed form
-    type: enum
-    enumValues: ["", "Bare / de-hulled", Podded, Coated, "Coated + Gaucho", "BioNPK-S coated", "Goldstrike coated", Scarified, "Lime coated"]
+    type: string
+    maxLength: 80
+    enumValues: ["", "Bare / de-hulled", Podded, Coated, "Coated + Gaucho", "BioNPK-S coated", "Goldstrike coated", Scarified, "Lime coated", Inoculated, "Inoculated & treated with BioNPK Powder S"]
     requiredForDraft: false
     requiredForPublish: false
     visibleWhen: always
@@ -811,7 +826,7 @@ fields:
     visibility: customer
     customerSurfaces: [how-its-sold, some-category-chips]
     workbook: 4 Sale lines.seed_form
-    fillGuidance: Public form. Blank displays as Bare.
+    fillGuidance: Public form. Presets are listed in enumValues. Create a form accepts any other wording up to 80 characters. Blank displays as Bare. Another form is another sale line.
 
   - id: saleLines.packKg
     tab: 4

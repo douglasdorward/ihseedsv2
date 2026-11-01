@@ -15,7 +15,7 @@ export const COLUMN_GUIDE_HEADERS = [
 export const PRODUCT_SHEET_HEADERS = {
   "1 Products": [
     "slug", "product_name", "category", "sub_category", "record_type", "botanical_name", "persistency_type",
-    "australian_bred", "tagline", "blurb", "key_attributes", "description", "distribution_note", "rainfall_min_mm",
+    "australian_bred", "carbon_credit_eligible", "tagline", "blurb", "key_attributes", "description", "distribution_note", "rainfall_min_mm",
     "soil_ph_min", "soil_ph_scale", "soil_range_lightest", "soil_range_heaviest", "sowing_depth_min_cm",
     "sowing_depth_max_cm", "tolerance", "end_use", "livestock", "disease_pest_resistance", "stand_life_notes",
     "grazing_management_notes", "pbr_protected", "pbr_details", "certification", "formulation_year",
@@ -134,6 +134,13 @@ const PRODUCTS: GuideRow[] = [
     "No",
     "Y or N. Internal flag only. Do not turn Y into a public “Australian bred” sentence unless that claim is already approved copy in another column.",
     "Not shown.",
+  ],
+  [
+    "1 Products",
+    "carbon_credit_eligible",
+    "No",
+    "Y or N. Y shows the product as carbon-credit eligible. N or a blank cell hides it. A missing column is treated as N.",
+    "When Y, Product Overview shows a leaf and CO₂ icon as the last row, with the label Carbon credit and the value Eligible. N is not shown.",
   ],
   [
     "1 Products",
@@ -411,7 +418,7 @@ const SPECIFICS: GuideRow[] = [
     "3 Category specifics",
     "category",
     "Should match 1 Products.category.",
-    "Root category name. Only columns that apply to this name are saved; other filled cells on the row are ignored. This cell does not move the product. Change category on 1 Products, then keep this cell in step. Applies as follows. Ryegrasses: ploidy, heading date, heading offset, ARGT, endophyte. Clovers: maturity, hard seed, oestrogen, bloat, flower colour. Serradellas & Medics: maturity, hard seed, flower colour, bloat. Lucerne: winter activity. Fescues & Other Grasses: ploidy, heading date, endophyte, growth season. Sub-Tropical Grasses: ploidy, growth season. Forage & Grain Crops: growing season, weeks to first grazing, prussic acid, regrowth. Mixes: flowering window. Biologicals: product form, application rate.",
+    "Root category name. Only columns that apply to this name are saved; other filled cells on the row are ignored. This cell does not move the product. Change category on 1 Products, then keep this cell in step. Applies as follows. Ryegrasses: ploidy, heading date, heading offset, ARGT, endophyte. Clovers: maturity, hard seed, oestrogen, bloat, flower colour. Serradellas & Medics: maturity, hard seed, flower colour, bloat. Lucerne: winter activity. Fescues & Other Grasses: ploidy, heading date, endophyte, growth season. Sub-Tropical Grasses: ploidy, growth season. Alternative Forage and Grain Crops: growing season, weeks to first grazing, prussic acid, regrowth. Mixes: flowering window. Biologicals: product form, application rate.",
     "Not printed. It only chooses which facts on this row can appear.",
   ],
   [
@@ -501,28 +508,28 @@ const SPECIFICS: GuideRow[] = [
   [
     "3 Category specifics",
     "growing_season",
-    "No. Saved for Forage & Grain Crops only.",
+    "No. Saved for Alternative Forage and Grain Crops only.",
     "Blank, or Summer, Winter, or Either. This is not growth_season.",
     "Quick facts, labelled Growing season. Forage cards chip it as Summer crop.",
   ],
   [
     "3 Category specifics",
     "weeks_to_first_grazing",
-    "No. Saved for Forage & Grain Crops only.",
+    "No. Saved for Alternative Forage and Grain Crops only.",
     "Short text such as 6-8. Not a closed list.",
     "Quick facts, labelled Weeks to first grazing. Forage cards chip Graze 6-8 wks when the text is 40 characters or fewer.",
   ],
   [
     "3 Category specifics",
     "prussic_acid_risk",
-    "No. Saved for Forage & Grain Crops only.",
+    "No. Saved for Alternative Forage and Grain Crops only.",
     "Blank, or None, Low, or Standard – manage.",
     "Quick facts, labelled Prussic acid risk.",
   ],
   [
     "3 Category specifics",
     "regrowth",
-    "No. Saved for Forage & Grain Crops only.",
+    "No. Saved for Alternative Forage and Grain Crops only.",
     "Blank, or Single cut, or Multi-cut / regrazes.",
     "Quick facts, labelled Regrowth.",
   ],
@@ -568,7 +575,7 @@ const SALES: GuideRow[] = [
     "4 Sale lines",
     "seed_form",
     "No",
-    "Public form from Lists: Bare / de-hulled, Podded, Coated, Coated + Gaucho, BioNPK-S coated, Goldstrike coated, Scarified, or Lime coated. Blank is allowed.",
+    "Public form. Presets: Bare / de-hulled, Podded, Coated, Coated + Gaucho, BioNPK-S coated, Goldstrike coated, Scarified, Lime coated, Inoculated, or Inoculated & treated with BioNPK Powder S. Any other wording up to 80 characters is allowed. Blank is allowed.",
     "How it's sold Form column. Blank is shown as Bare. Serradella cards and sub-tropical cards may chip the form.",
   ],
   [

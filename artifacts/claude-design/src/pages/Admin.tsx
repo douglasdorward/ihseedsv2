@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } 
 import { Icon, StatusPill } from "../components/ui";
 import { AlsoPopularPicker } from "../components/AlsoPopularPicker";
 import { ProductPageEditor } from "../components/ProductPageEditor";
+import { SeedFormField } from "../components/SeedFormField";
 import { FillFromPdf } from "../components/FillFromPdf";
 import AdminTechSheets from "./AdminTechSheets";
 import AdminImages from "./AdminImages";
@@ -132,7 +133,6 @@ const OPTS = {
   prussicAcidRisk: ["", "None", "Low", "Standard – manage"],
   regrowth: ["", "Single cut", "Multi-cut / regrazes"],
   productForm: ["", "Powder", "Liquid", "Peat", "Granule"],
-  seedForm: ["", "Bare / de-hulled", "Podded", "Coated", "Coated + Gaucho", "BioNPK-S coated", "Goldstrike coated", "Scarified", "Lime coated"],
   availability: ["Good stock", "Low stock", "Very low", "Unavailable"],
   availabilityOverride: ["", "Good stock", "Low stock", "Very low", "Unavailable"]
 };
@@ -167,6 +167,7 @@ const blankProduct = {
     flowerColour: "" as any,
     bredByOrigin: "",
     australianBred: false,
+    carbonCreditEligible: false,
     distributedBy: "IH Seeds",
     sowingRates: [],
     rainfallMinMm: null,
@@ -357,7 +358,7 @@ function getTabFields(tab: number, form: any) {
   const isFescue = c === "Fescues & Other Grasses";
   const isSubTropical = c === "Sub-Tropical Grasses";
   const isHerb = c === "Herbs";
-  const isForage = c === "Forage & Grain Crops";
+  const isForage = c === "Alternative Forage and Grain Crops";
   const isMix = c === "Mixes";
   const isBio = c === "Biologicals";
   
@@ -462,7 +463,7 @@ function PersistencyAndAustralianBredFields({
   details,
   setDetail,
 }: {
-  details: { persistencyType: string; australianBred: boolean };
+  details: { persistencyType: string; australianBred: boolean; carbonCreditEligible: boolean };
   setDetail: (key: string, value: any) => void;
 }) {
   return (
@@ -472,6 +473,13 @@ function PersistencyAndAustralianBredFields({
         Australian bred <AdminOnlyMark />
         <span className="admin-check-control">
           <input type="checkbox" checked={details.australianBred} onChange={(event) => setDetail("australianBred", event.target.checked)} />
+        </span>
+      </label>
+      <label className="admin-check-field">
+        Carbon-credit eligible
+        <span className="admin-field-hint">Shows “CARBON CREDIT” with “Eligible” underneath on the product overview.</span>
+        <span className="admin-check-control">
+          <input type="checkbox" checked={details.carbonCreditEligible} onChange={(event) => setDetail("carbonCreditEligible", event.target.checked)} />
         </span>
       </label>
     </div>
@@ -1971,7 +1979,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
   const isFescue = category === "Fescues & Other Grasses";
   const isSubTropical = category === "Sub-Tropical Grasses";
   const isHerb = category === "Herbs";
-  const isForage = category === "Forage & Grain Crops";
+  const isForage = category === "Alternative Forage and Grain Crops";
   const isMix = category === "Mixes";
   const isBio = category === "Biologicals";
   const isLegacyListing = getListingState(currentForm) === "Legacy";
@@ -2347,9 +2355,7 @@ function ProductEditor({ isNew, productId }: { isNew: boolean; productId?: numbe
                         <label>Stock code
                           <input value={line.stockCode} onChange={(e) => updateSaleLine(i, { stockCode: e.target.value })} placeholder="e.g. BIONPKS" />
                         </label>
-                        <label>Seed form
-                          <select value={line.seedForm} onChange={(e) => updateSaleLine(i, { seedForm: e.target.value })}>{OPTS.seedForm.map(o => <option key={o} value={o}>{o || "Not set"}</option>)}</select>
-                        </label>
+                        <SeedFormField value={line.seedForm} onChange={(seedForm) => updateSaleLine(i, { seedForm })} />
                         <div className="admin-sale-line-pack">
                           <span>Pack</span>
                           <div className="admin-sale-line-pack-inputs">

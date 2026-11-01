@@ -1,5 +1,6 @@
 export type QuickFactSlotId =
   | "persistencyType"
+  | "carbonCreditEligible"
   | "rainfallMinMm"
   | "soilPh"
   | "sowingRates"
@@ -44,6 +45,7 @@ export const SOIL_LABELS: Record<string, string> = {
 
 export type QuickFactDetails = {
   persistencyType?: string;
+  carbonCreditEligible?: boolean;
   rainfallMinMm?: number | null;
   soilRangeLightest?: string;
   soilRangeHeaviest?: string;
@@ -147,7 +149,7 @@ export function getEditorQuickFactSlots(category: string, details: QuickFactDeta
   if (["Fescues & Other Grasses", "Sub-Tropical Grasses"].includes(category)) {
     slots.push({ id: "growthSeason", label: "Growth season", icon: "sun", formatted: details.growthSeason?.trim() || "" });
   }
-  if (category === "Forage & Grain Crops") {
+  if (category === "Alternative Forage and Grain Crops") {
     slots.push({ id: "growingSeason", label: "Growing season", icon: "sun", formatted: details.growingSeason?.trim() || "" });
     slots.push({ id: "weeksToFirstGrazing", label: "Weeks to first grazing", icon: "clock", formatted: details.weeksToFirstGrazing?.trim() || "" });
     slots.push({ id: "prussicAcidRisk", label: "Prussic acid risk", icon: "shield", formatted: details.prussicAcidRisk?.trim() || "" });
@@ -157,5 +159,6 @@ export function getEditorQuickFactSlots(category: string, details: QuickFactDeta
     slots.push({ id: "productForm", label: "Product form", icon: "package", formatted: details.productForm?.trim() || "" });
     slots.push({ id: "applicationRate", label: "Application rate", icon: "scale", formatted: details.applicationRate?.trim() || "" });
   }
+  slots.push({ id: "carbonCreditEligible", label: "Carbon credit", icon: "carbon", formatted: details.carbonCreditEligible ? "Eligible" : "" });
   return slots;
 }

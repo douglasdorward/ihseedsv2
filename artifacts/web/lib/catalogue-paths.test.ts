@@ -48,7 +48,7 @@ test("featuredNavCategories lists Mixes, Ryegrasses, Clovers, Serradellas, Forag
     category({ id: 8, slug: "biologicals", name: "Biologicals", sortOrder: 1, productCount: 20 }),
     category({ id: 7, slug: "sub-tropical-grasses", name: "Sub-Tropical Grasses", sortOrder: 2, productCount: 3 }),
     category({ id: 4, slug: "fescues-other-grasses", name: "Fescues & Other Grasses", sortOrder: 3, productCount: 18 }),
-    category({ id: 9, slug: "forage-grain-crops", name: "Forage & Grain Crops", sortOrder: 4, productCount: 8 }),
+    category({ id: 9, slug: "forage-grain-crops", name: "Alternative Forage and Grain Crops", sortOrder: 4, productCount: 8 }),
     category({ id: 5, slug: "serradella", name: "Serradellas & Medics", sortOrder: 5, productCount: 12 }),
     category({ id: 3, slug: "clovers", name: "Clovers", sortOrder: 6, productCount: 15 }),
     category({ id: 2, slug: "ryegrass", name: "Ryegrasses", sortOrder: 7, productCount: 9 }),
@@ -60,7 +60,7 @@ test("featuredNavCategories lists Mixes, Ryegrasses, Clovers, Serradellas, Forag
     { name: "Ryegrasses", slug: "ryegrass" },
     { name: "Clovers", slug: "clovers" },
     { name: "Serradellas & Medics", slug: "serradella" },
-    { name: "Forage & Grain Crops", slug: "forage-grain-crops" },
+    { name: "Alternative Forage and Grain Crops", slug: "forage-grain-crops" },
     { name: "Sub-Tropical Grasses", slug: "sub-tropical-grasses" },
   ]);
 });

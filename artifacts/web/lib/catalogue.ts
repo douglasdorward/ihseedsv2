@@ -46,6 +46,7 @@ export type CatalogueProduct = {
     endophyte?: string;
     growthSeason?: string;
     persistencyType?: string;
+    carbonCreditEligible?: boolean;
     growingSeason?: string;
     weeksToFirstGrazing?: number | null;
     floweringWindow?: string;

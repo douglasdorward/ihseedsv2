@@ -159,7 +159,7 @@ function categoryExtras(products: ListingProduct[], categoryName: string): Categ
     const span = numberSpan(numbers(products, (details) => details.winterActivity));
     add("Winter activity", "cloud-rain", span ? spanValue(span) : null);
   }
-  if (categoryName === "Forage & Grain Crops") {
+  if (categoryName === "Alternative Forage and Grain Crops") {
     add("Growing season", "sun", list((details) => details.growingSeason));
     const span = numberSpan(numbers(products, (details) => details.weeksToFirstGrazing));
     add("Weeks to first grazing", "clock", span ? spanValue(span, "weeks") : null);

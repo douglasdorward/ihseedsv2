@@ -334,7 +334,7 @@ The authoritative export headers, in order, are:
 
 ```text
 Column guide: Sheet, Column, When it is required, What to enter, How it appears on the website
-1 Products: slug, product_name, category, sub_category, record_type, botanical_name, persistency_type, australian_bred, tagline, blurb, key_attributes, description, distribution_note, rainfall_min_mm, soil_ph_min, soil_ph_scale, soil_range_lightest, soil_range_heaviest, sowing_depth_min_cm, sowing_depth_max_cm, tolerance, end_use, livestock, disease_pest_resistance, stand_life_notes, grazing_management_notes, pbr_protected, pbr_details, certification, formulation_year, related_products, photo_1, photo_2, photo_3, tech_sheet_pdf_path, website_url, listing_state, listing_override, availability, status
+1 Products: slug, product_name, category, sub_category, record_type, botanical_name, persistency_type, australian_bred, carbon_credit_eligible, tagline, blurb, key_attributes, description, distribution_note, rainfall_min_mm, soil_ph_min, soil_ph_scale, soil_range_lightest, soil_range_heaviest, sowing_depth_min_cm, sowing_depth_max_cm, tolerance, end_use, livestock, disease_pest_resistance, stand_life_notes, grazing_management_notes, pbr_protected, pbr_details, certification, formulation_year, related_products, photo_1, photo_2, photo_3, tech_sheet_pdf_path, website_url, listing_state, listing_override, availability, status
 2 Sowing rates: slug, context, min, max, unit
 3 Category specifics: slug, category, ploidy, heading_date, heading_offset_days, argt_resistant, endophyte, growth_season, maturity_days, hard_seed_level, oestrogen_level, bloat_risk, flower_colour, winter_activity, growing_season, weeks_to_first_grazing, prussic_acid_risk, regrowth, flowering_window, product_form, application_rate
 4 Sale lines: slug, stock_code, seed_form, pack_kg, pack_unit, availability, price_display, is_default
@@ -466,6 +466,7 @@ The following matrix groups related fields. “Publish required” means require
 | End use/livestock | pipe lists | Agronomy & fit | No | No | Quick facts |
 | Persistency/type | `persistency_type` | Agronomy & fit | No | No | Quick facts where present |
 | Australian bred | `australian_bred` | Agronomy & fit | No | No | Stored/admin-only |
+| Carbon-credit eligible | `carbon_credit_eligible` | Agronomy & fit | No | No | Last Product Overview row when Y: label Carbon credit, value Eligible |
 | Inoculant group | product fields | Not in editor (retained on save/import) | No | No | Private |
 | Grazing management | `grazing_management_notes` | Agronomy & fit | No | No | Conditional accordion |
 | Disease/pest resistance | matching field | Agronomy & fit | No | No | Conditional accordion |
@@ -524,7 +525,7 @@ Switching views does not copy data; both surfaces read and write the same editor
 Field-by-field purpose, fill guidance, and customer visibility for each tab live in [docs/product-editor/](docs/product-editor/README.md). Update those files in the same change as editor, API, or public-display updates.
 
 1. **Basics** — identity, category, record type, listing state and botanical name. [01-basics.md](docs/product-editor/01-basics.md)
-2. **Agronomy & fit** — sowing, rainfall, pH, soils, tolerance, use, livestock, persistency, Australian bred, and management. [02-agronomy-and-fit.md](docs/product-editor/02-agronomy-and-fit.md)
+2. **Agronomy & fit** — sowing, rainfall, pH, soils, tolerance, use, livestock, persistency, Australian bred, carbon-credit eligible, and management. [02-agronomy-and-fit.md](docs/product-editor/02-agronomy-and-fit.md)
 3. **Category-specific** — fields shown only where relevant, including Mix components. [03-category-specific.md](docs/product-editor/03-category-specific.md)
 4. **Selling** — sale lines, availability, PBR and certification. [04-selling.md](docs/product-editor/04-selling.md)
 5. **Content & publishing** — the public copy layers, distribution note, legacy URL, media, FAQs and Also popular. [05-content-and-publishing.md](docs/product-editor/05-content-and-publishing.md)

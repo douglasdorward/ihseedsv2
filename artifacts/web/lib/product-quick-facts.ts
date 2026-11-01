@@ -74,7 +74,7 @@ export function getProductQuickFacts(product: CatalogueProduct): ProductQuickFac
   if (["Clovers", "Serradellas & Medics"].includes(product.category) && d.bloatRisk) quickFacts.push({ label: "Bloat risk", value: d.bloatRisk, icon: "shield" });
   if (product.category === "Lucerne" && d.winterActivity) quickFacts.push({ label: "Winter activity", value: d.winterActivity, icon: "cloud-rain" });
   if (["Fescues & Other Grasses", "Sub-Tropical Grasses"].includes(product.category) && d.growthSeason) quickFacts.push({ label: "Growth season", value: d.growthSeason, icon: "sun" });
-  if (product.category === "Forage & Grain Crops") {
+  if (product.category === "Alternative Forage and Grain Crops") {
     if (d.growingSeason) quickFacts.push({ label: "Growing season", value: d.growingSeason, icon: "sun" });
     if (d.weeksToFirstGrazing) quickFacts.push({ label: "Weeks to first grazing", value: d.weeksToFirstGrazing, icon: "clock" });
     if (d.prussicAcidRisk) quickFacts.push({ label: "Prussic acid risk", value: d.prussicAcidRisk, icon: "shield" });
@@ -84,5 +84,6 @@ export function getProductQuickFacts(product: CatalogueProduct): ProductQuickFac
     if (d.productForm) quickFacts.push({ label: "Product form", value: d.productForm, icon: "package" });
     if (d.applicationRate) quickFacts.push({ label: "Application rate", value: d.applicationRate, icon: "scale" });
   }
+  if (d.carbonCreditEligible) quickFacts.push({ label: "Carbon credit", value: "Eligible", icon: "carbon" });
   return quickFacts;
 }

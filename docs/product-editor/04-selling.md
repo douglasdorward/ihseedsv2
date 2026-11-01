@@ -34,7 +34,7 @@ One card per warehouse stock code. Legacy listing state disables availability on
 - **Required:** no
 - **Customer website:** “How it’s sold” Form column (`Bare` if blank). Some category cards chip seed form (serradella, sub-tropical).
 - **Public API:** yes
-- **How to fill:** Bare / de-hulled, Podded, Coated, Coated + Gaucho, BioNPK-S coated, Goldstrike coated, Scarified, Lime coated.
+- **How to fill:** Bare / de-hulled, Podded, Coated, Coated + Gaucho, BioNPK-S coated, Goldstrike coated, Scarified, Lime coated, Inoculated, or Inoculated & treated with BioNPK Powder S. Choose Create a form to type any other public wording, up to 80 characters. A second form is a second sale line.
 
 ### Pack weight / Pack unit
 

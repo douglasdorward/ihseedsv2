@@ -192,7 +192,7 @@ export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 20
                 Products
                 <Icon name="chevron-right" size={18} />
               </button>
-              <div id="products-nav-menu" className="nav-dropdown-panel">
+              <div id="products-nav-menu" className={`nav-dropdown-panel${productCategories.length > 6 ? " is-columns" : ""}`}>
                 <ul className="nav-dropdown-list" aria-label="Product categories">
                   {productLinks}
                 </ul>

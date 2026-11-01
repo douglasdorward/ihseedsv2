@@ -32,6 +32,7 @@ export type ProductDetails = {
   flowerColour: "" | "Pink" | "Yellow" | "White" | "Crimson" | "Red" | "Purple";
   bredByOrigin: string;
   australianBred: boolean;
+  carbonCreditEligible: boolean;
   distributedBy: string;
   sowingRates: { context: "" | "General" | "Monoculture" | "In a mix" | "Dryland" | "Irrigation" | "Pasture" | "Turf" | "Podded" | "De-hulled" | "Coated"; min: number | null; max: number | null; unit: string }[];
   rainfallMinMm: number | null;
@@ -101,7 +102,7 @@ export type ProductDetails = {
   applicationRate: string;
 };
 export type SaleLine = {
-  stockCode: string; seedForm: "" | "Bare / de-hulled" | "Podded" | "Coated" | "Coated + Gaucho" | "BioNPK-S coated" | "Goldstrike coated" | "Scarified" | "Lime coated";
+  stockCode: string; seedForm: string;
   seedGrade: "" | "Certified" | "Tested" | "Certified & Tested" | "VNS";
   packKg: number | null; packUnit: string; availability: "Good stock" | "Low stock" | "Very low" | "Unavailable" | null;
   priceDisplay: string; isDefault: boolean; sortOrder: number;
@@ -205,6 +206,7 @@ const emptyProductDetails: ProductDetails = {
   flowerColour: "",
   bredByOrigin: "",
   australianBred: false,
+  carbonCreditEligible: false,
   distributedBy: "IH Seeds",
   sowingRates: [],
   rainfallMinMm: null,
@@ -329,6 +331,7 @@ export function normalizeProductDetails(value: unknown, packSize = ""): ProductD
   return {
     ...emptyProductDetails,
     ...current,
+    carbonCreditEligible: current.carbonCreditEligible === true,
     tagline: current.tagline ?? legacySummary ?? "",
     standLifeNotes: current.standLifeNotes ?? current.persistenceLongevity ?? "",
     recordType: current.recordType ?? legacyKind ?? "Mix",
@@ -478,6 +481,7 @@ const productDetailsObjectSchema = z.object({
   flowerColour: z.enum(["", "Pink", "Yellow", "White", "Crimson", "Red", "Purple"]),
   bredByOrigin: z.string().max(2000),
   australianBred: z.boolean(),
+  carbonCreditEligible: z.boolean().default(false),
   distributedBy: z.string().max(120),
   sowingRates: z.array(z.object({ context: z.enum(["", "General", "Monoculture", "In a mix", "Dryland", "Irrigation", "Pasture", "Turf", "Podded", "De-hulled", "Coated"]), min: z.number().min(0).nullable(), max: z.number().min(0).nullable(), unit: z.string().max(20) })),
   rainfallMinMm: z.number().int().min(0).nullable(),
@@ -588,7 +592,7 @@ export const updateProductSchema = insertProductSchema
   });
 export const saleLineSchema = z.object({
   stockCode: z.string().trim().min(1).max(80),
-  seedForm: z.enum(["", "Bare / de-hulled", "Podded", "Coated", "Coated + Gaucho", "BioNPK-S coated", "Goldstrike coated", "Scarified", "Lime coated"]),
+  seedForm: z.string().trim().max(80),
   seedGrade: z.enum(["", "Certified", "Tested", "Certified & Tested", "VNS"]),
   packKg: z.number().min(0).nullable(),
   packUnit: z.string().trim().min(1).max(20).default("kg"),

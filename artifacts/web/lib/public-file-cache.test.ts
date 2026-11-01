@@ -14,5 +14,6 @@ test("the logo is kept long-term and favicons for a day", async () => {
   const cacheFor = (source: string) => rules.find((rule: { source: string }) => rule.source === source)
     ?.headers.find((header: { key: string }) => header.key === "Cache-Control")?.value;
   assert.match(cacheFor("/ih-seeds-logo.png"), /max-age=31536000, immutable/);
+  assert.match(cacheFor("/ih-seeds-logo-716.webp"), /max-age=31536000, immutable/);
   assert.equal(cacheFor("/favicon.ico"), "public, max-age=86400");
 });

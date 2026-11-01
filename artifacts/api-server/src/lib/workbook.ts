@@ -51,13 +51,13 @@ const SPECIFICS: Record<string, string> = {
 };
 const NUMBER_KEYS = new Set(["rainfallMinMm", "soilPhMin", "sowingDepthMinCm", "sowingDepthMaxCm",
   "headingOffsetDays", "maturityDays", "winterActivity"]);
-const BOOLEAN_KEYS = new Set(["australianBred", "pbrProtected", "argtResistant"]);
+const BOOLEAN_KEYS = new Set(["australianBred", "carbonCreditEligible", "pbrProtected", "argtResistant"]);
 const ARRAY_KEYS: Record<string, string> = {
   end_use: "endUse", livestock: "livestock", certification: "certification",
   related_products: "relatedProducts", seed_treatment: "seedTreatment", key_attributes: "keyAttributes",
 };
 const BOOL_COLUMNS: Record<string, string> = {
-  australian_bred: "australianBred", pbr_protected: "pbrProtected",
+  australian_bred: "australianBred", carbon_credit_eligible: "carbonCreditEligible", pbr_protected: "pbrProtected",
   argt_resistant: "argtResistant",
 };
 const LIFECYCLE_STATUSES = new Set(["Published", "Draft", "Archived"]);
@@ -65,7 +65,7 @@ const LISTING_STATES = ["Active", "New", "Legacy"] as const;
 const OPTION_ALIASES: Record<string, string> = {
   soil_ph_scale: "soil_ph_scale", context: "rate_context", unit: "rate_unit", rate_unit: "rate_unit",
   soil_range_lightest: "soil_code", soil_range_heaviest: "soil_code",
-  is_default: "yes_no", australian_bred: "yes_no", pbr_protected: "yes_no",
+  is_default: "yes_no", australian_bred: "yes_no", carbon_credit_eligible: "yes_no", pbr_protected: "yes_no",
   argt_resistant: "yes_no",
   robots_index: "yes_no", active: "yes_no",
 };
@@ -82,6 +82,7 @@ function typedValue(column: string, value: string) {
   if (column === "soil_ph_scale" && optionKey(value) === "cacl2") return "CaCl₂";
   return value;
 }
+const forageGrainSpecifics = new Set(["growing_season", "weeks_to_first_grazing", "prussic_acid_risk", "regrowth"]);
 const applicableSpecifics: Record<string, Set<string>> = {
   "Ryegrasses": new Set(["ploidy", "heading_date", "heading_offset_days", "argt_resistant", "endophyte"]),
   "Clovers": new Set(["maturity_days", "hard_seed_level", "oestrogen_level", "bloat_risk", "flower_colour"]),
@@ -89,7 +90,8 @@ const applicableSpecifics: Record<string, Set<string>> = {
   "Lucerne": new Set(["winter_activity"]),
   "Fescues & Other Grasses": new Set(["ploidy", "heading_date", "endophyte", "growth_season"]),
   "Sub-Tropical Grasses": new Set(["ploidy", "growth_season"]),
-  "Forage & Grain Crops": new Set(["growing_season", "weeks_to_first_grazing", "prussic_acid_risk", "regrowth"]),
+  "Alternative Forage and Grain Crops": forageGrainSpecifics,
+  "Forage & Grain Crops": forageGrainSpecifics,
   "Mixes": new Set(["flowering_window"]),
   "Biologicals": new Set(["product_form", "application_rate"]),
 };
@@ -260,9 +262,14 @@ function equivalentRoot(left: string, right: string) {
   const aliases = [
     ["specialtymixes", "mixes"], ["ryegrass", "ryegrasses"],
     ["pastureherbs", "herbs"], ["otherproducts", "other"],
+    ["forageandgraincrops", "alternativeforageandgraincrops"],
   ];
   const a = normal(left), b = normal(right);
   return a === b || aliases.some((group) => group.includes(a) && group.includes(b));
+}
+
+function keepsPublicForageName(stored: string, incoming: string) {
+  return normal(stored) === "alternativeforageandgraincrops" && normal(incoming) === "forageandgraincrops";
 }
 
 function orderedCategoryRows(rows: Row[]) {
@@ -396,6 +403,10 @@ export function dryRunWorkbook(content: Buffer): WorkbookReport {
       }
       for (const [column, raw] of Object.entries(row)) {
         const value = cell(raw), listName = OPTION_ALIASES[column] ?? column;
+        if (column === "seed_form") {
+          if (value.length > 80) issues.push({ sheet: name, row: rowNo, column, problem: "Seed form must be 80 characters or fewer" });
+          continue;
+        }
         const storedList = optionLists.get(listName);
         const list = listName === "listing_state"
           ? new Set([...(storedList ?? []), ...LISTING_STATES])
@@ -505,7 +516,7 @@ export async function commitWorkbook(content: Buffer, token: string) {
         if (!insertedRoot) throw new Error(`FAILED_TO_CREATE_TAXONOMY:${entry.category}`);
         root = insertedRoot;
         categories = [...categories, insertedRoot];
-      } else if (root.name !== entry.category) {
+      } else if (root.name !== entry.category && !keepsPublicForageName(root.name, entry.category)) {
         const previousName = root.name;
         const [renamedRoot] = await tx.update(catalogueCategoriesTable).set({
           name: entry.category,
@@ -771,6 +782,7 @@ export async function exportWorkbook() {
        record_type: listed("record_type", details.recordType), botanical_name: details.botanicalName,
        persistency_type: listed("persistency_type", details.persistencyType),
         australian_bred: details.australianBred ? "Y" : "N",
+        carbon_credit_eligible: details.carbonCreditEligible ? "Y" : "N",
        tagline: details.tagline, blurb: details.blurb, key_attributes: details.keyAttributes.join("|"),
         description: details.description, distribution_note: details.distributionNote,
        rainfall_min_mm: details.rainfallMinMm, soil_ph_min: details.soilPhMin,

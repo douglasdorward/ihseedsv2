@@ -64,7 +64,7 @@ export function getFactChips(product: ListingProduct, subcategoryName?: string) 
     add(details.persistencyType);
     add(details.rainfallMinMm, " mm+");
     add(details.sowingRates?.[0]?.context);
-  } else if (category === "Forage & Grain Crops") {
+  } else if (category === "Alternative Forage and Grain Crops") {
     add(details.growingSeason, " crop");
     add(details.weeksToFirstGrazing, " wks", "Graze ");
     if (subcategoryName) add(subcategoryName);

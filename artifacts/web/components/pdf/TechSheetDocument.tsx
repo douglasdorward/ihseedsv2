@@ -14,7 +14,7 @@ const SAMPLE_LINKS = [
   { href: "/internal/pdf/tech-sheet/amass-tetraploid-italian-ryegrass?facts=max", label: "Max facts" },
 ];
 
-/** Densest ryegrass Quick facts set the product page can emit (12 rows). Preview-only. */
+/** Densest ryegrass Quick facts set the product page can emit (13 rows). Preview-only. */
 export function withMaxQuickFacts(product: CatalogueProduct): CatalogueProduct {
   return {
     ...product,
@@ -22,6 +22,7 @@ export function withMaxQuickFacts(product: CatalogueProduct): CatalogueProduct {
     details: {
       ...product.details,
       persistencyType: "Short-term (1–2 years)",
+      carbonCreditEligible: true,
       rainfallMinMm: 600,
       soilRangeLightest: "LS",
       soilRangeHeaviest: "H",

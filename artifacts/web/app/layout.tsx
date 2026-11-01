@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { getCategories } from "../lib/catalogue";
-import { allNavCategories, featuredNavCategories } from "../lib/catalogue-paths";
+import { allNavCategories } from "../lib/catalogue-paths";
 import { companyTelHref, DEFAULT_COMPANY, siteJsonLd } from "../lib/company";
 import { FALLBACK_SITE_SETTINGS, loadSiteSettings } from "../lib/site-settings";
 import { absoluteSiteUrl, publicSiteUrl } from "../lib/site-url";
@@ -42,7 +42,7 @@ export default async function RootLayout({ children }: { children: any }) {
     getCategories().catch(() => []),
     loadSiteSettings().catch(() => FALLBACK_SITE_SETTINGS),
   ]);
-  const productCategories = featuredNavCategories(categories);
+  const productCategories = allNavCategories(categories);
   const footerCategories = allNavCategories(categories);
   const company = settings.company ?? DEFAULT_COMPANY;
 

@@ -129,7 +129,7 @@ Ploidy is offered for Mixes in the editor but Quick facts only print ploidy for 
 - **Public API:** yes
 - **How to fill:** Summer-active, Winter-active / Mediterranean, Year-round, Warm-season.
 
-## Forage & Grain Crops
+## Alternative Forage and Grain Crops
 
 Forage cards chip growing season (`{value} crop`), weeks to first grazing (`Graze {value} wks`), and on a category page the subcategory name. Those come first. Empty pill slots then fall back to minimum rainfall (`{n} mm+`), persistency type, and the first sowing-rate range. A card shows at most three pills.
 

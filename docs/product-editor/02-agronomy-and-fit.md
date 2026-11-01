@@ -117,6 +117,18 @@ Biologicals use a shorter form (application notes plus persistency / Australian 
 - **Public API:** excluded (admin-only)
 - **Purpose:** Internal origin flag. Do not treat as a public claim until a public design exists.
 
+## Carbon-credit eligible
+
+- **API path:** `details.carbonCreditEligible`
+- **Workbook:** `1 Products.carbon_credit_eligible`
+- **Required:** no
+- **Shown when:** always, including Biologicals
+- **Customer website:** Product Overview, only when ticked, and always the last row. The row is a leaf and CO₂ icon with the label “CARBON CREDIT” and the value “Eligible” underneath. Unticked products omit the row. The same fact is included in technical-sheet quick facts and llms.txt.
+- **Public API:** yes
+- **Purpose:** Staff flag that this product can be presented as eligible for carbon credits.
+- **How to fill:** Tick only when the product should make that public claim. Leave unticked otherwise.
+- **Constraints:** boolean. Workbook values are `Y` or `N`.
+
 ## Disease & pest resistance
 
 - **API path:** `details.diseasePestResistance`

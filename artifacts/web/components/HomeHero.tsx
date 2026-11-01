@@ -95,6 +95,12 @@ export function HomeHero({
 
   const advance = () => setIndex((currentIndex) => (currentIndex + 1) % items.length);
 
+  const watermark = (
+    <div className="hero-watermark" aria-hidden="true">
+      <img src="/ih-seeds-logo-white-716.webp" alt="" width={716} height={463} decoding="async" />
+    </div>
+  );
+
   const copy = (
     <div className="hero-copy">
       <h1><span>{eyebrow}</span><strong>{heading}</strong></h1>
@@ -112,6 +118,7 @@ export function HomeHero({
       <section className="hero-wrap">
         <div className="hero">
           <div className="hero-scrim" aria-hidden="true" />
+          {watermark}
           {copy}
         </div>
       </section>
@@ -128,6 +135,7 @@ export function HomeHero({
           {still ? <CoverImage src={still} alt="" sizes="100vw" priority quality={60} className="hero-photo" /> : null}
           {playVideo && <HeroVideo slide={current} active loop onEnded={() => undefined} />}
           <div className="hero-scrim" aria-hidden="true" />
+          {watermark}
           {copy}
         </div>
       </section>
@@ -164,6 +172,7 @@ export function HomeHero({
             </div>
           );
         })}
+        {watermark}
         {copy}
       </div>
     </section>
