@@ -1,6 +1,9 @@
 /** 24 fills the three-column product grid evenly (eight full rows). */
 export const PRODUCTS_PER_PAGE = 24;
 
+/** 12 fills the three-column article grid evenly (four full rows). */
+export const ARTICLES_PER_PAGE = 12;
+
 /** The requested page from `?page=`; anything missing or invalid is page 1. */
 export function pageFromSearchParams(params: URLSearchParams): number {
   const raw = params.get("page");
@@ -9,7 +12,7 @@ export function pageFromSearchParams(params: URLSearchParams): number {
   return Number.isSafeInteger(page) && page >= 1 ? page : 1;
 }
 
-export type ProductPage<T> = {
+export type ListingPage<T> = {
   /** The page actually shown: the request clamped to the available pages. */
   page: number;
   pageCount: number;
@@ -21,7 +24,7 @@ export type ProductPage<T> = {
 };
 
 /** Slice already-filtered results. Out-of-range requests show the last page. */
-export function paginate<T>(items: T[], requestedPage: number, perPage = PRODUCTS_PER_PAGE): ProductPage<T> {
+export function paginate<T>(items: T[], requestedPage: number, perPage = PRODUCTS_PER_PAGE): ListingPage<T> {
   const total = items.length;
   const pageCount = Math.max(1, Math.ceil(total / perPage));
   const page = Math.min(Math.max(1, Math.floor(requestedPage) || 1), pageCount);

@@ -22,3 +22,4 @@
 - [Schema drift outside migrations](schema-drift-constraints.md) — real DBs can hold constraints no migration creates; check dev/prod constraint defs on live-only DB errors; rename changed CHECKs so publish applies them.
 - [Generated tech sheet storage](tech-sheet-storage.md) — PDFs keyed by content fingerprint, env-namespaced bucket, token-gated store; only nix chromium launches.
 - [Uploaded redirects](uploaded-redirects.md) — admin-uploaded legacy redirects are marked `source = uploaded`; catalogue imports must never delete or rebuild them.
+- [Image optimiser caching](image-optimiser-caching.md) — capped widths, warm-up crawls rendered pages, vw-only sizes hints, local prod build gotchas.

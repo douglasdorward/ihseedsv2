@@ -5,12 +5,13 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { CoverImage } from "../../components/CoverImage";
 import { Icon } from "../../components/Icon";
+import { Pagination } from "../../components/Pagination";
 import { ProductNewStamp } from "../../components/NewStamp";
 import { SiteSearch } from "../../components/SiteSearch";
 import { StatusPill } from "../../components/StatusPill";
 import type { CatalogueCategory } from "../../lib/catalogue";
 import type { ListingProduct } from "../../lib/product-listing";
-import { productPublicPath } from "../../lib/catalogue-paths";
+import { compareNavCategories, productPublicPath } from "../../lib/catalogue-paths";
 import {
   catalogueFilterOptions,
   EMPTY_FILTERS,
@@ -23,8 +24,9 @@ import {
   type FilterOptionDimension,
   type ProductListingFilters,
 } from "../../lib/product-filters";
-import { pageFromSearchParams, pageHref, pageNumbers, paginate } from "../../lib/product-pagination";
+import { pageFromSearchParams, paginate } from "../../lib/pagination";
 import { getFactChips, hasProductPhoto, productCardImage, productImageAlt } from "./product-card-facts";
+import { IMAGE_SIZES } from "../../lib/image-sizes";
 
 function toggleValue(values: string[], value: string) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
@@ -82,7 +84,8 @@ export function ProductsListing({
   const rootCategories = useMemo(
     () => categories
       .filter((category) => category.parentId === null && category.active)
-      .sort((first, second) => first.name.localeCompare(second.name)),
+      // Same order as the product types in the footer.
+      .sort(compareNavCategories),
     [categories],
   );
 
@@ -94,6 +97,11 @@ export function ProductsListing({
   const categoryBySlug = useMemo(
     () => new Map(rootCategories.map((category) => [category.slug, category])),
     [rootCategories],
+  );
+
+  const categoryOptions = useMemo(
+    () => rootCategories.map((category) => category.slug).filter((slug) => options.category.includes(slug)),
+    [rootCategories, options.category],
   );
 
   const soilLabelByValue = useMemo(
@@ -149,9 +157,9 @@ export function ProductsListing({
         )}
       </div>
 
-      {options.category.length > 0 && (
+      {categoryOptions.length > 0 && (
         <FilterGroup title="Category">
-          {options.category.map((slug) => {
+          {categoryOptions.map((slug) => {
             const category = categoryBySlug.get(slug);
             if (!category) return null;
             return (
@@ -341,7 +349,7 @@ export function ProductsListing({
                 >
                   <div className="catalogue-product-media">
                     <div className="catalogue-product-image">
-                      {hasPhoto ? <CoverImage src={productCardImage(product)} alt={productImageAlt(product)} sizes="(max-width: 700px) 100vw, (max-width: 1100px) 46vw, 360px" /> : null}
+                      {hasPhoto ? <CoverImage src={productCardImage(product)} alt={productImageAlt(product)} sizes={IMAGE_SIZES.listingProductCard} /> : null}
                     </div>
                     {!hasPhoto && <img className="product-fallback-logo" src="/ih-seeds-logo.png" alt={`${product.name} — product image unavailable`} width={178} height={117} />}
                     <div style={{ position: "absolute", top: 12, left: 12 }}>
@@ -366,37 +374,7 @@ export function ProductsListing({
               );
             })}
             </div>
-            {current.pageCount > 1 && (
-              <nav className="product-pagination" aria-label="Product pages">
-                {current.page > 1 ? (
-                  <Link className="product-pagination-step" href={pageHref(pathname, searchParams, current.page - 1)} scroll={false} rel="prev">
-                    <Icon name="chevron-left" size={16} /> Previous
-                  </Link>
-                ) : (
-                  <span className="product-pagination-step is-disabled" aria-hidden="true"><Icon name="chevron-left" size={16} /> Previous</span>
-                )}
-                <ol className="product-pagination-pages">
-                  {pageNumbers(current.page, current.pageCount).map((value, index) => (
-                    <li key={value ?? `gap-${index}`}>
-                      {value === null ? (
-                        <span className="product-pagination-gap" aria-hidden="true">…</span>
-                      ) : value === current.page ? (
-                        <span className="product-pagination-page is-current" aria-current="page">{value}</span>
-                      ) : (
-                        <Link className="product-pagination-page" href={pageHref(pathname, searchParams, value)} scroll={false} aria-label={`Page ${value}`}>{value}</Link>
-                      )}
-                    </li>
-                  ))}
-                </ol>
-                {current.page < current.pageCount ? (
-                  <Link className="product-pagination-step" href={pageHref(pathname, searchParams, current.page + 1)} scroll={false} rel="next">
-                    Next <Icon name="chevron-right" size={16} />
-                  </Link>
-                ) : (
-                  <span className="product-pagination-step is-disabled" aria-hidden="true">Next <Icon name="chevron-right" size={16} /></span>
-                )}
-              </nav>
-            )}
+            <Pagination current={current} pathname={pathname} searchParams={searchParams} label="Product pages" />
           </>
         ) : (
           <div className="product-listing-empty">

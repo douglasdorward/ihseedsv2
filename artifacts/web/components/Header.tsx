@@ -76,7 +76,7 @@ function useDismissableMenu(location: string) {
   };
 }
 
-export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 2026" }: { productCategories?: NavCategory[]; seedGuideTitle?: string }) {
+export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 2026", phone = "", phoneHref = "" }: { productCategories?: NavCategory[]; seedGuideTitle?: string; phone?: string; phoneHref?: string }) {
   const location = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -232,6 +232,11 @@ export function Header({ productCategories = [], seedGuideTitle = "Seed Guide 20
         )}
       </nav>
       <SiteSearch open={searchOpen} onClose={closeSearch} onNavigate={closeSearchAndMenu} />
+      {phoneHref ? (
+        <a className="mobile-call-button" href={phoneHref} aria-label={`Call us on ${phone}`} data-testid="button-mobile-call">
+          <Icon name="phone" size={22} />
+        </a>
+      ) : null}
       <button
         className="mobile-menu-button"
         onClick={() => {

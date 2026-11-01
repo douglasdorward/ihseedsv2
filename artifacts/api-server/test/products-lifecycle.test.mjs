@@ -660,11 +660,18 @@ test("redirect lookup follows only the registered table entry", async () => {
 });
 
 test("a Legacy product page redirects to its category page unless a redirect is registered", async () => {
-  const product = await createProduct("legacy-to-category");
+  // A disposable database has no categories, so give the test product's category a root of its own.
+  const categoryName = `Legacy redirect ${testRunId}`;
+  const ownRoot = assertStatus(await request("POST", "/admin/categories", {
+    parentId: null, slug: `legacy-redirect-${testRunId}`, name: categoryName, groupLabel: "Automated tests",
+    lead: "", rainfall: "", image: "", sortOrder: 999, active: true,
+  }), 201);
+  const product = await createProduct("legacy-to-category", { category: categoryName });
   const published = assertStatus(await request("POST", `/admin/products/${product.id}/publish`), 200);
   const categories = assertStatus(await request("GET", "/categories"), 200);
   const root = categories.find((category) => category.parentId === null && category.name === published.category);
   assert.ok(root, "test product needs a root category");
+  assert.equal(root.id, ownRoot.id);
   const productPath = `/products/${root.slug}/${published.slug}`;
   const oldSitePath = `/product/old-${published.slug}`;
   const lookup = (path) => request("GET", `/redirects/lookup?fromPath=${encodeURIComponent(path)}`);
